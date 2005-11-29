@@ -1,0 +1,38 @@
+# Variable that points to ArchC installation path
+ARCHC = /home/srigo/phd/archc/src/verify/archc
+
+INC_DIR = -I. -I$(ARCHC)/include 
+
+CC =   g++
+
+OPT =   
+
+DEBUG =   -g
+
+OTHER =   -Wall -Wno-deprecated
+
+CFLAGS = $(DEBUG) $(OPT) $(OTHER)
+
+MODULE = acverifier
+
+SRCS = acverifier.cpp
+
+OBJS = $(SRCS:.cpp=.o)
+
+EXE = $(MODULE)
+
+.SUFFIXES: .cc .cpp .o .x
+
+all: $(ACFILES) $(EXE)
+
+$(EXE): $(OBJS) 
+	$(CC) $(CFLAGS) $(INC_DIR) -o $@ $(OBJS)  2>&1
+
+.cpp.o:
+	$(CC) $(CFLAGS) $(INC_DIR) -c $<
+
+.cc.o:
+	$(CC) $(CFLAGS) $(INC_DIR) -c $<
+
+clean:
+	rm -f $(OBJS) *~ $(EXE) core

@@ -1,0 +1,162 @@
+#!/usr/bin/perl
+
+#################################
+# Asserts file exist or abort
+#################################
+sub assert_file_exists() {
+    local($file) = @_;
+    print "Error: file not found: '$file'\n\n" unless -f $file;
+    exit unless -f $file;
+}
+
+
+#################################
+# Run some function at exit
+#################################
+sub at_exit() {
+#     foreach (@RUN_AT_EXIT) {
+#         print "(pwd:".`/bin/pwd`.")  Executing: $_\n";
+#         eval '$_'; warn $@ if $@;
+#     }
+    foreach (@RUN_AT_EXIT) {&$_;}
+}
+
+
+#################################
+# Common validations for ac_commands
+#################################
+
+# Test if ARCH is supported
+sub verify_arch() {
+    ($ARCH) = @_;
+    $ARCH || return 0;
+    foreach $arch_try (`find $models_dir -name $ARCH.ac`) {
+        chop($arch_try);
+        if (-r $arch_try) {
+            chop($project_file = `basename $arch_try`);
+            chop($project_dir = `dirname $arch_try`);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+# Test program existence
+sub verify_prog() {
+    ($PROG) = @_;
+    $PROG || return 0;
+    -f $PROG || return 0;
+}
+
+
+
+
+###############
+# Messages for [ OK ] and [FAIL] based on echo_success()
+# from /etc/rc.d/init.d/functions
+#
+$RES_COL = 65;
+$MOVE_TO_COL = "\033[${RES_COL}G";
+#$MOVE_TO_COL = "";
+$SETCOLOR_SUCCESS = "\033[1;32m";
+$SETCOLOR_FAILURE = "\033[1;31m";
+$SETCOLOR_NORMAL = "\033[0;39m";
+
+sub echo_success() {
+    print $MOVE_TO_COL;
+    print "[  ";
+    print $SETCOLOR_SUCCESS;
+    print "OK";
+    print $SETCOLOR_NORMAL;
+    print "  ]\n";
+}
+
+sub echo_failure() {
+    print $MOVE_TO_COL;
+    print "[";
+    print $SETCOLOR_FAILURE;
+    print "FAILED";
+    print $SETCOLOR_NORMAL;
+    print "]\n";
+}
+
+
+
+###############
+# Verify - run command and verify the result
+#          arg1 = message
+#          arg2 = command
+#          arg3 = redirections (if any)
+sub verify() {
+    ($msg, $command, $outfile, $errfile, $show_realtime) = @_;
+    @ERROR=();
+    print $msg . " ";
+    if (! $show_realtime) {
+        if ($outfile) {
+            system $command." >$outfile 2>$errfile";
+        }
+        else {
+            $CMD = $command." 2>&1";
+            @ERROR = `$CMD`;
+        }
+    }
+    else {
+        print "\n";
+        if ($outfile) {
+            system $command." 2>$errfile | tee $outfile";
+            #hack: pipeline masks command exit code. check for "error" word in $errfile
+            (-f $errfile) && (@tmp=`grep -i "exited with non-zero status" $errfile 2>/dev/null`) &&
+                ((@tmp) && ($?=256)) || ((!@tmp) && ($?=0));
+        }
+        else {
+            system $command." 2>&1";
+        }
+    }
+    #print "|>".$CMD."<|";
+    #join(' ',@_);
+    #print "|||$CMD|||\n";
+    $EXIT_STATUS=$?>>8;
+    if (length($msg)+2 > $RES_COL) {print "\n";}
+
+    #hack: collect2 masks link (ld) errors with message "ld returned 1 exit status" and exit 0
+    (-f $outfile) && ($hack=`tail -n 1 $outfile 2>/dev/null`) && ($hack eq "collect2: ld returned 1 exit status\n") && ($EXIT_STATUS=1);
+
+    if ($EXIT_STATUS) {
+	&echo_failure;
+	#printf STDOUT "ERROR: Command exited with non-zero status %d\n", $EXIT_STATUS;
+        @ERROR && (print @ERROR);
+        if ($errfile) {
+            #system "echo ERROR: Command exited with non-zero status $EXIT_STATUS >> $errfile";
+            system "cat $errfile";
+        }
+	#&at_exit;
+        exit 1;
+    } else {
+	&echo_success;
+    }
+}
+
+
+
+#################################
+# Configuration
+#################################
+
+# chop($dirname = `dirname $0`);
+# $config_file = "$dirname/ac_config";
+
+# chop($command = `basename $0`);
+# $command .= " $ARGV[0]";
+
+# if (-f $config_file) {
+#     require $config_file;
+# }
+# elsif (("$command" ne "$command_change_models_dir") || (! $ARGV[1])) {
+#     print "Please, run \"ac_model --models-dir [directory]\" to set models directory.\n";
+#     exit 1;
+# }
+
+
+
+# Return true
+1;

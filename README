@@ -1,0 +1,45 @@
+
+                    README file for ArchC v2.0alpha1
+                    ================================
+                    
+LICENSE
+=======
+
+ - ArchC tools are  provided under the GNU GPL license. See
+   COPYING file for details on this license.
+
+ - ArchC utility library, i.e., all  files stored in the src directory
+   of the ArchC source tree are provided under the  GNU  LGPL license.
+   See the  COPYING.LIB file  for details  on this license.
+
+
+INSTALL
+=======
+
+- Run make
+
+ArchC will build its tools  and place them inside the "bin" directory,
+and the installation script will prompt you every time it needs to set
+a  configuration variable.   Notice  that the  script  will suggest  a
+default value for  each variable, if you think that it  is OK for your
+installation you  just press enter to  confirm it.  This  data will be
+stored at the archc.conf file, in the config directory.
+
+
+MORE INFO
+=========
+
+  Remember that ArchC models and SystemC library must be compiled with
+  the same GCC version, otherwise you will get compilation problems.
+  
+  You can find a language overview, models, and documentation at
+  http://www.archc.org
+
+
+
+Thanks for the interest. We hope you enjoy using ArchC!
+
+The ArchC Team                    
+Computer Systems Laboratory (LSC) 
+IC-UNICAMP                        
+http://www.lsc.ic.unicamp.br      

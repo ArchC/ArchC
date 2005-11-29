@@ -1,0 +1,449 @@
+--- ../acsim/acsim.c	2005-05-20 18:06:48.000000000 -0300
++++ ./acsim.c	2005-05-20 18:31:01.000000000 -0300
+@@ -35,9 +35,15 @@
+ //////////////////////////////////////////////////////////
+ 
+ #include "acsim.h"
++#include "accsim.h"
+ #include "stdlib.h"
+ #include "string.h"
+ 
++//For struct stat and stat() in option -c
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++
+ //#define DEBUG_STORAGE
+ 
+ //Defining Traces and Dasm strings
+@@ -45,6 +51,11 @@
+ #define PRINT_DASM "%sdasmfile << hex << decode_pc << dec << \": \" << *instr << *format <<\"\t\t(\" << instr->get_name() << \",\" << format->get_name() << \")\" <<endl;\n"
+ 
+ //Command-line options flags
++int  ACP4Flag=0;                                //!<Indicates if the gcc option -march=pentium4 is on
++int  ACOmitFPFlag=0;                            //!<Indicates if the gcc option -fomit-frame-pointer is on
++int  ACCompsimFlag=0;                           //!<Indicates whether compiled simulation option is turned on or not
++char *ACCompsimProg=0;                          //!<Stores the name of the program for compiled simulation
++int  ACInlineFlag=0;                            //!<Indicates whether it is to use inline for isa and syscalls
+ int  ACABIFlag=0;                               //!<Indicates whether an ABI was provided or not
+ int  ACDasmFlag=0;                              //!<Indicates whether disassembler option is turned on or not
+ int  ACDebugFlag=0;                             //!<Indicates whether debugger option is turned on or not
+@@ -92,20 +103,26 @@
+   for each option encountered; the first one that matches, wins.  */
+ struct option_map option_map[] = {
+   {"--abi-included"  , "-abi"        ,"Indicate that an ABI for system call emulation was provided." ,"o"},
+-  {"--disassembler"  , "-dasm"       ,"Dump executing instructions in assembly format (Not completely implemented)." ,"o"},
+-  {"--debug"         , "-g"          ,"Enable simulation debug features: traces, update logs." ,"o"},
++/*   {"--disassembler"  , "-dasm"       ,"Dump executing instructions in assembly format (Not completely implemented)." ,"o"}, */
++  {"--debug"         , "-g"          ,"Enable simulation debug features: trace file." ,"o"},
+   {"--delay"         , "-dy"          ,"Enable delayed assignments to storage elements." ,"o"},
+   {"--dumpdecoder"   , "-dd"         ,"Dump the decoder data structure." ,"o"},
+   {"--help"          , "-h"          ,"Display this help message."       , 0},
+-  //  {"--quiet"         , "-q"          ,".", "o"},
+-  {"--no-dec-cache"  , "-ndc"        ,"Disable cache of decoded instructions." ,"o"},
++/*   {"--quiet"         , "-q"          ,".", "o"}, */
++/*   {"--no-dec-cache"  , "-ndc"        ,"Disable cache of decoded instructions." ,"o"}, */
+   {"--stats"         , "-s"          ,"Enable statistics collection during simulation." ,"o"},
+-  {"--verbose"       , "-vb"         ,"Display update logs for storage devices during simulation.", "o"},
++/*   {"--verbose"       , "-vb"         ,"Display update logs for storage devices during simulation.", "o"}, */
+ /*   {"--verify"        , "-v"          ,"Enable co-verification mechanism." ,"o"}, */
+-  //  {"--verify-timed"  , "-vt"         ,"Enable co-verification mechanism. Timed model." ,"o"},
+-  {"--version"       , "-vrs"        ,"Display ACSIM version.", 0},
+-  {"--encoder"       , "-enc"        ,"Use encoder tools with the simulator (beta version).", 0},
+-  {"--gdb-integration", "-gdb"       ,"Enable support for debbuging programs running on the simulator.", 0},
++/*   {"--verify-timed"  , "-vt"         ,"Enable co-verification mechanism. Timed model." ,"o"}, */
++  {"--version"       , "-vrs"        ,"Display ACCSIM version.", 0},
++/*   {"--encoder"       , "-enc"        ,"Use encoder tools with the simulator (beta version).", 0}, */
++/*   {"--gdb-integration", "-gdb"       ,"Enable support for debbuging programs running on the simulator.", 0}, */
++  {"--load"          , "-l"          ,"Load an application for compiled simulation (in ELF or HEX format).", "r"},
++  {"--optimization"  , "-opt"        ,"Use best compiled simulator optimization or set level manually.", "r"},
++  {"--inline"        , "-i"          ,"Inline ISA and Syscalls (slow compilation, fast execution)", "r"},
++  {"--block-size"    , "-bs"         ,"Set the maximum number of regions in a file.", "r"},
++/*   {"--pentium4"      , "-p4"         ,"Use option for gcc: -march=pentium4.", "r"}, */
++/*   {"--omit-frame-p"  , "-omitfp"     ,"Use option for gcc: -fomit-frame-pointer.", "r"}, */
+   0
+ };
+ 
+@@ -117,10 +134,10 @@
+ 
+   line[strlen(ACVersion)+1] = '\0';
+ 
+-  printf ("===============================================%s\n", line);
+-  printf (" This is the ArchC Simulator Generator version %s\n", ACVersion);
+-  printf ("===============================================%s\n\n", line);
+-  printf ("Usage: acsim input_file [options]\n");
++  printf ("========================================================%s\n", line);
++  printf (" This is the ArchC Compiled Simulator Generator version %s\n", ACVersion);
++  printf ("========================================================%s\n\n", line);
++  printf ("Usage: accsim input_file [options]\n");
+   printf ("       Where input_file stands for your AC_ARCH description file.\n\n");
+   printf ("Options:\n");
+ 
+@@ -132,7 +149,7 @@
+ 
+ /*! Function for decoder to get bits from the instruction */
+ /*    PARSER-TIME VERSION: Should not be called */
+-unsigned long long GetBits(void *buffer, int *quant, int last, int quantity, int sign)
++unsigned long long GetBits_____unused_for_accsim(void *buffer, int *quant, int last, int quantity, int sign)
+ {
+   AC_ERROR("GetBits(): This function should not be called in parser-time for interpreted simulator.\n");
+   return 1;
+@@ -189,7 +206,7 @@
+     else{
+       if(!acppLoad(argv[0])){
+         AC_ERROR("Invalid input file: %s\n", argv[0]);
+-        printf("   Try acsim --help for more information.\n");
++        printf("   Try accsim --help for more information.\n");
+         return EXIT_FAILURE;
+       }
+       arch_filename = argv[0];
+@@ -197,7 +214,7 @@
+   }
+   else{
+     AC_ERROR("No input file provided.\n");
+-    printf("   Try acsim --help for more information.\n");
++    printf("   Try accsim --help for more information.\n");
+     return EXIT_FAILURE;
+   }
+ 
+@@ -213,18 +230,115 @@
+       /* Searching option map.*/
+       for( i=0; i<ACNumberOfOptions; i++){
+                                 
+-        if( (!strcmp(argv[0], option_map[i].name)) || (!strcmp(argv[0], option_map[i].equivalent))){
++        if( (!strncmp(argv[0], option_map[i].name, strlen(option_map[i].name))) ||
++            (!strncmp(argv[0], option_map[i].equivalent, strlen(option_map[i].equivalent)))){
+ 
+           switch (i)
+             {
+-            case OPABI:
+-              ACABIFlag = 1;
++/*             case OPP4: */
++/*               ACP4Flag = 1; */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
++/*               break; */
++/*             case OPOmitFP: */
++/*               ACOmitFPFlag = 1; */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
++/*               break; */
++            case OPOptimization:
++              if ((argc < 2) || (argv[1][0] < '0') || (argv[1][0] > '9')) {
++/*                 extern int PROCESSOR_OPTIMIZATIONS; */
++/*                 PROCESSOR_OPTIMIZATIONS = -1; */
++                AC_ERROR("Give an optimization level: 0, 1, 2\n");
++                exit(EXIT_FAILURE);
++              }
++              else {
++                extern int PROCESSOR_OPTIMIZATIONS;
++                PROCESSOR_OPTIMIZATIONS = strtol(argv[1], 0, 0);
++                if ((PROCESSOR_OPTIMIZATIONS < 0) || (PROCESSOR_OPTIMIZATIONS > 2)) {
++                  AC_ERROR("Give an optimization level: 0, 1, 2\n");
++                  exit(EXIT_FAILURE);
++                }
++                ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++                ++argv, --argc, j++;  /* skip over a parameter */
++              }
+               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+               break;
+-            case OPDasm:
+-              ACDasmFlag = 1;
++            case OPRegionBlockSize:
++              if (argc < 2) {
++                AC_ERROR("Give a block size number after %s option.\n", argv[0]);
++                exit(EXIT_FAILURE);
++              }
++              else {
++                extern int REGION_BLOCK_SIZE;
++                REGION_BLOCK_SIZE = strtol(argv[1], 0, 0);
++                if (REGION_BLOCK_SIZE < 1) {
++                  AC_ERROR("Too small region block size\n");
++                  exit(EXIT_FAILURE);
++                }
++                ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++                ++argv, --argc, j++;  /* skip over a parameter */
++              }
+               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+               break;
++            case OPCompsim:
++              //This hidden option in the form "-l 2 <filename>" uses the original storage and resources classes (slower)
++              if ((argc > 1) && (strcmp(argv[1], "2")==0)) {
++                ACCompsimFlag++;
++                ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++                ++argv, --argc, j++;  /* skip over a parameter */
++              }
++              //Find application name
++              ACCompsimProg = index(argv[0], '=');
++              if (ACCompsimProg) ACCompsimProg++;  //remove '='
++              else if (argc > 1) {
++                ACCompsimProg = argv[1];
++                ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++                ++argv, --argc, j++;  /* skip over a parameter */
++              }
++              else {
++                AC_ERROR("ELF or HEX application file must be indicated for the --load option.\n");
++                exit(EXIT_FAILURE);
++              }
++              //Try to find the program here or in parent
++              {
++                struct stat unused;
++                if (stat(ACCompsimProg,&unused)!=0) {
++                  char *tmp = (char*) calloc(1,strlen(ACCompsimProg)+5);
++                  strcat (tmp, "../");
++                  strcat (tmp, ACCompsimProg);
++                  if (stat(tmp,&unused)==0) {ACCompsimProg = tmp;}
++                  else {
++                    AC_ERROR("Target application not found: %s\n", ACCompsimProg);
++                    exit(EXIT_FAILURE);
++                  }
++                }
++              }
++              ACCompsimFlag++;
++              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++              break;
++            case OPInline:
++
++              if ((argc > 1) && (isdigit(argv[1][0]))) {
++                ACInlineFlag = strtol(argv[1], 0, 0);
++                if (ACInlineFlag > 5000) {
++                  AC_ERROR("Inline limit is too high (limit is 5000): %d\n", ACInlineFlag);
++                  exit(EXIT_FAILURE);
++                }
++                ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++                ++argv, --argc, j++;  /* skip over a parameter */
++              }
++              else {
++                ACInlineFlag = -1;
++              }
++              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++              break;
++            case OPABI:
++              ACABIFlag = 1;
++              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++              break;
++/*             case OPDasm: */
++/*               ACDasmFlag = 1; */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
++/*               break; */
+             case OPDebug:
+               ACDebugFlag = 1;
+               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+@@ -241,20 +355,20 @@
+               /*   ACQuietFlag = 1; */
+               /*   ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
+               /*   break; */
+-            case OPDecCache:
+-              ACDecCacheFlag = 0;
+-              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+-              break;
++/*             case OPDecCache: */
++/*               ACDecCacheFlag = 0; */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
++/*               break; */
+ 
+             case OPStats:
+               ACStatsFlag = 1;
+               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+               break;
+-            case OPVerbose:
+-              ACVerboseFlag = 1;
+-              AC_MSG("Simulator running on verbose mode.\n");
+-              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+-              break;
++/*             case OPVerbose: */
++/*               ACVerboseFlag = 1; */
++/*               AC_MSG("Simulator running on verbose mode.\n"); */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
++/*               break; */
+ /*             case OPVerify: */
+ /*               ACVerifyFlag =1; */
+ /*               AC_MSG("Simulator running on co-verification mode. Use it ONLY along with the ac_verifier tool.\n"); */
+@@ -265,14 +379,14 @@
+               /*   AC_MSG("Co-verification is turned on, running on timed mode.\n"); */
+               /*   ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
+               /*   break; */
+-            case OPEncoder:
+-              ACEncoderFlag = 1;
+-              AC_MSG("Simulator will have encoder extra tools (beta version).\n");
+-              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+-              break;
+-            case OPGDBIntegration:
+-              ACGDBIntegrationFlag=1;
+-              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++/*             case OPEncoder: */
++/*               ACEncoderFlag = 1; */
++/*               AC_MSG("Simulator will have encoder extra tools (beta version).\n"); */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
++/*               break; */
++/*             case OPGDBIntegration: */
++/*               ACGDBIntegrationFlag=1; */
++/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
+ 
+             default:
+               break;
+@@ -285,6 +399,32 @@
+     }
+   }
+ 
++  if(!ACCompsimFlag){
++    //Test if the last argument is an application for the compiled simulation
++    if (argc > 0) {
++      struct stat dummy;
++      ACCompsimProg = argv[0];
++      //Try to find the program here or in parent
++      if (stat(ACCompsimProg,&dummy)!=0) {
++        char *tmp = (char*) calloc(1,strlen(ACCompsimProg)+5);
++        strcat (tmp, "../");
++        strcat (tmp, ACCompsimProg);
++        if (stat(tmp,&dummy)==0) {ACCompsimProg = tmp;}
++        else {
++          AC_ERROR("Target application not found: %s\n", ACCompsimProg);
++          exit(EXIT_FAILURE);
++        }
++      }
++      ACCompsimFlag++;
++      ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
++      ++argv, --argc;  /* skip over founded argument */
++    }
++    else {
++      AC_ERROR("Inform a target application for compiled simulation.\n");
++      return EXIT_FAILURE;
++    }
++  }
++  
+   if(argc >0){
+     AC_ERROR("Invalid argument %s.\n", argv[0]);
+     return EXIT_FAILURE;
+@@ -365,6 +505,11 @@
+     if( ACDDecoderFlag )
+       ShowDecoder(decoder -> decoder, 0);
+ 
++    //If compiled simulation
++    if (ACCompsimFlag) {
++      accs_main();
++      return 0;
++    }
+ 
+     //Creating Resources Header File
+     CreateResourceHeader();
+@@ -958,6 +1103,7 @@
+   ac_stg_list *pstage;
+   ac_pipe_list *ppipe;
+ 
++  extern int PROCESSOR_OPTIMIZATIONS;
+   
+   //! File containing decoding structures 
+   FILE *output;
+@@ -1014,6 +1160,9 @@
+   if( HaveCycleRange )
+     fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
+ 
++  //Additional definitions for compiled simulation
++  accs_EmitParmsExtra(output);
++
+   fprintf( output, "\n\n");
+   COMMENT(INDENT[0],"Word type definitions.");
+     
+@@ -1932,6 +2081,7 @@
+   extern ac_sto_list *storage_list;
+   extern char *project_name;
+   ac_sto_list *pstorage;
++  ac_dec_instr *pinstr;
+ 
+   FILE *output;
+   char filename[] = "ac_stats.H";
+@@ -2090,6 +2240,15 @@
+   //Openning input file.
+   fprintf( output, "%soutput.open( \"%s.stats\");\n", INDENT[2], project_name);
+ 
++  //Statistics for instructions
++  if (ACStatsFlag) {
++    for( pinstr = decoder->instructions; pinstr!= NULL; pinstr=pinstr->next) {
++      fprintf( output, "    instr_table[%d].name = \"%s\";\n",
++               pinstr->id, pinstr->name);
++    }
++    fprintf( output, "\n");
++  }
++
+   fprintf( output, "%s}\n", INDENT[1]);
+     
+ 
+@@ -3168,6 +3327,8 @@
+   ac_pipe_list *ppipe;
+   FILE *output;
+   char filename[] = "Makefile.archc";
++
++  extern int PROCESSOR_OPTIMIZATIONS;
+  
+   if ( !(output = fopen( filename, "w"))){
+     perror("ArchC could not open output file");
+@@ -3225,10 +3386,13 @@
+ 
+   fprintf( output, "\n");
+  
++  //Emit compiled simulation variables
++  accs_EmitMakefileExtra(output);
++
+   //Declaring ACSRCS variable
+ 
+   COMMENT_MAKE("These are the source files automatically generated by ArchC, that must appear in the SRCS variable");
+-  fprintf( output, "ACSRCS := ac_resources.cpp $(MODULE)-arch.cpp ");
++  fprintf( output, "ACSRCS := ac_resources.cpp ");
+ 
+   //Checking if we have a pipelined architecture or not.
+   if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
+@@ -3249,18 +3413,21 @@
+     fprintf( output, "$(MODULE).cpp");
+   }     
+ 
++  fprintf( output, " $(wildcard $(MODULE)-block*.cpp)");
++
+   fprintf( output, "\n\n");
+  
+   //Declaring ACINCS variable
+   COMMENT_MAKE("These are the source files automatically generated  by ArchC that are included by other files in ACSRCS");
+   fprintf( output, "ACINCS := ac_isa_init.cpp");
++  fprintf( output, " ac_progmem.bin ac_prog_regions.H");
+ 
+   fprintf( output, "\n\n");
+ 
+   //Declaring ACHEAD variable
+ 
+   COMMENT_MAKE("These are the header files automatically generated by ArchC");
+-  fprintf( output, "ACHEAD := ac_resources.H ac_types.H ac_parms.H $(MODULE)-arch.H $(MODULE)-isa.H ");
++  fprintf( output, "ACHEAD := ac_progmem.H ac_resources.H ac_types.H ac_parms.H $(MODULE)-arch.H $(MODULE)-isa.H ");
+ 
+   if(HaveFormattedRegs)
+     fprintf( output, "ac_fmt_regs.H ");
+@@ -3320,11 +3487,13 @@
+ 
+   //Declaring SRCS variable
+   COMMENT_MAKE("These are the source files provided by the user + ArchC sources");
+-  fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) $(MODULE)-isa.cpp %s",
++  fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) %s",
+            (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":"");
+ 
++  fprintf( output, " $(if $(filter 1,$(ISA_AND_SYSCALL_TOGETHER)),,$(MODULE)-isa.cpp");
+   if(ACABIFlag)
+     fprintf( output, " $(MODULE)_syscall.cpp");
++  fprintf( output, ")");
+ 
+   fprintf( output, "\n\n");
+ 
+@@ -3342,7 +3511,7 @@
+ 
+   fprintf( output, "$(EXE): $(OBJS) %s libdummy.a\n",
+            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
+-  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(ARCHC)/lib/ac_decoder.o $(LIBS) -ldummy 2>&1 | c++filt\n\n");
++  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(ARCHC)/lib/ac_decoder.o $(LIBS) -ldummy -Xlinker --allow-multiple-definition 2>&1 | c++filt\n\n");
+ 
+   COMMENT_MAKE("Create dummy library with possibly undefined functions");
+   fprintf( output, "ACDUMMY := $(wildcard ac_dummy*.cpp)\n");
+@@ -4536,7 +4705,7 @@
+         else if( !strcmp(var, "SYSTEMC_PATH") ){
+           SYSTEMC_PATH = (char*) malloc(strlen(value)+1);
+           SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);
+-          if (strlen(value) <= 2) {
++          if ((!ACCompsimFlag) && (strlen(value) <= 2)) {
+             AC_ERROR("Please configure a SystemC path running install.sh script in ArchC directory.\n");
+             exit(1);
+           }

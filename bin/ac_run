@@ -1,0 +1,192 @@
+#!/bin/bash
+
+# We use file descriptor 3 for messages
+#   as a duplicate file descriptor 2 (stderr) for normal operation
+#   (but messages can be disabled with --quiet)
+if [ ! -w /dev/fd/3 ]
+then
+    exec 3>&2
+fi
+
+# We use file descriptor 4 for debugging
+#   it is normally hidden, show to stderr with --debug option
+if [ ! -w /dev/fd/4 ]
+then
+    exec 4>/dev/null
+fi
+
+
+#################################
+# ac_run routines
+#################################
+
+help(){
+    if [ -n $1 ] ; then echo $1; fi
+    cat <<EOF 1>&2
+This script must be called inside an ArchC model directory and will prepare a
+new simulator if nescessary (compiled simulation is selected using the
+simulator option -l or --load).
+
+Usage: ac_run [options] <arch> [simulator_options] <program> [program_arguments]
+Options:
+  --help        This help message
+  --quiet,-q    Does not show status messages
+  --debug       Show debug messages
+  --force,-f    Force to recreate the simulator
+  -C dir        Change to directory dir before doing anything
+
+The arch_options are passed directly to ArchC Simulator Generator.
+
+EOF
+    exit 1
+}
+
+verify(){
+    echo ">>> $1" >&3
+    echo "$2" >&4
+    bash -c "$2" >&3 2>&3
+    errcode=$?
+    if [ $errcode -ne 0 ]; then
+        echo "ERROR! Executing command \"$2\" (exit code $errcode). " \
+            "See above error lines if any." >&3
+        exit 1
+    fi
+}
+
+verify_no_redir(){
+    echo ">>> $1" >&3
+    echo "$2" >&4
+    bash -c "$2"
+    errcode=$?
+    if [ $errcode -ne 0 ]; then
+        echo "ERROR! Executing command \"$2\" (exit code $errcode). " \
+            "See above error lines if any." >&3
+        exit 1
+    fi
+}
+
+
+#################################
+# MAIN
+#################################
+
+archc_cmd="acsim"
+OPCompsim=0
+FORCE_SIMULATOR_CREATION=0
+
+
+#################################
+# parse comand line
+#################################
+
+if [ -z "$1" ]; then help; fi 
+
+while arg=$1
+  do
+  case $arg in
+      --help)       help;;
+      --quiet|-q)   shift; exec 3>/dev/null;;
+      --debug)      shift; exec 4>&2;;
+      --force|-f)   shift; FORCE_SIMULATOR_CREATION=1;;
+      -C)           shift; if [ -d $1 ]
+                           then cd $1
+                           else echo $1: No such file or directory; exit 1;
+                           fi; shift;;
+      *)            break;;
+  esac
+done
+
+ARCH=${1%.ac}; shift
+
+if [ ! -f "$ARCH.ac" ]; then
+    echo Architecture description file \"$ARCH.ac\" not found >&3
+    echo Use \"$0 --help\" to show usage information >&3
+    exit 1
+fi
+
+for arg in $@
+  do
+  case $arg in
+      -l)         shift; OPCompsim=1; archc_cmd="accsim"; acpp_opt="$acpp_opt$arg ";;
+      -* | [0-9]*)shift; acpp_opt="$acpp_opt$arg ";;
+      *)          break;;
+  esac
+done
+
+PROG=$1; shift
+sim_args=$@
+
+if [ -z $PROG ]; then
+    echo Target program to simulate was not specified >&3
+    echo Use \"$0 --help\" to show usage information >&3
+    exit 1
+elif [ ! -f "$PROG" ]; then
+    echo Target program file \"$PROG\" not found >&3
+    echo Use \"$0 --help\" to show usage information >&3
+    exit 1
+fi
+
+
+if [ $OPCompsim -eq 1 ] ; then acpp_opt="$acpp_opt$PROG " ; fi
+PROGBASE=`basename $PROG`
+
+
+
+#################################
+# prepare simulator if necessary
+#################################
+
+#echo "Selected: project=\"$ARCH\"; options=\"$acpp_opt\"" >&3
+#echo "Preparing new simulator." >&3
+
+if [ $OPCompsim -eq 0 ]; then
+    SIMULATOR_CMD="./$ARCH.x --load=$PROG";
+else
+    SIMULATOR_CMD="./$ARCH.x"
+fi
+
+# Try to find an existing simulator
+if [ ! -f ./$ARCH.x ]; then
+    echo ">>> Generating a simulator" >&4
+    FORCE_SIMULATOR_CREATION=1
+else
+    EXISTING_SIMUL_OPT=`./$ARCH.x --version 2>/dev/null | sed -n "s/^.*( *\(.*\))/\1/p"`
+    if [ "$EXISTING_SIMUL_OPT" != "$acpp_opt" ]; then
+        echo ">>> Existing simulator options ($EXISTING_SIMUL_OPT) are different from requested" >&4
+        FORCE_SIMULATOR_CREATION=1
+    else
+        echo ">>> Using existing simulator" >&4
+    fi
+fi
+
+# Create simulator if necessary
+if [ $FORCE_SIMULATOR_CREATION -eq 1 ]; then
+
+    if [ -f "Makefile.archc" ]; then
+        verify "Cleaning old simulator" \
+            "make -f Makefile.archc distclean"
+    fi
+
+    # Use archc from the same directory of this script
+    archc_cmd=`dirname $0`/$archc_cmd
+    echo ">>> Using ArchC simulator generator: $archc_cmd" >&4
+
+    # Process model files with ArchC
+    verify "Pre-processing" \
+        "/usr/bin/time -p $archc_cmd $ARCH.ac $acpp_opt"
+
+    # Compile simulator
+    verify "Compiling" \
+        "/usr/bin/time -p make -f Makefile.archc"
+fi
+
+
+
+#################################
+# run simulator
+#################################
+
+verify_no_redir "Simulating program '$PROGBASE'" \
+    "$SIMULATOR_CMD $sim_args"
+
+exit 0

@@ -1,0 +1,16 @@
+AC_SYSC(open, 0x40);
+AC_SYSC(creat, 0x44);
+AC_SYSC(close, 0x48);
+AC_SYSC(read, 0x4c);
+AC_SYSC(write, 0x50);
+AC_SYSC(isatty, 0x54);
+AC_SYSC(sbrk, 0x58);
+AC_SYSC(lseek, 0x5c);
+AC_SYSC(fstat, 0x60);
+AC_SYSC(_exit, 0x64);
+AC_SYSC(times, 0x68);
+AC_SYSC(time, 0x6c);
+AC_SYSC(random, 0x70);
+AC_SYSC(ac_syscall_wrapper, 0x74);
+AC_SYSC(ac_syscall_geterrno, 0x78);
+AC_SYSC(ac_syscall_stat_mode, 0x7c);

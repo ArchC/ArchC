@@ -1,0 +1,74 @@
+/**
+ * @file   ac_storage.H
+ * @author Thiago Massariolli Sigrist
+ * @date   Tue Sep 13 17:16:51 2005
+ * 
+ * @brief  Defines a class modeling a basic storage device (memory).
+ * 
+ * 
+ */
+
+//////////////////////////////////////////////////////////////////////////////
+
+#ifndef _AC_STORAGE_H_
+#define _AC_STORAGE_H_
+
+//////////////////////////////////////////////////////////////////////////////
+
+// Standard includes
+#include <string>
+
+// SystemC includes
+
+// ArchC includes
+#include "ac_inout_if.H"
+
+//////////////////////////////////////////////////////////////////////////////
+
+// 'using' statements
+using std::string;
+
+//////////////////////////////////////////////////////////////////////////////
+
+// Forward class declarations, needed to compile
+
+//////////////////////////////////////////////////////////////////////////////
+
+/// Models a basic storage device, used as main memory by default.
+class ac_storage : public ac_inout_if {
+private:
+  ac_ptr data;
+  string name;
+  uint32_t size;
+
+public:
+  // constructor
+  ac_storage(string nm, uint32_t sz);
+
+  // destructor
+  virtual ~ac_storage();
+
+  // getters and setters
+  void set_name(string n);
+
+  string get_name() const;
+
+  uint32_t get_size() const;
+
+  void read(ac_ptr buf, unsigned long long address,
+		   int wordsize) const;
+
+  void read(ac_ptr buf, unsigned long long address,
+		   int wordsize, int n_words) const;
+
+  void write(ac_ptr buf, unsigned long long address,
+		    int wordsize);
+
+  void write(ac_ptr buf, unsigned long long address,
+		    int wordsize, int n_words);
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+#endif // _AC_STORAGE_H_

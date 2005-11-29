@@ -1,0 +1,86 @@
+#!/usr/bin/perl
+
+$command_change_models_dir = "ac_model --models-dir";
+
+# Find this program dir and include lib
+chop($dirname = `dirname $0`);
+push(@INC,$dirname);
+require 'ac_lib';
+
+
+sub help() {
+    ($msg) = @_;
+    print "$msg" if $msg;
+    print "
+Usage: ac_model [options] [model_name directory]
+Update model files in 'directory'
+Options:
+  --help            This help message
+  --models-dir dir  Uses 'dir' as the models directory
+";
+    exit 1;
+}
+
+
+sub set_models_dir()
+{
+    ($new_models_dir) = @_;
+    if (-d $new_models_dir) {
+        open(config,"> $config_file");
+        print config "\$models_dir = \"$new_models_dir\";\n";
+        close (config);
+        require $config_file;
+    }
+    else {
+        &help("ERROR: Invalid directory: $new_models_dir");
+    }
+}
+
+
+#################################
+# ac_model command
+#################################
+
+($ARCH, $DIR, @ARGS) = @ARGV;
+
+# Help
+if ($ARGV[0] =~ /^-*h(elp)*$/) {&help()}
+
+# Configure models directory
+if ($ARGV[0] =~ /^--models-dir$/) {
+    if (! $ARGV[1]) {
+        print "Current models directory: $models_dir\n";
+        exit 0;
+    }
+    &set_models_dir($ARGV[1]);
+    print "New models directory: $models_dir\n";
+    exit 0;
+}
+
+# Verify correct architecture
+&verify_arch($ARCH) || &help("ERROR: Architecture not supported: \"$ARCH\"");
+
+# Verify directory
+&help("ERROR: missing directory name.") if (! $DIR);
+&help("ERROR: '$DIR' is not a directory.") if ((-e $DIR) && (! -d $DIR));
+
+# Command line options
+$read_option = 1;
+while ($read_option) {
+    if    ($ARGV[0] eq "-y") {$OPBatch=1; shift(@ARGV);}
+    elsif ($ARGV[0] eq "--batch") {$OPBatch=1; shift(@ARGV);}
+    else {$read_option=0}
+}
+
+# Removing old directory
+if (-e "$DIR") {
+    print "Remove the existing directory '$DIR'? (no) ";
+    if ($OPBatch) {print "y\n"; $ans="y";}
+    else {chop($ans=<STDIN>);}
+    if ($ans =~ /^[Yy]/) {system "rm -rf $DIR";}
+    else {print "Error: existing simulation files will not be overwritten.\n"; exit 1;}
+}
+
+# Copying model files
+print "Copying '$ARCH' model files in directory '$DIR'\n";
+system "cp -r $project_dir $DIR";

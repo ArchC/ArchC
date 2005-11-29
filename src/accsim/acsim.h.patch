@@ -1,0 +1,34 @@
+--- ../acsim/acsim.h	2004-11-30 12:08:55.000000000 -0200
++++ ./acsim.h	2004-11-30 19:21:10.000000000 -0200
+@@ -94,20 +94,26 @@
+ //! Enumeration type for command line options
+ enum _ac_cmd_options {
+   OPABI,
+-  OPDasm,
++/*   OPDasm, */
+   OPDebug,
+   OPDelay,
+   OPDDecoder,
+   OPHelp,
+   /*OPQuiet,*/
+-  OPDecCache,
++/*   OPDecCache, */
+   OPStats,
+-  OPVerbose,
++/*   OPVerbose, */
+   /*OPVerify,*/
+   /*OPVerifyTimed,*/
+   OPVersion,
+-  OPEncoder,
+-  OPGDBIntegration,
++/*   OPEncoder, */
++/*   OPGDBIntegration, */
++  OPCompsim,
++  OPOptimization,
++  OPInline,
++  OPRegionBlockSize,
++/*   OPP4, */
++/*   OPOmitFP, */
+   ACNumberOfOptions
+ };
+ 

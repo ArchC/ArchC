@@ -1,0 +1,96 @@
+#!/usr/bin/perl
+
+# Find this program dir and include lib
+chop($dirname = `dirname $0`);
+push(@INC,$dirname);
+require 'ac_lib';
+
+
+#################################
+# ac_stat routines
+#################################
+
+sub help()
+{
+    ($msg) = @_;
+    print "$msg" if $msg;
+    print "
+Usage: ac_stat arch program
+Options:
+  --help       This help message
+
+Other options are ignored
+";
+    exit 1;
+}
+
+
+sub print_acpp_stat()
+{
+    # Print ACPP statistics
+    @ERROR = `grep 'non-zero status' $SIM_DIR/MAKEACPP_STDERR`;
+    if (@ERROR) {print "----- ArchC Preprocessor Error -----\n"; system "cat $SIM_DIR/MAKEACPP_STDERR"; exit 1;}
+    print "----- ArchC Preprocessor Statistics -----\n";
+    &assert_file_exists("$SIM_DIR/MAKEACPP_STDOUT");
+    system "grep -i 'error\\|warning\\|size' $SIM_DIR/MAKEACPP_STDOUT";
+    system "tail -n 1 $SIM_DIR/MAKEACPP_STDOUT";
+    system "cat $SIM_DIR/MAKEACPP_STDERR";
+}
+
+
+sub print_make_stat()
+{
+    # Print MAKE statistics
+    @ERROR = `grep 'non-zero status' $SIM_DIR/MAKE_STDERR`;
+    if (@ERROR) {print "----- Compile Error -----\n"; system "cat $SIM_DIR/MAKE_STDERR"; exit 1;}
+    print "----- Compile Statistics -----\n";
+    system "cat $SIM_DIR/MAKE_STDERR";
+}
+
+
+sub print_simulation_stat()
+{
+    # Print Simulation statistics (lines *after* the one containing "Statistics")
+    local(@ERROR) = grep(/non-zero status/, `cat $ARCH-$PROGBASE.AC_STDERR`) if -f "$ARCH-$PROGBASE.AC_STDERR";
+    if (@ERROR) {
+        print "----- Simulation Error -----\n";
+        system "cat $ARCH-$PROGBASE.AC_STDERR";
+        exit 1;
+    }
+    print "----- Simulation Statistics -----\n";
+    &assert_file_exists("$ARCH-$PROGBASE.AC_STDERR");
+    system "cat $ARCH-$PROGBASE.AC_STDERR | perl -e '\$f=0;while(<stdin>){print if \$f;\$f=1 if /Statistics/i}'";
+}
+
+
+#################################
+# ac_stat command
+#################################
+
+&help() if (grep(/--help/,@ARGV));
+
+($ARCH, $PROG, @ARGS) = grep(!/^-/,@ARGV);  # ignore options
+
+chop($PROGBASE = `basename $PROG`) if $PROG;
+
+# Find simulation files
+if    (-d "$ARCH-$PROGBASE") {$SIM_DIR = "$ARCH-$PROGBASE"}
+elsif (-d "$ARCH") {$SIM_DIR = "$ARCH"}
+else  {
+    #try with first parameter (ARCH) as program
+    chop(@files = `ls -d *-\`basename $ARCH\`* 2>/dev/null`);
+    if (@files) {
+        $PROG = $ARCH;
+        chop($PROGBASE = `basename $PROG`) if $PROG;
+        $ARCH = $1 if ($files[0] =~ /(.*)-$PROGBASE/);
+        print "Using archc=$ARCH prog=$PROG\n";
+        $SIM_DIR = "$ARCH-$PROGBASE" if -d "$ARCH-$PROGBASE";
+    }
+}
+
+if ($SIM_DIR) {
+    &print_acpp_stat();
+    &print_make_stat();
+}
+
+&print_simulation_stat();

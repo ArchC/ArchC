@@ -1,0 +1,73 @@
+#!/bin/bash
+
+#######################################
+# Find the ARCHC_PATH if not set
+#######################################
+
+if [ "$ARCHC_PATH" = "" ]; then
+
+    TMP="$0"
+
+    # If relative path (does not start with '/')
+    if [ $TMP = ${TMP#/} ]; then
+
+        # Append full current directory (possibly removing a starting './')
+        TMP="$PWD/${TMP#./}"
+
+    fi
+
+    # Follow symbolic links
+    ERROR=0;
+    while [ $ERROR -eq 0 ]; do
+        NAME=$TMP
+        TMP=`readlink $TMP`
+        ERROR=$?
+
+        if [ $TMP = ${TMP#/} ]; then
+            #found relative name (prefix with dirname)
+            TMP=`dirname $NAME`/${TMP}
+        fi
+
+    done
+
+    # Find base name
+    BASENAME=`basename $NAME`
+
+    # Remove basename and bin/ dir from complete name
+    export ARCHC_PATH=${NAME%/bin/$BASENAME}
+
+    if [ $ARCHC_PATH = $NAME ]; then
+        echo "This program points to an invalid ArchC instalation" >&2
+        echo "To solve this problem you can do one of:" >&2
+        echo "1) Use a simbolic link instead of copying the ArchC tool." >&2
+        echo "2) Set ARCHC_PATH environment variable to the ArchC"\
+            "instalation directory. (be sure to export in bash)" >&2
+        exit 1
+    fi
+
+    # Search for config file
+    if [ ! -f $ARCHC_PATH/config/archc.conf ]; then
+        echo "ArchC appears to be installed in $ARCHC_PATH, but it is not"\
+            "correctly configurated. Please run the line bellow to create"\
+            "the config file." >&2
+        echo "   make -C $ARCHC_PATH" >&2
+        exit 1
+    fi
+fi
+
+# Update instalation
+#make -C $ARCHC_PATH
+
+# Execute the command with the same name or show status
+
+COMMAND=$ARCHC_PATH/bin/`basename $0`-bin
+
+if [ -x $COMMAND ] ; then
+    $COMMAND $@
+elif [ ! -z $ARCHC_PATH ]; then
+    echo "ArchC directory found in $ARCHC_PATH"
+    echo "To update your ArchC instalation, copy the line bellow to a shell."
+    echo "   make -C $ARCHC_PATH"
+else
+    echo "ArchC directory not found!"
+fi
