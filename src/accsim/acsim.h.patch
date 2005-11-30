@@ -1,5 +1,5 @@
---- ../acsim/acsim.h	2004-11-30 12:08:55.000000000 -0200
-+++ ./acsim.h	2004-11-30 19:21:10.000000000 -0200
+--- ../acsim/acsim.h	2004-11-30 19:27:40.000000000 -0200
++++ ./acsim.h	2005-11-23 12:35:06.370629296 -0200
 @@ -94,20 +94,26 @@
  //! Enumeration type for command line options
  enum _ac_cmd_options {

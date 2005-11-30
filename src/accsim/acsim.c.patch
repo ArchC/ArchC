@@ -1,5 +1,5 @@
---- ../acsim/acsim.c	2005-05-20 18:06:48.000000000 -0300
-+++ ./acsim.c	2005-05-20 18:31:01.000000000 -0300
+--- ../acsim/acsim.c	2005-11-23 12:54:39.553278424 -0200
++++ ./acsim.c	2005-11-23 12:55:35.434783144 -0200
 @@ -35,9 +35,15 @@
  //////////////////////////////////////////////////////////
  
@@ -325,7 +325,7 @@
  
      //Creating Resources Header File
      CreateResourceHeader();
-@@ -958,6 +1103,7 @@
+@@ -960,6 +1105,7 @@
    ac_stg_list *pstage;
    ac_pipe_list *ppipe;
  
@@ -333,7 +333,7 @@
    
    //! File containing decoding structures 
    FILE *output;
-@@ -1014,6 +1160,9 @@
+@@ -1016,6 +1162,9 @@
    if( HaveCycleRange )
      fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
  
@@ -343,7 +343,7 @@
    fprintf( output, "\n\n");
    COMMENT(INDENT[0],"Word type definitions.");
      
-@@ -1932,6 +2081,7 @@
+@@ -1934,6 +2083,7 @@
    extern ac_sto_list *storage_list;
    extern char *project_name;
    ac_sto_list *pstorage;
@@ -351,7 +351,7 @@
  
    FILE *output;
    char filename[] = "ac_stats.H";
-@@ -2090,6 +2240,15 @@
+@@ -2092,6 +2242,15 @@
    //Openning input file.
    fprintf( output, "%soutput.open( \"%s.stats\");\n", INDENT[2], project_name);
  
@@ -367,7 +367,7 @@
    fprintf( output, "%s}\n", INDENT[1]);
      
  
-@@ -3168,6 +3327,8 @@
+@@ -3176,6 +3335,8 @@
    ac_pipe_list *ppipe;
    FILE *output;
    char filename[] = "Makefile.archc";
@@ -376,7 +376,7 @@
   
    if ( !(output = fopen( filename, "w"))){
      perror("ArchC could not open output file");
-@@ -3225,10 +3386,13 @@
+@@ -3233,10 +3394,13 @@
  
    fprintf( output, "\n");
   
@@ -391,7 +391,7 @@
  
    //Checking if we have a pipelined architecture or not.
    if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
-@@ -3249,18 +3413,21 @@
+@@ -3257,18 +3421,21 @@
      fprintf( output, "$(MODULE).cpp");
    }     
  
@@ -414,7 +414,7 @@
  
    if(HaveFormattedRegs)
      fprintf( output, "ac_fmt_regs.H ");
-@@ -3320,11 +3487,13 @@
+@@ -3328,11 +3495,13 @@
  
    //Declaring SRCS variable
    COMMENT_MAKE("These are the source files provided by the user + ArchC sources");
@@ -429,7 +429,7 @@
  
    fprintf( output, "\n\n");
  
-@@ -3342,7 +3511,7 @@
+@@ -3350,7 +3519,7 @@
  
    fprintf( output, "$(EXE): $(OBJS) %s libdummy.a\n",
             (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
@@ -438,8 +438,8 @@
  
    COMMENT_MAKE("Create dummy library with possibly undefined functions");
    fprintf( output, "ACDUMMY := $(wildcard ac_dummy*.cpp)\n");
-@@ -4536,7 +4705,7 @@
-         else if( !strcmp(var, "SYSTEMC_PATH") ){
+@@ -4553,7 +4722,7 @@
+         if( !strcmp(var, "SYSTEMC_PATH") ){
            SYSTEMC_PATH = (char*) malloc(strlen(value)+1);
            SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);
 -          if (strlen(value) <= 2) {

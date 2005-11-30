@@ -70,7 +70,7 @@ int  ACVerifyTimedFlag=0;                       //!<Indicates whether verificati
 int  ACEncoderFlag=0;                           //!<Indicates whether encoder tools will be included in the simulator
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 
-char *ACVersion = "1.2";                        //!<Stores ArchC version number.
+char *ACVersion = "1.5.1";                      //!<Stores ArchC version number.
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
 char *arch_filename;                            //!<Stores ArchC arquitecture file
@@ -663,7 +663,8 @@ void CreateResourceHeader() {
 
   if( ACStatsFlag ){
     COMMENT(INDENT[1],"Statistics Object.");
-    fprintf( output, "%sstatic ac_stats ac_sim_stats;\n", INDENT[0]);      
+    fprintf( output, "%sstatic ac_stats ac_sim_stats;\n", INDENT[1]);
+    Globals_p += sprintf( Globals_p, "extern ac_stats &ac_sim_stats;\n");
   }
 
   /* Declaring storage devices */
@@ -835,6 +836,7 @@ void CreateResourceHeader() {
 
   //Time increasing step
   fprintf( output, "%sstatic double time_step;\n", INDENT[1]);
+  Globals_p += sprintf( Globals_p, "extern double &time_step;\n");
 
   //Command-line arguments to be passed to the running application
   fprintf( output, "%sstatic int argc;\n", INDENT[1]);
@@ -2536,6 +2538,7 @@ void CreateResourceImpl() {
   if( ACStatsFlag ){
     COMMENT(INDENT[0],"Statistics Object.");
     fprintf( output, "%sac_stats ac_resources::ac_sim_stats;\n", INDENT[0]);
+    Globals_p += sprintf( Globals_p, "ac_stats &ac_sim_stats = ac_resources::ac_sim_stats;\n");
   }
   
   COMMENT(INDENT[0],"Storage Devices.");
@@ -2634,6 +2637,7 @@ void CreateResourceImpl() {
   Globals_p += sprintf( Globals_p, "unsigned long long &ac_cycle_counter = ac_resources::ac_cycle_counter;\n");
 
   fprintf( output, "double ac_resources::time_step;\n");
+  Globals_p += sprintf( Globals_p, "double &time_step = ac_resources::time_step;\n");
 
   if(HaveMultiCycleIns) 
     fprintf( output, "unsigned ac_resources::ac_cycle;\n");
@@ -3294,6 +3298,7 @@ void CreateArchSyscallHeader()
           "#define ARCH_SYSCALL_H\n"
           "\n"
           "#include \"ac_syscall.H\"\n"
+          "#include \"ac_parms.H\"\n"
           "\n"
           "//%s system calls\n"
           "class %s_syscall : public ac_syscall\n"
@@ -3306,6 +3311,9 @@ void CreateArchSyscallHeader()
           "  void set_int(int argn, int val);\n"
           "  void return_from_syscall();\n"
           "  void set_prog_args(int argc, char **argv);\n"
+          "#ifdef AC_MEM_HIERARCHY\n"
+          "  int  flush_cache();\n"
+          "#endif\n"
           "};\n"
           "\n"
           "#endif\n"
@@ -3856,6 +3864,7 @@ void EmitDecStruct( FILE* output){
   for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next){
 
     fprintf( output, "%sformats[%d].name      = \"%s\";\n", INDENT[2], i, pformat->name);
+    fprintf( output, "%sformats[%d].size      = %d;\n", INDENT[2], i, pformat->size);
     fprintf( output, "%sformats[%d].fields    = &(fields[%d]);\n", INDENT[2], i, count_fields);
     if(pformat->next)
       fprintf( output, "%sformats[%d].next      = &(formats[%d]);\n\n", INDENT[2], i, i+1);
@@ -4179,7 +4188,13 @@ void EmitInstrExec( FILE *output, int base_indent){
   }
 
   if( ACStatsFlag ){
-    fprintf( output, "%sif((!ac_annul_sig) && (!ac_wait_sig)) {\n", INDENT[base_indent]);
+    if (stage_list || pipe_list){ /* pipelined archs don't use ac_annul_sig */
+      fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
+    }
+    else {
+      fprintf( output, "%sif((!ac_annul_sig) && (!ac_wait_sig)) {\n", INDENT[base_indent]);
+    }
+
     fprintf( output, "%sac_sim_stats.instr_executed++;\n", INDENT[base_indent+1]);
     fprintf( output, "%sac_sim_stats.instr_table[ins_id].count++;\n", INDENT[base_indent+1]);
 
@@ -4698,11 +4713,13 @@ void ReadConfFile(){
         sscanf(line, "%s",var);
         strcpy( value, strchr(line, '=')+1);
 
-        if( !strcmp(var, "ARCHC_PATH") ){
-          ARCHC_PATH =  (char*) malloc(strlen(value)+1);
-          ARCHC_PATH = strcpy(ARCHC_PATH, value);
-        }
-        else if( !strcmp(var, "SYSTEMC_PATH") ){
+        /* Does NOT read ARCHC_PATH again from config file (already using it from environment) */
+        /*   this allows to move/renane the ArchC directory without reconfiguration */
+/*         if( !strcmp(var, "ARCHC_PATH") ){ */
+/*           ARCHC_PATH =  (char*) malloc(strlen(value)+1); */
+/*           ARCHC_PATH = strcpy(ARCHC_PATH, value); */
+/*         } */
+        if( !strcmp(var, "SYSTEMC_PATH") ){
           SYSTEMC_PATH = (char*) malloc(strlen(value)+1);
           SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);
           if ((!ACCompsimFlag) && (strlen(value) <= 2)) {

@@ -50,9 +50,11 @@
 #include <errno.h>
 #include "eval.h"
 
-unsigned char *data_mem=0;
+char *data_mem=0;
 unsigned int data_mem_size=0;
 unsigned int data_mem_start=0;
+unsigned int ac_heap_ptr=0;
+unsigned int ac_start_addr=0;
 int prog_size_bytes=0;
 int prog_size_instr=0;
 unsigned char *instr_mem=0;
@@ -72,38 +74,36 @@ ac_sto_list *accs_FindLoadDevice();
 
 /*************************************************************************************/
 /*! Function for decoder that updates the the bytes quantity available in the buffer */
-char *fetch;
-char buffer[50];
+unsigned char *fetch;
+//char buffer[50];
 int quant;
 
-int ExpandInstrBuffer_____TODO_not_used_____(int index)
+unsigned long long GetWord(int index)
 {
   extern int wordsize;
   extern int ac_host_endian;
   
   int wordbytes = wordsize/8;
   int i;
-
-  while(quant <= index) {
+  unsigned long long word=0;
 
     // Test if host is little-endian
     if (ac_host_endian == 0) {
-      for (i=0; i<wordbytes; i++) {
-        buffer[quant+i] = fetch[quant+wordbytes-1-i];
+      for (i=wordbytes-1; i>=0; i--) {
+        word <<= 8;
+        word |= fetch[index*wordbytes+i];
       }
     }
 
     // else host is big-endian
     else {
       for (i=0; i<wordbytes; i++) {
-        buffer[quant+i] = fetch[quant+i];
+        word <<= 8;
+        word |= fetch[index*wordbytes+i];
       }
     }
 
-    quant += wordsize/8;
-  }
-      
-  return quant;
+  return word;
 };
 
 #define DECODE(addr) (fetch=addr, quant=100, Decode(decoder,fetch,quant))
@@ -116,7 +116,7 @@ int ExpandInstrBuffer_____TODO_not_used_____(int index)
   {
     //! Read the buffer using this macro
 //#define BUFFER(index) ((index<*quant) ? ( ((int*)buffer)[index]) : (*quant=ExpandInstrBuffer(index),((int*)buffer)[index]))
-#define BUFFER(index) ( ((int*)fetch)[index])
+//#define BUFFER(index) ( ((int*)fetch)[index])
 
     extern int wordsize;
     extern int ac_tgt_endian;
@@ -138,7 +138,7 @@ int ExpandInstrBuffer_____TODO_not_used_____(int index)
     //Read words from first to last
     for (i=index_first; i<=index_last; i++) {
       value <<= wordsize;
-      value |= BUFFER(i);
+      value |= GetWord(i);
     }
 
     //Remove bits before last
@@ -153,7 +153,7 @@ int ExpandInstrBuffer_____TODO_not_used_____(int index)
     //Read words from last to first
     for (i=index_last; i>=index_first; i--) {
       value <<= wordsize;
-      value |= BUFFER(i);
+      value |= GetWord(i);
     }
 
     //Remove bits before first
@@ -163,7 +163,7 @@ int ExpandInstrBuffer_____TODO_not_used_____(int index)
     }
 
     //Mask to the size of the field
-    value &= ((unsigned)(~0LL)) >> (64-((unsigned)quantity));
+    value &= (~((~0LL) << quantity));
 
     //If signed, sign extend if necessary
     if (sign && ( value >= (1 << (quantity-1)) ))
@@ -330,82 +330,186 @@ unsigned int convert_endian(unsigned int size, unsigned int num)
 }
 
 
-//int accs_ReadElf_1(char* elffile);
-int accs_ReadElf_2(char* elffile);
+int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size);
+
 
 int accs_ReadElf(char* elffile) {
-  return accs_ReadElf_2(elffile);
+  //return accs_ReadElf_2(elffile);
+  extern char* data_mem;
+  extern unsigned char* instr_mem;
+  extern unsigned int data_mem_size;
+
+  data_mem_size = accs_FindLoadDevice()->size;
+  data_mem = malloc(data_mem_size);
+  instr_mem = data_mem;
+
+  return ac_load_elf(elffile, data_mem, data_mem_size);
 }
 
 
-int accs_ReadElf_2(char* elffile)
+//Taken from archc.cpp
+//  -- corrected AC_ERROR and AC_SAY to become C construct (AC_SAY -> AC_MSG)
+//  -- sizeof(ac_fetch) is fixed with 4 (32 bits ELF), type is "unsigned int"
+//  -- included code: Search for executable sections
+
+//Loading binary application
+int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size)
 {
   Elf32_Ehdr    ehdr;
   Elf32_Shdr    shdr;
   Elf32_Phdr    phdr;
-  int           fd, i;
+  int           fd;
+  unsigned int  i;
 
   //Open application
-  if (!elffile || ((fd = open(elffile, 0)) == -1)) {
-    AC_ERROR("Openning application program '%s': %s\n", elffile, strerror(errno));
+  if (!filename || ((fd = open(filename, 0)) == -1)) {
+    AC_ERROR("Openning application file '%s': %s\n", filename, strerror(errno));
     exit(EXIT_FAILURE);
   }
 
   //Test if it's an ELF file
   if ((read(fd, &ehdr, sizeof(ehdr)) != sizeof(ehdr)) ||  // read header
-      (strncmp(ehdr.e_ident, ELFMAG, 4) != 0) ||          // test elf magic number
+      (strncmp((char *)ehdr.e_ident, ELFMAG, 4) != 0) ||          // test elf magic number
       0) {
-    //AC_ERROR("not an ELF file\n");
     close(fd);
     return EXIT_FAILURE;
   }
+  
+  //Set start address
+  ac_start_addr = convert_endian(4,ehdr.e_entry);
+  if (ac_start_addr > data_mem_size) {
+    AC_ERROR("the start address of the application is beyond model memory\n");
+    close(fd);
+    exit(EXIT_FAILURE);
+  }
 
-  //It is an ELF file
-  AC_MSG("Reading ELF application program: %s\n", elffile);
+  if (convert_endian(2,ehdr.e_type) == ET_EXEC) {
+    //It is an ELF file
+    AC_MSG("Reading ELF application file: %s\n", filename);
 
-  //Get program headers and load segments
-  data_mem = 0;
-  lseek(fd, convert_endian(4,ehdr.e_phoff), SEEK_SET);
-  for (i=0; i<convert_endian(2,ehdr.e_phnum); i++) {
+    //Get program headers and load segments
+    //    lseek(fd, convert_endian(4,ehdr.e_phoff), SEEK_SET);
+    for (i=0; i<convert_endian(2,ehdr.e_phnum); i++) {
 
-    if (read(fd, &phdr, sizeof(phdr)) != sizeof(phdr)) {
-      AC_ERROR("reading ELF program header\n");
-      return EXIT_FAILURE;
-    }
-
-    if (convert_endian(4,phdr.p_type) == PT_LOAD) {
-      int j;
-      int p_vaddr = convert_endian(4,phdr.p_vaddr);
-      int p_memsz = convert_endian(4,phdr.p_memsz);
-      int p_offset = convert_endian(4,phdr.p_offset);
-      int p_filesz = convert_endian(4,phdr.p_filesz);
-
-      if (data_mem_start > p_vaddr)
-        data_mem_start = p_vaddr;
-      if (data_mem_size  < p_vaddr + p_memsz)
-        data_mem_size = p_vaddr + p_memsz;
-
-      data_mem = realloc(data_mem, data_mem_size); instr_mem = data_mem;
-
-      //If some error, abort
-      if (data_mem == 0) {
-        AC_ERROR("not enough memory to allocate %d bytes loading ELF file '%s'.", data_mem_size, elffile);
+      //Get program headers and load segments
+      lseek(fd, convert_endian(4,ehdr.e_phoff) + convert_endian(2,ehdr.e_phentsize) * i, SEEK_SET);
+      if (read(fd, &phdr, sizeof(phdr)) != sizeof(phdr)) {
+        AC_ERROR("reading ELF program header\n");
+        close(fd);
         exit(EXIT_FAILURE);
       }
 
-      //Load and correct endian
-      lseek(fd, p_offset, SEEK_SET);
-      for (j=0; j < p_filesz; j+=4) {
-        int tmp;
-        read(fd, &tmp, 4);
-        *(unsigned int *) (data_mem + p_vaddr + j) = convert_endian(4, tmp);
-      }
-      memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
-    }
+      if (convert_endian(4,phdr.p_type) == PT_LOAD) {
+        Elf32_Word j;
+        Elf32_Addr p_vaddr = convert_endian(4,phdr.p_vaddr);
+        Elf32_Word p_memsz = convert_endian(4,phdr.p_memsz);
+        Elf32_Word p_filesz = convert_endian(4,phdr.p_filesz);
+        Elf32_Off  p_offset = convert_endian(4,phdr.p_offset);
 
-    //next header
-    lseek(fd, convert_endian(4,ehdr.e_phoff) + convert_endian(2,ehdr.e_phentsize) * i, SEEK_SET);
+        //Error if segment greater then memory
+        if (data_mem_size < p_vaddr + p_memsz) {
+          AC_ERROR("not enough memory in ArchC model to load application.\n");
+          close(fd);
+          exit(EXIT_FAILURE);
+        }
+
+        //Set heap to the end of the segment
+        if (ac_heap_ptr < p_vaddr + p_memsz) ac_heap_ptr = p_vaddr + p_memsz;
+
+        //Load and correct endian
+        lseek(fd, p_offset, SEEK_SET);
+        for (j=0; j < p_filesz; j+=4) {
+          int tmp;
+          read(fd, &tmp, 4);
+          *(unsigned int *) (data_mem + p_vaddr + j) = convert_endian(4, tmp);
+        }
+        memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
+      }
+
+      //next header/segment
+      //      lseek(fd, convert_endian(4,ehdr.e_phoff) + convert_endian(2,ehdr.e_phentsize) * i, SEEK_SET);
+    }
   }
+  else if (convert_endian(2,ehdr.e_type) == ET_REL) {
+
+    AC_MSG("Reading ELF relocatable file: %s\n", filename);
+
+    // first load the section name string table
+    char *string_table;
+    int   shoff = convert_endian(4,ehdr.e_shoff);
+    short shndx = convert_endian(2,ehdr.e_shstrndx);
+    short shsize = convert_endian(2,ehdr.e_shentsize);
+
+    lseek(fd, shoff+(shndx*shsize), SEEK_SET);
+    if (read(fd, &shdr, sizeof(shdr)) != sizeof(shdr)) {
+      AC_ERROR("reading ELF section header\n");
+      close(fd);
+      exit(EXIT_FAILURE);
+    }
+    
+    string_table = (char *) malloc(convert_endian(4,shdr.sh_size));
+    lseek(fd, convert_endian(4,shdr.sh_offset), SEEK_SET);
+    read(fd, string_table, convert_endian(4,shdr.sh_size));
+
+    // load .text, .data and .bss sections    
+    for (i=0; i<convert_endian(2,ehdr.e_shnum); i++) {
+
+      lseek(fd, shoff + shsize*i, SEEK_SET);
+      
+      if (read(fd, &shdr, sizeof(shdr)) != sizeof(shdr)) {
+        AC_ERROR("reading ELF section header\n");
+        close(fd);
+        exit(EXIT_FAILURE);
+      }
+
+
+      if (!strcmp(string_table+convert_endian(4,shdr.sh_name), ".text") ||
+          !strcmp(string_table+convert_endian(4,shdr.sh_name), ".data") ||
+          !strcmp(string_table+convert_endian(4,shdr.sh_name), ".bss")) {
+        
+        //        printf("Section %s:\n", string_table+convert_endian(4,shdr.sh_name));
+
+        Elf32_Off  tshoff  = convert_endian(4,shdr.sh_offset);
+        Elf32_Word tshsize = convert_endian(4,shdr.sh_size);
+        Elf32_Addr tshaddr = convert_endian(4,shdr.sh_addr);
+
+        if (tshsize == 0) {
+          // printf("--- empty ---\n");
+          continue;
+        }
+
+        if (data_mem_size < tshaddr + tshsize) {
+          AC_ERROR("not enough memory in ArchC model to load application.\n");
+          close(fd);
+          exit(EXIT_FAILURE);
+        }
+
+        //Set heap to the end of the segment
+        if (ac_heap_ptr < tshaddr + tshsize) ac_heap_ptr = tshaddr + tshsize;
+
+        if (!strcmp(string_table+convert_endian(4,shdr.sh_name), ".bss")) {
+          memset(data_mem + tshaddr, 0, tshsize);
+          //continue;
+          break; // .bss is supposed to be the last one
+        }
+
+        //Load and correct endian
+        lseek(fd, tshoff, SEEK_SET);
+        Elf32_Word j;
+        for (j=0; j < tshsize; j+=4) {
+          int tmp;
+          read(fd, &tmp, 4);
+          *(unsigned int *) (data_mem + tshaddr + j) = convert_endian(4, tmp);
+
+          // printf("0x%08x %08x \n", tshaddr+j, *(ac_fetch *) (data_mem+tshaddr+j));
+        }
+        //        printf("\n");        
+      }
+
+    }
+  }
+    
+
 
   //Search for executable sections (set prog_size_bytes to executable sections only)
   prog_size_bytes = 0;
@@ -434,189 +538,14 @@ int accs_ReadElf_2(char* elffile)
   }
   if (prog_size_bytes == 0) prog_size_bytes = data_mem_size;
 
+
+
+
   //Close file
   close(fd);
 
   return EXIT_SUCCESS;
-}  
-
-
-/* int accs_ReadElf_1(char* elffile) */
-/* { */
-/*   Elf *          elf; */
-/*   Elf32_Ehdr *   ehdr; */
-/*   Elf32_Shdr *   shdr; */
-/*   Elf32_Phdr *   phdr; */
-/*   Elf_Scn *      scn; */
-/*   Elf_Data *     snames; */
-/*   Elf_Data *     data; */
-/*   int            fd; */
-/*   int            i, found_load;  //, start, size; */
-
-/*   //Open application */
-/*   if (!elffile || ((fd = open(elffile, 0)) == -1)) { */
-/*     AC_ERROR("Openning application program '%s': %s\n", elffile, strerror(errno)); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-
-/*   //Test if it's an ELF file */
-/*   if ((elf_version(EV_CURRENT) != EV_CURRENT) || */
-/*       ((elf = elf_begin(fd, ELF_C_READ, NULL)) == NULL) || */
-/*       ((ehdr = elf32_getehdr(elf)) == NULL) || */
-/*       ((scn = elf_getscn(elf, ehdr->e_shstrndx)) == NULL) || */
-/*       ((snames = elf_getdata(scn, NULL)) == NULL) || */
-/*       0) { */
-/*     //AC_MSG("Not an ELF file, falling back to HEX file mode.\n"); */
-/*     return EXIT_FAILURE; */
-/*   } */
-
-/*   //It is an ELF file */
-/*   AC_MSG("Reading ELF application program: %s (section(s):", elffile); */
-
-/*   //Read program header for the PT_LOAD type */
-/*   found_load = 0; */
-/*   phdr = elf32_getphdr(elf); */
-/*   //  for (i=0; !found_load && (i < ehdr->e_phnum); i++) { */
-/*   for (i=0; (phdr != NULL) && (i < ehdr->e_phnum); i++) { */
-/*     if (phdr->p_type == PT_LOAD) { */
-/*       //((start = phdr->p_vaddr) == 0) && */
-/*       if (phdr->p_vaddr < data_mem_start) */
-/*         data_mem_start = phdr->p_vaddr; */
-/*       if (phdr->p_vaddr+phdr->p_memsz > data_mem_size) */
-/*         data_mem_size = phdr->p_vaddr+phdr->p_memsz; */
-/*       //data_mem_size = phdr->p_memsz; */
-/*       //data_mem_start = phdr->p_vaddr; */
-/*       found_load++; */
-/*       phdr++; */
-/*     } */
-/*   } */
-/*   //If the size to alocate is greatter then 5MB => error! */
-/*   if ((found_load != 1) && (data_mem_size > 0x500000)) { */
-/*     AC_ERROR("ELF file '%s' should have just one LOAD segment, the program is sparse in memory.", elffile); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-
-/*   //Alocate memory for this segment */
-/*   //prog_size_bytes = data_mem_size; */
-/*   //data_mem_size = size; */
-/*   //instr_mem = malloc(prog_size_bytes); */
-/*   data_mem = calloc(data_mem_size,1); instr_mem = data_mem; */
-
-/*   //Look for section */
-/*   for (scn = NULL; scn = elf_nextscn(elf, scn); ) { */
-
-/*     //This section is ALLOCated, is type SHT_PROGBITS and is inside the segment? */
-/*     if (((shdr = elf32_getshdr(scn)) != NULL) && */
-/*         (shdr->sh_flags & SHF_ALLOC) && */
-/*         (shdr->sh_type == SHT_PROGBITS) && */
-/*         (shdr->sh_addr >= data_mem_start) && */
-/*         (shdr->sh_size <= data_mem_size - (shdr->sh_addr-data_mem_start)) && */
-/*         //((data = elf_getdata(scn, NULL)) != NULL) && */
-/*         ((data = elf_rawdata(scn, NULL)) != NULL) && */
-/*         1) { */
-
-/*       Elf_Data *translated; */
-/*       translated = malloc(sizeof(Elf_Data)); */
-/*       translated->d_buf = malloc(data->d_size); */
-/*       translated->d_type = ELF_T_WORD; */
-/*       translated->d_size = data->d_size; */
-/*       translated->d_version = EV_CURRENT; */
-/*       //Is it an executable section? */
-/*       if (shdr->sh_flags & SHF_EXECINSTR) { */
-/*         //TODO: just one executable section suported */
-/*         //instr_mem = shdr->sh_addr-data_mem_start; */
-/*         if (prog_size_bytes != 0) { */
-/*           AC_ERROR("ReadElf: just one executable section suported"); */
-/*           exit(EXIT_FAILURE); */
-/*         } */
-/*         prog_size_bytes = shdr->sh_size; */
-/*       } */
-/*       data->d_type = ELF_T_WORD; */
-/*       elf32_xlatetom(translated, data, ehdr->e_ident[EI_DATA]); */
-/*       printf(" %s", (char *)snames->d_buf+shdr->sh_name); */
-/*       //printf("Section: ?, Type: %d %d %d, Trans: %d\n", data->d_type, ELF_T_BYTE, ELF_T_WORD, translated->d_type); */
-/*       memcpy(data_mem+shdr->sh_addr-data_mem_start, translated->d_buf, translated->d_size); */
-/*       free(translated->d_buf); */
-/*       free(translated); */
-
-/*       /\*       memcpy(data_mem+shdr->sh_addr-data_mem_start, data->d_buf, data->d_size); *\/ */
-/*       /\*       //It is a executable section? *\/ */
-/*       /\*       if (shdr->sh_flags & SHF_EXECINSTR) { *\/ */
-/*       /\*      //TODO: just one executable section suported *\/ */
-/*       /\*      //instr_mem = shdr->sh_addr-data_mem_start; *\/ */
-/*       /\*      if (prog_size_bytes != 0) { *\/ */
-/*       /\*        AC_ERROR("ReadElf: just one executable section suported"); *\/ */
-/*       /\*        exit(EXIT_FAILURE); *\/ */
-/*       /\*      } *\/ */
-/*       /\*      prog_size_bytes = shdr->sh_size; *\/ */
-/*       /\*       } *\/ */
-
-/*     } */
-/*   } */
-
-/*   //Set entry point */
-/*   if ((ehdr->e_entry != 0) && */
-/*       (ehdr->e_entry >= data_mem_start) && (ehdr->e_entry < data_mem_start+data_mem_size) && */
-/*       1) { */
-/*     prog_entry_point = ehdr->e_entry-data_mem_start; */
-/*   } */
-
-/*   //Close ELF */
-/*   elf_end(elf); */
-
-/*   //Close "Reading application..." */
-/*   printf(").\n"); */
-
-/*   return EXIT_SUCCESS; */
-/* } */
-
-
-/* void accs_ReadElfSection(char* elffile, char* scn_name) */
-/* { */
-/*   Elf *          elf; */
-/*   Elf32_Ehdr *   ehdr; */
-/*   Elf32_Shdr *   shdr; */
-/*   Elf_Scn *      scn; */
-/*   Elf_Data *     snames; */
-/*   Elf_Data *     data; */
-/*   int            fd; */
-
-/*   //Open ELF */
-/*   if (!elffile || ((fd = open(elffile, 0)) == -1)) { */
-/*     AC_ERROR("Openning ELF file '%s': %s", elffile, strerror(errno)); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-
-/*   //Read section names data */
-/*   if ((elf_version(EV_CURRENT) != EV_CURRENT) || */
-/*       ((elf = elf_begin(fd, ELF_C_READ, NULL)) == NULL) || */
-/*       ((ehdr = elf32_getehdr(elf)) == NULL) || */
-/*       ((scn = elf_getscn(elf, ehdr->e_shstrndx)) == NULL) || */
-/*       ((snames = elf_getdata(scn, NULL)) == NULL) ) { */
-/*     AC_ERROR("Reading ELF file %s", elffile); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-
-/*   //Look for section */
-/*   for (scn = NULL; scn = elf_nextscn(elf, scn); ) { */
-
-/*     //If found, instr_mem points to it */
-/*     if (((shdr = elf32_getshdr(scn)) != NULL) && */
-/*         (strcmp(scn_name, (char *)snames->d_buf + shdr->sh_name) == 0)) { */
-/*       if (((data = elf_getdata(scn, NULL)) == NULL) || */
-/*           ((prog_size_bytes = data->d_size) == 0) ) { */
-/*         AC_ERROR("Reading ELF file %s: section %s is invalid or null", elffile, scn_name); */
-/*         exit(EXIT_FAILURE); */
-/*       } */
-/*       instr_mem = malloc(data->d_size); */
-/*       memcpy(instr_mem, data->d_buf, data->d_size); */
-/*       break; */
-/*     } */
-/*   } */
-
-/*   //Close ELF */
-/*   elf_end(elf); */
-/* }   */
+}
 
 
 int accs_ReadHexProgram(char* prog_filename)
@@ -772,10 +701,13 @@ int accs_ReadObjdumpHex(char* prog_filename) {
           exit(1);
         }
         addr += wordsize/8;
+
+        //keep the maximum address in prog_size_bytes
+        if (prog_size_bytes < addr) prog_size_bytes = addr;
+
       }
     }
   }
-  prog_size_bytes = addr;
   data_mem_size = prog_size_bytes;
   fclose(prog);
 }
@@ -975,160 +907,126 @@ void accs_CreateCompsimImpl()
 
 
 
-  //!Write file header
-  sprintf( filename, "%s.cpp", project_name);
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-  //output = stdout;
-  print_comment( output, "ArchC Compsim implementation file.");
-
-  fprintf(output, "//Input program: %s\n\n", ACCompsimProg);
-
-  fprintf( output, "#include \"%s.H\"\n", project_name);
-  fprintf( output, "#include \"%s-isa.H\"\n", project_name);
-  if (ACABIFlag) {
-    fprintf( output, "#include \"ac_syscall.H\"\n");
-    fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
-  }
-  fprintf( output, "#include \"archc.H\"\n");
-  //fprintf( output, "#include \"ac_reg.H\"\n");
-  fprintf( output, "#include \"ac_prog_regions.H\"\n");
-  //fprintf( output, "#include <stdlib.h>\n");
-  fprintf( output, "#include <stdio.h>\n");
-  fprintf( output, "#include <iostream>\n");
-  fprintf( output, "\n");
-  fprintf( output, "#ifdef AC_INLINE\n");
-  fprintf( output, "\n");
-  fprintf( output, "//ISA instructions are compiled together for inline to work\n");
-  fprintf( output, "#include \"%s-isa.cpp\"\n", project_name);
-  fprintf( output, "\n");
-  if (ACABIFlag) {
-    fprintf( output, "//Syscalls are compiled together for inline to work\n");
-    fprintf( output, "#include \"%s_syscall.cpp\"\n", project_name);
-    fprintf( output, "\n");
-  }
-  fprintf( output, "#endif // defined AC_INLINE\n");
-  fprintf( output, "\n");
-  fprintf( output,
-           "//!Trace file\n"
-           "#ifdef AC_DEBUG\n"
-           "extern std::ofstream trace_file;\n"
-           "#define PRINT_TRACE trace_file << std::hex << ((int)ac_pc) << \"\\n\"\n"
-           "#else \n"
-           "#define PRINT_TRACE do {} while(0)\n"
-           "#endif\n"
-           "\n");
-
-  if (COUNT_SYSCALLS)
-    COUNT_SYSCALLS_Init(output);
-
-  //Write other variables
-  if (ACABIFlag) {
-    fprintf(output, "%s_syscall model_syscall;\n", project_name);
-    fprintf(output, "\n");
-  }
-  
-  //Declarations for PROCESSOR_OPTIMIZATIONS
-  if (PROCESSOR_OPTIMIZATIONS > 0) {
-    fprintf(output, "//Used for optimizations\n");
-    fprintf(output, "unsigned tmp_pc;\n\n");
-  }
-
-  //!Write each Region function
+  //Write in separate files, to minimize compilation overhead
+  //  select number of Regions per file with command-line option "-bs"
   for (rblock=0; rblock <= (((prog_size_bytes-1) >> REGION_SIZE) / REGION_BLOCK_SIZE); rblock++) {
 
+    // Open file
+    if (rblock == 0) sprintf( filename, "%s.cpp", project_name);
+    else             sprintf( filename, "%s-block%d.cpp", project_name, rblock);
 
-    // @@@@@@@@@@@@@@@@@ new block @@@@@@@@@@@@@@@@@@@@@@@
-
-    FILE *block_output;
-
-    //!Open new file for region block if its not the first block
-    if (rblock != 0) {
-
-      sprintf( filename, "%s-block%d.cpp", project_name, rblock);
-      if ( !(block_output = fopen( filename, "w"))){
-        perror("ArchC could not open output file");
-        exit(1);
-      }
-
-      print_comment( block_output, "ArchC Compsim block file.");
-
-      fprintf( block_output, "#include \"%s-isa.H\"\n", project_name);
-      fprintf( block_output, "#include \"archc.H\"\n", project_name);
-      fprintf( block_output, "#include \"ac_reg.H\"\n", project_name);
-      fprintf( block_output, "#include <stdio.h>\n");
-      fprintf( block_output, "#include <iostream>\n");
-      fprintf( block_output, "\n");
-      fprintf( block_output, "#ifdef AC_INLINE\n");
-      fprintf( block_output, "\n");
-      fprintf( block_output, "//ISA instructions are compiled together for inline to work\n");
-      fprintf( block_output, "#include \"%s-isa.cpp\"\n", project_name);
-      fprintf( block_output, "\n");
-      fprintf( block_output, "#endif // defined AC_INLINE\n");
-      fprintf( block_output, "\n");
-      fprintf( block_output,
-               "//!Trace file\n"
-               "#ifdef AC_DEBUG\n"
-               "extern std::ofstream trace_file;\n"
-               "#define PRINT_TRACE trace_file << std::hex << ((int)ac_pc) << \"\\n\"\n"
-               "#else \n"
-               "#define PRINT_TRACE do {} while(0)\n"
-               "#endif\n"
-               "\n");
-
-      //Declarations for PROCESSOR_OPTIMIZATIONS
-      if (PROCESSOR_OPTIMIZATIONS > 0) {
-        fprintf(block_output, "//Used for optimizations\n");
-        fprintf(block_output, "extern unsigned tmp_pc;\n\n");
-      }
+    if ( !(output = fopen( filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
     }
+
+
+    //!Write file header
+    print_comment( output, "ArchC Compsim implementation file.");
 
     if (rblock == 0) {
-      block_output = output;
+      fprintf(output, "//Input program: %s\n\n", ACCompsimProg);
+      fprintf( output, "#include \"%s.H\"\n", project_name);
     }
 
-    // @@@@@@@@@@@@@@@@@ END   new block @@@@@@@@@@@@@@@@@@@@@@@
+    fprintf( output, "#include \"%s-isa.H\"\n", project_name);
+
+    if (rblock == 0) {
+
+      if (ACABIFlag) {
+        fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
+      }
+
+      fprintf( output, "#include \"ac_prog_regions.H\"\n");
+    }
+
+    fprintf( output, "\n");
 
 
+    // Inlines for command-line option "-i"
+    fprintf( output, "#ifdef AC_INLINE\n");
+    fprintf( output, "\n");
+    fprintf( output, "//ISA instructions are compiled together for inline to work\n");
+    fprintf( output, "#include \"%s-isa.cpp\"\n", project_name);
+    fprintf( output, "\n");
+    if (rblock == 0) {
+      if (ACABIFlag) {
+        fprintf( output, "//Syscalls are compiled together for inline to work\n");
+        fprintf( output, "#include \"%s_syscall.cpp\"\n", project_name);
+        fprintf( output, "\n");
+      }
+    }
+    fprintf( output, "#endif // defined AC_INLINE\n");
+    fprintf( output, "\n");
 
 
+    // Trace file for command-line option "-g"
+    fprintf( output,
+             "//!Trace file\n"
+             "#ifdef AC_DEBUG\n"
+             "#include <iostream>\n"
+             "extern std::ofstream trace_file;\n"
+             "#define PRINT_TRACE trace_file << std::hex << ((int)ac_pc) << \"\\n\"\n"
+             "#else \n"
+             "#define PRINT_TRACE /* nothing */\n"
+             "#endif\n"
+             "\n");
+
+
+    // Write other variables
+    if (rblock == 0) {
+      if (COUNT_SYSCALLS)  COUNT_SYSCALLS_Init(output);
+      if (ACABIFlag)       fprintf(output, "%s_syscall model_syscall;\n\n", project_name);
+    }
+
+
+    //Declarations for PROCESSOR_OPTIMIZATIONS
+    if (PROCESSOR_OPTIMIZATIONS > 0) {
+      fprintf(output, "//Used for optimizations\n");
+      fprintf(output, "unsigned tmp_pc;\n\n");
+    }
+
+
+    // @@@@@@@@@@@@@@@@@ kernel of compiled simulation @@@@@@@@@@@@@@@@@@@@@@@
 
     for (i=rblock*REGION_BLOCK_SIZE;
          ((i < (rblock+1)*REGION_BLOCK_SIZE) && (i <= ((prog_size_bytes-1) >> REGION_SIZE)));
          i++) {
       int end_region = (prog_size_bytes < ((i+1) << REGION_SIZE)) ? prog_size_bytes : ((i+1) << REGION_SIZE);
     
-      fprintf(block_output, "void Region%d() {\n", i);
-
-      fprintf(block_output,
+      // Region function start
+      fprintf(output, "void Region%d() {\n", i);
+      fprintf(output,
               "\n"
               "  while (1) {\n"
               "    switch((int)ac_pc) {\n"
               "\n"
               );
+
+
+      // KERNEL: emit instructions
       for (j = (i << REGION_SIZE); j < end_region; j++) {
 
         if ((ACABIFlag) && (j==64)) {  // Special addresses for ArchC system calls
-          j = accs_EmitSyscalls(block_output, j);
+          j = accs_EmitSyscalls(output, j);
         }
 
         if ((decode_table[j]) && (decode_table[j]->dec_vector)) {
-          accs_EmitInstr(block_output, j);
+          accs_EmitInstr(output, j);
         }
       }
 
-      //!Write invalid PC section and end Region function
-      fprintf( block_output,
+
+      // Write invalid PC section and end Region function
+      fprintf( output,
                "      //certify to change region on fall-through\n"
                "      ac_pc = %#x;\n"
                "      break;\n"
                "\n"
                "    default:\n"
-               , end_region);
-      if (i == EXIT_ADDRESS>>REGION_SIZE) fprintf( block_output, "      if (ac_pc == %d) return;\n", EXIT_ADDRESS);
-      fprintf( block_output,
+               , ((i+1) << REGION_SIZE));
+      if (i == EXIT_ADDRESS>>REGION_SIZE) fprintf( output, "      if (ac_pc == %d) return;\n", EXIT_ADDRESS);
+      fprintf( output,
                "      if ((ac_pc >= %d) && (ac_pc < %d)) {\n"
                "        AC_ERROR(\"ac_pc=0x\" << hex << int(ac_pc) << \" points to an non-decoded memory location.\" << endl);\n"
                "        ac_stop(EXIT_FAILURE);\n"
@@ -1142,57 +1040,55 @@ void accs_CreateCompsimImpl()
                , (i << REGION_SIZE), ((i+1) << REGION_SIZE));
     }
 
-    if (rblock != 0) {
-      fclose(block_output);
+
+    // Write Execute function, only in the first file
+    if (rblock == 0) {
+
+      fprintf(output, "void Execute(int argc, char *argv[]) {\n\n");
+      if (ACABIFlag) {fprintf(output, "  model_syscall.set_prog_args(argc, argv);\n\n");}
+      fprintf(output,
+              "  extern int ac_stop_flag;\n"
+              "  while (!ac_stop_flag) {\n"
+              "    switch(ac_pc >> %d) {\n"
+              "\n"
+              , REGION_SIZE);
+      for (j=0; j <= ((prog_size_bytes-1) >> REGION_SIZE); j++) {
+        fprintf(output,
+                "    case %d:\n"
+                "      Region%d();\n"
+                "      break;\n"
+                "\n"
+                //cygwin don't recognize %1$s to specify an argument 'cause uses newlib
+                , j, j);
+      }
+      fprintf(output,
+              "    default:\n"
+              "      AC_ERROR(\"ac_pc=0x\" << hex << int(ac_pc) << \" is beyond program memory.\" << std::endl);\n"
+              "      ac_stop(EXIT_FAILURE);\n"
+              "      break;\n"
+              "    }\n"
+              "  }\n"
+              );
+
+      if (COUNT_SYSCALLS) {
+        COUNT_SYSCALLS_EmitPrintStat(output);
+      }
+
+      fprintf(output,
+              "}\n"
+              "\n"
+              "\n"
+              );
     }
+
+
+    // Close file
+    fclose( output);
+
   }
 
 
-  //!Write Execute function
-
-  fprintf(output, "void Execute(int argc, char *argv[]) {\n\n");
-  if (ACABIFlag) {fprintf(output, "  model_syscall.set_prog_args(argc, argv);\n\n");}
-  fprintf(output,
-          "  extern int ac_stop_flag;\n"
-          "  while (!ac_stop_flag) {\n"
-          "    switch(ac_pc >> %d) {\n"
-          "\n"
-          , REGION_SIZE);
-  for (j=0; j <= ((prog_size_bytes-1) >> REGION_SIZE); j++) {
-    fprintf(output,
-            "    case %d:\n"
-            "      Region%d();\n"
-            "      break;\n"
-            "\n"
-            //cygwin don't recognize %1$s to specify an argument 'cause uses newlib
-            , j, j);
-  }
-  fprintf(output,
-          "    default:\n"
-          "      AC_ERROR(\"ac_pc=0x\" << hex << int(ac_pc) << \" is beyond program memory.\" << std::endl);\n"
-          "      ac_stop(EXIT_FAILURE);\n"
-          "      break;\n"
-          "    }\n"
-          "  }\n"
-          );
-
-  if (HAS_AC_END_SIMULATION) {
-    fprintf(output, "  //Execute ac_end_simulation\n");
-    fprintf(output, "  ac_behavior_ac_end_simulation();\n\n");
-  }
-
-  if (COUNT_SYSCALLS) {
-    COUNT_SYSCALLS_EmitPrintStat(output);
-  }
-
-  fprintf(output,
-          "}\n"
-          "\n"
-          "\n"
-          );
-
-  fclose( output); 
-
+  // Free memory
   for (j=0; j<prog_size_bytes; j++) {free(decode_table[j]);}
   free(decode_table);
   free(stat_instr_used);
@@ -2060,7 +1956,7 @@ void accs_CreateProgramMemoryImpl()
     exit(1);
   }
 
-  fwrite(data_mem, data_mem_size, 1, output);
+  fwrite(data_mem, ac_heap_ptr, 1, output);
 
   fclose( output);
 }
@@ -2117,9 +2013,10 @@ void accs_CreateMain()
           "  extern char *appfilename;\n"
           "  appfilename=\"%s\";\n"
           "\n"
-          "  ac_heap_ptr = %u;\n"
+          "  ac_heap_ptr = 0x%x;\n"
+          "  ac_start_addr = 0x%x;\n"
           "\n"
-          "  %s.load_array(mem_dump, %u);\n"
+          "  %s.load_array(mem_dump, 0x%x);\n"
           "\n"
           "#ifdef AC_DEBUG\n"
           "  ac_trace(\"%s.trace\");\n"
@@ -2134,8 +2031,8 @@ void accs_CreateMain()
           "  std::cerr << std::endl;\n"
           "\n"
           //cygwin don't recognize %1$s to specify an argument 'cause uses newlib
-          , project_name, ACCompsimProg, data_mem_start+data_mem_size, (accs_FindLoadDevice())->name, data_mem_start+data_mem_size
-          , project_name);
+          , project_name, ACCompsimProg, ac_heap_ptr, ac_start_addr, (accs_FindLoadDevice())->name
+          , ac_heap_ptr, project_name);
 
   if (ACStatsFlag)
     fprintf(output,
@@ -2455,7 +2352,7 @@ void accs_EmitMakefileExtra(FILE* output)
 
   fprintf( output, "INLINE := %d\n", (ACInlineFlag?1:0));
   fprintf( output, "ISA_AND_SYSCALL_TOGETHER := %d\n", (ACInlineFlag || PROCESSOR_OPTIMIZATIONS == 2)? 1 : 0);
-  fprintf( output, "CFLAGS := $(CFLAGS) $(if $(filter 1,$(INLINE)),-O3) $(if $(filter 1,$(ISA_AND_SYSCALL_TOGETHER)), -DAC_INLINE) ");
+  fprintf( output, "CFLAGS := $(CFLAGS) $(if $(filter 1,$(INLINE)),-O -finline-functions -fgcse) $(if $(filter 1,$(ISA_AND_SYSCALL_TOGETHER)), -DAC_INLINE) ");
   if (ACCompsimFlag) fprintf( output, "-DAC_COMPSIM");
   fprintf( output, "\n\n");
 }
@@ -2472,9 +2369,14 @@ void accs_EmitParmsExtra(FILE* output)
 
 ac_sto_list *accs_FindLoadDevice()
 {
+  //Already set?
+  extern ac_sto_list *load_device;
+  if (load_device) return load_device;
+  
+
   extern ac_sto_list *storage_list, *fetch_device;
   ac_sto_list *pstorage;
-  ac_sto_list *load_device = storage_list;
+  load_device = storage_list;
 
   // COPIED FROM ACPP
 
