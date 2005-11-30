@@ -672,7 +672,7 @@ HEXA_DIGIT [0-9A-Fa-f]
     *block_buf_ptr = '\0';
     yylval.text = (char*)malloc(strlen(block_buf)+1);
     strcpy(yylval.text,block_buf);
-    BEGIN(return_state);
+    BEGIN(INITIAL);
     return BLOCK;
   }
 }

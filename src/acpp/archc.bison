@@ -380,6 +380,7 @@ void add_instr( char* name){
   strcpy(pinstr->name, name);
   strcpy(pinstr->format, current_type);
   pinstr->mnemonic = NULL;
+  pinstr->asm_str = NULL;
   instr_num++;
   pinstr->id = instr_num;
   pinstr->cycles = 1;
@@ -866,13 +867,17 @@ asmdec: ID DOT SET_ASM LPAREN STR
 	         yyerror("Undeclared instruction: %s", $1);
 	}
 	else{
-	  pinstr->asm_str = (char*) malloc( strlen($5)+1);
-	  strcpy(pinstr->asm_str, $5);
-	  pinstr->mnemonic =(char*) malloc( strlen($5)+1);
-	  strcpy(pinstr->mnemonic, $5);
-	  aux = pinstr->mnemonic;
-	  while(*aux != ' ' && *aux != '\0') aux++;
-	  *aux = '\0';
+          if (pinstr->asm_str == NULL) {
+            pinstr->asm_str = (char*) malloc( strlen($5)+1);
+            strcpy(pinstr->asm_str, $5);
+          }
+          if (pinstr->mnemonic == NULL) {
+            aux = $5;
+            while(*aux != ' ' && *aux != '\0') aux++;
+            pinstr->mnemonic =(char*) malloc( aux-$5+1);
+            memcpy(pinstr->mnemonic, $5, aux-$5);
+            pinstr->mnemonic[aux-$5] = '\0';
+          }
 
           // search for the insn format and store it in 'pformat' for future use
  	  for(pformat = format_ins_list ; pformat != NULL && strcmp(pinstr->format, pformat->name); pformat = pformat->next);
@@ -1069,7 +1074,7 @@ conddec: ID COND BLOCK SEMICOLON
     yyerror("Undeclared instruction: %s", $1);
   }
   else{
-    get_control_flow_struct(pinstr)->cond = $4;
+    get_control_flow_struct(pinstr)->cond = $3;
     ControlInstrInfoLevel = 2;
   }
 }

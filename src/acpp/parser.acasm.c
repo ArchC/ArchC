@@ -1,63 +1,105 @@
+/* 
+    ArchC parser (acasm module) - Copyright (C) 2002-2005  The ArchC Team
+
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the Free
+    Software Foundation; either version 2 of the License, or (at your option)
+    any later version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+    more details.
+*/
+
+/********************************************************/
+/* parser.acasm.c: ArchC parser (acasm module)  .       */
+/* Author: Alexandro Baldassin                          */
+/* Date: 01-06-2005                                     */
+/*                                                      */
+/* The ArchC Team                                       */
+/* Computer Systems Laboratory (LSC)                    */
+/* IC-UNICAMP                                           */
+/* http://www.lsc.ic.unicamp.br                         */
+/********************************************************/
+
 /*
 
 Overview - Internal aspects
 
 Parser x Tools
 
-  There are mainly two aspects of the ArchC language you should be aware of: parser and tools. Although you may
-think of them as two different things, the way it's implemented at the moment looks like a single 'beast'. The ideal
-solution would be to split the parser into a unique and independent module: the information collected would then
-be saved into an intermediate representation. The tools would use this intermediate representation to generate their
-files and stuff. For old reasons, the way it has started up and is being developed, the parser and tools views of
-the language are someway the same. This has some bad side effects, but it saved us time in the development and we are
-slowly focusing in the intermediate representation.
-  This module represents the parser structures and functions used by the acasm tool. Acasm is a generator of an 
-assembler based in the GNU As. The structures we'll find here are mainly dependent of the Acasm tool, yet it's used
-by the parser as well. The parser collects the information found in the ArchC .ac files and store them in these
-structures (the acasm specific informations). The assembler specific generator module can then use these structures
-to create the source files which will build an assembler for that architecture.
+  There are mainly two aspects of the ArchC language you should be aware of:
+parser and tools. Although you may think of them as two different things, the
+way it's implemented at the moment looks like a single 'beast'. The ideal
+solution would be to split the parser into a unique and independent module: the
+information collected would then be saved into an intermediate
+representation. The tools would use this intermediate representation to
+generate their files and stuff. For old reasons, the parser and tools views of
+the language are someway the same. This has some bad side effects, but it saved
+us time in the development and we are slowly focusing in the intermediate
+representation.  This module represents the parser structures and functions
+used by the acasm tool. Acasm is a generator of an assembler based in the GNU
+as. The structures we'll find here are mainly dependent of the acasm tool, yet
+it's used by the parser as well. The parser collects the information found in
+the ArchC .ac files and store them in these structures (the acasm specific
+informations). The assembler specific generator module can then use these
+structures to create the source files which will build an assembler for that
+architecture.
 
 
 Philosophy
 
-  Each increment we make in the parser of the language is tied to a tool necessity. So the way we're starting to split
-things is: put the parser relative structures and functions in the 'parser.<tool>.*' files and the tool specific files
-in their respective directories. At this moment, Acasm is the first tool to use this philosophy. We hope this will prove
-itself worthy so we can adapt the other tools (acsim, accsim, ...) as well.
-  The parser (which uses Bison) and the Acasm module should include this module header file so that it can use the 
-structures and functions provided. Note that -NO- global shared variables are used but interface functions where needed.
-The parser fills in the structures calling some interface functions provided (the ones with the prefix 'acpp_asm') and
-the acasm module uses those informations by calling other group of functions (the ones with the prefix 'ac_asm'). Note
-also that all structures start with the ac_asm prefix (their use are someway 'shared' by the parser and tool by means
-of the interface functions). There might be some structures (like ac_dec_insn) which needs to be shared by more then one 
-tool. Those structures are being stored in their first and original modules at this moment. 
+  Each increment we make in the parser of the language is tied to a tool
+necessity. So the way we're starting to split things is: put the parser
+relative structures and functions in the 'parser.<tool>.*' files and the tool
+specific files in their respective directories. At this moment, acasm is the
+first tool to use this philosophy. We hope this will prove itself worthy so we
+can adapt the other tools (acsim, accsim, ...) as well.  The parser (which uses
+Bison) and the acasm module should include this module header file so that it
+can use the structures and functions provided. Note that -NO- global shared
+variables are used but interface functions where needed.  The parser fills in
+the structures calling some interface functions provided (the ones with the
+prefix 'acpp_asm') and the acasm module uses those informations by calling
+other group of functions (the ones with the prefix 'ac_asm'). Note also that
+all structures start with the ac_asm prefix (their use are someway 'shared' by
+the parser and tool by means of the interface functions). There might be some
+structures (like ac_dec_insn) which needs to be shared by more then one
+tool. Those structures are being stored in their first and original modules at
+this moment.
 
 
-The 'Acasm parser'
+The 'acasm parser' (information useful to developers)
   
-  I decided to used the term 'Acasm parser' instead of only 'parser' since, already stated in the Parser x Tools section,
-this parser functions are relative only to those specific to the Acasm tools. From now on, whenever 'parser' is used,
-it'll mean Acasm parser. 
-  The parser is composed of basicly 3 groups. Each group is relative to one acasm keyword of the ArchC language. They are:
-'ac_asm_map', 'set_asm' and 'pseudo_instr' keywords. Maybe it was a better programming style to split this file into 3, each
-of them dealing with one keyword. But since it's a first version, it's all grouped here.
-  All parser interface functions use a kind of state machine to do its processing. So there is a sequence to call the 
-functions, and each one updates its internal state. These states and sequence ordering are described bellow for each of
-the keywords. A basic information is given for every keyword, stating the general idea of the implementation. Detailed 
-description about the implementation can be found through the source code.
+  I decided to used the term 'acasm parser' instead of only 'parser' since,
+already stated in the Parser x Tools section, this parser functions are
+relative only to those specific to the acasm tool. From now on, whenever
+'parser' is used, it'll mean acasm parser.  The parser is composed of basicly 3
+groups. Each group is relative to one acasm keyword of the ArchC language. They
+are: 'ac_asm_map', 'set_asm' and 'pseudo_instr' keywords. Maybe it was a better
+programming style to split this file into 3, each of them dealing with one
+keyword. But since it's a first version, it's all grouped here.  All parser
+interface functions use a kind of state machine to do its processing. So there
+is a sequence to call the functions, and each one updates its internal
+state. These states and sequence ordering are described bellow for each of the
+keywords. A basic information is given for every keyword, stating the general
+idea of the implementation. Detailed description about the implementation can
+be found through the source code.
 
+*******************************
  -> ac_asm_map
-   
+*******************************   
+
   syntax: 
-    <asm_map> ::= 'ac_asm_map' <marker> '{' {<symbol_mapping>';'}*1 '}'
+    <asm_map> ::= 'ac_asm_map' <marker> '{' (<symbol_mapping>)*';' '}'
 
     <marker> -a valid identifier used as a mapping ID- must be unique
     a valid identifier is  [a-zA-Z][_a-zA-Z0-9]* (declared in the .lex file)
 
-    <symbol_mapping> ::= <symbol>{,<symbol>} '=' <value> |                         
-                         <symbol>'['<value>'..'<value>']' '=' '['<value2>'..'<value2>']' |
-                         '['<value>'..'<value>']'<symbol> '=' '['<value2>'..'<value2>']' |
-			  <symbol>'['<value>'..'<value>']'<symbol> '=' '['<value2>'..'<value2>']'
+    <symbol_mapping> ::= <symbol>(,<symbol>)* '=' <value> |                         
+                         <symbol>'['<value>'..'<value>']' '=' '['<value>'..'<value>']' |
+                         '['<value>'..'<value>']'<symbol> '=' '['<value>'..'<value>']' |
+			  <symbol>'['<value>'..'<value>']'<symbol> '=' '['<value>'..'<value>']'
 
     <symbol> ::= '"'<symbol_id>'"'
     <symbol_id> -any sequence of valid ASCII chars- (valid chars are those accepted by is_map_symbol_* functions)
@@ -79,90 +121,113 @@ description about the implementation can be found through the source code.
          "e"[1..3]"i" = [10..8];
       }
 
-  Acasm Info:
+  acasm Info:
 
-      A list of the mappings declared is stored in the 'mapping_list' variable. It can be retrieved through the
-'ac_asm_get_mapping_list()' function. It's up to the caller to get the info they need in the list, just be sure
-you don't change it ;)
+  A list of the mappings declared is stored in the 'mapping_list' variable. It
+can be retrieved through the 'ac_asm_get_mapping_list()' function. It's up to
+the caller to get the info they need in the list, just be sure you don't change
+it ;)
 
 
   Basic Parser Info:
     
-      Upon finding the 'ac_asm_map' keyword, the parser should call 'acpp_asm_create_mapping_block()' with the ID
-as an argument. This will check for redefinition of the ID and adds it to the internal list. After this, each <symbol>
-found in the right side of the attribution must be added calling either 'acpp_asm_add_mapping_symbol()' or 
-'acpp_asm_add_mapping_symbol_range()' depending if the symbol include a range [] or not. The value (or the range of
-values) can then be assigned through the 'acpp_asm_add_symbol_value()' function.
-      The dependency among the calls to the functions is:
+  Upon finding the 'ac_asm_map' keyword, the parser should call
+'acpp_asm_create_mapping_block()' with the ID as an argument. This will check
+for redefinition of the ID and add it to the internal list. After this, each
+<symbol> found in the right side of the attribution must be added calling
+either 'acpp_asm_add_mapping_symbol()' or 'acpp_asm_add_mapping_symbol_range()'
+depending if the symbol include a range [] or not. The value (or the range of
+values) can then be assigned through the 'acpp_asm_add_symbol_value()'
+function.
+  The dependency among the calls to the functions is:
 
-       Step 1 - call acpp_asm_create_mapping_block() to create a mapping block
-       Step 2 - call acpp_asm_add_mapping_symbol() or acpp_asm_add_mapping_symbol_range() to stack symbol definitions
-                for that block
-       Step 3 - call acpp_asm_add_symbol_value() to assign a value (or a range of values) to the symbol(s) stacked
-       Step 4 - either add more symbols going to step 2 or create another mapping block going to step 1
+   Step 1 - call acpp_asm_create_mapping_block() to create a mapping block
+   Step 2 - call acpp_asm_add_mapping_symbol() or
+            acpp_asm_add_mapping_symbol_range() to stack symbol definitions for
+            that block
+   Step 3 - call acpp_asm_add_symbol_value() to assign a value (or a range of
+            values) to the symbol(s) stacked
+   Step 4 - either add more symbols going to step 2 or create another mapping
+            block going to step 1
 
 
+******************************* 
  -> set_asm
+******************************* 
 
-    set_asm is tied up to an 'ac_instr' type. It's the type used by the ArchC language so that instructions can be created.
-Every insn declared by 'ac_instr' can use a property called 'set_asm' to declared its assembly syntax and encoding scheme.
-'set_asm' resembles the standard C function 'scanf': there's a string with literal and formatting characters (those starting
-with the '%' char) and a list of arguments for each of the formatting characters. The syntax string is not parsed by the bison 
-itself; it uses some of the functions implemented here. The general format of a set_asm declaration is:
+  set_asm is tied up to an 'ac_instr' type. It's the type used by the ArchC
+language so that instructions can be created.  Every insn declared by
+'ac_instr' can use a property called 'set_asm' to declared its assembly syntax
+and encoding scheme.  'set_asm' resembles the standard C function 'scanf':
+there's a string with literal and formatting characters (those starting with
+the '%' char) and a list of arguments for each of the formatting
+characters. The syntax string is not parsed by the bison itself; it uses some
+of the functions implemented here. The general format of a set_asm declaration
+is:
 
     <archc_instr>'.''set_asm' '(' <syntax_string> { ',' <list_of_arguments> } ')' ';'
 
-    <syntax_string> is made up of literal and formatting characters. Literals are those characters that should be matched
-    literally in the input source code whereas formatting characters always start with the symbol '%' followed by an identifier.
-    A valid identifier is the one that can be created using [a-zA-Z][_a-zA-Z0-9]* and are declared using 'the ac_asm_map' keyword
-    or else it's of a built-in type.
-    Some things you should be aware of when talking about syntax strings are:
+    <syntax_string> is made up of literal and formatting characters. Literals
+    are those characters that should be matched literally in the input source
+    code whereas formatting characters always start with the symbol '%'
+    followed by an identifier. A valid identifier is the one that can be
+    created using [a-zA-Z][_a-zA-Z0-9]* and are declared using 'the ac_asm_map'
+    keyword or else it's of a built-in type.  Some things you should be aware
+    of when talking about syntax strings are:
        
-          . the first whitespace found in the string splits it in the 'mnemonic' and 'operands' parts; if there is no whitespace
-            then there is no operand string for that insn syntax;
-            example: 
-	    	    set_asm("add x1, x2");  
-		      "add"   -> mnemonic
-		      "x1,x2" -> operands
+     . the first whitespace found in the string splits it in the 'mnemonic' and
+       'operands' parts; if there is no whitespace then there is no operand string 
+       for that insn syntax;
+        example: 
+	  set_asm("add x1, x2");  
+	    "add"   -> mnemonic
+	    "x1,x2" -> operands
 
-          . you can put the format identifier between the '[' ']' character when using the '%' character;
-            example:
-	            set_asm("add %[register],%register", ...);
-		    both '%[register]' and '%register' have the same effect
+     . you can put the format identifier between the '[' ']' character when using 
+       the '%' character;
+        example:
+	  set_asm("add %[register],%register", ...);
+	    both '%[register]' and '%register' have the same effect
 
-          . formatting string in the mnemonic part of the string has a different meaning: it tells the Acasm to expand that in the
-           symbols defined under the format identifier (only identifiers created through 'ac_asm_map' are valid);
-            example:
-                   ac_asm_map annul {
-		     "" = 0;
-                     ",a" = 1;   
-                   }
+     . formatting string in the mnemonic part of the string has a different meaning: 
+       it tells the acasm to expand that in the symbols defined under the format 
+       identifier (only identifiers created through 'ac_asm_map' are valid);
+        example:
+          ac_asm_map annul {
+	    "" = 0;
+            ",a" = 1;   
+          }
 
-        	   set_asm("bvs%[anul] %expRW", an, ...);
-		     the acasm tool will expand it in:
-                          "bvs   %expRW" (encoding the format field 'an' with the value 0);
-			  "bvs,a %expRW" (encoding the format field 'an' with the value 1);
+          set_asm("bvs%[anul] %expRW", an, ...);
+            the acasm tool will expand it in:
+             "bvs   %expRW" (encoding the format field 'an' with the value 0);
+	     "bvs,a %expRW" (encoding the format field 'an' with the value 1);
 
-          . in operand strings, every sequence of the chars [a-zA-Z0-9_$.] are grouped as a single token. All other valid characters 
-	  are also a token. Among tokens it's not necessary to specify whitespaces, they are implict.
-            example:
-                the following declarations are the same:
+     . in operand strings, every sequence of the chars [a-zA-Z0-9_$.] are grouped as a 
+       single token. All other valid characters are also a token. Among tokens it's not 
+       necessary to specify whitespaces, they are implict.
+        example:
+         the following declarations are the same:
 
-                   set_asm("add %reg,[%reg]", ...);
-		   set_asm(" add %reg , [  %reg]", ...);
+          set_asm("add %reg,[%reg]", ...);
+          set_asm(" add %reg , [  %reg]", ...);
 
-		the next one is not valid since there should be a valid identifier following the first '%' char:
+  	 the next one is not valid since there should be a valid identifier following 
+         the first '%' char:
       
-                   set_asm("add % reg, %reg", ...);
+          set_asm("add % reg, %reg", ...);
 	       
-	   . some characters cannot be part of the string. Those are described by the is_mnemonic_* and is_operand_* functions.
-           Some characters can appear in the mnemonic part but not in the operand, and vice-versa.
+     . some characters cannot be part of the string. Those are described by the 
+       is_mnemonic_* and is_operand_* functions. Some characters can appear in the mnemonic 
+       part but not in the operand, and vice-versa.
                     
-    <list_of_arguments> should match one of the fields declared through ac_format under the instruction which its assembly
-    syntax is being specified. To every marker specified in the syntax string there should be one argument. The first argument
-    found is relative to the first marker; the second argument is relative to the second marker and so. A constant argument is the
-    one which can be assigned to a constant integer or symbol at the declaration time. They don't need any marker in the syntax 
-    string
+    <list_of_arguments> should match one of the fields declared through
+    ac_format under the instruction which its assembly syntax is being
+    specified. To every marker specified in the syntax string there should be
+    one argument. The first argument found is relative to the first marker; the
+    second argument is relative to the second marker and so. A constant
+    argument is the one which can be assigned to a constant integer or symbol
+    at the declaration time. They don't need any marker in the syntax string
     
       Example:
         ("add %reg, %imm", rs, imm)   -> '%reg's argument is 'rs' and '%imm' argument is 'imm
@@ -171,39 +236,51 @@ itself; it uses some of the functions implemented here. The general format of a 
 
   Acasm Info:
 
-      A list of the insn syntaxes declared are stored in the 'asm_insn_list' variable. It can be retrieved through the
-'ac_asm_get_asm_insn_list()' function. It's up to the caller to get the info they need in the list, just be sure
-you don't change it ;)
+  A list of the insn syntaxes declared are stored in the 'asm_insn_list'
+variable. It can be retrieved through the 'ac_asm_get_asm_insn_list()'
+function. It's up to the caller to get the info they need in the list, just be
+sure you don't change it ;)
 
 
   Basic Parser Info:
 
-      When a 'set_asm' directive is found in the ArchC source file and its syntax is starting to be check, you call the 
-init function 'acpp_asm_new_insn()'. It initializes some internal information. After that, syntax strings are parsed 
-through a calling to the function 'acpp_asm_parse_asm_string()'. Arguments and constant arguments are processed by calling
-'acpp_asm_parse_asm_argument()' or 'acpp_asm_parse_const_asm_argument()'. To insert the insn to the list, call 
-'acpp_asm_end_insn()'. It's the last step when parsing the whole 'set_asm' stuff. Those functions work by creating internal
-representation of the strings being parsed. end_insn is responsable for creating the final asm string and insert it into
-the asm_insn_list.
-      The dependency among the calls to the functions is:
+  When a 'set_asm' directive is found in the ArchC source file and its syntax
+should be checked, you must call the init function 'acpp_asm_new_insn()'. It
+initializes some internal states. After that, syntax strings are parsed
+through a calling to the function 'acpp_asm_parse_asm_string()'. Arguments and
+constant arguments are processed by calling 'acpp_asm_parse_asm_argument()' or
+'acpp_asm_parse_const_asm_argument()'. To insert the insn to the list, call
+'acpp_asm_end_insn()'. It's the last step when parsing the whole 'set_asm'
+stuff. Those functions work by creating internal representation of the strings
+being parsed. end_insn is responsable for creating the final asm string and
+insert it into the asm_insn_list.
+  The dependency among the calls to the functions is:
 
-       Step 1 - call acpp_asm_new_insn() before any other function, to initialize internal states
-       Step 2 - call acpp_asm_parse_asm_insn() to parse the syntax string
-       Step 3 - either call acpp_asm_parse_asm_argument() or acpp_asm_parse_const_asm_argument() to process the each argument
-       Step 4 - call acpp_asm_end_insn() to create a new ac_asm_insn and insert it in the list of insns
+   Step 1 - call acpp_asm_new_insn() before any other function, to initialize 
+            internal states
+   Step 2 - call acpp_asm_parse_asm_insn() to parse the syntax string
+   Step 3 - either call acpp_asm_parse_asm_argument() or 
+            acpp_asm_parse_const_asm_argument() to process the each argument
+   Step 4 - call acpp_asm_end_insn() to create a new ac_asm_insn and insert it 
+            in the list of insns
 
 
+******************************* 
  -> pseudo_instr
+******************************* 
 
   syntax:
     <pseudo_insn> ::= 'pseudo_instr' '(' <pseudo_declaration> ')' '{' {<pseudo_member> ';'}*1 '}'
 
-    <pseudo_declaration> is a string of almost the same type of <syntax_string>. Markers cannot be used in the mnemonic string.
+    <pseudo_declaration> is a string of almost the same type of <syntax_string>. 
+      Markers cannot be used in the mnemonic string.
 
-    <pseudo_member> is a string with the insn syntaxes that should be executed when <pseudo_declaration> is found. This string
-    follows the same basic syntax of <syntax_string>: mnemonic string cannot use markers. Macro substitutions are made using
-    an integer from 0-9 right after the '%' character. 0 corresponds to the first marker in the <pseudo_declaration>, 1 to the
-    second, and so on...
+    <pseudo_member> is a string with the insn syntaxes that should be executed 
+      when <pseudo_declaration> is found. This string follows the same basic 
+      syntax of <syntax_string>: mnemonic string cannot use markers. Macro 
+      substitutions are made using an integer from 0-9 right after the '%' 
+      character. 0 corresponds to the first marker in the <pseudo_declaration>, 
+      1 to the second, and so on...
 
       example:
     
@@ -212,50 +289,66 @@ the asm_insn_list.
         "ori %0, %0, %1";
       }
 
-      When processing the macro insn 'li %reg, %imm', the assembler will validate and evaluate the %reg and %imm fields. Then it will 
-execute the following two insns 'lui' and 'ori'. %0 will be replaced by the evaluated %reg, and %1 will be replaced by the evaluted 
-%imm field in the 'lui' insn.
-      Note: Theorically a <pseudo_member> can be another pseudo_instr. However it's not tested yet.
+      When processing the macro insn 'li %reg, %imm', the assembler will 
+      validate and evaluate the %reg and %imm fields. Then it will execute 
+      the following two insns: 'lui' and 'ori'. %0 will be replaced by the 
+      evaluated %reg, and %1 will be replaced by the evaluted %imm field in 
+      the 'lui' insn.
+      Note: Theorically a <pseudo_member> can be another pseudo_instr. 
+        However it's not tested yet.
 
 
-  Acasm Info:
+  acasm Info:
 
-      A pseudo insn is also stored in the 'asm_insn_list'. However, some fields of the structure ac_asm_insn has some fixed values.
-'mnemonic' and 'operand' fields store the mnemonic and operands strings of <pseudo_declaration>. 'insn' field is always NULL since
-there is no ac_dec_instr attached to a pseudo. 'const_image' is always 0 since pseudo-ops don't have arguments. 'pseudo_list' is a 
-string list with all <pseudo_member> as declared in the ArchC source file. 'num_pseudo' is the number of pseudo members in the
+  A pseudo insn is also stored in the 'asm_insn_list'. However, some fields of
+the structure ac_asm_insn has some fixed values.  'mnemonic' and 'operand'
+fields store the mnemonic and operands strings of <pseudo_declaration>. 'insn'
+field is always NULL since there is no ac_dec_instr attached to a
+pseudo. 'const_image' is always 0 since pseudo-ops don't have
+arguments. 'pseudo_list' is a string list with all <pseudo_member> as declared
+in the ArchC source file. 'num_pseudo' is the number of pseudo members in the
 'pseudo_list' field.
 
 
   Basic Parser Info:
 
-      'acpp_asm_parse_asm_insn()' is also used to parse <pseudo_declaration> setting the flag 'is_pseudo' to 0 (like a native insn).
-Only after that one should call 'acpp_asm_new_pseudo()'. To insert each <pseudo_member> call 'acpp_asm_add_pseudo_member()'. It will
-insert them in the pseudo_list. To finish, call 'acpp_asm_end_insn()' to insert it in the asm_insn_list. 
-      The dependency among the calls to the functions is:
+ 'acpp_asm_parse_asm_insn()' is also used to parse <pseudo_declaration> setting
+the flag 'is_pseudo' to 0 (like a native insn).  Only after that one should
+call 'acpp_asm_new_pseudo()'. To insert each <pseudo_member>, call
+'acpp_asm_add_pseudo_member()'. It will insert them in the pseudo_list. To
+finish, call 'acpp_asm_end_insn()' to insert it in the asm_insn_list.
+  The dependency among the calls to the functions is:
        
-       Step 1 - call acpp_asm_parse_asm_insn() to parse the base pseudo-op string (<pseudo_declaration>)
-       Step 2 - call acpp_asm_new_pseudo() to initialize internal states in pseudo-op processing
-       Step 3 - call acpp_asm_add_pseudo_member() for each insn of the pseudo declaration
-       Step 4 - call acpp_asm_end_insn() to insert all in the asm_insn_list
+   Step 1 - call acpp_asm_parse_asm_insn() to parse the base pseudo-op string 
+            (<pseudo_declaration>)
+   Step 2 - call acpp_asm_new_pseudo() to initialize internal states in 
+            pseudo-op processing
+   Step 3 - call acpp_asm_add_pseudo_member() for each insn of the pseudo 
+            declaration
+   Step 4 - call acpp_asm_end_insn() to insert all in the asm_insn_list
+
 
 
 
 Some conventions:
 
-- acasm specific parser structures use the prefix string 'ac_asm' (that's because the decoder structures use 'ac_dec')
+- acasm specific parser structures use the prefix string 'ac_asm' 
+  (that's because the decoder structures use 'ac_dec')
 
-- there are no global variables shared among modules. Interface functions are used instead. Functions made for being
-used by the parser use the prefix 'acpp_asm' whereas those used by the Acasm tool or this module itself use the prefix 
-'ac_asm'.
+- there are no global variables shared among modules. Interface functions are 
+  used instead. Functions which are used by the parser use the prefix 'acpp_asm' 
+  whereas those used by the Acasm tool or this module itself use the prefix 
+  'ac_asm'.
 
-- where an error might raise, an interface function will use a variable (error_msg) to store its message and will return 0.
-The caller is responsable for allocating memory for error_msg before the call is made.
+- where an error might raise, an interface function will use a variable (error_msg) 
+  to store its message and will return 0. The caller is responsable for allocating 
+  memory for error_msg before the call is made.
 
 - variables and functions internal to this module uses the C -STATIC- qualifier.
 
 
 */
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -329,12 +422,11 @@ extern ac_dec_format *format_ins_list;   /* list of formats declared */
 
 
 /*
- Acasm interface functions
+ acasm interface functions
 */
 
 ac_asm_insn* ac_asm_get_asm_insn_list() { return asm_insn_list; }
 ac_asm_map_list* ac_asm_get_mapping_list() { return mapping_list; }
-
 
 
 
@@ -351,8 +443,6 @@ unsigned int ac_asm_encode_insn_field(unsigned int field_value, ac_dec_format *p
 
   return return_value;
 }
-
-
 
 
 
@@ -453,11 +543,11 @@ static ac_asm_symbol *find_mapping_symbol(char *symbol) {
 
  Note:
   Be careful when defining symbols for mnemonic expansions. Some characters like '.' may
-cause problems with the GNU As assembler.
+cause problems with the GNU as assembler.
    
 */
 inline static int is_map_symbol_name(char *s) {
-  if (isspace(*s) || *s == ';' || *s == '#' || *s == '\''
+  if (isspace(*s) || *s == ';' || *s == '\''
       || (*s == '/' && *(s+1) == '*')
       || (*s == '*' && *(s+1) == '/') ) 
     return 0;
@@ -504,7 +594,7 @@ inline static int is_mnemonic_begin(char *s) {
 }
 
 inline static int is_mnemonic_name(char *s) {
-  if ( *s == ';' || *s == '#' || *s == '\''
+  if ( *s == ';' || *s == '\''
       || (*s == '/' && *(s+1) == '*')
       || (*s == '*' && *(s+1) == '/') ) 
     return 0;
@@ -577,12 +667,12 @@ marker but the modifiers are invalid.
 	'imm'
 
  Modifiers:
-        'H'[s][n] s -> signed, n -> get the n-high bits
-	'R'[[b]n] b -> backward, n -> add n to PC
-	'A'[n] -> align in a paragraph of n-bits
-        'L'[n] -> get the n-low bits
+        'H'[n][c][s|u] -> signed, n -> get the n-high bits, c -> carry from lower bits
+	'R'[n][b]      -> backward, n -> add n to PC
+	'A'[n][s|u]    -> align in a paragraph of n-bits
+        'L'[n][s|u]    -> get the n-low bits
 
- There may be more than 1 modifiers per built-in base. If H and L are
+ There may be more than 1 modifier per built-in base. If H and L are
 in the same base, only the first one is taken. 
 
  The order in which the modifiers appear is NOT relevant.
@@ -619,8 +709,10 @@ static int is_builtin_marker(char *s) {
       if (ret_val & BI_MD_LO_MASK ||
 	  ret_val & BI_MD_HI_MASK) return BI_MD_INVALID_MASK;
       ret_val |= BI_MD_LO_MASK;
-      /* check for an integer following - unsigned */
+
+      /* check for an integer following */
       while (*(st+1) >= '0' && *(st+1) <= '9') st++;
+      if (*(st+1) == 's' || *(st+1) == 'u') st++;
 
       break;
 
@@ -628,17 +720,20 @@ static int is_builtin_marker(char *s) {
       if (ret_val & BI_MD_HI_MASK ||
 	  ret_val & BI_MD_LO_MASK) return BI_MD_INVALID_MASK;
       ret_val |= BI_MD_HI_MASK;
-      /* check for an integer following - signed */
-      if (*(st+1) == 's') st++;
+
+      /* check for an integer following */
       while (*(st+1) >= '0' && *(st+1) <= '9') st++;
-      
+      if (*(st+1) == 'c') st++;
+      if (*(st+1) == 's' || *(st+1) == 'u') st++;
+
       break;
 
     case 'A':
       if (ret_val & BI_MD_AL_MASK) return BI_MD_INVALID_MASK;
       ret_val |= BI_MD_AL_MASK;
-      /* check for an integer following - unsigned */
+      /* check for an integer following */
       while (*(st+1) >= '0' && *(st+1) <= '9') st++;
+      if (*(st+1) == 's' || *(st+1) == 'u') st++;
 
       break;
 
@@ -646,9 +741,9 @@ static int is_builtin_marker(char *s) {
       if (ret_val & BI_MD_REL_MASK) return BI_MD_INVALID_MASK;
       ret_val |= BI_MD_REL_MASK;
 
-      /* check for an integer following - signed */
-      if (*(st+1) == 'b') st++;
+      /* check for an integer following */
       while (*(st+1) >= '0' && *(st+1) <= '9') st++;
+      if (*(st+1) == 'b') st++;
       
       break;
 
@@ -672,41 +767,42 @@ static int is_builtin_marker(char *s) {
   See the header of this file for basic information.
   Following you will find detailed description of the implementation.
 
-  When a function might indicate an error, it will return 0 and error_msg will contain
-the ASCII message of the error.
+  When a function might indicate an error, it will return 0 and error_msg will
+contain the ASCII message of the error.
 
-  The order of the symbols and markers in the lists is the same as they appear in the source code (the new
-symbols are added in the end of list, so this will be true as long as the adding functions are called
-with the right ordering of the symbols)
+  The order of the symbols and markers in the lists is the same as they appear
+in the source code (the new symbols are added in the end of list, so this will
+be true as long as the adding functions are called with the right ordering of
+the symbols)
 
 **********************************************/
 
 
 /*
-  It's the first function to call when a mapping block (ac_asm_map) is found in the source file. It will
-clean some internal variables (symbol_name_list) and add one mapping element to mapping_list. The list
-of symbols (map_symbol_list) used by the current mapping element is also initialized and ready for eventual
-adds through add_mapping_symbol functions.
-  The symbol names for each symbol-value pair are stored in the map_symbol_list which is cleared after
-a value is assigned to its symbol(s) through add_symbol_value.
+  It's the first function to call when a mapping block (ac_asm_map) is found in
+the source file. It will clean some internal variables (symbol_name_list) and
+add one mapping element to mapping_list. The list of symbols (map_symbol_list)
+used by the current mapping element is also initialized and ready for eventual
+adds through add_mapping_symbol functions.  The symbol names for each
+symbol-value pair are stored in the map_symbol_list which is cleared after a
+value is assigned to its symbol(s) through add_symbol_value.
 
-  marker -> the name of the mapping block (it's not parsed to check for valid characters since the bison
-  parser already gives us a valid string)
+  marker -> the name of the mapping block (it's not parsed to check for valid
+  characters since the bison parser already gives us a valid string)
 
 */
 int acpp_asm_create_mapping_block(char *marker, char *error_msg)
 {
-
   /* if it's a built-in marker, quit */
   int bi = is_builtin_marker(marker);
   if (bi != BI_NONE) {
-    sprintf(error_msg, "Invalid marker name '%s' . It's a built-in type", marker);
+    sprintf(error_msg, "Invalid conversion specifier '%s' . It's a built-in type", marker);
     return 0;
   }
 
   /* if this marker is already used, quit */
   if (find_mapping_marker(marker) != NULL) {
-    sprintf(error_msg, "Marker already used: '%s'", marker);
+    sprintf(error_msg, "Conversion specifier already used: '%s'", marker);
     return 0;
   }
 
@@ -716,6 +812,7 @@ int acpp_asm_create_mapping_block(char *marker, char *error_msg)
 
   /* creates a new ac_map_list element and inserts it in the tail of the list */
   ac_asm_map_list *t_m = (ac_asm_map_list *) malloc(sizeof(ac_asm_map_list));
+
 
   t_m->marker = (char *) malloc(strlen(marker)+1);
   strcpy(t_m->marker, marker);
@@ -742,12 +839,14 @@ int acpp_asm_create_mapping_block(char *marker, char *error_msg)
 
 
 /*
-  This adds a single symbol to the current symbol names (symbol_name_list). A symbol-value pair 
-is only added to the mapping list when a call to add_symbol_value is done.
+   This adds a single symbol to the current symbol names (symbol_name_list). A
+  symbol-value pair is only added to the mapping list when a call to
+  add_symbol_value is done.
   
 
-   symbol -> the symbol to add. It must be unique for this mapping block (error if not). The symbol
-string is parsed to check for invalid characters (checked in is_map_symbol_* functions).
+   symbol -> the symbol to add. It must be unique for this mapping block (error
+if not). The symbol string is parsed to check for invalid characters (checked
+in is_map_symbol_* functions).
 
 */
 int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
@@ -758,7 +857,7 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
     return 0;
   }
 
-  /* if the symbol was not added but its queued, quit as well */
+  /* if the symbol was not added but is queued, quit as well */
   strlist *t_sl = symbol_name_list;
   while (t_sl != NULL) {
     if (!strcmp(t_sl->str, symbol)) {
@@ -802,6 +901,7 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
   strlist *t_s = (strlist *) malloc(sizeof(strlist));
   t_s->str = (char *) malloc(strlen(symbol)+1);
   strcpy(t_s->str, symbol);
+  t_s->next= NULL;
 
   if (!symbol_name_list) { 
     symbol_name_list = t_s;
@@ -818,16 +918,18 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
 
 /*
  
-  This function adds ranged symbols (those with [..]) to the symbol_name_list. It does some range 
-checking. Only non-negatives integers are allowed. It works by building each string with the range
-specified and calling add_mapping_symbol() for each single symbol created.
+  This function adds ranged symbols (those with [..]) to the
+symbol_name_list. It does some range checking. Only non-negatives integers are
+allowed. It works by building each string with the range specified and calling
+add_mapping_symbol() for each single symbol created.
 
  sb -> string before a range specification - may be NULL
  sa -> string after a range specification - may be NULL
  r1 -> start range value (must be >= 0)
  r2 -> end range value (must be >= 0)
 
-Note: 'sb' and 'sa' cannot be NULL both at the same time. This is treated as an internal error.
+Note: 'sb' and 'sa' cannot be NULL both at the same time. This is treated as an
+internal error.
 
 */
 int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *error_msg) {
@@ -855,6 +957,7 @@ int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *
   while (*p_fs != '\0') p_fs++;
 
   saved_p_fs = p_fs;
+
   int i;
   for (i=0; i<=range; i++) {
     p_fs = saved_p_fs;
@@ -874,17 +977,18 @@ int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *
 
 
 /*
-  This function should be called after adding symbols through the add_mapping_symbol functions.
-It assigns the value (or a range of values) to the symbols added. The range can include negative
-values. If val1 == val2 then it's a single value and all the symbols in symbol_name_list will
-be assigned this value. In case of a range of values, the numbers of symbols added must equal
-the value range or an error will raise.
+  This function should be called after adding symbols through the
+add_mapping_symbol functions.  It assigns the value (or a range of values) to
+the symbols added. The range can include negative values. If val1 == val2 then
+it's a single value and all the symbols in symbol_name_list will be assigned
+this value. In case of a range of values, the number of symbols added must
+equal the value range or an error will raise.
 
   val1 -> start range value (any integer)
   val2 -> end range value (any integer)
 
-  Note: Although val1 and val2 might be negative values, the lex doesn't recgonize negative values
-at the moment of this writing.
+  Note: Although val1 and val2 might be negative values, the lex doesn't
+recognize negative values at the moment of this writing.
 
 */
 // if val1 = val2 then its a unique value; otherwise it's a range
@@ -962,11 +1066,12 @@ int acpp_asm_add_symbol_value(int val1, int val2, char *error_msg) {
   See the header of this file for basic information.
   Following you will find detailed description of the implementation.
 
-  When a function might thrown an error, it will return 0 and error_msg will contain
-the ASCII message of the error.
+  When a function might thrown an error, it will return 0 and error_msg will
+contain the ASCII message of the error.
 
-  The list asm_insn_list is in alphabetical ordering. In case of a same mnemonic name, the order
-follows the way the insn syntax appear in the source file.
+  The list asm_insn_list is in alphabetical ordering. In case of a same
+mnemonic name, the order follows the way the insn syntax appear in the source
+file.
 
 **********************************************/
 
@@ -974,12 +1079,12 @@ follows the way the insn syntax appear in the source file.
   Check if a mapping marker pointed by 's' is valid. 
 
   str -> string to be validated (after the '%')
-  marker -> string in which the marker name will be stored (must be allocated by the caller) (only if
-  returned value == 1)
+  marker -> string in which the marker name will be stored (must be allocated 
+  by the caller) (only if returned value == 1)
 
 
-  str will always point to the next element after the marker name (if there is a ']', it will point after
-  that)
+  str will always point to the next element after the marker name (if there 
+  is a ']', it will point after that)
 */
 static int validate_marker(char **str, char *marker, char *error_msg) {
   int has_lbrack = 0;  
@@ -1019,8 +1124,8 @@ static int validate_marker(char **str, char *marker, char *error_msg) {
 
 
 /*
-  When parsing an 'native' insn, this function should be the one called first. It cleans internal
-variables and states.
+  When parsing an 'native' insn, this function should be the one called
+first. It cleans internal variables and states.
 
 */
 void acpp_asm_new_insn() {
@@ -1040,23 +1145,25 @@ void acpp_asm_new_insn() {
 
 
 /*
-  This function validates the asm string in the .ac files and saves a formatted version internally. The formatting done
-basicly removes additional whitespaces and put an additional scape caracter for every one found.
-  The formatted asm string is used later when creating the final version (including operands) as used by the assembler
-generated by the Acasm tool.
-  Pseudo-ops members insn uses a lightly different format (following the '%' there is a number, not identifier) that are
-stored internally in the formatted_pseudo variable (when is_pseudo == 1).
+  This function validates the asm string in the .ac files and saves a formatted
+version internally. The formatting done basicly removes additional whitespaces
+and put an additional scape caracter for every one found.  The formatted asm
+string is used later when creating the final version (including operands) as
+used by the assembler generated by the acasm tool.  Pseudo-ops members insn
+uses a lightly different format (following the '%' there is a number, not
+identifier) that are stored internally in the formatted_pseudo variable (when
+is_pseudo == 1).
 
-  asm_str   -> original string, as found in the .ac files with the set_asm directives
+  asm_str   -> original string, as found in the .ac files with the set_asm 
+               directives
 
   is_pseudo ->  0 - 'native' instructions. 
               !0 - pseudo-ops members have different semantics for the % arguments.
 
-
   Notes: 
        After each %(marker) sequence it's put a ':' character.
-       Only the marker (%) character is saved in the mnemonic part of the string. They type of the marker is saved in
-       'mnemonic_marker'.
+       Only the marker (%) character is saved in the mnemonic part of the string. 
+       The type of the marker is saved in 'mnemonic_marker'.
        Base built-in types cannot be defined by the user.
 
   Some examples of outputed format_asm_str:
@@ -1069,19 +1176,20 @@ stored internally in the formatted_pseudo variable (when is_pseudo == 1).
 
 
   TODO:
-   falta validar no caso de pseudo_instr que os mnemonicos nao possam conter markers (jah q is_pseudo == 0 e nao tem como 
-saber se eh pseudo ou nao a insn base)
+   falta validar no caso de pseudo_instr que os mnemonicos nao possam conter markers 
+   (jah q is_pseudo == 0 e nao tem como saber se eh pseudo ou nao a insn base)
    checar por sintaxe jah definida das instrucoes declaradas sob a pseudo?
 
 */
 int acpp_asm_parse_asm_string(char *asm_str, int is_pseudo, char *error_msg) {
 
-  char *s = asm_str;                  /* s     -> pointer to input asm string */
-  char *s_out;                        /* s_out -> pointer to formatted asm string (module local storage) */
+  char *s = asm_str;        /* s     -> pointer to input asm string */
+  char *s_out;              /* s_out -> pointer to formatted asm string (module local storage) */
 
   /*
-   In case of a pseudo member insn, we should not clear the numbers of operands expected for the pseudo-op
-insn, since it's used to check the limit of arguments one pseudo member may have.
+   In case of a pseudo member insn, we should not clear the numbers of operands
+expected for the pseudo-op insn, since it's used to check the limit of
+arguments one pseudo member may have.
   */
   if (!is_pseudo) num_args_expected = 0;
 
@@ -1155,7 +1263,7 @@ insn, since it's used to check the limit of arguments one pseudo member may have
 
       ac_asm_map_list *ml = find_mapping_marker(s_out);
       if (ml == NULL) {
-	sprintf(error_msg, "Marker not defined: '\%%%s'", s_out);
+	sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", s_out);  
 	in_error = 1;
 	return 0;
       }
@@ -1258,7 +1366,7 @@ insn, since it's used to check the limit of arguments one pseudo member may have
 	  s++;
 	}
 	else {
-          sprintf(error_msg, "Invalid marker identifier: '%c'", *s);
+          sprintf(error_msg, "Invalid macro substitution: '%c'", *s);
 	  in_error = 1;
           return 0;
 	}
@@ -1273,7 +1381,7 @@ insn, since it's used to check the limit of arguments one pseudo member may have
 	/* first check for a built-in marker */
 	int bi = is_builtin_marker(s_out);
 	if (bi != BI_NONE && (bi & BI_MD_INVALID_MASK)) {
-	  sprintf(error_msg, "Invalid modifier used with built-in base marker");
+	  sprintf(error_msg, "Invalid modifier used with built-in conversion specifier");
 	  //	  printf("'%s' \n", s_out);
 	  in_error = 1;
 	  return 0;
@@ -1282,7 +1390,10 @@ insn, since it's used to check the limit of arguments one pseudo member may have
 
 	  ac_asm_map_list *ml = find_mapping_marker(s_out);
 	  if (ml == NULL) {
-	    sprintf(error_msg, "Marker not defined: '\%%%s'", s_out);
+	    /* the following sequence of %'s are saved as %% and then to % when displaying.
+	       Do not try to optimize it ^^ */
+	    sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", s_out);
+
 	    in_error = 1;
 	    return 0;
 	  }
@@ -1333,16 +1444,18 @@ insn, since it's used to check the limit of arguments one pseudo member may have
 
 /*
 
- Parses an argument relative to one of the markers defined in the syntax string. An argument is basicly a field
-of the instruction where the values will be encoded by the assembler generated.
- It validates de field (check if it exists in the insn format) and create an internal string representation
-(formatted_arg_str) which is used by the assembler generated by the Acasm tool. The format of this string is
-a number describing the field within the format (from the left to the right of the insn format) followed by ':'.
+ Parses an argument relative to one of the markers defined in the syntax
+string. An argument is basicly a field of the instruction where the values will
+be encoded by the assembler generated.  It validates the field (check if it
+exists in the insn format) and create an internal string representation
+(formatted_arg_str) which is used by the assembler generated by the acasm
+tool. The format of this string is a number describing the field within the
+format (from the left to the right of the insn format) followed by ':'.
 
 
  pf  -> pointer to the format associated with this insn field
- field_str -> an argument string as found in the ArchC source file (for constant arguments, use const version 
-of this function)
+ field_str -> an argument string as found in the ArchC source file 
+ (for constant arguments, use const version of this function)
 
  Note:
    For mnemonics arguments, 'formatted_arg_str' is not changed.
@@ -1394,26 +1507,30 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, char *error_
 
 
 /*
-  Handles parsing of set_asm constant arguments. A constant argument may have two forms:
+  Handles parsing of set_asm constant arguments. A constant argument may have
+  two forms:
     . an int const of the form:   <field> = int_value
     . a string const of the form: <field> = str_value
 
-  pf        -> pointer to the format of the instruction this argument is being set to
+  pf        -> pointer to the format of the instruction this argument is being 
+               set to
   field_str -> <field> field of the instruction format which will be constant
-  iconst_field, sconst_field -> integer and string const field. Only one must be valid at a time. A value of
-NULL in sconst_field indicates this constant argument is of type int. Otherwise it's a string type
+  iconst_field, sconst_field -> integer and string const field. Only one must be 
+               valid at a time. A value of NULL in sconst_field indicates this 
+               constant argument is of type int. Otherwise it's a string type
  
-
-  Constant argument does not alter the 'formatted_arg_str'. Instead, it uses c_image to store the const value assigned
-by the user in an ArchC source file.
+  Constant argument does not alter the 'formatted_arg_str'. Instead, it uses
+c_image to store the const value assigned by the user in an ArchC source file.
 
   examples:
 
    ArchC source:  "imm = 10"
-      . 10 will be encoded in its right position within the format field 'imm' and saved in 'c_image'
+      . 10 will be encoded in its right position within the format field 'imm' 
+        and saved in 'c_image'
 
    ArchC source:  "imm = $ra"
-      . first the value of '$ra' will be found, then it'll encoded and saved in 'c_image'
+      . first the value of '$ra' will be found, then it'll encoded and saved 
+        in 'c_image'
 
 */
 int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int iconst_field, char *sconst_field, char *error_msg) {
@@ -1450,9 +1567,11 @@ int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int ic
 
 
 /*
-  This should be called after the syntax string and argument field are processed.
-  Strings 'formatted_asm_str' and 'formatted_arg_str' are merged and a new acpp_asm_insn is inserted in the insn 
-list. In case a mnemonic marker exists, its expansion is done here also.
+  This should be called after the syntax string and argument field are
+  processed.  
+  Strings 'formatted_asm_str' and 'formatted_arg_str' are merged
+  and a new acpp_asm_insn is inserted in the insn list. In case a mnemonic
+  marker exists, its expansion is done here also.
 
   p -> pointer to the relative ac_dec_insn 
 
@@ -1681,19 +1800,19 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
   See the header of this file for basic information.
   Following you will find detailed description of the implementation.
 
-  When a function might thrown an error, it will return 0 and error_msg will contain
-the ASCII message of the error.
+  When a function might thrown an error, it will return 0 and error_msg will
+contain the ASCII message of the error.
 
 **********************************************/
 
 
 
 /*
- This function should be called right after acpp_asm_parse_asm_insn() to initialize internal
-variables.
- It creates a dummy argument string buffer (formatted_arg_str) since pseudo_instrs don't have
-arguments. This way, acpp_asm_end_insn() can also be used by pseudo_instrs insn to insert them
-in the main insn list.
+ This function should be called right after acpp_asm_parse_asm_insn() to
+initialize internal variables.
+ It creates a dummy argument string buffer (formatted_arg_str) since
+pseudo_instrs don't have arguments. This way, acpp_asm_end_insn() can also be
+used by pseudo_instrs insn to insert them in the main insn list.
 
 */
 void acpp_asm_new_pseudo() {
@@ -1715,10 +1834,12 @@ void acpp_asm_new_pseudo() {
 
 
 /*
-  This function validates de string 'pseudo' (by callign acpp_asm_parse_asm_strin with pseudo_field
-set) and then inserts the formatted string in the pseudo_list variable at the tail of the list.
+  This function validates de string 'pseudo' (by callign
+acpp_asm_parse_asm_strin with pseudo_field set) and then inserts the formatted
+string in the pseudo_list variable at the tail of the list.
 
-  pseudo -> a pseudo string member of a pseudo_instr declaration as found in the ArchC source files.
+  pseudo -> a pseudo string member of a pseudo_instr declaration as found in
+  the ArchC source files.
 
 */
 int acpp_asm_add_pseudo_member(char *pseudo, char *error_msg)
