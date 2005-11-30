@@ -29,7 +29,7 @@ me=`echo "$0" | sed -e 's,.*/,,'`
 usage="\
 Usage: $0 [options] <archc source file> <architecture name>
 
-Create gas dependent source files and copy them to the binutils tree.
+Create gas target source files and copy them to the binutils tree.
 
 Options:
   -c, --create-only  only create the files, do not copy to binutils tree
@@ -39,14 +39,13 @@ Options:
 Report bugs and patches to ArchC Team."
 
 version="\
-ArchC assembler generator script -beta version-
-
-2005 - Only for internal use"
+ArchC assembler generator script version 1.5.1"
 
 help="
 Try \`$me --help' for more information."
 
-CREATE_ONLY="0"
+CREATE_ONLY=0
+PATCH_BINUTILS=1  #1 means to patch, 0 otherwise
 
 # Parse command line
 while test $# -gt 0 ; do
@@ -56,7 +55,7 @@ while test $# -gt 0 ; do
     --help | --h* | -h )
        echo "$usage"; exit 0 ;;
     --create-only | -c )
-       CREATE_ONLY="1"; shift; break ;;  
+       CREATE_ONLY=1; shift; break ;;  
 #    -- )     # Stop option processing
 #       shift; break ;;
     -* )
@@ -70,7 +69,7 @@ done
 case $# in
  0 | 1) echo "$me: missing argument$help" >&2
     exit 1;;
- 2 | 3) ;;
+ 2) ;;
  *) echo "$me: too many arguments$help" >&2
     exit 1;;
 esac
@@ -79,13 +78,68 @@ esac
 # check for environment variable definitions
 #
 if [ -z "$ARCHC_PATH" ]; then
-  echo "ARCHC_PATH environment variable not set"
-  exit 1
+
+    TMP="$0"
+
+    # If relative path (does not start with '/')
+    if [ $TMP = ${TMP#/} ]; then
+
+        # Append full current directory (possibly removing a starting './')
+        TMP="$PWD/${TMP#./}"
+
+    fi
+
+    # Follow symbolic links
+    ERROR=0;
+    while [ $ERROR -eq 0 ]; do
+        NAME=$TMP
+        TMP=`readlink $TMP`
+        ERROR=$?
+
+        if [ $TMP = ${TMP#/} ]; then
+            #found relative name (prefix with dirname)
+            TMP=`dirname $NAME`/${TMP}
+        fi
+
+    done
+
+    # Find base name
+    BASENAME=`basename $NAME`
+
+    # Remove basename and bin/ dir from complete name
+    export ARCHC_PATH=${NAME%/bin/$BASENAME}
+
+    if [ $ARCHC_PATH = $NAME ]; then
+        echo "This program points to an invalid ArchC instalation" >&2
+        echo "To solve this problem you can do one of:" >&2
+        echo "1) Use a simbolic link instead of copying the ArchC tool." >&2
+        echo "2) Set ARCHC_PATH environment variable to the ArchC"\
+            "installation directory. (be sure to export in bash)" >&2
+        exit 1
+    fi
+
+    # Search for config file
+    if [ ! -f $ARCHC_PATH/config/archc.conf ]; then
+        echo "ArchC appears to be installed in $ARCHC_PATH, but it is not"\
+            "correctly configurated. Please run the line bellow to create"\
+            "the config file." >&2
+        echo "   make -C $ARCHC_PATH" >&2
+        exit 1
+    fi
 fi
 
+
 if [ -z "$BINUTILS_PATH" ]; then
-  echo "BINUTILS_PATH environment variable not set"
+
+  BINUTILS_PATH=`grep BINUTILS_PATH $ARCHC_PATH/config/archc.conf | cut -d = -f2`
+  BINUTILS_PATH=`echo $BINUTILS_PATH`
+  
+  if [ -z "$BINUTILS_PATH" ]; then
+    echo "BINUTILS_PATH environment variable not set"
   exit 1
+
+  fi 
+
 fi
 
 # check for '/' at the end and take it out
@@ -102,6 +156,28 @@ include/opcode/$2.h
 include/elf/$2.h
 bfd/elf32-$2.c
 bfd/cpu-$2.c"
+
+
+if [ "$CREATE_ONLY" -eq 0 ]; then
+# tell the user if the architecture name already exists in Binutils
+  $BINUTILS_DIR/config.sub $2-elf > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "==================="
+    echo "asmgen.sh has detected that your Binutils distribution already uses the"
+    echo "architecture name '$2'."
+    echo
+    echo "It is not recommended to continue if you have not set it by yourself."
+#  echo "If you continue, the Binutils files will not be patched."
+    echo "==================="
+    echo
+    read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+    echo
+    case $USER_ANSWER in 
+	y | yes | Y | YES) PATCH_BINUTILS=0; break;;
+	* ) echo "Quitting acasm.sh..."; echo; exit 1;;
+    esac
+  fi
+fi
 
 # creates binutils directory tree (if none was built)
 for directory in $BINUTILS_TREE
@@ -131,15 +207,16 @@ sed s/xxxxx/$2/g binutils/gas/config/tc-templ.ct > binutils/gas/config/tc-templ.
 cat binutils/gas/config/tc-templ.cr binutils/gas/config/tc-funcs.c > binutils/gas/config/tc-$2.c
 [ $? -ne 0 ] && exit $?
 
-if [ "$CREATE_ONLY" -ne "0" ]; then
+if [ "$CREATE_ONLY" -ne 0 ]; then
   echo "Done. No files copied."
+  echo
   exit 0
 fi
 
 # check if we need to patch the files
-$BINUTILS_DIR/config.sub $2-elf > /dev/null 2>&1
+#$BINUTILS_DIR/config.sub $2-elf > /dev/null 2>&1
 
-if [ $? -ne 0 ]; then
+if [ "$PATCH_BINUTILS" -ne 0 ]; then
 # applies the patch 
     echo "Patching... "
     for file in $FILES_TO_PATCH
@@ -174,7 +251,7 @@ if [ $? -ne 0 ]; then
     chmod a+x $BINUTILS_DIR/bfd/config.bfd
 
 else
-    echo "Configuration triplet $2-elf found. Configuration files won't be patched."
+    echo "Skipping patching..."
 fi
 
 # copies the generated files into binutils tree
@@ -186,3 +263,4 @@ do
 done
 
 echo "All done successfully."
+echo

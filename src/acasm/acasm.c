@@ -1,3 +1,28 @@
+/* 
+    ArchC assembler generator - Copyright (C) 2002-2005  The ArchC Team
+
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the Free
+    Software Foundation; either version 2 of the License, or (at your option)
+    any later version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+    more details.
+*/
+
+/********************************************************/
+/* acasm.c: The ArchC assembler generator.              */
+/* Author: Alexandro Baldassin                          */
+/* Date: 01-06-2005                                     */
+/*                                                      */
+/* The ArchC Team                                       */
+/* Computer Systems Laboratory (LSC)                    */
+/* IC-UNICAMP                                           */
+/* http://www.lsc.ic.unicamp.br                         */
+/********************************************************/
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -49,7 +74,7 @@ static void internal_error() {
 #define IND5 "          "
 
 /* Opcodes library variable names */ 
-#define OPCODE_TABLE_VAR_DEF  "const acasm_opcode opcodes[]"
+#define OPCODE_TABLE_VAR_DEF  "acasm_opcode opcodes[]"
 #define NUM_OPCODES_VAR_DEF   "const int num_opcodes"
 #define PSEUDO_TABLE_VAR_DEF  "const char *pseudo_instrs[]"
 #define NUM_PSEUDOS_VAR_DEF   "const int num_pseudo_instrs"
@@ -88,7 +113,7 @@ static void show_usage(FILE * stream)
 /* Show version number (--version) */
 static void show_version(FILE *stream)
 {
-  fprintf(stream, "This is acasm beta version - Only for internal use\n");
+  fprintf(stream, "This is acasm version 1.5.1\n");
 }
 
 char *arch_name = NULL; /* name of the architecture */
@@ -106,19 +131,19 @@ static const struct option longopts[] =
 
 
 
-
-
 /*
   Main Code
 
 */
 int main(int argc, char **argv)
 {
-  //  char *archc_arch_file;
-  extern char *isa_filename;  // got from architecture file by the parser
+
+  /* got from architecture file by the parser */
+  extern char *isa_filename;  
 
   /* Initializes the pre-processor */
-  // TODO: make acppInit() accept a parameter telling whether extended set_asm parameter is to be recognized or not
+  /* TODO: make acppInit() accept a parameter telling whether extended 
+     set_asm parameter is to be recognized or not */
   extern int support_extended_setasm;
   support_extended_setasm = 1;
   acppInit();
@@ -165,18 +190,16 @@ int main(int argc, char **argv)
     default:
       show_usage(stdout);
       exit(1);
-
     }
   }
 
   if (file_name == NULL) {
     fprintf(stderr, "No ArchC description file specified.\n");
-    //    show_usage(stdout);
     exit(1);
   }
+
   if (arch_name == NULL) {
     fprintf(stderr, "No architecture name specified.\n");
-    //    show_usage(stdout);
     exit(1);
   }
 
@@ -185,6 +208,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "Invalid file: '%s'.\n", file_name);
     exit(1);
   }
+
   if (acppRun()) {
     fprintf(stderr, "Parser error in ARCH file.\n");
     exit(1);
@@ -295,7 +319,7 @@ static int CreateOpcHFile() {
   fprintf(output, "%sunsigned long image;\n", IND1);
   fprintf(output, "%sunsigned long format_id;\n", IND1);
   fprintf(output, "%sunsigned long pseudo_idx;\n", IND1);
-    fprintf(output, "%sunsigned long counter;\n", IND1);
+  fprintf(output, "%sunsigned long counter;\n", IND1);
   fprintf(output, "} acasm_opcode;\n");
 
   fprintf(output, "\n");
@@ -355,7 +379,7 @@ static int CreateOpcCFile() {
   CreateAsmSymbolTable(output);  /* write the symbol table */
   
   fprintf(output, "\n");
-  CreatePseudoOpsTable(output);   /* write the pseudo-op table */
+  CreatePseudoOpsTable(output);  /* write the pseudo-op table */
 
   fprintf(output, "\n");
 
@@ -402,6 +426,9 @@ static int CreateOpcCFile() {
   . unsigned long pseudo_idx
     An index to the first instruction to be executed in case this is a pseudo instruction
 
+  . unsigned long counter
+    (optional) Used to count the number of instruction assembled
+
 */
 static void CreateOpcodeTable(FILE *output)
 {
@@ -414,7 +441,7 @@ static void CreateOpcodeTable(FILE *output)
   /* table name */
   fprintf(output, "%s = {\n", OPCODE_TABLE_VAR_DEF);
 
-  long pseudo_idx = 1;  /* index to a instruction in the pseudo_instr table */  
+  long pseudo_idx = 1;  /* index to an instruction in the pseudo_instr table */  
   while (asml != NULL) {
 
     /* mnemonic */
@@ -436,7 +463,7 @@ static void CreateOpcodeTable(FILE *output)
     
     if (asml->insn != NULL) { /* native instructions */
 
-      /* gets the format of this instruction. 0 is the first */
+      /* get the format of this instruction. 0 is the first */
       format_id = 0;
       while ((pfrm != NULL) && strcmp(asml->insn->format, pfrm->name)) {
 	format_id++; 
@@ -486,7 +513,6 @@ static void CreateOpcodeTable(FILE *output)
      Optional statistic field
      ***/
     fprintf(output, ",\t0");
-
 
 
     fprintf(output, "},\n"); 
@@ -609,14 +635,14 @@ static int CreateBfdCpuFile() {
 
   /* the structure */
   fprintf(output, "const bfd_arch_info_type bfd_%s_arch = {\n", arch_name);
-  fprintf(output, "%s32,\n", IND1); // bits in a word
-  fprintf(output, "%s32,\n", IND1); // bits in an address
+  fprintf(output, "%s32,\n", IND1); /* bits in a word */
+  fprintf(output, "%s32,\n", IND1); /* bits in an address */
   fprintf(output, "%s8,\n", IND1);
   fprintf(output, "%sbfd_arch_%s,\n", IND1, arch_name); 
   fprintf(output, "%s0,\n", IND1);
   fprintf(output, "%s\"%s\",\n", IND1, arch_name);
   fprintf(output, "%s\"%s\",\n", IND1, arch_name);
-  fprintf(output, "%s3,\n", IND1); // section align power
+  fprintf(output, "%s3,\n", IND1); /* section align power */
   fprintf(output, "%sTRUE,\n", IND1);
   fprintf(output, "%sbfd_default_compatible,\n", IND1);
   fprintf(output, "%sbfd_default_scan,\n", IND1);
@@ -749,8 +775,9 @@ static int CreateTcHFile() {
   fprintf(output, "typedef struct fix_addend {\n");
   fprintf(output, "%sunsigned long insn_format_id;\n", IND1);
   fprintf(output, "%sunsigned long insn_field_id;\n", IND1);
-  fprintf(output, "%sint apply_shift;\n", IND1);
-  fprintf(output, "%sint apply_mask;\n", IND1);
+  fprintf(output, "%sint al_value;\n", IND1);
+  fprintf(output, "%sint hl_value;\n", IND1);
+
   fprintf(output, "%sint flag;\n", IND1);
   fprintf(output, "%sint field_size;\n", IND1);
   fprintf(output, "%sint pcrel_add;\n", IND1);
@@ -789,6 +816,15 @@ static int CreateTcHFile() {
   fprintf(output, "%sgoto skip_label; \\\n", IND3);
   fprintf(output, "%swhile (0)\n", IND1);
   fprintf(output, "extern int %s_validate_fix(struct fix *, asection *);\n", arch_name);
+
+  fprintf(output, "\n");
+
+  fprintf(output, "extern void %s_elf_final_processing PARAMS ((void));\n", arch_name);
+  fprintf(output, "#define elf_tc_final_processing %s_elf_final_processing\n", arch_name);
+
+  fprintf(output, "\n");
+
+  fprintf(output, "#define DIFF_EXPR_OK            /* foo-. gets turned into PC relative relocs */");
 
   fprintf(output, "\n");
   fprintf(output, "#endif\n");
@@ -830,10 +866,8 @@ static int CreateTcCFile() {
   if ((output = fopen(buffer, "w")) == NULL) 
     return 0;
 
-
   CreateEncodingFunc(output);
   CreateGetFieldSizeFunc(output);
-
 
   fclose(output);
   return 1;

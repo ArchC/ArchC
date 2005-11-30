@@ -27,10 +27,14 @@
 #define BI_MD_MASK   (BI_MD_REL_BIT | BI_MD_HI_BIT | BI_MD_LO_BIT | BI_MD_AL_BIT)
 
 /* FLAGS used with flag field in fixups */
-#define FIX_FLAG_LO      0        /* low field */
-#define FIX_FLAG_HI      1        /* high field */
-#define FIX_FLAG_HIS    (1 << 1)  /* high field, signed */
-#define FIX_FLAG_PCREL  (1 << 2)  /* pc relative */
+#define FIX_FLAG_LO        0        /* low field */
+#define FIX_FLAG_HI        1        /* high field */
+#define FIX_FLAG_HI_CARRY (1 << 1)  /* high field with carry from lower bits */
+#define FIX_FLAG_PCREL    (1 << 2)  /* pc relative */
+#define FIX_FLAG_ALIGNED  (1 << 3)  /* aligned (power of 2) */
+#define FIX_FLAG_HL_SIGN  (1 << 4)
+#define FIX_FLAG_AL_SIGN  (1 << 5)
+#define FIX_FLAG_LO_DATA  (1 << 6)
 
 #ifdef __STDC__
 #define INTERNAL_ERROR() as_fatal (_("Internal error: line %d, %s"), __LINE__, __FILE__)
@@ -65,7 +69,7 @@ static void encode_cons_field(unsigned long val_const, unsigned int bi_type, lon
 /*
   variables used by the core
 */
-const char comment_chars[] = "#!@";  // # - MIPS, ! - SPARC, @ - ARM
+const char comment_chars[] = "#!";  // # - MIPS, ! - SPARC, @ - ARM
 const char line_comment_chars[] = "#";
 const char line_separator_chars[] = ";";
 
@@ -92,12 +96,13 @@ static struct hash_control *sym_hash = NULL;
 static struct hash_control *op_hash = NULL;
 
 /* command line options */
+enum {absolute, rel, rela} output_mode = absolute;
 static int ignore_undef = 0;
-static int no_extern_rels = 0;
-static int no_rels = 0;
-static int start_text_addr = 0;
-static int start_data_addr = 0;
-static int data_after_text = 0;
+//static int no_extern_rels = 0;
+//static int no_rels = 0;
+static int text_addr = 0;
+static int data_addr = 0;
+static int data_after_text = 1;
 
 /* assuming max input = 64 */
 static int log_table[] = {  0 /*invalid*/,  0, 1, 1, 
@@ -113,8 +118,10 @@ static int log_table[] = {  0 /*invalid*/,  0, 1, 1,
 static int valhl = 0;  // value used to return H or L addends
 static int valr = 0;   // value used to return R addends
 static int vala = 0;   // value used to return A addends
-static int hi_signed = 0; // if 1, high must be encoded signed
 
+static int is_hl_signed = 0;
+static int is_alig_signed = 1; // align defaults to signed
+static int high_has_carry = 0;
 
 /* every error msg due to a parser error is stored here 
    NULL implies no error has occured  */
@@ -137,10 +144,11 @@ static struct insn_encoding
   unsigned int op_num;
   unsigned int op_pos[9*2];
 
-  int need_fix;  
+  int need_fix;
+  expressionS ref_expr_fix; /* symbol in which the relocation points to */
   int fix_pcrel_add; /* PC + x */
-  int fix_apply_shift;
-  int fix_apply_mask;
+  int fix_al_value;
+  int fix_hl_value;
   int fix_flag;      /* see FIX_FLAG_*  */
   int fix_field_size;
   int fix_field_id;  /* field to be fixed */
@@ -268,7 +276,7 @@ md_assemble(char *str)
   } 
 
   if (insn_error) {
-    as_bad(_("%s in insn: '%s'\n"), insn_error, str);
+    as_bad(_("%s in insn: '%s'"), insn_error, str);
     return;
   }
 
@@ -450,7 +458,7 @@ void ac_parse_operands(char *s_pos, char *args)
 	    return;
 	  }
 
-          create_fixup(bi_type, field_id);	  
+          create_fixup(bi_type, field_id);
             
 	  break;
 
@@ -522,6 +530,9 @@ void ac_parse_operands(char *s_pos, char *args)
 
 	  *s_pos = save_c;	        	    
 	}
+
+	/* NEVER!!! discomment the line below O.O */
+	/* if (out_insn.is_pseudo) return; */
 
 	/* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
 	out_insn.image |= ac_encode_insn(out_insn.format, field_id, symbol_value);
@@ -630,7 +641,9 @@ static void emit_insn() {
   if (out_insn.need_fix) {
     fixS *fixP;
 
-    if (ref_expr.X_add_symbol == NULL) 
+    ref_expr = out_insn.ref_expr_fix;
+
+    if (ref_expr.X_op != O_symbol)
       INTERNAL_ERROR();
 
     fixP = fix_new_exp (frag_now, frag_address - frag_now->fr_literal /* where */, AC_WORD_SIZE/8 /* size */,
@@ -641,11 +654,24 @@ static void emit_insn() {
     
     fixP->tc_fix_data.insn_format_id = out_insn.format;
     fixP->tc_fix_data.insn_field_id = out_insn.fix_field_id;
-    fixP->tc_fix_data.apply_mask = out_insn.fix_apply_mask;
-    fixP->tc_fix_data.apply_shift = out_insn.fix_apply_shift; 
+    fixP->tc_fix_data.al_value = out_insn.fix_al_value;
+    fixP->tc_fix_data.hl_value = out_insn.fix_hl_value; 
+    //    fixP->tc_fix_data.apply_mask = out_insn.fix_apply_mask;
+    //    fixP->tc_fix_data.apply_shift = out_insn.fix_apply_shift; 
     fixP->tc_fix_data.flag = out_insn.fix_flag;
     fixP->tc_fix_data.field_size = out_insn.fix_field_size;
     fixP->tc_fix_data.pcrel_add = out_insn.fix_pcrel_add;
+
+#ifdef PRINT_FIXUP
+    printf("Symbol - %s :\n", S_GET_NAME(ref_expr.X_add_symbol));
+    printf("field size = %x\n", out_insn.fix_field_size);
+    printf("hl value = %x\n", out_insn.fix_hl_value);
+    printf("pcrel add = %x\n", out_insn.fix_pcrel_add);
+    printf("al value = %x\n", out_insn.fix_al_value);
+    printf("fix flag = %x\n", out_insn.fix_flag);
+    printf("field id = %x\n", out_insn.fix_field_id);
+    printf("reloc = %x\n\n", S_GET_VALUE(ref_expr.X_add_symbol));  
+#endif
 
   }
 
@@ -705,10 +731,10 @@ md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 
   /*
     If the relocation must be stored in reloc field (rather than in the insn itself) and the relocation
-    is against a symbol (not a pc-relavite local)
+    is against a symbol (not a pc-relative local)
     don't reloc anything against a symbol
    */
-  if (no_rels && fixP->fx_addsy != NULL) {
+  if ((output_mode == rela) && fixP->fx_addsy != NULL) {
     fixP->fx_done = 1;
     return;
   }
@@ -719,6 +745,20 @@ md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
   bfd_byte *location = (bfd_byte *) (fixP->fx_frag->fr_literal + fixP->fx_where);
   bfd_vma relocation = *valP; //fixP->fx_addnumber;
 
+  /*
+    This is used by expressions of type 'foo-.' which gets turned into PC relative
+    Included because of susan.s for PPC generated something like:
+    .data
+    .L395:
+       .long .L387-.L395
+       .long .L396-.L395
+
+       where .L396 is a forward reference to a .text symbol
+
+    This addition is related to the DIFF_EXPR_OK define
+   */
+  if (fixP->fx_pcrel && (fixP->fx_addsy != NULL) && S_IS_DEFINED(fixP->fx_addsy))
+    relocation += fixP->fx_where+fixP->fx_frag->fr_address;
 
   /* the relocation is against a symbol... 
      if a start address has been specified, add the symbol's seg offset 
@@ -729,12 +769,12 @@ md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
     if (S_GET_SEGMENT(fixP->fx_addsy) == data_section) {
       if (data_after_text)
         relocation += (bfd_section_size(stdoutput, text_section)/bfd_octets_per_byte(stdoutput))
-          +start_text_addr;
+          +text_addr;
       else
-        relocation += start_data_addr;
+        relocation += data_addr;
     }
     else if (S_GET_SEGMENT(fixP->fx_addsy) == text_section)
-      relocation += start_text_addr;
+      relocation += text_addr;
   }
 
 
@@ -747,32 +787,38 @@ md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 
   /* modifiers' applying order
      1 - PC relative (already applied by core)
-     2 - high/low
+     2 - high-carry/high/low
      3 - alignment (and a sign extension)
   */
-
-
-  if (fixP->tc_fix_data.flag & FIX_FLAG_HIS)
-    apply_hi_operator(&relocation, fixP->tc_fix_data.field_size);
   
-
-  int field_size = get_field_size(fixP->tc_fix_data.insn_format_id,
-                                  fixP->tc_fix_data.insn_field_id);
+  int fix_flag = fixP->tc_fix_data.flag;
 
 
-  relocation &= fixP->tc_fix_data.apply_mask;
+  if (fix_flag & FIX_FLAG_HI_CARRY)
+    apply_hi_operator(&relocation, fixP->tc_fix_data.hl_value);
 
-  if (fixP->tc_fix_data.apply_shift) { /* alignment and sign extension reajust */
-    relocation >>= fixP->tc_fix_data.apply_shift; 
-    sign_extend(&relocation, field_size, fixP->tc_fix_data.field_size-fixP->tc_fix_data.apply_shift);
+  if ((fix_flag & FIX_FLAG_HI_CARRY) || (fix_flag & FIX_FLAG_HI) || (fix_flag & FIX_FLAG_LO) || (fix_flag & FIX_FLAG_LO_DATA)) {
+    if ((fix_flag & FIX_FLAG_HI_CARRY) || (fix_flag & FIX_FLAG_HI))
+      relocation >>= 32-fixP->tc_fix_data.hl_value; // shift to the lower bits
+    else
+      relocation &= (0xFFFFFFFF >> (32-fixP->tc_fix_data.hl_value));
+    if (fix_flag & FIX_FLAG_HL_SIGN)
+      sign_extend(&relocation, fixP->tc_fix_data.field_size, fixP->tc_fix_data.hl_value);
   }
 
 
-  if (fixP->tc_fix_data.insn_field_id != (unsigned int)-1) 
+  if (fix_flag & FIX_FLAG_ALIGNED) {
+    relocation >>= fixP->tc_fix_data.al_value;
+    if (fix_flag & FIX_FLAG_AL_SIGN)
+      sign_extend(&relocation, fixP->tc_fix_data.field_size, fixP->tc_fix_data.hl_value-fixP->tc_fix_data.al_value);
+  }
+
+
+  if (fix_flag & FIX_FLAG_LO_DATA)
+    x |= relocation;
+  else 
     x |= ac_encode_insn(fixP->tc_fix_data.insn_format_id, fixP->tc_fix_data.insn_field_id, 
 			relocation);  
-  else  /* simple relocations (data section) */
-    x |= relocation;
      
   ac_put_bits(x, location, AC_WORD_SIZE);
  
@@ -784,18 +830,20 @@ int
 xxxxx_validate_fix(struct fix *fixP, asection *seg)
 {
 
-  /* force all fix-ups to be relocated */
-  if (!no_extern_rels) return 1;
+  /* force all fix-ups to be relocated, excepted a 'rel' case */
+  if (output_mode == rel) {
 
 
   /*
     don't adjust external fixups or the ones with undefined symbols, except the cases where an addend 
     must be encoded (like in MIPS: lw $2, %lo(extern+10)($10) --> 10 must be encoded anyway)
   */
-  if ((S_IS_EXTERN(fixP->fx_addsy)) || (!S_IS_DEFINED (fixP->fx_addsy))) {
-    if (fixP->fx_offset != 0)   /* offset = operand addend (constant) */
-      md_apply_fix3(fixP, &fixP->fx_offset, seg);
-    fixP->fx_done = 1;  /* don't call md_apply_fix3 anymore */
+    if ((S_IS_EXTERN(fixP->fx_addsy)) || (!S_IS_DEFINED (fixP->fx_addsy))) {
+      if (fixP->fx_offset != 0)   /* offset = operand addend (constant) */
+	md_apply_fix3(fixP, &fixP->fx_offset, seg);
+      fixP->fx_done = 1;  /* don't call md_apply_fix3 anymore */
+      return 0;
+    }
   }
 
   return 1;
@@ -833,7 +881,7 @@ the bfd alignment, and return the next aligned address. I've not tested that tho
 
 
 /*
-   Called (by operand()) when symbols might get their values taken like:
+   Called (by emit_expr()) when symbols might get their values taken like:
    .data
    .word label2
 */
@@ -850,16 +898,42 @@ xxxxx_cons_fix_new(struct frag *frag, int where, unsigned int nbytes, struct exp
 
   fixP->tc_fix_data.insn_format_id = (unsigned int) -1;  /* -1 is for data items */
   fixP->tc_fix_data.insn_field_id = (unsigned int) -1;
-  fixP->tc_fix_data.apply_shift = 0;
-  fixP->tc_fix_data.apply_mask = 0xFFFFFFFF >> (AC_WORD_SIZE - nbytes*8);
-  fixP->tc_fix_data.flag = FIX_FLAG_LO;   // this must be expanded to FIX_FLAG_8, _16 (nbytes)
-  fixP->tc_fix_data.field_size = nbytes*8;
+  //  fixP->tc_fix_data.apply_shift = 0;
+  //  fixP->tc_fix_data.apply_mask = 0xFFFFFFFF >> (AC_WORD_SIZE - nbytes*8);
+  fixP->tc_fix_data.al_value = 0;
+  fixP->tc_fix_data.hl_value = nbytes*8;
+  fixP->tc_fix_data.flag = FIX_FLAG_LO_DATA;   
+  fixP->tc_fix_data.field_size = AC_WORD_SIZE;//nbytes*8;
   fixP->tc_fix_data.pcrel_add = 0;
 
   if (!fixP) INTERNAL_ERROR();
 
 } 
  
+
+void
+xxxxx_elf_final_processing (void) {
+  /*
+  see elf.c file (bfd directory), function prep_headers() for details
+ 
+  The routine prep_headers, set the e_entry to bfd_get_start_address();
+
+  */
+  /* Maybe it should be at md_begin()? */
+  elf_elfheader(stdoutput)->e_entry = text_addr;  /* sanity */
+  if (!bfd_set_start_address(stdoutput, text_addr))
+    INTERNAL_ERROR();
+
+  text_section->vma = text_addr;
+
+  if (data_after_text)
+    data_section->vma = (bfd_section_size(stdoutput, text_section)/bfd_octets_per_byte(stdoutput))+text_addr;
+  else
+    data_section->vma = data_addr;
+
+  bss_section->vma = (bfd_section_size(stdoutput, data_section)/bfd_octets_per_byte(stdoutput))+data_section->vma;
+}
+
 
 /* ---------------------------------------------------------------------------------------
  Static functions
@@ -992,14 +1066,14 @@ const char *md_shortopts = "";
 struct option md_longopts[] =
 {
   {"ignore-undef", no_argument, NULL, OPTION_MD_BASE},
-  {"no-extern-rels", no_argument, NULL, OPTION_MD_BASE+1},  
-  {"no-rels", no_argument, NULL, OPTION_MD_BASE+2},
+  //  {"no-extern-rels", no_argument, NULL, OPTION_MD_BASE+1},  
+  //  {"no-rels", no_argument, NULL, OPTION_MD_BASE+2},
+  {"output-mode", required_argument, NULL, OPTION_MD_BASE+1},
 
   /* Note: these options don't generate a correct listing */
-  {"text-addr", required_argument, NULL, OPTION_MD_BASE+3},
-  {"data-addr", required_argument, NULL, OPTION_MD_BASE+4},
-
-  {"archc", no_argument, NULL, OPTION_MD_BASE+5} 
+  {"text-addr", required_argument, NULL, OPTION_MD_BASE+2},
+  {"data-addr", required_argument, NULL, OPTION_MD_BASE+3},
+  {"archc", no_argument, NULL, OPTION_MD_BASE+4} 
 };
 size_t md_longopts_size = sizeof (md_longopts);
 
@@ -1007,13 +1081,21 @@ size_t md_longopts_size = sizeof (md_longopts);
 static void
 archc_show_information()
 {
-  fprintf (stderr, _("GNU assembler automaticly generated by acasm beta version.\n"));
+  fprintf (stderr, _("GNU assembler automatically generated by acasm 1.5.1.\n\
+Architecture name: xxxxx.\n"));
 }
 
 
 int
 md_parse_option (int c, char *arg)
 {
+  /* Needed in the case:
+
+    as --text-addr=xxx --data-addr=.text --output-mode=rel [or rela]
+  
+  */
+  static int flag_dat = 0;
+
   switch (c) 
     {
     case OPTION_MD_BASE+0: /* ignore undefined symbols */
@@ -1021,31 +1103,43 @@ md_parse_option (int c, char *arg)
       break;
 
     case OPTION_MD_BASE+1:
-      no_extern_rels = 1;
+      if (!strcmp(arg, "absolute")) {
+	output_mode = absolute;
+	data_after_text = 1;
+      }
+      else if (!strcmp(arg, "rel")) {
+	output_mode = rel;
+	data_after_text = flag_dat;
+      }
+      else if (!strcmp(arg, "rela")) {
+	output_mode = rela;
+	data_after_text = flag_dat;
+      }
+      
       break;
 
-    case OPTION_MD_BASE+2:
-      no_rels = 1;
-      break;
-
-    case OPTION_MD_BASE+3: /* .text addr */
+    case OPTION_MD_BASE+2: /* .text addr */
       if (*arg == '0' && *(arg+1) == 'x') /* hexa */
-        start_text_addr = strtol(arg, NULL, 16);
+        text_addr = strtol(arg, NULL, 16);
       else
-        start_text_addr = atoi(arg);
+        text_addr = atoi(arg);
       break;
 
-    case OPTION_MD_BASE+4: /* .data addr */
+    case OPTION_MD_BASE+3: /* .data addr */
 
       if (!strcmp(arg, ".text"))
-        data_after_text = 1;
-      else if (*arg == '0' && *(arg+1) == 'x') /* hexa */
-        start_data_addr = strtol(arg, NULL, 16);
-      else
-        start_data_addr = atoi(arg);
+	flag_dat = 1;
+      else if (*arg == '0' && *(arg+1) == 'x') {/* hexa */
+        data_addr = strtol(arg, NULL, 16);
+	data_after_text = 0;
+      }
+      else {
+        data_addr = atoi(arg);
+	data_after_text = 0;
+      }
       break;
 
-    case OPTION_MD_BASE+5: /* display archc version information; */  
+    case OPTION_MD_BASE+4: /* display archc version information; */  
       archc_show_information();
       exit (EXIT_SUCCESS); 
       break;
@@ -1065,14 +1159,16 @@ md_show_usage (FILE *stream)
 
   fprintf (stream, _("\
   --ignore-undef          ignore undefined symbols\n"));
+
   fprintf (stream, _("\
-  --no-extern-rels        do not perform relocation against extern symbols\n"));
-  fprintf (stream, _("\
-  --no-rels               do not perform internal relocation\n"));
+  --output-mode=<mode>    set the format of the output file\n\
+                          <mode>: absolute, rel, rela\n"));
+
   fprintf (stream, _("\
   --text-addr=<addr>      set the start address of .text section to <addr>\n"));
   fprintf (stream, _("\
   --data-addr=<addr>      set the start address of .data section to <addr>\n"));
+
   fprintf (stream, _("\
   --archc                 display ArchC information\n"));
 }
@@ -1133,7 +1229,18 @@ long
 md_pcrel_from (fixP)
      fixS *fixP;
 {
-  return fixP->fx_where + fixP->fx_frag->fr_address + fixP->tc_fix_data.pcrel_add;
+  if (fixP->fx_addsy == NULL)
+    INTERNAL_ERROR();
+
+  /* 
+   Be sure to not try to relocate against a undefined symbol
+  */
+  if (!S_IS_DEFINED(fixP->fx_addsy)) {
+    as_warn (_("Cannot resolve conditional jump to undefined symbol: %s. Assuming 0"), S_GET_NAME(fixP->fx_addsy));
+    return 0;
+  }
+  else
+    return fixP->fx_where + fixP->fx_frag->fr_address + fixP->tc_fix_data.pcrel_add;
 }
 
 symbolS *md_undefined_symbol (char *name ATTRIBUTE_UNUSED)
@@ -1156,6 +1263,9 @@ int xxxxx_parse_name(char *name, expressionS *expP, char *c ATTRIBUTE_UNUSED) {
 
   if (in_imm_mode) { /* no name allowed when getting an 'imm' operand */
     insn_error = "invalid operand, expected a number";
+
+    expP->X_op = O_absent;       /* some machines crash without these lines */
+    expP->X_add_symbol = NULL; 
     return 1;
   }
 
@@ -1195,14 +1305,16 @@ void apply_hi_operator(unsigned long *value, unsigned long field_size) {
   sign_extend(&low_number, 32, 32-field_size);
 
   *value -= low_number;      
+
+
 }
 
 
 
 /*
   value -> the value to be extended
-  bit_size -> size (in bits) of the final field
-  sign_bit -> position (from right to left) of the sign bit 1-based
+  bit_size -> size (in bits) of the final field (returned value)
+  sign_bit -> position (from right to left) of the sign bit (1-based)
 
   Example:
   value: 0xFFFB6
@@ -1227,7 +1339,6 @@ sign_extend(unsigned long *value, int bit_size, int sign_bit)
 
 
 
-
 /*
  Bases:
         'exp'
@@ -1235,10 +1346,10 @@ sign_extend(unsigned long *value, int bit_size, int sign_bit)
 	'imm'
 
  Modifiers:
-        'H'[s][n] s -> signed, n -> get the n-high bit
-        'L'[n] -> get the n-low bits
-	'R'[b][n] b -> backward, n -> add n to PC
-	'A'[n] -> align in a paragraph of n-bits
+        'H'[n][c][u|s] -> n -> get the n-high bit -- u or s (unsigned or unsigned) -- c - add carry from lower bits
+        'L'[n][u|s] -> get the n-low bits
+	'R'[n][b] -> backward, n -> add n to PC
+	'A'[n][u|s] -> align in a paragraph of n-bits
 
  st : null-terminated string with the conversion specifier  
 */
@@ -1249,7 +1360,9 @@ get_builtin_marker(char *st)
   valhl = 0;
   valr  = 0;
   vala  = 0;
-  hi_signed = 0;
+  is_hl_signed = 0;
+  is_alig_signed = 1;
+  high_has_carry = 0;
 
   unsigned int ret_val = BI_NONE;
 
@@ -1292,7 +1405,8 @@ get_builtin_marker(char *st)
       break;
 
     default:
-      return ret_val | BI_MD_INV_BIT;
+      INTERNAL_ERROR();
+      //return ret_val | BI_MD_INV_BIT;
     }
 
     st++;
@@ -1320,6 +1434,8 @@ get_addend(char addend_type, char **st)
 {
   char *sl = *st;
   sl++;
+
+  /*
   if (addend_type == 'H' && *sl == 's') {
     hi_signed = 1;
     sl++;
@@ -1330,6 +1446,7 @@ get_addend(char addend_type, char **st)
     sl++;
     st++;
   }
+  */
 
   while (*sl >= '0' && *sl <= '9') sl++;
       
@@ -1345,8 +1462,59 @@ get_addend(char addend_type, char **st)
       valr = atoi((*st)+1);
 
     *sl = savec;
-    *st = sl-1;
+    //    *st = sl-1;
   }
+
+  switch (addend_type) {
+
+  case 'H': // [c][u|s]
+    if (*sl == 'c') {
+      sl++;
+      high_has_carry = 1;
+    }
+    // fall through
+    /*
+    if (*sl == 's') {
+      sl++;
+      is_hl_signed = 1;
+    }
+    else if (*sl == 'u') {
+      sl++;
+      is_hl_signed = 0;
+    }
+    break;
+    */
+  case 'L': // [u|s]
+    if (*sl == 's') {
+      sl++;
+      is_hl_signed = 1;
+    }
+    else if (*sl == 'u') {
+      sl++;
+      is_hl_signed = 0;
+    }
+    break;
+ 
+  case 'R': // [b]
+    if (*sl == 'b') {
+      sl++;
+      valr = valr * (-1);
+    }
+    break;
+ 
+  case 'A': // [u|s]
+    if (*sl == 's') {
+      sl++;
+      is_alig_signed = 1;
+    }
+    else if (*sl == 'u') {
+      sl++;
+      is_alig_signed = 0;
+    }
+    break;
+  }
+
+  *st = sl-1;
 }
 
 
@@ -1413,27 +1581,32 @@ create_fixup(unsigned int bi_type, long int field_id)
   int high = (bi_type & BI_MD_HI_BIT) ? 1 : 0;
   int pcrel = (bi_type & BI_MD_REL_BIT) ? 1 : 0;
 
+  if (out_insn.is_pseudo) return;
+
   if (out_insn.need_fix)  /* only one fixup for instruction allowed */
     INTERNAL_ERROR();
 
   out_insn.need_fix = 1; 
+  out_insn.fix_flag = 0;
 
-  out_insn.fix_flag |= pcrel ? FIX_FLAG_PCREL : 0;
+  out_insn.fix_field_size = (int)get_field_size(out_insn.format, field_id);
+  out_insn.fix_hl_value = valhl ? valhl : (int)get_field_size(out_insn.format, field_id);
   out_insn.fix_pcrel_add = valr;
-  out_insn.fix_apply_shift = align ? (vala ? log_table[vala] : log_table[AC_WORD_SIZE/8]) : 0;
+  out_insn.fix_al_value = align ? (vala ? log_table[vala] : log_table[AC_WORD_SIZE/8]) : 0;
 
-  if (high) {
-    out_insn.fix_flag |= hi_signed ? FIX_FLAG_HIS : FIX_FLAG_HI;
-    out_insn.fix_field_size = valhl ? valhl : (int)get_field_size(out_insn.format, field_id);
-    out_insn.fix_apply_shift += valhl ? AC_WORD_SIZE-valhl : AC_WORD_SIZE-(int)get_field_size(out_insn.format, field_id);
-    out_insn.fix_apply_mask = 0xFFFFFFFF;
-  }
-  else { /* low */
-    out_insn.fix_apply_mask = valhl ? 0xFFFFFFFF >> (32-valhl) : 0xFFFFFFFF >> (32-get_field_size(out_insn.format, field_id)); 
-    out_insn.fix_field_size = valhl ? valhl : (int)get_field_size(out_insn.format, field_id);
-  }
-	    
+  // PCREL fixup settings
+  out_insn.fix_flag |= pcrel ? FIX_FLAG_PCREL : 0;
+
+  // ALIGN fixup settings
+  out_insn.fix_flag |= align ? FIX_FLAG_ALIGNED : 0;
+  out_insn.fix_flag |= align ? (is_alig_signed ? FIX_FLAG_AL_SIGN : 0) : 0;
+
+  // HIGH/LOW fixup settings
+  out_insn.fix_flag |= high ? (high_has_carry ? FIX_FLAG_HI_CARRY : FIX_FLAG_HI) : FIX_FLAG_LO;
+  out_insn.fix_flag |= is_hl_signed ? FIX_FLAG_HL_SIGN : 0;
+
   out_insn.fix_field_id = field_id;
+  out_insn.ref_expr_fix = ref_expr;
 }
 
 
@@ -1444,10 +1617,12 @@ encode_cons_field(unsigned long val_const, unsigned int bi_type, long int field_
   int high = (bi_type & BI_MD_HI_BIT) ? 1 : 0;
   //  int pcrel = (bi_type & BI_MD_REL_BIT) ? 1 : 0;
 	    
+  if (out_insn.is_pseudo) return;
+
   /* DO NOT ADD PCREL IN EXPRESSIONS OPERANDS */
   if (high) {
     int high_value = valhl ? valhl : (int)get_field_size(out_insn.format, field_id);
-    if (hi_signed)
+    if (high_has_carry)
       apply_hi_operator(&val_const, high_value);
     
     val_const >>= (AC_WORD_SIZE - high_value);
