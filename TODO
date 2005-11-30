@@ -21,3 +21,6 @@ TO DO:
 	necessary because different models, no matter how differently
 	configured, will have to share the same library binary objects, to
 	avoid great chaos;
+ - all files must adhere to the new code comment & organization rules;
+ - acsim must be cleaned, its deprecated functions must be removed;
+ - delay dilemma: should the delay option continue to work?
