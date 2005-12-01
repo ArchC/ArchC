@@ -1295,103 +1295,79 @@ void CreateISAHeader() {
   fprintf( output, "#include \"ac_decoder_rt.H\"\n");
   fprintf( output, "#include \"ac_instr_info.H\"\n");
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
+  fprintf( output, "#include \"%s_arch_ref.H\"\n", project_name);
   fprintf( output, "\n\n");
 
-  /* _isa must inherit from every instruction type class */
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "#include \"%s_type_%s.H\"\n",
-            project_name, pformat->name);
-  }
-
-  fprintf( output, "\n");
-
-  fprintf( output, "class %s_isa: ", project_name,
+  fprintf( output, "class %s_isa: public %s_arch_ref {\n", project_name,
            project_name);
-
-  /* _isa must inherit from every instruction type class */
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf( output, "public %s_type_%s", project_name, pformat->name);
-    if (pformat->next != NULL) {
-      fprintf(output, ", ");
-    }
-  }
-  fprintf(output, " {\n");
 
   fprintf(output, "private:\n");
   fprintf(output, "typedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", project_name);
 
   fprintf(output, "public:\n");
 
-  // [ARCHC_2_0]
-  // Não existem objetos para pseudo-instruções.
-
-
-  // [ARCHC_2_0]
-  // Não existem objetos para instrução genérica.
-
   fprintf( output, "\n");
   fprintf( output, "%sstatic ac_dec_field fields[%s_parms::AC_DEC_FIELD_NUMBER];\n", INDENT[1], project_name);
   fprintf( output, "%sstatic ac_dec_format formats[%s_parms::AC_DEC_FORMAT_NUMBER];\n", INDENT[1], project_name);
   fprintf( output, "%sstatic ac_dec_list dec_list[%s_parms::AC_DEC_LIST_NUMBER];\n", INDENT[1], project_name);
   fprintf( output, "%sstatic ac_dec_instr instructions[%s_parms::AC_DEC_INSTR_NUMBER];\n", INDENT[1], project_name);
-  fprintf( output, "%sstatic const ac_instr_info<%s_isa> instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n", INDENT[1], project_name, project_name);
+  fprintf( output, "%sstatic const ac_instr_info<%s_isa> instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1], project_name, project_name);
 
-  fprintf( output, "\n");
   fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
 
-  /* set_fields() method --- UGLY */
-  fprintf(output, "%svoid set_fields( ac_instr_t instr ){\n", INDENT[1]);
-  /* sets the fields for each format */
-  for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next) {
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      fprintf(output, "%s%s_type_%s::%s = instr.get(%d);\n",
-              INDENT[2],
-              project_name,
-              pformat->name,
-              pfield->name,
-              pfield->id);
-    }
-  }
-
-  fprintf(output, "%s};\n", INDENT[1]);
-
   //Emiting Constructor.
-  fprintf( output,"\n");
-  COMMENT(INDENT[1], "Constructor.\n");
-  fprintf( output,"%s%s_isa(%s_arch& ref) : %s_instruction(ref),\n", INDENT[1],
+  COMMENT(INDENT[1], "Constructor.");
+  fprintf( output,"%s%s_isa(%s_arch& ref) : %s_arch_ref(ref) {\n", INDENT[1],
            project_name, project_name, project_name);
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf( output, "%s%s_type_%s(ref)", INDENT[2], project_name, pformat->name);
-    if (pformat->next != NULL) {
-      fprintf(output, ",\n");
-    }
-  }
-  fprintf(output, " {\n\n");
 
   COMMENT(INDENT[2], "Building Decoder.");
-  fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n\n", INDENT[2], project_name, project_name );
-
-#ifdef ADD_DEBUG
-  fprintf( output,"\n#ifdef AC_DEBUG_DECODER\n" );
-  fprintf( output,"      ShowDecFormat(%s_isa::formats);\n", project_name );
-  fprintf( output,"      ShowDecoder(decoder -> decoder, 0);\n" );
-  fprintf( output,"#endif \n" );
-#endif
-
-  // [ARCHC_2_0]
-  // Inicialização de instr_table é estática, não ocorre mais dentro
-  // do construtor (está em _isa_init.H).
-
-/*     if( ACStatsFlag ){ */
-/*       fprintf( output, "%s\n", INDENT[2]); */
-/*       COMMENT(INDENT[2], "Initializing Instruction Statistics table.\n"); */
-/*       fprintf( output, "%sfor( int i = 0; i < AC_DEC_INSTR_NUMBER; i++)\n", INDENT[2] ); */
-/*       fprintf( output, "%sac_sim_stats.instr_table[instructions[i].id].name = instructions[i].name;\n", INDENT[3]); */
-/*     } */
-/*   }      */
+  fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n", INDENT[2], project_name, project_name );
 
   /* Closing constructor declaration. */
-  fprintf( output,"%s}\n", INDENT[1] );
+  fprintf( output,"%s}\n\n", INDENT[1] );
+
+  /* Instruction Behavior Method declarations */
+  /* instruction */
+    fprintf(output, "%svoid _behavior_instruction();\n\n", INDENT[1]);
+
+  /* begin & end */
+  fprintf(output, "%svoid _behavior_begin();\n", INDENT[1]);
+  fprintf(output, "%svoid _behavior_end();\n\n", INDENT[1]);
+
+  /* types/formats */
+  for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
+    fprintf(output, "%svoid _behavior_%s_%s(",
+            INDENT[1], project_name, pformat->name);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      if (pfield -> sign)
+        fprintf(output, "int %s", pfield->name);
+      else
+        fprintf(output, "unsigned int %s", pfield->name);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ");\n");
+  }
+  fprintf(output, "\n");
+
+  /* instructions */
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    for (pformat = format_ins_list;
+         (pformat != NULL) && strcmp(pinstr->format, pformat->name);
+         pformat = pformat->next);
+    fprintf(output, "%svoid behavior_%s(",
+            INDENT[1], pinstr->name);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      if (pfield -> sign)
+        fprintf(output, "int %s", pfield->name);
+      else
+        fprintf(output, "unsigned int %s", pfield->name);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ");\n");
+  }
+  fprintf(output, "\n");
 
   /* Closing class declaration. */
   fprintf( output,"};\n\n" );
