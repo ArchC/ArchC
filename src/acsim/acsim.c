@@ -375,14 +375,6 @@ int main( argc, argv )
     CreateArchRefImpl();
     //Creating ISA Header File
     CreateISAHeader();
-    /* Creating _instruction.H file */
-    CreateInstructionHeader();
-    /* Creating format header files. */
-    CreateFormatHeaders();
-    //Creating ARCH Header File
-    CreateARCHHeader();
-    //Creating ARCH Impl File
-/*     CreateARCHImpl(); */
 
     //Now, declare stages if a pipeline was declared
     //Otherwise, declare one sc_module to simulate the processor datapath
@@ -1583,12 +1575,6 @@ void CreateFormatHeaders() {
 
 }
 
-//!Creates the ARCH Header File.
-void CreateARCHHeader() {
-  
-}
-
- 
 //!Creates Stage Module Header File  for Single Pipelined Architectures.
 void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
 
@@ -3218,167 +3204,6 @@ void CreateArchImpl() {
   fprintf( output, "}\n\n");  
 
 }
-
-//!Creates the ARCH Implementation File.
-void CreateARCHImpl() {
-
-  extern ac_stg_list *stage_list;
-  extern ac_pipe_list *pipe_list;
-  extern ac_stg_list *stage_list;
-  extern ac_sto_list *storage_list;
-  extern char *project_name;
-  extern int stage_num;
-  ac_sto_list *pstorage;
-  ac_stg_list *pstage;
-  ac_pipe_list *ppipe;
-  int i;
-
-  char filename[256];
-  char description[] = "Architecture Module implementation file.";
- 
-  //! File containing ISA declaration
-  FILE  *output;
-  
-  sprintf( filename, "%s_arch.cpp", project_name);
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, description);
-
-  fprintf( output, "#include \"ac_parms.H\"\n");
-  fprintf( output, "#include  \"%s_arch.H\"\n", project_name);
-  if( ACVerifyFlag ){
-    fprintf( output, "#include  \"ac_msgbuf.H\"\n");
-    fprintf( output, "#include  \"sys/msg.h\"\n");
-  }
-  fprintf( output, " \n");
-
-  //Emiting Verification Method.
-  COMMENT(INDENT[0],"Verification method.\n");               
-  fprintf( output, "%svoid %s_arch::ac_verify(){\n", INDENT[0], project_name);        
-
-  if( ACVerifyFlag ){
-
-    fprintf( output, "extern int msqid;\n");
-    fprintf( output, "struct log_msgbuf lbuf;\n");
-    fprintf( output, "log_list::iterator itor;\n");
-    fprintf( output, "log_list *plog;\n");
-  }
-  fprintf( output, " \n");
-
-
-  fprintf( output, "%sif( ", INDENT[1]);
-
-  if(stage_list){
-    for( i =1; i<= stage_num-1; i++)    
-      fprintf( output, "st%d_done.read() && \n%s", i, INDENT[2]); 
-    fprintf( output, "st%d_done.read() )\n", stage_num); 
-  }
-  else if ( pipe_list ){
-
-    for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
-
-      for( pstage = ppipe->stages; pstage->next != NULL; pstage=pstage->next)
-        fprintf( output, "%s%s_%s_done.read() && \n", INDENT[1], ppipe->name, pstage->name);
-
-      if( ppipe->next )  //If we have another pipe in the list, do it normally, otherwise, close if condition
-        fprintf( output, "%s%s_%s_done.read() && \n", INDENT[1], ppipe->name, pstage->name);
-      else
-        fprintf( output, "%s%s_%s_done.read() )\n", INDENT[1], ppipe->name, pstage->name);
-				
-    }
-  }
-  else{
-    fprintf( output, "done.read() )\n"); 
-  }
-
-  fprintf( output, "%s  {\n", INDENT[2]);
-
-    
-  fprintf( output, "#ifdef AC_VERBOSE\n");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    fprintf( output, "%s%s.change_dump(cerr);\n", INDENT[3],pstorage->name );
-  }
-  fprintf( output, "#endif\n");
-
-
-  fprintf( output, "#ifdef AC_UPDATE_LOG\n");
-
-  if( ACVerifyFlag ){
-
-    int next_type = 3;
-
-    fprintf( output, "%sif( sc_simulation_time() ){\n", INDENT[3]);
-
-    //Sending logs for every storage device. We just consider for co-verification caches, regbanks and memories
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-      if( pstorage->type == MEM ||
-          pstorage->type == ICACHE ||
-          pstorage->type == DCACHE ||
-          pstorage->type == CACHE ||
-          pstorage->type == REGBANK ){
-
-        fprintf( output, "%splog = %s.get_changes();\n", INDENT[4],pstorage->name );
-        fprintf( output, "%sif( plog->size()){\n", INDENT[4] );
-        fprintf( output, "%sitor = plog->begin();\n", INDENT[5] );
-        fprintf( output, "%slbuf.mtype = %d;\n", INDENT[5], next_type );
-        fprintf( output, "%swhile( itor != plog->end()){\n\n", INDENT[5] );
-        fprintf( output, "%slbuf.log = *itor;\n", INDENT[6] );
-        fprintf( output, "%sif( msgsnd(msqid, (struct log_msgbuf *)&lbuf, sizeof(lbuf), 0) == -1)\n", INDENT[6] );
-        fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[7] );
-        fprintf( output, "%sitor = plog->erase(itor);\n", INDENT[6] );
-        fprintf( output, "%s}\n", INDENT[5] );
-        fprintf( output, "%s}\n\n", INDENT[4] );
-			
-        next_type++;
-      }
-    }
-    fprintf( output, "%s}\n\n", INDENT[3] );
-		
-  }
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    //fprintf( output, "%s%s.change_save();\n", INDENT[3],pstorage->name );
-    fprintf( output, "%s%s.reset_log();\n", INDENT[3],pstorage->name );          
-  }
-	
-  fprintf( output, "#endif\n");
-
-
-  if(stage_list){
-    for( i =1; i<= stage_num; i++)    
-      fprintf( output, "%sst%d_done.write(0);\n", INDENT[3], i);  
-  }
-  else  if ( pipe_list ){
-		
-    for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
-			
-      for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
-        fprintf( output, "%s%s_%s_done.write(0);\n", INDENT[1], ppipe->name, pstage->name);
-
-    }
-  }
-  else{
-    fprintf( output, "%sdone.write(0);\n", INDENT[3]); 
-  }
-
-  fprintf( output, "%s  }\n", INDENT[2]);
-  fprintf( output, "%s}\n\n", INDENT[0]);
-
-  //!Emit update method.
-  if( stage_list )
-    EmitPipeUpdateMethod( output);
-  else if ( pipe_list )
-    EmitMultiPipeUpdateMethod( output);
-  else
-    EmitUpdateMethod( output);
-
-  //!END OF FILE.
-  fclose(output);
-}
-
 
 /*!Create the template for the .cpp file where the user has
   the basic code for the main function. */

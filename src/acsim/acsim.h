@@ -183,9 +183,6 @@ void CreateArchRefHeader(void);                  //!< Create the header file for
 void CreateArchRefImpl(void);                  //!< Create the .cpp file for proj_arch_ref class.
 void CreateTypeHeader(void);                      //!< Create the header file for ArchC types.
 void CreateISAHeader(void);                       //!< Create the header file for the AC_ISA derived class.
-void CreateInstructionHeader(void); /**< Creates the header file _instruction.H */
-void CreateFormatHeaders(void); /**< Creates the format header files */
-void CreateARCHHeader(void);                      //!< Create the header file for the AC_ARCH derived class.
 void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name);  //!< Create the header files for pipeline stages.
 void CreateProcessorHeader(void);                 //!< Create the header file for the processor module.
 void CreateParmHeader(void);                      //!< Create the header file for ArchC common parameters.
@@ -202,8 +199,6 @@ void CreateRegsImpl(void);                        //!< Create the .cpp template 
 void CreateImplTmpl(void);                        //!< Create the .cpp template file for behavior description.
 void CreateMainTmpl(void);                        //!< Create the .cpp template file for the main function.
 void CreateProcessorImpl(void);                   //!< Create the .cpp file for processor module.
-void CreateARCHImpl(void);                        //!< Create the .cpp file for AC_ARCH derived class.
-//@}
 
 /** @defgroup emitfunc Emit Functions
  * @ingroup acsim
