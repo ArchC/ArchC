@@ -1390,27 +1390,46 @@ void CreateISAHeader() {
   fprintf( output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr ()\n\n");
 
   /* ac_behavior 2nd level macros - generic instruction */
-  fprintf(output, "#define AC_BEHAVIOR_instruction() %s_instruction::_behavior_instruction()\n", project_name);
+  fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction()\n", project_name);
 
   fprintf(output, "\n");
 
-  /* ac_behavior 2nd level macros - pseudo-instructions begin, end, error */
-  fprintf(output, "#define AC_BEHAVIOR_begin() %s_instruction::_behavior_begin()\n", project_name);
-  fprintf(output, "#define AC_BEHAVIOR_end() %s_instruction::_behavior_end()\n", project_name);
-  fprintf(output, "#define AC_BEHAVIOR_error() %s_instruction::_behavior_error()\n", project_name);
+  /* ac_behavior 2nd level macros - pseudo-instructions begin, end */
+  fprintf(output, "#define AC_BEHAVIOR_begin() %s_isa::_behavior_begin()\n", project_name);
+  fprintf(output, "#define AC_BEHAVIOR_end() %s_isa::_behavior_end()\n", project_name);
 
   fprintf(output, "\n");
 
   /* ac_behavior 2nd level macros - instruction types */
   for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "#define AC_BEHAVIOR_%s() %s_type_%s::_behavior_%s_%s()\n", pformat->name, project_name, pformat->name, project_name, pformat->name);
+    fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::_behavior_%s_%s(", pformat->name, project_name, project_name, pformat->name);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      if (pfield -> sign)
+        fprintf(output, "int %s", pfield->name);
+      else
+        fprintf(output, "unsigned int %s", pfield->name);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ")\n");
   }
-
   fprintf(output, "\n");
 
   /* ac_behavior 2nd level macros - instructions */
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    fprintf(output, "#define AC_BEHAVIOR_%s() %s_type_%s::behavior_%s()\n", pinstr->name, project_name, pinstr->format, pinstr->name);
+    fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::behavior_%s(", pinstr->name, project_name, pinstr->name);
+    for (pformat = format_ins_list;
+         (pformat != NULL) && strcmp(pinstr->format, pformat->name);
+         pformat = pformat->next);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      if (pfield -> sign)
+        fprintf(output, "int %s", pfield->name);
+      else
+        fprintf(output, "unsigned int %s", pfield->name);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ")\n");
   }
 
   /* END OF FILE */
