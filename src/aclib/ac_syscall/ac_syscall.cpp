@@ -1,20 +1,3 @@
-#include "ac_syscall.H"
-#include "ac_utils.H"
-#include "ac_arch.H"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-
-#include <sys/times.h>
-#include <time.h>
-
 // Fix incompatibility from NewLib flags and Linux flags
 
 #define NEWLIB_O_RDONLY          0x0000
