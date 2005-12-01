@@ -31,14 +31,14 @@
 
 #ifdef USE_GDB
 #include "ac_gdb.H"
-extern AC_GDB *gdbstub;
+// extern AC_GDB *gdbstub;
 #endif /* USE_GDB */
 
 #ifdef AC_VERIFY
 
 //Declaring co-verification message queue
-key_t key;
-int msqid;
+// key_t key;
+// int msqid;
 
 
 #endif
@@ -75,7 +75,7 @@ void ac_init_opt( int ac, char* av[]){
       cerr << "  --version               Display ArchC version and options used when built\n";
       cerr << "  --load=<prog_path>      Load target application\n";
 #ifdef USE_GDB
-      cerr << "  --gdb[=<port>]          Enable GDB support\n";
+//       cerr << "  --gdb[=<port>]          Enable GDB support\n";
 #endif /* USE_GDB */
       exit(1);
     }
@@ -119,17 +119,17 @@ void ac_init_app( int ac, char* av[]){
       strcpy(appfilename, appname);
     }
 #ifdef USE_GDB    
-    if( (size>=5) && (!strncmp( av[1], "--gdb", 5))){ //Enable GDB support
-      int port = 0;
-      if ( size > 6 )
-        { 
-          port = atoi( av[1] + 6 );
-          if ( ( port > 1024 ) && gdbstub )
-            gdbstub->set_port( port );
-        }
-      if ( gdbstub ) 
-        gdbstub->enable();
-    }
+//     if( (size>=5) && (!strncmp( av[1], "--gdb", 5))){ //Enable GDB support
+//       int port = 0;
+//       if ( size > 6 )
+//         { 
+//           port = atoi( av[1] + 6 );
+//           if ( ( port > 1024 ) && gdbstub )
+//             gdbstub->set_port( port );
+//         }
+//       if ( gdbstub ) 
+//         gdbstub->enable();
+//     }
 #endif /* USE_GDB */
     
     ac --;
