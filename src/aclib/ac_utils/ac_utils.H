@@ -51,8 +51,6 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
-#include "ac_log.H"
-#include "ac_instr.H"
  
 using std::list;
 using std::setw;

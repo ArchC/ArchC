@@ -3985,7 +3985,7 @@ void CreateMakefile(){
   //Declaring FILES variable
   COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
   COMMENT_MAKE("They are stored in the archc/src/aclib directory");
-  fprintf( output, "ACFILES := ac_utils.cpp %s",
+  fprintf( output, "ACFILES := %s",
            (ACGDBIntegrationFlag)?"ac_gdb.cpp breakpoints.cpp ":"");
 
   if( HaveMemHier )
@@ -4002,7 +4002,7 @@ void CreateMakefile(){
   //Declaring ACLIBFILES variable
   COMMENT_MAKE("These are the library files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/lib directory");
-  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ");
+  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o ");
   if(ACABIFlag)
     fprintf(output, "ac_syscall.o ");
   fprintf(output, "\n\n");

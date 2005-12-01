@@ -24,10 +24,7 @@
 /* http://www.lsc.ic.unicamp.br                         */
 /********************************************************/
  
-
 #include "ac_utils.H"
-#include "ac_decoder_rt.H"
-#include "ac_arch.H"
 
 #ifdef USE_GDB
 #include "ac_gdb.H"
