@@ -3993,19 +3993,19 @@ void CreateMakefile(){
 
   if(ACStatsFlag)
     fprintf( output, "ac_stats.cpp ");
-                
-  if(ACABIFlag)
-    fprintf( output, "ac_syscall.cpp ");
-                
+
   if(ACEncoderFlag)
     fprintf( output, "ac_encoder.cpp ");
-                
+
   fprintf( output, "\n\n");
 
   //Declaring ACLIBFILES variable
   COMMENT_MAKE("These are the library files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/lib directory");
-  fprintf( output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o \n\n");
+  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ");
+  if(ACABIFlag)
+    fprintf(output, "ac_syscall.o ");
+  fprintf(output, "\n\n");
 
   //Declaring FILESHEAD variable
   COMMENT_MAKE("These are the headers files provided by ArchC");
