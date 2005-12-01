@@ -101,10 +101,10 @@ void ac_syscall<ac_word, ac_Hword>::open()
   int flags = get_int(1); correct_flags(&flags);
   int mode = get_int(2);
   int ret = ::open((char*)pathname, flags, mode);
-//   if (ret == -1) {
-//     AC_RUN_ERROR("System Call open (file '%s'): %s\n", pathname, strerror(errno));
-//     exit(EXIT_FAILURE);
-//   }
+  if (ret == -1) {
+    AC_RUN_ERROR("System Call open (file '%s'): %s\n", pathname, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
   set_int(0, ret);
   return_from_syscall();
 }
