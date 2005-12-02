@@ -25,20 +25,11 @@
 
 /// Struct containing information about a generic ArchC instruction.
 /// Each entry of the processor ISA instruction table has type
-/// ac_instr_info<isa_class>.
-template<class isa_class> struct ac_instr_info {
-
-  /// Parametric type for a processor ISA instruction behavior.
-  typedef void (isa_class::*bhv_function)();
+/// ac_instr_info.
+struct ac_instr_info {
 
   /// Instruction number.
   int ac_instr_number;
-
-  /// Pointer to specific instruction behavior.
-  bhv_function ac_instr_behavior;
-
-  /// Pointer to instruction's type behavior.
-  bhv_function ac_instr_type_behavior;
 
   char* ac_instr_name;           /**< Instruction name. */
   char* ac_instr_mnemonic;       /**< Instruction mnemonic. */
@@ -49,8 +40,6 @@ template<class isa_class> struct ac_instr_info {
   
   /// Default constructor.
   explicit ac_instr_info(int number,
-			 bhv_function behavior,
-			 bhv_function type_behavior,
 			 char* name,
 			 char* mnemonic,
 			 unsigned size = 0,
@@ -59,8 +48,6 @@ template<class isa_class> struct ac_instr_info {
 			 unsigned max_latency = 0) :
 
     ac_instr_number(number),
-    ac_instr_behavior(behavior),
-    ac_instr_type_behavior(type_behavior),
     ac_instr_name(name),
     ac_instr_mnemonic(mnemonic),
     ac_instr_size(size),
