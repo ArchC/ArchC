@@ -1311,7 +1311,7 @@ void CreateISAHeader() {
   fprintf( output, "%sstatic ac_dec_format formats[%s_parms::AC_DEC_FORMAT_NUMBER];\n", INDENT[1], project_name);
   fprintf( output, "%sstatic ac_dec_list dec_list[%s_parms::AC_DEC_LIST_NUMBER];\n", INDENT[1], project_name);
   fprintf( output, "%sstatic ac_dec_instr instructions[%s_parms::AC_DEC_INSTR_NUMBER];\n", INDENT[1], project_name);
-  fprintf( output, "%sstatic const ac_instr_info<%s_isa> instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1], project_name, project_name);
+  fprintf( output, "%sstatic const ac_instr_info instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1], project_name, project_name);
 
   fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
 
