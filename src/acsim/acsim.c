@@ -3655,12 +3655,6 @@ void CreateMakefile(){
   if(ACABIFlag)
     fprintf( output, "$(MODULE)_syscall.H ");
 
-  /* INSTRUCTION TYPES HEADER FILES */
-  fprintf( output, "$(MODULE)_instruction.H ");
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "$(MODULE)_type_%s.H ", pformat->name);
-  }
-
   fprintf( output, "\n\n");
  
  
