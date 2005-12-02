@@ -3411,20 +3411,14 @@ void CreateImplTmpl(){
   fprintf(output, "};\n\n");
 
   /* Creating instruction table */
-  fprintf(output, "const ac_instr_info<%s_isa>\n", project_name);
+  fprintf(output, "const ac_instr_info\n");
   fprintf(output, "%s_isa::instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] = {\n",
           project_name, project_name);
-  fprintf(output, "%sac_instr_info<%s_isa>(0, 0, 0, \"_ac_invalid_\", \"_ac_invalid_\", %d),\n", INDENT[1], project_name, wordsize);
+  fprintf(output, "%sac_instr_info(0, \"_ac_invalid_\", \"_ac_invalid_\", %d),\n", INDENT[1], wordsize / 8);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    fprintf(output, "%sac_instr_info<%s_isa>(%d, &%s_isa::behavior_%s, &%s_isa::_behavior_%s_%s, \"%s\", \"%s\", %d)",
+    fprintf(output, "%sac_instr_info(%d, \"%s\", \"%s\", %d)",
             INDENT[1],
-            project_name,
             pinstr->id,
-            project_name,
-            pinstr->name,
-            project_name,
-            project_name,
-            pinstr->format,
             pinstr->name,
             pinstr->mnemonic,
             pinstr->size);
