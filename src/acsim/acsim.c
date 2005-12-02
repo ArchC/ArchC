@@ -4365,27 +4365,62 @@ void EmitDecodification( FILE *output, int base_indent){
 void EmitInstrExec( FILE *output, int base_indent){
   extern ac_stg_list *stage_list;
   extern ac_pipe_list *pipe_list;
+  extern ac_dec_instr *instr_list;
+  extern ac_dec_format *format_ins_list;
   extern int HaveCycleRange;
 
   extern char* project_name;
 
+  ac_dec_format *pformat;
+  ac_dec_instr *pinstr;
+  ac_dec_field *pfield;
+
+
   if( ACGDBIntegrationFlag )
     fprintf( output, "%sif (gdbstub && gdbstub->stop(decode_pc)) gdbstub->process_bp();\n\n", INDENT[base_indent]);
   
-  fprintf(output, "%sISA.set_fields(*instr_vec);\n", INDENT[base_indent]);
-  fprintf( output, "%sac_pc = decode_pc;\n", INDENT[base_indent]);
+  fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
 
   //Pipelined archs can annul an instruction through pipelining flushing.
   if(stage_list || pipe_list ){
     fprintf( output, "%sISA._behavior_instruction( (ac_stage_list) id );\n", INDENT[base_indent]);
-    fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name);
-    fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name);
+/*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
+/*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
   }
   else{
     fprintf( output, "%sISA._behavior_instruction();\n", INDENT[base_indent]);
-    fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))();\n", INDENT[base_indent], project_name);
-    fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))();\n", INDENT[base_indent], project_name);
+    /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))();\n", INDENT[base_indent], project_name); */
+    /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))();\n", INDENT[base_indent], project_name); */
   }
+  
+  /* Switch statement for instruction selection */
+  fprintf(output, "%sswitch (ins_id) {\n", INDENT[base_indent]);
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    /* opens case statement */
+    fprintf(output, "%scase %d:\n", INDENT[base_indent], pinstr->id);
+    /* emits format behavior method call */
+    for (pformat = format_ins_list;
+         (pformat != NULL) && strcmp(pinstr->format, pformat->name);
+         pformat = pformat->next);
+    fprintf(output, "%sISA._behavior_%s_%s(", INDENT[base_indent + 1],
+            project_name, pformat->name);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      fprintf(output, "instr_vec->get(%d)", pfield->id);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ");\n");
+    /* emits instruction behavior method call */
+    fprintf(output, "%sISA.behavior_%s(", INDENT[base_indent + 1],
+            pinstr->name);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      fprintf(output, "instr_vec->get(%d)", pfield->id);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ");\n");    
+  }
+  fprintf(output, "} // switch (ins_id)\n\n", INDENT[base_indent]);
 
   if( ACDasmFlag ){
     fprintf( output, PRINT_DASM , INDENT[base_indent]);
