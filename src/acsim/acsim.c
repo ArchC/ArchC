@@ -4412,7 +4412,8 @@ void EmitInstrExec( FILE *output, int base_indent){
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
-    fprintf(output, ");\n");    
+    fprintf(output, ");\n");
+    fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
   fprintf(output, "} // switch (ins_id)\n\n", INDENT[base_indent]);
 
