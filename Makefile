@@ -28,6 +28,7 @@ decoderdir := $(aclibdir)/ac_decoder
 encoderdir := $(aclibdir)/ac_encoder
 storagedir := $(aclibdir)/ac_storage
 syscalldir := $(aclibdir)/ac_syscall
+tlmdir     := $(aclibdir)/ac_tlm
 utilsdir   := $(aclibdir)/ac_utils
 gdbdir     := $(aclibdir)/ac_gdb
 
@@ -44,8 +45,8 @@ tools   :=
 exports :=
 clean   := $(libdir) $(includedir)
 modules := $(coredir) $(decoderdir) $(encoderdir) $(storagedir) $(syscalldir) \
-           $(utilsdir) $(acppdir) $(acsimdir) $(accsimdir) $(gdbdir) \
-	   $(acasmdir)
+           $(utilsdir) $(tlmdir) $(acppdir) $(acsimdir) $(accsimdir) \
+	   $(gdbdir) $(acasmdir)
 deprecated:= $(topdir)/acpp
 
 
