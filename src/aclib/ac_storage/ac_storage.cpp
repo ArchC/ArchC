@@ -25,8 +25,8 @@ uint32_t ac_storage::get_size() const {
   return size;
 }
 
-void ac_storage::read(ac_ptr buf, unsigned long long address,
-		      int wordsize) const {
+void ac_storage::read(ac_ptr buf, uint32_t address,
+		      int wordsize) {
   switch (wordsize) {
   case 8: { // unsigned char
     *(buf.ptr8) = (data.ptr8)[address];
@@ -49,8 +49,8 @@ void ac_storage::read(ac_ptr buf, unsigned long long address,
   }
 }
 
-void ac_storage::read(ac_ptr buf, unsigned long long address,
-		      int wordsize, int n_words) const {
+void ac_storage::read(ac_ptr buf, uint32_t address,
+		      int wordsize, int n_words) {
   switch (wordsize) {
   case 8: { // unsigned char
     for (int i = 0; i < n_words; i++)
@@ -77,7 +77,7 @@ void ac_storage::read(ac_ptr buf, unsigned long long address,
   }
 }
 
-void ac_storage::write(ac_ptr buf, unsigned long long address,
+void ac_storage::write(ac_ptr buf, uint32_t address,
 		       int wordsize) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -101,7 +101,7 @@ void ac_storage::write(ac_ptr buf, unsigned long long address,
   }
 }
 
-void ac_storage::write(ac_ptr buf, unsigned long long address,
+void ac_storage::write(ac_ptr buf, uint32_t address,
 		       int wordsize, int n_words) {
   switch (wordsize) {
   case 8: { // unsigned char

@@ -55,16 +55,16 @@ public:
 
   uint32_t get_size() const;
 
-  void read(ac_ptr buf, unsigned long long address,
-		   int wordsize) const;
+  void read(ac_ptr buf, uint32_t address,
+		   int wordsize);
 
-  void read(ac_ptr buf, unsigned long long address,
-		   int wordsize, int n_words) const;
+  void read(ac_ptr buf, uint32_t address,
+		   int wordsize, int n_words);
 
-  void write(ac_ptr buf, unsigned long long address,
+  void write(ac_ptr buf, uint32_t address,
 		    int wordsize);
 
-  void write(ac_ptr buf, unsigned long long address,
+  void write(ac_ptr buf, uint32_t address,
 		    int wordsize, int n_words);
 
 };

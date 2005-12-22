@@ -145,7 +145,8 @@ public:
       ac_sim_stats.add_access(name);
 #endif
       return (ac_Hword) (((ac_Hword*)(&aux_word))[
-		(address % sizeof(ac_word)) ? 0 : 1 ]);
+		(address % sizeof(ac_word)) == 0 ]);
+// 		(address % sizeof(ac_word)) ? 0 : 1 ]);
     }
     else {
       storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
@@ -221,10 +222,12 @@ public:
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
     if (!ac_mt_endian) {
-      oset_addr = oset_addr ? 0 : 1;
+//       oset_addr = oset_addr ? 0 : 1;
+      oset_addr = oset_addr == 0;
     }
     else {
-      oset_addr = oset_addr ? 1 : 0;
+//       oset_addr = oset_addr ? 1 : 0;
+      oset_addr = oset_addr != 0;
     }
 
     ((ac_Hword*)(&aux_word))[oset_addr] = datum;

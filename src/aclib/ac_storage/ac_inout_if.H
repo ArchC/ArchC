@@ -48,8 +48,8 @@ public:
    * @param wordsize Word size in bits.
    * 
    */
-  virtual void read(ac_ptr buf, uint64_t address,
-		    int wordsize) const = 0;
+  virtual void read(ac_ptr buf, uint32_t address,
+		    int wordsize) = 0;
 
   /** 
    * Reads multiple words.
@@ -60,8 +60,8 @@ public:
    * @param n_words Number of words to be read.
    * 
    */
-  virtual void read(ac_ptr buf, uint64_t address,
-		    int wordsize, int n_words) const = 0;
+  virtual void read(ac_ptr buf, uint32_t address,
+		    int wordsize, int n_words) = 0;
 
   /** 
    * Writes a single word.
@@ -71,7 +71,7 @@ public:
    * @param wordsize Word size in bits.
    *
    */
-  virtual void write(ac_ptr buf, uint64_t address,
+  virtual void write(ac_ptr buf, uint32_t address,
 		     int wordsize) = 0;
 
   /** 
@@ -83,7 +83,7 @@ public:
    * @param n_words Number of words to be written.
    * 
    */
-  virtual void write(ac_ptr buf, uint64_t address,
+  virtual void write(ac_ptr buf, uint32_t address,
 		     int wordsize, int n_words) = 0;
 
   virtual uint32_t get_size() const = 0;
