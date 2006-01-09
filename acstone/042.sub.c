@@ -1,0 +1,128 @@
+/**********************************************************************
+ It is a simple main function that uses signed and unsigned short int 
+ subs.
+**********************************************************************/
+
+/* The file begin.h is included if compiler flag -DBEGINCODE is used */
+#ifdef BEGINCODE
+#include "begin.h"
+#endif
+
+int main() {
+  
+  signed short int a,b,c;
+  signed short int d; 
+  unsigned short int ua,ub,uc;
+  unsigned short int ud;
+
+  a=0x00FF;
+  b=0xFF00;
+  c=a-b;
+  /* Before c must be 511 */ c=0;
+
+  a=0xFFEC;
+  b=0xFFE2;
+  c=a-b;
+  /* Before c must be 10 */ c=0;
+
+  a=0xFFFE;
+  b=0x0002;
+  c=a-b;
+  /* Before c must be -4 */ c=0;
+
+  a=0x000A;
+  b=0xFFFB;
+  c=a-b;
+  /* Before c must be 15 */ c=0;
+
+  a=0x0005;
+  b=0xFFF6;
+  c=a-b;
+  /* Before c must be 15 */ c=0;
+
+  a=0x0F0F;
+  b=0xF0F0;
+  c=a-b;
+  /* Before c must be 7711 */ c=0;
+
+  a=0xAAAA;
+  b=0x5555;
+  c=a-b;
+  /* Before c must be 21845 */ c=0;
+
+  d=15;
+  d-=1;
+  d-=2;
+  d-=3;
+  d-=4;
+  d-=5;
+  /* Before d must be 0 */ d=0;
+
+
+  ua=0x00FF;
+  ub=0xFF00;
+  uc=ua-ub;
+  /* Before uc must be 511 */ uc=0;
+
+  ua=0xFFEC;
+  ub=0xFFE2;
+  uc=ua-ub;
+  /* Before uc must be 10 */ uc=0;
+
+  ua=0xFFFE;
+  ub=0x0002;
+  uc=ua-ub;
+  /* Before uc must be 65532 */ uc=0;
+
+  ua=0x000A;
+  ub=0xFFFB;
+  uc=ua-ub;
+  /* Before uc must be 15 */ uc=0;
+
+  ua=0x0005;
+  ub=0xFFF6;
+  uc=ua-ub;
+  /* Before uc must be 15 */ uc=0;
+
+  ua=0x0F0F;
+  ub=0xF0F0;
+  uc=ua-ub;
+  /* Before uc must be 7711 */ uc=0;
+
+  ua=0xAAAA;
+  ub=0x5555;
+  uc=ua-ub;
+  /* Before uc must be 21845 */ uc=0;
+
+  ud=15;
+  ud-=1;
+  ud-=2;
+  ud-=3;
+  ud-=4;
+  ud-=5;
+  /* Before ud must be 0 */ ud=0;
+
+  d=0;
+  d-=0xFFFF;
+  d-=0xFFFE;
+  d-=0xFFFD;
+  d-=0xFFFC;
+  d-=0xFFFB;
+  /* Before d must be 15 */ d=0;
+
+  ud=0;
+  ud-=0xFFFF;
+  ud-=0xFFFE;
+  ud-=0xFFFD;
+  ud-=0xFFFC;
+  ud-=0xFFFB;
+  /* Before ud must be 15 */ ud=0;
+
+  return 0; 
+  /* Return 0 only */
+}
+
+/* The file end.h is included if compiler flag -DENDCODE is used */
+#ifdef ENDCODE
+#include "end.h"
+#endif

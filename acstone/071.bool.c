@@ -1,0 +1,116 @@
+/**********************************************************************
+ It is a simple main function that uses char boolean operators.
+**********************************************************************/
+
+/* The file begin.h is included if compiler flag -DBEGINCODE is used */
+#ifdef BEGINCODE
+#include "begin.h"
+#endif
+
+int main() {
+
+  unsigned char a,b,c,d,e,f,g,h,i,j;
+  
+  a=0xFF;
+  b=0xFF;
+  c=a|b;
+  /* Before c must be 255 */ c=0;
+  d=a&b;
+  /* Before d must be 255 */ d=0;
+  e=a^b;
+  /* Before e must be 0 */ e=0;
+  f=~(a|b);
+  /* Before f must be 0 */ f=0;
+  g=~(a&b);
+  /* Before g must be 0 */ g=0;
+  h=~(a^b);
+  /* Before h must be 255 */ h=0;
+  i=~a;
+  /* Before i must be 0 */ i=0;
+  j=~b;
+  /* Before j must be 0 */ j=0;
+
+  a=0x0F;
+  b=0xF0;
+  c=a|b;
+  /* Before c must be 255 */ c=0;
+  d=a&b;
+  /* Before d must be 0 */ d=0;
+  e=a^b;
+  /* Before e must be 255 */ e=0;
+  f=~(a|b);
+  /* Before f must be 0 */ f=0;
+  g=~(a&b);
+  /* Before g must be 255 */ g=0;
+  h=~(a^b);
+  /* Before h must be 0 */ h=0;
+  i=~a;
+  /* Before i must be 240 */ i=0;
+  j=~b;
+  /* Before j must be 15 */ j=0;
+
+  a=0xFF;
+  b=0x00;
+  c=a|b;
+  /* Before c must be 255 */ c=0;
+  d=a&b;
+  /* Before d must be 0 */ d=0;
+  e=a^b;
+  /* Before e must be 255 */ e=0;
+  f=~(a|b);
+  /* Before f must be 0 */ f=0;
+  g=~(a&b);
+  /* Before g must be 255 */ g=0;
+  h=~(a^b);
+  /* Before h must be 0 */ h=0;
+  i=~a;
+  /* Before i must be 0 */ i=0;
+  j=~b;
+  /* Before j must be 255 */ j=0;
+
+  a=0x55;
+  b=0xAA;
+  c=a|b;
+  /* Before c must be 255 */ c=0;
+  d=a&b;
+  /* Before d must be 0 */ d=0;
+  e=a^b;
+  /* Before e must be 255 */ e=0;
+  f=~(a|b);
+  /* Before f must be 0 */ f=0;
+  g=~(a&b);
+  /* Before g must be 255 */ g=0;
+  h=~(a^b);
+  /* Before h must be 0 */ h=0;
+  i=~a;
+  /* Before i must be 170 */ i=0;
+  j=~b;
+  /* Before j must be 85 */ j=0;
+
+  a=0x00;
+  b=0x00;
+  c=a|b;
+  /* Before c must be 0 */ c=0;
+  d=a&b;
+  /* Before d must be 0 */ d=0;
+  e=a^b;
+  /* Before e must be 0 */ e=0;
+  f=~(a|b);
+  /* Before f must be 255 */ f=0;
+  g=~(a&b);
+  /* Before g must be 255 */ g=0;
+  h=~(a^b);
+  /* Before h must be 255 */ h=0;
+  i=~a;
+  /* Before i must be 255 */ i=0;
+  j=~b;
+  /* Before j must be 255 */ j=0;
+
+  return 0; 
+  /* Return 0 only */
+}
+
+/* The file end.h is included if compiler flag -DENDCODE is used */
+#ifdef ENDCODE
+#include "end.h"
+#endif
