@@ -1,6 +1,6 @@
 /**
  * @file      ac_tlm_port.H
- * @author    Thiago Massariolli Sigrist   
+ * @author    Thiago Massariolli Sigrist
  * 
  * @author    The ArchC Team
  *            http://www.archc.org/

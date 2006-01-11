@@ -183,36 +183,58 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
  * @param address Address to where the word will be written.
  * @param wordsize Word size in bits.
  *
- * @bug Only works for wordsize == 64.
- * 
  */
 void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
   ac_tlm_req req;
   ac_tlm_rsp rsp;
 
-  req.type = WRITE;
-  req.addr = address;
+//   req.type = WRITE;
+//   req.addr = address;
 
+  // It would be necessary to read 64 bits and mix the bits with the smaller
+  // words that will be written
   if (rsp.status == SUCCESS) {
     switch (wordsize) {
     case 8:
-      req.data = *(buf.ptr8);
+      req.type = READ;
+      req.addr = address && 0xfffff000;
+      rsp = (*this)->transport(req);
+
+      req.type = WRITE;
+      ((uint8_t*)&(req.data))[address % sizeof(uint64_t)] = *(buf.ptr8);
+      rsp = (*this)->transport(req);
       break;
     case 16:
-      req.data = *(buf.ptr16);
+      req.type = READ;
+      req.addr = address && 0xfffff000;
+      rsp = (*this)->transport(req);
+
+      req.type = WRITE;
+      ((uint16_t*)&(req.data))[(address % sizeof(uint64_t)) >> 1] =
+	*(buf.ptr16);
+      rsp = (*this)->transport(req);
       break;
     case 32:
-      req.data = *(buf.ptr32);
+      req.type = READ;
+      req.addr = address && 0xfffff000;
+      rsp = (*this)->transport(req);
+
+      req.type = WRITE;
+      ((uint32_t*)&(req.data))[(address % sizeof(uint64_t)) >> 2] =
+	*(buf.ptr32);
+      rsp = (*this)->transport(req);
       break;
     case 64:
+      req.type = WRITE;
+      req.addr = address;
       req.data = *(buf.ptr64);
+      rsp = (*this)->transport(req);
       break;
     default:
       break;
     }
   }
 
-  rsp = (*this)->transport(req);
 }
 
 /** 
@@ -222,8 +244,6 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
  * @param address Address to where the words will be written.
  * @param wordsize Word size in bits.
  * @param n_words Number of words to be written.
- * 
- * @bug Only works with blocks which size is a multiple of 64 bits.
  * 
  */
 void ac_tlm_port::write(ac_ptr buf, uint32_t address,
