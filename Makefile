@@ -20,6 +20,7 @@ specialdirs:= $(bindir) $(examplesdir) $(includedir) $(modelsdir) $(libdir)
 
 # SystemC
 SYSTEMC := $(topdir)/systemc
+SCTLM := $(wildcard $(SYSTEMC)/include/sysc/tlm)
 
 # ArchC libs
 aclibdir   := $(srcdir)/aclib
@@ -45,7 +46,7 @@ tools   :=
 exports :=
 clean   := $(libdir) $(includedir)
 modules := $(coredir) $(decoderdir) $(encoderdir) $(storagedir) $(syscalldir) \
-           $(utilsdir) $(tlmdir) $(acppdir) $(acsimdir) $(accsimdir) \
+           $(utilsdir) $(if $(SCTLM),$(tlmdir)) $(acppdir) $(acsimdir) $(accsimdir) \
 	   $(gdbdir) $(acasmdir)
 deprecated:= $(topdir)/acpp
 

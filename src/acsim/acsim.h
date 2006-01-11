@@ -114,7 +114,7 @@ enum _ac_cmd_options {
 typedef enum  _ac_cmd_options_ ac_cmd_options;
 
 //! Enumeration type for storage device types
-enum _ac_sto_types { MEM, CACHE, ICACHE, DCACHE, REG, REGBANK};
+enum _ac_sto_types { MEM, CACHE, ICACHE, DCACHE, REG, REGBANK, TLM_PORT, TLM_INTR_PORT };
 
 typedef enum _ac_sto_types ac_sto_types;
 

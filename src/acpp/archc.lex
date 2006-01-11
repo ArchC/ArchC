@@ -376,6 +376,18 @@ HEXA_DIGIT [0-9A-Fa-f]
 
    }
 
+<ARCH>"ac_tlm_port"   {
+     #if DEBUG_LEX
+              printf( "AC_TLM_PORT: %s\n", yytext );
+     #endif
+              return AC_TLM_PORT;
+    }
+<ARCH>"ac_tlm_intr_port"   {
+     #if DEBUG_LEX
+              printf( "AC_TLM_INTR_PORT: %s\n", yytext );
+     #endif
+              return AC_TLM_INTR_PORT;
+    }
 
 <ARCH>"ac_cache"   {
      #if DEBUG_LEX

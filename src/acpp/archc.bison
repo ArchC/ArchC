@@ -45,7 +45,7 @@
 #define ADD_DEBUG 1
 
 /*!type used to identify the kind of list being declared */
-enum _commalist { INSTR_L, STAGE_L, REG_L, PIPE_L, REGBANK_L, CACHE_L, MEM_L};
+enum _commalist { INSTR_L, STAGE_L, REG_L, PIPE_L, REGBANK_L, CACHE_L, MEM_L, TLM_PORT_L, TLM_INTR_PORT_L };
 /*!type used to identify the kind of list being declared */
 typedef enum _commalist commalist;
 
@@ -121,6 +121,7 @@ commalist list_type;       //!< Indicates what type of list of declarations is b
 description descrp;        //!< Indicates what type of description is being parsed.
 sto_unit current_unit;     //!< Indicates what storage unit is being used.
 ac_sto_types cache_type;   //!< Indicates the type of cache being declared.
+ac_sto_types port_type;    //!< Indicates the type of port being declared.
 ac_sto_list *fetch_device; //!< Indicates the device used for fetching instructions.
 
 int instr_num;    //!< Number of Instructions 
@@ -484,7 +485,7 @@ void add_storage( char* name, unsigned size, ac_sto_types type){
   else
     pstorage->format = NULL;
     
-	if( type == MEM || type == CACHE || type == ICACHE || type == DCACHE)
+	if( type == MEM || type == CACHE || type == ICACHE || type == DCACHE || type == TLM_PORT )
   	pstorage->size = size * current_unit;
 	else
   	pstorage->size = size;
@@ -650,7 +651,9 @@ ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
 
 
 /* ARCH Tokens */
-%token <text> AC_ARCH 
+%token <text> AC_ARCH
+%token <text> AC_TLM_PORT
+%token <text> AC_TLM_INTR_PORT
 %token <text> AC_CACHE
 %token <text> AC_ICACHE
 %token <text> AC_DCACHE
@@ -668,8 +671,9 @@ ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
 %token <text> BIND_TO
 
 /* ARCH non-terminals */
-%type <text> archdec  archdecbody stagedec pipedec declist worddec fetchdec archctordec
-%type <text> storagedec  storagelist memdec  regbankdec cachedec cachenparm 
+%type <text> archdec archdecbody stagedec pipedec declist worddec fetchdec archctordec
+%type <text> storagedec storagelist memdec regbankdec cachedec cachenparm
+%type <text> portdec intrportdec
 %type <text> cachesparm cacheobjdec cacheobjdec1 regdec assignformat assignwidth
 
 /* General non-terminals */
@@ -1194,6 +1198,8 @@ storagedec: cachedec
 	| memdec
 	| regbankdec
 	| regdec
+        | portdec
+        | intrportdec
 	;
 
 /* Generic Memory Declaration */
@@ -1206,6 +1212,28 @@ memdec: AC_MEM ID COLON INT unit
 
 	storagelist SEMICOLON
 	;
+
+/* Port declaration */
+portdec: AC_TLM_PORT ID COLON INT unit 
+               {
+                 /* Including port in storage list */
+                 add_storage( $2, $4, (ac_sto_types)TLM_PORT );
+                 list_type = TLM_PORT_L;
+               }
+
+            storagelist SEMICOLON
+            ;
+
+/* Interruption Port declaration */
+intrportdec: AC_TLM_INTR_PORT ID
+               {
+                 /* Including port in storage list */
+                 add_storage( $2, 0, (ac_sto_types)TLM_INTR_PORT );
+                 list_type = TLM_INTR_PORT_L;
+               }
+
+            storagelist SEMICOLON
+            ;
 
 /* Cache Declaration */
 cachedec: AC_CACHE {cache_type = (ac_sto_types)CACHE;} cacheobjdec
@@ -1312,6 +1340,10 @@ storagelist: COMMA ID COLON INT
 		     add_storage( $2, $4, (ac_sto_types)REGBANK );
 		  else if( list_type == MEM_L )
 		     add_storage( $2, $4, (ac_sto_types)MEM );
+		  else if( list_type == TLM_PORT_L )
+		     add_storage( $2, $4, (ac_sto_types)TLM_PORT );
+		  else if( list_type == TLM_INTR_PORT_L )
+		     add_storage( $2, $4, (ac_sto_types)TLM_INTR_PORT );
 		  else {
 		    /* Should never enter here. */
 		      yyerror("Internal Bug. Invalid list type. It should be CACHE_L, REGBANK_L or MEM_L");

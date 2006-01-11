@@ -3009,7 +3009,8 @@ void CreateArchImpl() {
         fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       }
       break;
-      
+
+    /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT fall to default... add the behaviors here */
     default:
       fprintf(output, "%s%s_stg(\"%s_stg\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
