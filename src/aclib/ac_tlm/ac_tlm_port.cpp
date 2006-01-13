@@ -56,7 +56,7 @@
  * @param size Size or address range of the element to be attached.
  * 
  */
-ac_tlm_port::ac_tlm_port(uint32_t sz) : size(sz) {}
+ac_tlm_port::ac_tlm_port(char const* nm, uint32_t sz) : name(nm), size(sz) {}
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -300,6 +300,12 @@ uint32_t ac_tlm_port::get_size() const {
 //////////////////////////////////////////////////////////////////////////////
 
 // Destructors
+
+/**
+ * Default (virtual) destructor.
+ * @return Nothing.
+ */
+ac_tlm_port::~ac_tlm_port() {}
 
 //////////////////////////////////////////////////////////////////////////////
 

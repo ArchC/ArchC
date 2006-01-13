@@ -115,6 +115,8 @@ ac_cache_parms  *parms_list, *pparms, *parms_list_tail;
 /** Boolean flag passed to the SystemC generator*/
 int HaveFormattedRegs = 0,  HaveMultiCycleIns = 0, HaveMemHier=0, HaveCycleRange=0;
 int ControlInstrInfoLevel = 0;
+int HaveTLMPorts = 0;
+int HaveTLMIntrPorts = 0;
 //@}
 
 commalist list_type;       //!< Indicates what type of list of declarations is being parsed.
@@ -133,7 +135,7 @@ int pipe_num;     //!< Number of Pipelines
 int wordsize;     //!< Size of the word type in bits for the current project.
 int reg_width;   //!< Bit width of registers in a regbank.
 int fetchsize;    //!< Size of the fetch word type in bits for the current project.
-int  line_num;    //!< Input file line counter.
+int line_num;    //!< Input file line counter.
 
 int ac_tgt_endian;  //!< Indicate the endianess of the target architecture.
 
@@ -1219,6 +1221,7 @@ portdec: AC_TLM_PORT ID COLON INT unit
                  /* Including port in storage list */
                  add_storage( $2, $4, (ac_sto_types)TLM_PORT );
                  list_type = TLM_PORT_L;
+                 HaveTLMPorts = 1;
                }
 
             storagelist SEMICOLON
@@ -1230,6 +1233,7 @@ intrportdec: AC_TLM_INTR_PORT ID
                  /* Including port in storage list */
                  add_storage( $2, 0, (ac_sto_types)TLM_INTR_PORT );
                  list_type = TLM_INTR_PORT_L;
+                 HaveTLMIntrPorts = 1;
                }
 
             storagelist SEMICOLON

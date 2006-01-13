@@ -464,7 +464,7 @@ void CreateArchHeader() {
   extern ac_stg_list *stage_list;
   extern char* project_name;
 
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, reg_width;
+  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, reg_width;
 
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
@@ -472,8 +472,6 @@ void CreateArchHeader() {
   char *Globals_p = Globals;
   ac_pipe_list *ppipe;
 
-  // [ARCHC_2_0]
-  // Mudar todas as ocorrências de 'ac_resources' para 'nomeproc_arch'.
   FILE *output;
   char filename[256];
 
@@ -493,6 +491,12 @@ void CreateArchHeader() {
   fprintf( output, "#include  \"ac_storage.H\"\n");
   fprintf( output, "#include  \"ac_memport.H\"\n");
   fprintf( output, "#include  \"ac_regbank.H\"\n");
+
+  if (HaveTLMPorts)
+    fprintf(output, "#include  \"ac_tlm_port.H\"\n");
+
+  if (HaveTLMIntrPorts)
+    fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
 
   if( ACStatsFlag )
     fprintf( output, "#include  \"ac_stats.H\"\n");
@@ -589,7 +593,16 @@ void CreateArchHeader() {
 
       break;
 
-      
+    /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT */
+    case TLM_PORT:
+      fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[1], pstorage->name);
+      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+      break;
+
+    case TLM_INTR_PORT:
+      fprintf(output, "%sac_tlm_intr_port %s;\n", INDENT[1], pstorage->name);
+      break;
+
     default:
       fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
       fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
@@ -643,78 +656,6 @@ void CreateArchHeader() {
     fprintf( output, "%s};\n", INDENT[1]);
   }
 
-  // [ARCHC_2_0]
-  // Wait, release e annul vão para o ac_arch.H ?
-
-/*   //Wait Method */
-/*   COMMENT(INDENT[1],"Put the simulator on the wait state."); */
-/*   fprintf( output, "%sstatic void ac_wait(){\n", INDENT[1]); */
-/*   fprintf( output, "%sac_wait_sig = 1;\n", INDENT[2]); */
-/*   fprintf( output, "%s};\n", INDENT[1]); */
-/*   fprintf( output, "\n"); */
-
-/*   //Release Method */
-/*   COMMENT(INDENT[1],"Release the simulator from the wait state."); */
-/*   fprintf( output, "%sstatic void ac_release(){\n", INDENT[1]); */
-/*   fprintf( output, "%sac_wait_sig = 0;\n", INDENT[2]); */
-
-/*   fprintf( output, "%s};\n", INDENT[1]); */
-/*   fprintf( output, "\n"); */
-
-/*   //Annulation Method */
-/*   //There is no annul signal to pipelined archs. They use flush. */
-/*   if( !stage_list && !pipe_list ){ */
-/*     COMMENT(INDENT[1],"Annul the current instruction."); */
-/*     fprintf( output, "%sstatic void ac_annul(){\n", INDENT[1]); */
-/*     fprintf( output, "%sac_annul_sig = 1;\n", INDENT[2]); */
-/*     fprintf( output, "%s};\n", INDENT[1]); */
-/*   } */
-/*   fprintf( output, "\n"); */
-
-/*   //TODO: COlocar como opcao de linha de comando */
-/*   //ILP method */
-/*   COMMENT(INDENT[1],"Force Paralelism."); */
-/*   fprintf( output, "%sstatic void ac_parallel( ){\n", INDENT[1]); */
-/*   fprintf( output, "%sac_parallel_sig = 1;\n", INDENT[2]); */
-/*   fprintf( output, "%s};\n", INDENT[1]); */
-/*   fprintf( output, "\n"); */
-      
-/*   if(stage_list){ */
-/*     COMMENT(INDENT[1],"Flush method."); */
-/*     //We have different methods for pipelined and non-pipelined archs */
-/*     fprintf( output, "%sstatic void ac_flush( char *stage ){\n", INDENT[1]); */
-/*     //AC_STAGE version */
-/*     for( pstage = stage_list; pstage != NULL; pstage=pstage->next) */
-/*       if( pstage->next ){ */
-/*         if( pstage->id ==1 ) */
-/*           fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name); */
-/*         else */
-/*           fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name); */
-
-/*         fprintf( output, "%s%s_flush = 1;\n", INDENT[3], pstage->name); */
-/*       } */
-
-/*     fprintf( output, "%s};\n", INDENT[1]); //end of flush method */
-/*   } */
-/*   //AC_PIPE version */
-/*   else  if(pipe_list){ */
-	
-/*     COMMENT(INDENT[1],"Flush method."); */
-/*     fprintf( output, "%sstatic void ac_flush( char *stage ){\n", INDENT[1]); */
-/*     for( ppipe = pipe_list; ppipe!=NULL; ppipe= ppipe->next ){ */
-			
-/*       for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next) */
-/*         if( pstage->next ){ */
-/*           if( pstage->id ==1 ) */
-/*             fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name); */
-/*           else */
-/*             fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name); */
-/*           fprintf( output, "%s%s_%s_flush = 1;\n", INDENT[3], ppipe->name, pstage->name); */
-/*         } */
-/*     } */
-/*     fprintf( output, "%s};\n", INDENT[1]);//end of flush method */
-/*   } */
-
   if(ACVerifyFlag){
     COMMENT(INDENT[1],"Set co-verification msg queue.");
     fprintf( output, "%svoid set_queue(char *exec_name);\n", INDENT[1]);
@@ -732,13 +673,6 @@ void CreateArchHeader() {
 
   fprintf( output, "};\n\n"); //End of ac_resources class
 
-
-  // [ARCHC_2_0]
-  // Não gerar global aliases!!!!!
-  
-/*   COMMENT(INDENT[0],"Global aliases for resources."); */
-/*   fprintf( output, "%s\n", Globals); */
-
   fprintf( output, "#endif  //_%s_ARCH_H\n", project_name);
   fclose( output); 
 
@@ -752,7 +686,7 @@ void CreateArchRefHeader() {
   extern ac_stg_list *stage_list;
   extern char* project_name;
 
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, reg_width;
+  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts, reg_width;
 
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
@@ -760,8 +694,6 @@ void CreateArchRefHeader() {
   char *Globals_p = Globals;
   ac_pipe_list *ppipe;
 
-  // [ARCHC_2_0]
-  // Mudar todas as ocorrências de 'ac_resources' para 'nomeproc_arch'.
   FILE *output;
   char filename[256];
 
@@ -776,14 +708,16 @@ void CreateArchRefHeader() {
   fprintf( output, "#ifndef  _%s_ARCH_REF_H\n", project_name);
   fprintf( output, "#define  _%s_ARCH_REF_H\n\n", project_name);
 
-  // [ARCHC_2_0]
-  // Incluir também "ac_arch.H"
-
   fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include  \"ac_arch_ref.H\"\n");
   fprintf( output, "#include  \"ac_memport.H\"\n");
   fprintf( output, "#include  \"ac_reg.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n\n");
+  fprintf( output, "#include  \"ac_regbank.H\"\n");
+
+  if (HaveTLMIntrPorts)
+    fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
+
+  fprintf(output, "\n");
   
   COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
   fprintf(output, "class %s_arch;\n\n", project_name);
@@ -862,6 +796,10 @@ void CreateArchRefHeader() {
 
       break;
 
+    case TLM_INTR_PORT:
+      fprintf(output, "%sac_tlm_intr_port& %s;\n", INDENT[1], pstorage->name);
+      break;
+
       
     default:
       fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
@@ -913,9 +851,6 @@ void CreateArchRefImpl() {
 
   print_comment( output, "ArchC Resources implementation file.");
 
-  // [ARCHC_2_0]
-  // Incluir também "ac_arch.H"
-
   fprintf( output, "#include  \"%s_arch.H\"\n", project_name);
   fprintf( output, "#include  \"%s_arch_ref.H\"\n\n", project_name);
 
@@ -938,111 +873,6 @@ void CreateArchRefImpl() {
 
 }
 
-
-// [ARCHC_2_0]
-// ac_types.H desaparece.
-// Criar aqui os arquivos para _instruction e para _tipos...
-
-//!Create ArchC Types Header File
-void CreateTypeHeader() {
-
-
-  FILE *output;
-  char filename[] = "ac_types.H";
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-
-  print_comment( output, "ArchC Types header file.");
-  fprintf( output, "#ifndef  _AC_TYPES_H\n");
-  fprintf( output, "#define  _AC_TYPES_H\n\n");
-  
-  fprintf( output, "#include  <systemc.h>\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "#include  \"ac_resources.H\"\n");
-  fprintf( output, "#include  \"archc.H\"\n\n");
-
-  //Declaring abstract stage class.
-  COMMENT(INDENT[0],"ArchC abstract class for pipeline stages.\n");
-  fprintf( output, "class ac_stage: public sc_module, public ac_resources {\n");
-  fprintf( output, "public:\n");
-  fprintf( output, "%svirtual void behavior(){};\n", INDENT[1]);
-  fprintf( output, "%sSC_CTOR( ac_stage ){};\n", INDENT[1]);
-  fprintf( output, "};\n\n");
-
-  //Declaring begin pseudo instruction class
-  COMMENT(INDENT[0],"Pseudo instruction begin.\n"); 
-  fprintf( output, "class ac_begin: public ac_resources {\n");
-  fprintf( output, "public:\n");
-  fprintf( output, "  static void behavior(ac_stage_list  stage = (ac_stage_list)0, unsigned cycle=0);\n");
-  fprintf( output, "};\n\n");
-
-  //Declaring end pseudo instruction class
-  COMMENT(INDENT[0],"Pseudo instruction end.\n"); 
-  fprintf( output, "class ac_end: public ac_resources {\n");
-  fprintf( output, "public:\n");
-  fprintf( output, "  static void behavior(ac_stage_list  stage = (ac_stage_list)0, unsigned cycle=0);\n");
-  fprintf( output, "};\n\n");
-
-  //Declaring abstract instruction class.
-  EmitGenInstrClass( output );
-/*   COMMENT(INDENT[0],"ArchC abstract class for instructions.\n"); */
-/*   fprintf( output, "class ac_instruction: public ac_resources {\n"); */
-/*   fprintf( output, "protected:\n"); */
-/*   fprintf( output, "%schar* ac_instr_name;\n", INDENT[1]); */
-/*   fprintf( output, "%schar* ac_instr_mnemonic;\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned ac_instr_size;\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned ac_instr_cycles;\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned ac_instr_min_latency;\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned ac_instr_max_latency;\n", INDENT[1]); */
-/*   fprintf( output, "public:\n"); */
-
-/*   fprintf( output, "%sac_instruction( char* name, char* mnemonic, unsigned min, unsigned max ){ ac_instr_name = name ; ac_instr_mnemonic = mnemonic; ac_instr_min_latency = min, ac_instr_max_latency =max;}\n", INDENT[1]); */
-/*   fprintf( output, "%sac_instruction( char* name, char* mnemonic ){ ac_instr_name = name ; ac_instr_mnemonic = mnemonic;}\n", INDENT[1]); */
-/*   fprintf( output, "%sac_instruction( char* name ){ ac_instr_name = name ;}\n", INDENT[1]); */
-/*   fprintf( output, "%sac_instruction( ){ ac_instr_name = \"NULL\";}\n", INDENT[1]); */
-
-/*   fprintf( output, "%svirtual void behavior(ac_stage_list  stage = (ac_stage_list)0, unsigned cycle=0);\n", INDENT[1]);    */
-/*   fprintf( output, "%svirtual void set_fields( ac_instr instr){};\n", INDENT[1]); */
-
-/*   fprintf( output, "%svoid set_cycles( unsigned c){ ac_instr_cycles = c;}\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned get_cycles(){ return ac_instr_cycles;}\n", INDENT[1]); */
-
-/*   fprintf( output, "%svoid set_min_latency( unsigned c){ ac_instr_min_latency = c;}\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned get_min_latency(){ return ac_instr_min_latency;}\n", INDENT[1]); */
-
-/*   fprintf( output, "%svoid set_max_latency( unsigned c){ ac_instr_max_latency = c;}\n", INDENT[1]); */
-/*   fprintf( output, "%sunsigned get_max_latency(){ return ac_instr_max_latency;}\n", INDENT[1]); */
-
-/*   fprintf( output, "%sunsigned get_size() {return ac_instr_size;}\n", INDENT[1]); */
-/*   fprintf( output, "%svoid set_size( unsigned s) {ac_instr_size = s;}\n", INDENT[1]); */
-
-/*   fprintf( output, "%schar* get_name() {return ac_instr_name;}\n", INDENT[1]); */
-/*   fprintf( output, "%svoid set_name( char* name) {ac_instr_name = name;}\n", INDENT[1]); */
-
-/*   fprintf( output, "%svirtual  void print (ostream & os) const{};\n", INDENT[1]); */
-
-/*   fprintf( output, "%sfriend ostream& operator<< (ostream &os,const ac_instruction &ins){\n", INDENT[1]); */
-/*   fprintf( output, "%sins.print(os);\n", INDENT[1]); */
-/*   fprintf( output, "%sreturn os;\n", INDENT[1]); */
-/*   fprintf( output, "%s};\n", INDENT[1]); */
-
-/*   fprintf( output, "};\n\n"); */
-  
-  EmitFormatClasses( output );
-  EmitInstrClasses(output ); 
-
-  fprintf( output, "\n\n");
-  fprintf( output, "#endif  //_AC_TYPES_H\n");
-  fclose( output); 
-
-}
-
-// [ARCHC_2_0]
-// ac_parms.H não se altera.
 
 //!Creates Decoder Header File
 void CreateParmHeader() {
@@ -2572,356 +2402,13 @@ void CreateProcessorImpl() {
   free(filename);
 }
 
-
-//!Create ArchC Resources Implementation File
-void CreateResourceImpl() {
-
-  extern ac_pipe_list *pipe_list;
-  extern ac_sto_list *storage_list, *fetch_device;
-  extern ac_stg_list *stage_list;
-  extern int HaveMultiCycleIns, HaveMemHier, reg_width; 
-  extern ac_sto_list* load_device;
-
-  ac_sto_list *pstorage, *pmem;
-  ac_stg_list *pstage;
-  char Globals[5000];
-  char *Globals_p = Globals;
-	ac_pipe_list *ppipe;
-
-  FILE *output;
-  char filename[] = "ac_resources.cpp";
-
-  load_device= storage_list;
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-
-  print_comment( output, "ArchC Resources Implementation file.");
-  
-  fprintf( output, "#include  \"ac_resources.H\"\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
-  fprintf( output, "#include  \"ac_reg.H\"\n");
-
-  if(ACVerifyFlag){
-    fprintf( output, "#include  \"ac_msgbuf.H\"\n");
-    fprintf( output, "#include  <sys/ipc.h>\n");
-    fprintf( output, "#include  <unistd.h>\n");
-    fprintf( output, "#include  <sys/msg.h>\n");
-    fprintf( output, "#include  <sys/types.h>\n");
-  }
-
-  if( ACStatsFlag ){
-    COMMENT(INDENT[0],"Statistics Object.");
-    fprintf( output, "%sac_stats ac_resources::ac_sim_stats;\n", INDENT[0]);
-    Globals_p += sprintf( Globals_p, "ac_stats &ac_sim_stats = ac_resources::ac_sim_stats;\n");
-  }
-  
-  COMMENT(INDENT[0],"Storage Devices.");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-    switch( pstorage->type ){
-
-    case REG:
-
-      //Formatted registers have a special class.
-      if( pstorage->format != NULL ){
-        fprintf( output, "%sac_%s ac_resources::%s(\"%s\");\n", INDENT[0], pstorage->name, pstorage->name, pstorage->name);
-        Globals_p += sprintf( Globals_p, "ac_%s &%s = ac_resources::%s;\n", pstorage->name, pstorage->name, pstorage->name);
-      }
-      else{
-        fprintf( output, "%sac_reg<unsigned> ac_resources::%s(\"%s\", 0);\n", INDENT[0], pstorage->name, pstorage->name);      
-        Globals_p += sprintf( Globals_p, "ac_reg<unsigned> &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-      }
-      break;
-                        
-    case REGBANK:
-      //Emiting register bank. Checking is a register width was declared.
-      switch( (unsigned)reg_width ){
-      case 0:
-        fprintf( output, "%sac_regbank<ac_word> ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-        Globals_p += sprintf( Globals_p, "ac_regbank<ac_word> &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-        break;
-      case 8:
-        fprintf( output, "%sac_regbank<unsigned char> ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-        Globals_p += sprintf( Globals_p, "ac_regbank<unsigned char> &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-        break;
-      case 16:
-        fprintf( output, "%sac_regbank<unsigned short> ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-        Globals_p += sprintf( Globals_p, "ac_regbank<unsigned short> &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-        break;
-      case 32:
-        fprintf( output, "%sac_regbank<unsigned> ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-        Globals_p += sprintf( Globals_p, "ac_regbank<unsigned> &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-        break;
-      case 64:
-        fprintf( output, "%sac_regbank<unsigned long long> ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-        Globals_p += sprintf( Globals_p, "ac_regbank<unsigned long long> &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-        break;
-      default:
-        AC_ERROR("Register width not supported: %d\n", reg_width);
-        break;
-      }
-      break;
-
-    case CACHE:
-    case ICACHE:
-    case DCACHE:
-
-      if( !pstorage->parms ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
-        Globals_p += sprintf( Globals_p, "ac_storage &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-      }
-      else{
-        //It is an ac_cache object.
-        EmitCacheDeclaration(output, pstorage, 0);
-        Globals_p += sprintf( Globals_p, "ac_cache &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-      }
-      break;
-
-    case MEM:
-
-      if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
-        Globals_p += sprintf( Globals_p, "ac_storage &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-      }
-      else{
-        //It is an ac_mem object.
-        fprintf( output, "%sac_mem ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
-        Globals_p += sprintf( Globals_p, "ac_mem &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-      }
-      break;
-
-    default:
-      fprintf( output, "%sac_storage ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-      Globals_p += sprintf( Globals_p, "ac_storage &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
-      break;
-    }
-  }
-
-  fprintf( output, "%sac_storage *ac_resources::IM;\n\n", INDENT[0]);
-  fprintf( output, "%sac_storage *ac_resources::APP_MEM;\n\n", INDENT[0]);
-  
-  COMMENT(INDENT[0],"Control Variables.");
-  fprintf( output, "ac_reg<unsigned> ac_resources::ac_pc(\"ac_pc\", 0xffffffff);\n");
-  Globals_p += sprintf( Globals_p, "ac_reg<unsigned> &ac_pc = ac_resources::ac_pc;\n");
-  fprintf( output, "unsigned ac_resources::ac_start_addr = 0;\n");
-  Globals_p += sprintf( Globals_p, "unsigned &ac_start_addr = ac_resources::ac_start_addr;\n");
-  fprintf( output, "unsigned long long ac_resources::ac_instr_counter = 0;\n");
-  Globals_p += sprintf( Globals_p, "unsigned long long &ac_instr_counter = ac_resources::ac_instr_counter;\n");
-  fprintf( output, "unsigned long long ac_resources::ac_cycle_counter = 0;\n");
-  Globals_p += sprintf( Globals_p, "unsigned long long &ac_cycle_counter = ac_resources::ac_cycle_counter;\n");
-
-  fprintf( output, "double ac_resources::time_step;\n");
-  Globals_p += sprintf( Globals_p, "double &time_step = ac_resources::time_step;\n");
-
-  if(HaveMultiCycleIns) 
-    fprintf( output, "unsigned ac_resources::ac_cycle;\n");
-
-  fprintf( output, "bool ac_resources::ac_tgt_endian = %d;\n", ac_tgt_endian);
-  Globals_p += sprintf( Globals_p, "bool &ac_tgt_endian = ac_resources::ac_tgt_endian;\n");
-
-
-  //TODO: Test wait signal for pipelined archs
-  fprintf( output, "%sbool ac_resources::ac_wait_sig;\n", INDENT[0]);
-  Globals_p += sprintf( Globals_p, "bool &ac_wait_sig = ac_resources::ac_wait_sig;\n");
-
-  fprintf( output, "%sbool ac_resources::ac_parallel_sig;\n", INDENT[0]);
-
-  if( !stage_list && !pipe_list ){
-    fprintf( output, "%sbool ac_resources::ac_annul_sig;\n", INDENT[0]);
-    Globals_p += sprintf( Globals_p, "bool &ac_annul_sig = ac_resources::ac_annul_sig;\n");
-  }
-
-  //Emitting stall variables
-  if( stage_list ){
-    for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
-      if( pstage->next ){
-        fprintf( output, "%sbool ac_resources::%s_stall;\n", INDENT[0], pstage->name);
-        Globals_p += sprintf( Globals_p, "bool &%s_stall = ac_resources::%s_stall;\n", pstage->name, pstage->name);
-      }
-		
-    for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
-      if( pstage->next ){
-        fprintf( output, "%sbool ac_resources::%s_flush;\n", INDENT[0], pstage->name);
-        Globals_p += sprintf( Globals_p, "bool &%s_flush = ac_resources::%s_flush;\n", pstage->name, pstage->name);
-      }
-
-  }else if(pipe_list){
-	
-    for( ppipe = pipe_list; ppipe!=NULL; ppipe= ppipe->next ){
-
-      for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
-        if( pstage->next ){
-          fprintf( output, "%sbool ac_resources::%s_%s_stall;\n", INDENT[0], ppipe->name, pstage->name);
-          Globals_p += sprintf( Globals_p, "bool &%s_%s_stall = ac_resources::%s_%s_stall;\n", ppipe->name, pstage->name, ppipe->name, pstage->name);
-        }
-		
-      for( pstage = ppipe->stages ; pstage != NULL; pstage=pstage->next)
-        if( pstage->next ){
-          fprintf( output, "%sbool ac_resources::%s_%s_flush;\n", INDENT[0], ppipe->name, pstage->name);
-          Globals_p += sprintf( Globals_p, "bool &%s_%s_flush = ac_resources::%s_%s_flush;\n", ppipe->name, pstage->name, ppipe->name, pstage->name);
-        }
-    }
-  } 
-
-  fprintf( output, "\n");
-
-  COMMENT(INDENT[0], "Program arguments.");
-  fprintf( output, "int ac_resources::argc;\n");
-  fprintf( output, "char ** ac_resources::argv;\n");
-        
-  if( ACDasmFlag ){
-    COMMENT(INDENT[0], "Disassembler file.");
-    fprintf( output, "%sofstream ac_resources::dasmfile;\n", INDENT[1]);
-  }
-
-  //!Declaring Constructor.
-  COMMENT(INDENT[0],"Constructor.\n");
-  fprintf( output, "%sac_resources::ac_resources(){\n\n", INDENT[0]);
-
-  COMMENT(INDENT[1],"Initializing.\n");
-  for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
-    if( pstage->next )
-      fprintf( output, "%s%s_stall  =0;\n", INDENT[1], pstage->name);
-
-  fprintf( output, "\n");
-  for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
-    if( pstage->next )
-      fprintf( output, "%s%s_flush  =0;\n", INDENT[1], pstage->name);
-      
-  if(HaveMultiCycleIns) 
-    fprintf( output, "%sac_cycle = 1;\n", INDENT[1]);
-  
-  fprintf( output, "%sac_tgt_endian = %d;\n", INDENT[1], ac_tgt_endian);
-  fprintf( output, "%sac_start_addr = 0;\n", INDENT[1]);
-  fprintf( output, "%sac_instr_counter = 0;\n", INDENT[1]);
-  fprintf( output, "%sac_cycle_counter = 0;\n", INDENT[1]);
-  fprintf( output, "%sac_wait_sig = 0;\n", INDENT[1]);
-  fprintf( output, "%sac_parallel_sig = 0;\n", INDENT[1]);
-
-  if( !stage_list && !pipe_list )
-    fprintf( output, "%sac_annul_sig = 0;\n", INDENT[1]);
-
-
-  /* Determining which device is gonna be used for fetching instructions */
-  if( !fetch_device ){
-    //The parser has not determined because there is not an ac_icache obj declared.
-    //In this case, look for the object with the lowest (zero) hierarchy level.
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
-      if( pstorage->level == 0 &&  pstorage->type != REG &&  pstorage->type != REGBANK)
-        fetch_device = pstorage;
-
-    if( !fetch_device ) { //Couldn't find a fetch device. Error!
-      AC_INTERNAL_ERROR("Could not determine a device for fetching.");
-      exit(1);
-    }
-  }
-
-  fprintf( output, "%sIM = &%s;\n", INDENT[1], fetch_device->name);
-
-  /* Determining which device is going to be used for loading applications*/
-  /* The device used for loading applications must be the one in the highest
-     level of a memory hierachy.*/
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    if(pstorage->level > load_device->level)
-      load_device = pstorage;
-  }
-
-  /* If there is only one level, which is gonna be zero, then it is the same
-     object used for fetching. */
-  if( load_device->level ==0 )
-    load_device = fetch_device;
-
-  fprintf( output, "%sAPP_MEM = &%s;\n", INDENT[1], load_device->name);
-
-  fprintf( output, "\n");      
-
-  /* Connecting memory hierarchy */
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
-    if( pstorage->higher ){
-      fprintf( output, "%s%s.bindToNext(%s);\n", INDENT[1], pstorage->name, pstorage->higher->name );
-    }
-        
-  fprintf( output, "}\n\n");
-
-  fprintf( output, "\n");      
-
-  if(ACVerifyFlag){
-    int ndevice=0;
-
-    //Set co-verification msg queue method
-    fprintf( output, "void ac_resources::set_queue(char* exec_name){\n\n" );
-    fprintf( output, "%sstruct start_msgbuf sbuf;\n", INDENT[1] );
-    fprintf( output, "%sstruct dev_msgbuf dbuf;\n", INDENT[1] );
-    fprintf( output, "%sextern key_t key;\n", INDENT[1] );
-    fprintf( output, "%sextern int msqid;\n", INDENT[1] );
-
-    fprintf( output, "%sif ((key = ftok(exec_name, 'A')) == -1) {\n", INDENT[1] );
-    fprintf( output, "%sAC_ERROR(\"Could not attach to the co-verification msg queue. Process:\" << getpid());\n", INDENT[2] );
-    fprintf( output, "%sperror(\"ftok\");\n", INDENT[2] );
-    fprintf( output, "%sexit(1);\n", INDENT[2] );
-    fprintf( output, "%s}\n", INDENT[1] );
-		
-    fprintf( output, "%sif ((msqid = msgget(key, 0644)) == -1) {\n", INDENT[1] );
-    fprintf( output, "%sAC_ERROR(\"Could not attach to the co-verification msg queue. Process:\" << getpid());\n", INDENT[2] );
-    fprintf( output, "%sperror(\"msgget\");\n", INDENT[2] );
-    fprintf( output, "%sexit(1);\n", INDENT[2] );
-    fprintf( output, "%s}\n", INDENT[1] );
-
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-      if( pstorage->type == MEM ||
-          pstorage->type == ICACHE ||
-          pstorage->type == DCACHE ||
-          pstorage->type == CACHE ||
-          pstorage->type == REGBANK )
-        ndevice++;
-    }
-
-    fprintf( output, "%ssbuf.mtype = 1;\n", INDENT[1] );
-    fprintf( output, "%ssbuf.ndevice =%d;\n", INDENT[1], ndevice );
-
-    fprintf( output, "%sif (msgsnd(msqid, (void*)&sbuf, sizeof(sbuf), 0) == -1)\n", INDENT[1] );
-    fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[2] );
-    fprintf( output, "\n" );
-
-    fprintf( output, "%sdbuf.mtype =2;\n", INDENT[1] );
-
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-      if( pstorage->type == MEM ||
-          pstorage->type == ICACHE ||
-          pstorage->type == DCACHE ||
-          pstorage->type == CACHE ||
-          pstorage->type == REGBANK ){
-
-        fprintf( output, "%sstrcpy(dbuf.name,%s.get_name());\n", INDENT[1], pstorage->name );
-
-        fprintf( output, "%sif (msgsnd(msqid, (void*)&dbuf, sizeof(dbuf), 0) == -1)\n", INDENT[1] );
-        fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[2] );
-        fprintf( output, "\n" );
-      }
-    }
-    fprintf( output, "}\n");   //End of set_queue
-  }
-
-  COMMENT(INDENT[0],"Global aliases for resources.");
-  fprintf( output, "%s\n", Globals);
-
-  fclose( output); 
-  
-}
-
 /** Creates the _arch.cpp Implementation File. */
 void CreateArchImpl() {
 
   extern ac_pipe_list *pipe_list;
   extern ac_sto_list *storage_list, *fetch_device;
   extern ac_stg_list *stage_list;
-  extern int HaveMultiCycleIns, HaveMemHier, reg_width; 
+  extern int HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, reg_width; 
   extern ac_sto_list* load_device;
 
   extern char *project_name;
@@ -3011,6 +2498,15 @@ void CreateArchImpl() {
       break;
 
     /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT fall to default... add the behaviors here */
+    case TLM_PORT:
+      fprintf(output, "%s%s_port(\"%s_port\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      break;
+
+    case TLM_INTR_PORT:
+      fprintf(output, "%s%s(\"%s\"),\n", INDENT[1], pstorage->name, pstorage->name);
+      break;
+
     default:
       fprintf(output, "%s%s_stg(\"%s_stg\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
@@ -3031,7 +2527,7 @@ void CreateArchImpl() {
     //The parser has not determined because there is not an ac_icache obj declared.
     //In this case, look for the object with the lowest (zero) hierarchy level.
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
-      if( pstorage->level == 0 &&  pstorage->type != REG &&  pstorage->type != REGBANK)
+      if( pstorage->level == 0 && pstorage->type != REG && pstorage->type != REGBANK && pstorage->type != TLM_INTR_PORT)
         fetch_device = pstorage;
 
     if( !fetch_device ) { //Couldn't find a fetch device. Error!
@@ -3529,6 +3025,8 @@ void CreateMakefile(){
   extern char *project_name;
   extern int HaveMemHier;
   extern int HaveFormattedRegs;
+  extern int HaveTLMPorts;
+  extern int HaveTLMIntrPorts;
   ac_stg_list *pstage;
   ac_pipe_list *ppipe;
   ac_dec_format *pformat;
@@ -3570,7 +3068,10 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
         
-  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include -I$(SYSTEMC)/include\n");
+  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include -I$(SYSTEMC)/include ");
+  if (HaveTLMPorts || HaveTLMIntrPorts)
+    fprintf(output, "-I$(SYSTEMC)/include/sysc/tlm ");
+  fprintf(output, "\n");
   fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH)\n");
 
   fprintf( output, "\n");
@@ -3682,12 +3183,19 @@ void CreateMakefile(){
   fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o ");
   if(ACABIFlag)
     fprintf(output, "ac_syscall.o ");
+  if(HaveTLMPorts)
+    fprintf(output, "ac_tlm_port.o ");
+  if(HaveTLMIntrPorts)
+    fprintf(output, "ac_tlm_intr_port.o ");
   fprintf(output, "\n\n");
 
   //Declaring FILESHEAD variable
   COMMENT_MAKE("These are the headers files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/include directory");
-  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) $(ACLIBFILES:.o=.H) ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H \n\n");
+  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) $(ACLIBFILES:.o=.H) ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
+  if (HaveTLMPorts || HaveTLMIntrPorts)
+    fprintf(output, "ac_tlm_protocol.H ");
+  fprintf(output, "\n\n");
 
   //Declaring SRCS variable
   COMMENT_MAKE("These are the source files provided by the user + ArchC sources");

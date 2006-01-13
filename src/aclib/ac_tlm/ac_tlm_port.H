@@ -37,6 +37,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Standard includes
+#include <string>
 
 // SystemC includes
 #include <systemc.h>
@@ -48,6 +49,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // using statements
+using std::string;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +61,7 @@
 class ac_tlm_port : public sc_port<ac_tlm_transport_if>,
 		    public ac_inout_if {
 public:
+  string name;
   uint32_t size;
 
   /** 
@@ -67,7 +70,13 @@ public:
    * @param size Size or address range of the element to be attached.
    * 
    */
-  explicit ac_tlm_port(uint32_t sz);
+  explicit ac_tlm_port(char const* name, uint32_t sz);
+
+  /**
+   * Default (virtual) destructor.
+   * @return Nothing.
+   */
+  virtual ~ac_tlm_port();
 
   /** 
    * Reads a single word.
