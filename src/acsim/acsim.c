@@ -2613,7 +2613,7 @@ void CreateMainTmpl() {
 
   COMMENT(INDENT[1],"%sISA simulator", INDENT[1]);               
   fprintf( output, "%s%s %s_proc1(\"%s\");\n\n", INDENT[1], project_name, project_name, project_name);
-  fprintf( output, "%s%s_proc1(clk);\n\n", INDENT[1], project_name);
+  fprintf( output, "%s%s_proc1.clock(clk);\n\n", INDENT[1], project_name);
 
   if(ACGDBIntegrationFlag)
     fprintf( output, "%sgdbstub = new AC_GDB(%s_proc1. %s_mc, PORT_NUM);\n\n",
