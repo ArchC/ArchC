@@ -15,7 +15,7 @@
 %{
 #include <stdlib.h>
 #include <string.h>
-#include "archc.parser.h"
+#include "archc_parser.h"
 
 #define MAX_STR_CONST  256
 #define MAX_CODE_CONST  256

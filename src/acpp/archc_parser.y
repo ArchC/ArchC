@@ -25,7 +25,7 @@
  * The ArchC parser is generated using GNU tools Bison and Flex.
  * The ArchC grammar for the parser and the regular expressions
  * for the lexical analyser are  stored into archc_parser.y and
- * archc_parser.l files respectively
+ * archc_lex.l files respectively
  * @{
 */
 
