@@ -65,6 +65,9 @@ extern int ACABIFlag;
 extern int ACStatsFlag;
 extern int ACDelayFlag;
 
+extern unsigned eval_result;
+extern char* eval_input;
+
 #include "accsim_extras.h"
 
 
