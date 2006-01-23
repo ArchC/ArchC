@@ -1,4 +1,5 @@
 #!/bin/sh
 aclocal
 autoconf
-automake
+test -d config || mkdir config
+automake --add-missing
