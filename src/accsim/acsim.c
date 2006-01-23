@@ -4668,7 +4668,8 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 //!Read the archc.conf configuration file
 void ReadConfFile(){
 
-  char *conf_filename;
+  char *conf_filename_local;
+  char *conf_filename_global;
   extern char *ARCHC_PATH;
   extern char *SYSTEMC_PATH;
   extern char *CC_PATH;
@@ -4681,19 +4682,23 @@ void ReadConfFile(){
   char var[CONF_MAX_LINE];
   char value[CONF_MAX_LINE];
 
-  ARCHC_PATH = getenv("ARCHC_PATH");
+/*  ARCHC_PATH = getenv("ARCHC_PATH"); */
 
-  if(!ARCHC_PATH){
-    AC_ERROR("You should set the ARCHC_PATH environment variable.\n");
-    exit(1);
-  }
-                
-  conf_filename = (char*) malloc( strlen(ARCHC_PATH)+20);
-  conf_filename = strcpy(conf_filename, ARCHC_PATH);
-  conf_filename = strcat(conf_filename, "/config/archc.conf");
+/*  if(!ARCHC_PATH){ */
+/*    AC_ERROR("You should set the ARCHC_PATH environment variable.\n"); */
+/*    exit(1); */
+/*  } */
 
-  conf_file = fopen(conf_filename, "r");
+  conf_filename_local = "~/.archc/archc.conf";
+  conf_filename_global = malloc(strlen(SYSCONFDIR) + 12);
+  strcpy(conf_filename_global, SYSCONFDIR);
+  strcat(conf_filename_global, "/archc.conf");
 
+  conf_file = fopen(conf_filename_local, "r");
+
+  if (!conf_file)
+    conf_file = fopen(conf_filename_global, "r");
+  
   if( !conf_file ){
     //ERROR
     AC_ERROR("Could not open archc.conf configuration file.\n");
@@ -4751,5 +4756,5 @@ void ReadConfFile(){
       }
     }
   }
-  free(conf_filename);
+  free(conf_filename_global);
 }

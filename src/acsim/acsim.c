@@ -668,7 +668,7 @@ void CreateArchHeader() {
   fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
 
   COMMENT(INDENT[1],"Virtual destructor declaration.");
-  fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1]);
+  fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
 
 
   fprintf( output, "};\n\n"); //End of ac_resources class
@@ -3072,13 +3072,13 @@ void CreateMakefile(){
   if (HaveTLMPorts || HaveTLMIntrPorts)
     fprintf(output, "-I$(SYSTEMC)/include/sysc/tlm ");
   fprintf(output, "\n");
-  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH)\n");
+  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L$(ARCHC)/lib\n");
 
   fprintf( output, "\n");
  
   fprintf( output, "LIB_SYSTEMC := %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
-  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS)\n");
+  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
   fprintf( output, "CC :=  %s\n", CC_PATH);
   fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
   fprintf( output, "DEBUG :=  %s\n", DEBUG_FLAGS);
@@ -3221,7 +3221,7 @@ void CreateMakefile(){
 
   fprintf( output, "$(EXE): $(OBJS) %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
-  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) $(addprefix $(ARCHC)/lib/, $(ACLIBFILES)) 2>&1 | c++filt\n\n");
+  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n");
 
   COMMENT_MAKE("Copy from template if main.cpp not exist");
   fprintf( output, "main.cpp:\n");
@@ -4413,7 +4413,8 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 //!Read the archc.conf configuration file
 void ReadConfFile(){
 
-  char *conf_filename;
+  char *conf_filename_local;
+  char *conf_filename_global;
   extern char *ARCHC_PATH;
   extern char *SYSTEMC_PATH;
   extern char *CC_PATH;
@@ -4426,18 +4427,22 @@ void ReadConfFile(){
   char var[CONF_MAX_LINE];
   char value[CONF_MAX_LINE];
 
-  ARCHC_PATH = getenv("ARCHC_PATH");
+/*  ARCHC_PATH = getenv("ARCHC_PATH"); */
 
-  if(!ARCHC_PATH){
-    AC_ERROR("You should set the ARCHC_PATH environment variable.\n");
-    exit(1);
-  }
+/*  if(!ARCHC_PATH){ */
+/*    AC_ERROR("You should set the ARCHC_PATH environment variable.\n"); */
+/*    exit(1); */
+/*  } */
                 
-  conf_filename = (char*) malloc( strlen(ARCHC_PATH)+20);
-  conf_filename = strcpy(conf_filename, ARCHC_PATH);
-  conf_filename = strcat(conf_filename, "/config/archc.conf");
+  conf_filename_local = "~/.archc/archc.conf";
+  conf_filename_global = malloc(strlen(SYSCONFDIR) + 12);
+  strcpy(conf_filename_global, SYSCONFDIR);
+  strcat(conf_filename_global, "/archc.conf");
 
-  conf_file = fopen(conf_filename, "r");
+  conf_file = fopen(conf_filename_local, "r");
+
+  if (!conf_file)
+    conf_file = fopen(conf_filename_global, "r");
 
   if( !conf_file ){
     //ERROR
@@ -4494,5 +4499,5 @@ void ReadConfFile(){
       }
     }
   }
-  free(conf_filename);
+  free(conf_filename_global);
 }

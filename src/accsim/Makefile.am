@@ -6,6 +6,9 @@ INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../aclib/ac_syscall
 ## yacc options
 AM_YFLAGS = -d -p eval_
 
+## Passing the sysconfdir to the compiler
+CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" @CPPFLAGS@
+
 ## The ArchC compiled simulator generation tool 
 bin_PROGRAMS = accsim
 BUILT_SOURCES = eval.h

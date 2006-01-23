@@ -5,3 +5,6 @@ AUTOMAKE_OPTIONS = foreign
 
 ## Subdirectories
 SUBDIRS = src
+
+## Configuration file installation
+sysconf_DATA = archc.conf
