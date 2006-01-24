@@ -9,8 +9,15 @@ AC_CONFIG_SRCDIR([src/accsim/accsim.c])
 AC_CONFIG_AUX_DIR(config)
 #AM_CONFIG_HEADER([archc_config.h])
 
-# Custom macro definitions
-
+# Getting system configuration - copy from SystemC
+AC_CANONICAL_HOST
+TARGET_ARCH=
+case "$host_os" in
+  *linux*)
+    TARGET_ARCH="linux"
+    ;;
+esac
+AC_SUBST(TARGET_ARCH)
 
 # Checks for programs.
 AC_PROG_CXX
