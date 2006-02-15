@@ -83,13 +83,13 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address, int wordsize) {
   if (rsp.status == SUCCESS) {
     switch (wordsize) {
     case 8:
-      *(buf.ptr8) = (uint8_t) rsp.data;
+      *(buf.ptr8) = ((uint8_t*)&rsp.data)[0];
       break;
     case 16:
-      *(buf.ptr16) = (uint16_t) rsp.data;
+      *(buf.ptr16) = ((uint16_t*)&rsp.data)[0];
       break;
     case 32:
-      *(buf.ptr32) = (uint32_t) rsp.data;
+      *(buf.ptr32) = ((uint32_t*)&rsp.data)[0];
       break;
     case 64:
       *(buf.ptr64) = rsp.data;
@@ -128,6 +128,7 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
 	for (int j = 0; (i < n_words) && (j < 8); i++, j++) { 
 	  (buf.ptr8)[i] = ((uint8_t*)&rsp.data)[j];
 	}
+        i--;
       }
     }
     break;
@@ -142,6 +143,7 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
 	for (int j = 0; (i < n_words) && (j < 4); i++, j++) { 
 	  (buf.ptr16)[i] = ((uint16_t*)&rsp.data)[j];
 	}
+        i--;
       }
     }
     break;
@@ -156,6 +158,7 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
 	for (int j = 0; (i < n_words) && (j < 2); i++, j++) { 
 	  (buf.ptr32)[i] = ((uint32_t*)&rsp.data)[j];
 	}
+        i--;
       }
     }
     break;
@@ -196,30 +199,30 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
   switch (wordsize) {
   case 8:
     req.type = READ;
-    req.addr = address && 0xfffff000;
+    req.addr = address;
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
-    ((uint8_t*)&(req.data))[address % sizeof(uint64_t)] = *(buf.ptr8);
+    ((uint8_t*)&(req.data))[0] = *(buf.ptr8);
     rsp = (*this)->transport(req);
     break;
   case 16:
     req.type = READ;
-    req.addr = address && 0xfffff000;
+    req.addr = address;
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
-    ((uint16_t*)&(req.data))[(address % sizeof(uint64_t)) >> 1] =
+    ((uint16_t*)&(req.data))[0] =
       *(buf.ptr16);
     rsp = (*this)->transport(req);
     break;
   case 32:
     req.type = READ;
-    req.addr = address && 0xfffff000;
+    req.addr = address;
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
-    ((uint32_t*)&(req.data))[(address % sizeof(uint64_t)) >> 2] =
+    ((uint32_t*)&(req.data))[0] =
       *(buf.ptr32);
     rsp = (*this)->transport(req);
     break;
@@ -248,33 +251,55 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
   ac_tlm_req req;
   ac_tlm_rsp rsp;
 
-  req.type = WRITE;
-
   switch (wordsize) {
   case 8:
     for (int i = 0; i < n_words; i++) {
+      req.type = READ;
       req.addr = address + i;
+      req.data = 0ULL;
+      rsp = (*this)->transport(req);
+
+      req.type = WRITE;
+      req.data = rsp.data;
+
       for (int j = 0; (i < n_words) && (j < 8); j++, i++) {
 	((uint8_t*)&req.data)[j] = (buf.ptr8)[i];
       }
+      i--;
       (*this)->transport(req);
     }
     break;
   case 16:
     for (int i = 0; i < n_words; i++) {
+      req.type = READ;
       req.addr = address + (i * sizeof(uint16_t));
+      req.data = 0ULL;
+      rsp = (*this)->transport(req);
+
+      req.type = WRITE;
+      req.data = rsp.data;
+
       for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
 	((uint16_t*)&req.data)[j] = (buf.ptr16)[i];
       }
+      i--;
       (*this)->transport(req);
     }
     break;
   case 32:
     for (int i = 0; i < n_words; i++) {
+      req.type = READ;
       req.addr = address + (i * sizeof(uint32_t));
+      req.data = 0ULL;
+      rsp = (*this)->transport(req);
+
+      req.type = WRITE;
+      req.data = rsp.data;
+
       for (int j = 0; (i < n_words) && (j < 2); j++, i++) {
 	((uint32_t*)&req.data)[j] = (buf.ptr32)[i];
       }
+      i--;
       (*this)->transport(req);
     }
     break;
