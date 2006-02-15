@@ -150,7 +150,7 @@ public:
     }
   }
 
-  virtual void init(int ac, char *av[], double period) = 0;
+  virtual void init(int ac, char *av[]) = 0;
 
   virtual void stop(int status = 0) = 0;
 

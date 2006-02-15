@@ -662,7 +662,7 @@ void CreateArchHeader() {
   }
 
   COMMENT(INDENT[1],"Module initialization method.");
-  fprintf( output, "%svirtual void init(int ac, char* av[], double period) = 0;\n\n", INDENT[1]);
+  fprintf( output, "%svirtual void init(int ac, char* av[]) = 0;\n\n", INDENT[1]);
 
   COMMENT(INDENT[1],"Module finalization method.");
   fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
@@ -1455,21 +1455,18 @@ void CreateProcessorHeader() {
   fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", INDENT[1], project_name);
 
   fprintf( output, "public:\n\n");
-  
-  fprintf( output, "%ssc_in<bool> clock;\n", INDENT[1]);
+
   fprintf( output, "%ssc_signal<unsigned> bhv_pc;\n", INDENT[1]);
 
   if( HaveMultiCycleIns)
     fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
   
   fprintf( output, " \n");
-  
-  fprintf( output, "%ssc_signal<bool> do_it;\n", INDENT[1]);
 
-  fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
-  fprintf( output, "%sdouble last_clock;\n", INDENT[1]);
-  
-  fprintf( output, " \n");
+  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+    fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
+
+  fprintf( output, "\n");
 
   fprintf( output, "%s%s_isa ISA;\n", INDENT[1], project_name );
   if (ACABIFlag)
@@ -1486,14 +1483,13 @@ void CreateProcessorHeader() {
 
   COMMENT(INDENT[1], "Behavior execution method.");
   fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
-  
-  COMMENT(INDENT[1], "Verification method.");
-  fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
-  fprintf( output, " \n");
-  
-  COMMENT(INDENT[1], "Updating Pipe Regs for behavioral simulation.");
-  fprintf( output, "%svoid ac_update_regs();\n", INDENT[1]);
-  
+
+  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+    COMMENT(INDENT[1], "Verification method.");
+    fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
+    fprintf( output, " \n");
+  }
+
   fprintf( output, " \n");
 
   fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], project_name);
@@ -1503,16 +1499,13 @@ void CreateProcessorHeader() {
   fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this), syscall(*this) {\n\n", INDENT[1], project_name, project_name);
   
   fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
-  fprintf( output, "%ssensitive << bhv_pc << do_it;\n\n", INDENT[2]);
 
-  fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
-  fprintf( output, "%ssensitive<< done;\n", INDENT[2]);  
-  fprintf( output, " \n");
+  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+    fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
+    fprintf( output, "%ssensitive<< done;\n", INDENT[2]);  
+    fprintf( output, " \n");
+  }
 
-  fprintf( output,"%sSC_THREAD( ac_update_regs );\n", INDENT[2]);
-  fprintf( output,"%ssensitive_pos<< clock ; \n", INDENT[2]);
-  fprintf( output,"%sdont_initialize(); \n\n", INDENT[2]);     
-  
   fprintf( output,"%sbhv_pc = 0; \n", INDENT[2]);
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
@@ -1545,8 +1538,8 @@ void CreateProcessorHeader() {
     fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", INDENT[1]);
   }
   
-    fprintf( output, "\n%svoid init(int ac, char* av[], double period);\n\n", INDENT[1]);
-    fprintf( output, "%svoid init(char* program, double period);\n\n", INDENT[1]);
+    fprintf( output, "\n%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
+    fprintf( output, "%svoid init(char* program);\n\n", INDENT[1]);
     fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
 
     fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
@@ -2165,7 +2158,7 @@ void CreateProcessorImpl() {
     fprintf( output, "%sreturn;\n", INDENT[2]);
     fprintf( output, "%s}\n\n", INDENT[1]);
   }
-    
+
   //Emiting processor behavior method implementation.
   if( HaveMultiCycleIns )
     EmitMultiCycleProcessorBhv(output);
@@ -2176,126 +2169,6 @@ void CreateProcessorImpl() {
       EmitProcessorBhv(output);
   }
 
-  fprintf( output, " \n");
-
-  //Emiting Verification Method.
-  COMMENT(INDENT[0],"Verification method.\n");               
-  fprintf( output, "%svoid %s::ac_verify(){\n", INDENT[0], project_name);        
-
-  if( ACVerifyFlag ){
-
-    fprintf( output, "extern int msqid;\n");
-    fprintf( output, "struct log_msgbuf lbuf;\n");
-    fprintf( output, "log_list::iterator itor;\n");
-    fprintf( output, "log_list *plog;\n");
-  }
-  fprintf( output, " \n");
-
-
-  fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
-
-  fprintf( output, "%sif( ", INDENT[1]);
-
-  if(stage_list){
-    for( i =1; i<= stage_num-1; i++)    
-      fprintf( output, "st%d_done.read() && \n%s", i, INDENT[2]); 
-    fprintf( output, "st%d_done.read() )\n", stage_num); 
-  }
-  else if ( pipe_list ){
-
-    for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
-
-      for( pstage = ppipe->stages; pstage->next != NULL; pstage=pstage->next)
-        fprintf( output, "%s%s_%s_done.read() && \n", INDENT[1], ppipe->name, pstage->name);
-
-      if( ppipe->next )  //If we have another pipe in the list, do it normally, otherwise, close if condition
-        fprintf( output, "%s%s_%s_done.read() && \n", INDENT[1], ppipe->name, pstage->name);
-      else
-        fprintf( output, "%s%s_%s_done.read() )\n", INDENT[1], ppipe->name, pstage->name);
-				
-    }
-  }
-  else{
-    fprintf( output, "done.read() )\n"); 
-  }
-
-  fprintf( output, "%s  {\n", INDENT[2]);
-
-    
-  fprintf( output, "#ifdef AC_VERBOSE\n");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    fprintf( output, "%s%s.change_dump(cerr);\n", INDENT[3],pstorage->name );
-  }
-  fprintf( output, "#endif\n");
-
-
-  fprintf( output, "#ifdef AC_UPDATE_LOG\n");
-
-  if( ACVerifyFlag ){
-
-    int next_type = 3;
-
-    fprintf( output, "%sif( sc_simulation_time() ){\n", INDENT[3]);
-
-    //Sending logs for every storage device. We just consider for co-verification caches, regbanks and memories
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-      if( pstorage->type == MEM ||
-          pstorage->type == ICACHE ||
-          pstorage->type == DCACHE ||
-          pstorage->type == CACHE ||
-          pstorage->type == REGBANK ){
-
-        fprintf( output, "%splog = %s.get_changes();\n", INDENT[4],pstorage->name );
-        fprintf( output, "%sif( plog->size()){\n", INDENT[4] );
-        fprintf( output, "%sitor = plog->begin();\n", INDENT[5] );
-        fprintf( output, "%slbuf.mtype = %d;\n", INDENT[5], next_type );
-        fprintf( output, "%swhile( itor != plog->end()){\n\n", INDENT[5] );
-        fprintf( output, "%slbuf.log = *itor;\n", INDENT[6] );
-        fprintf( output, "%sif( msgsnd(msqid, (struct log_msgbuf *)&lbuf, sizeof(lbuf), 0) == -1)\n", INDENT[6] );
-        fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[7] );
-        fprintf( output, "%sitor = plog->erase(itor);\n", INDENT[6] );
-        fprintf( output, "%s}\n", INDENT[5] );
-        fprintf( output, "%s}\n\n", INDENT[4] );
-			
-        next_type++;
-      }
-    }
-    fprintf( output, "%s}\n\n", INDENT[3] );
-		
-  }
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    //fprintf( output, "%s%s.change_save();\n", INDENT[3],pstorage->name );
-    fprintf( output, "%s%s.reset_log();\n", INDENT[3],pstorage->name );          
-  }
-	
-  fprintf( output, "#endif\n");
-
-
-  if(stage_list){
-    for( i =1; i<= stage_num; i++)    
-      fprintf( output, "%sst%d_done.write(0);\n", INDENT[3], i);  
-  }
-  else  if ( pipe_list ){
-		
-    for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
-			
-      for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
-        fprintf( output, "%s%s_%s_done.write(0);\n", INDENT[1], ppipe->name, pstage->name);
-
-    }
-  }
-  else{
-    fprintf( output, "%sdone.write(0);\n", INDENT[3]); 
-  }
-
-  fprintf( output, "%s  }\n\n", INDENT[2]);
-
-  fprintf(output, "%swait();\n\n", INDENT[1]);
-  fprintf(output, "%s}\n", INDENT[1]);
-
-  fprintf( output, "%s}\n\n", INDENT[0]);
-
   //!Emit update method.
   if( stage_list )
     EmitPipeUpdateMethod( output);
@@ -2304,22 +2177,138 @@ void CreateProcessorImpl() {
   else
     EmitUpdateMethod( output);
 
-  /* TODO: Emit other stuff */
-  /* stuff == */
-  /* 1. SIGNAL HANDLERS */
-  /* 2. init() and stop() functions */
+  fprintf( output, " \n");
+
+  //Emiting Verification Method.
+  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+    COMMENT(INDENT[0],"Verification method.\n");
+    fprintf( output, "%svoid %s::ac_verify(){\n", INDENT[0], project_name);
+
+    if( ACVerifyFlag ){
+
+      fprintf( output, "extern int msqid;\n");
+      fprintf( output, "struct log_msgbuf lbuf;\n");
+      fprintf( output, "log_list::iterator itor;\n");
+      fprintf( output, "log_list *plog;\n");
+    }
+    fprintf( output, " \n");
+
+
+    fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
+
+    fprintf( output, "%sif( ", INDENT[1]);
+
+    if(stage_list){
+      for( i =1; i<= stage_num-1; i++)    
+        fprintf( output, "st%d_done.read() && \n%s", i, INDENT[2]); 
+      fprintf( output, "st%d_done.read() )\n", stage_num); 
+    }
+    else if ( pipe_list ){
+
+      for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
+
+        for( pstage = ppipe->stages; pstage->next != NULL; pstage=pstage->next)
+          fprintf( output, "%s%s_%s_done.read() && \n", INDENT[1], ppipe->name, pstage->name);
+
+        if( ppipe->next )  //If we have another pipe in the list, do it normally, otherwise, close if condition
+          fprintf( output, "%s%s_%s_done.read() && \n", INDENT[1], ppipe->name, pstage->name);
+        else
+          fprintf( output, "%s%s_%s_done.read() )\n", INDENT[1], ppipe->name, pstage->name);
+
+      }
+    }
+    else{
+      fprintf( output, "done.read() )\n"); 
+    }
+
+    fprintf( output, "%s  {\n", INDENT[2]);
+
+
+    fprintf( output, "#ifdef AC_VERBOSE\n");
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+      fprintf( output, "%s%s.change_dump(cerr);\n", INDENT[3],pstorage->name );
+    }
+    fprintf( output, "#endif\n");
+
+
+    fprintf( output, "#ifdef AC_UPDATE_LOG\n");
+
+    if( ACVerifyFlag ){
+
+      int next_type = 3;
+
+      fprintf( output, "%sif( sc_simulation_time() ){\n", INDENT[3]);
+
+      //Sending logs for every storage device. We just consider for co-verification caches, regbanks and memories
+      for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+
+        if( pstorage->type == MEM ||
+            pstorage->type == ICACHE ||
+            pstorage->type == DCACHE ||
+            pstorage->type == CACHE ||
+            pstorage->type == REGBANK ){
+
+          fprintf( output, "%splog = %s.get_changes();\n", INDENT[4],pstorage->name );
+          fprintf( output, "%sif( plog->size()){\n", INDENT[4] );
+          fprintf( output, "%sitor = plog->begin();\n", INDENT[5] );
+          fprintf( output, "%slbuf.mtype = %d;\n", INDENT[5], next_type );
+          fprintf( output, "%swhile( itor != plog->end()){\n\n", INDENT[5] );
+          fprintf( output, "%slbuf.log = *itor;\n", INDENT[6] );
+          fprintf( output, "%sif( msgsnd(msqid, (struct log_msgbuf *)&lbuf, sizeof(lbuf), 0) == -1)\n", INDENT[6] );
+          fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[7] );
+          fprintf( output, "%sitor = plog->erase(itor);\n", INDENT[6] );
+          fprintf( output, "%s}\n", INDENT[5] );
+          fprintf( output, "%s}\n\n", INDENT[4] );
+
+          next_type++;
+        }
+      }
+      fprintf( output, "%s}\n\n", INDENT[3] );
+
+    }
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+      //fprintf( output, "%s%s.change_save();\n", INDENT[3],pstorage->name );
+      fprintf( output, "%s%s.reset_log();\n", INDENT[3],pstorage->name );          
+    }
+
+    fprintf( output, "#endif\n");
+
+
+    if(stage_list){
+      for( i =1; i<= stage_num; i++)    
+        fprintf( output, "%sst%d_done.write(0);\n", INDENT[3], i);  
+    }
+    else  if ( pipe_list ){
+
+      for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
+	
+        for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
+          fprintf( output, "%s%s_%s_done.write(0);\n", INDENT[1], ppipe->name, pstage->name);
+
+      }
+    }
+    else{
+      fprintf( output, "%sdone.write(0);\n", INDENT[3]); 
+    }
+
+    fprintf( output, "%s  }\n\n", INDENT[2]);
+
+    fprintf(output, "%swait();\n\n", INDENT[1]);
+    fprintf(output, "%s}\n", INDENT[1]);
+
+    fprintf( output, "%s}\n\n", INDENT[0]);
+  }
 
   /* SIGNAL HANDLERS */
   fprintf(output, "#include <ac_sighandlers.H>\n\n");
 
   /* init() and stop() */
   /* init() with 3 parameters */
-  fprintf(output, "void %s::init(int ac, char *av[], double period) {\n", project_name);
+  fprintf(output, "void %s::init(int ac, char *av[]) {\n", project_name);
   fprintf(output, "%sextern char* appfilename;\n", INDENT[1]);
   fprintf(output, "%sac_init_opt( ac, av);\n", INDENT[1]);
   fprintf(output, "%sac_init_app( ac, av);\n", INDENT[1]);
   fprintf(output, "%sAPP_MEM->load(appfilename);\n", INDENT[1]);
-  fprintf(output, "%stime_step = period / (sc_get_default_time_unit()).to_double();\n", INDENT[1]);
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2351,10 +2340,9 @@ void CreateProcessorImpl() {
 
 
   /* init() with 2 parameters */
-  fprintf(output, "void %s::init(char* program, double period) {\n",
+  fprintf(output, "void %s::init(char* program) {\n",
           project_name);
   fprintf(output, "%sAPP_MEM->load(program);\n", INDENT[1]);
-  fprintf(output, "%stime_step = period / (sc_get_default_time_unit()).to_double();\n", INDENT[1]);
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2608,12 +2596,8 @@ void CreateMainTmpl() {
   fprintf( output, "int sc_main(int ac, char *av[])\n");
   fprintf( output, "{\n\n");
 
-  COMMENT(INDENT[1],"Clock");               
-  fprintf( output, "%ssc_clock clk(\"clk\", 20, 0.5, true);\n", INDENT[1]);
-
   COMMENT(INDENT[1],"%sISA simulator", INDENT[1]);               
   fprintf( output, "%s%s %s_proc1(\"%s\");\n\n", INDENT[1], project_name, project_name, project_name);
-  fprintf( output, "%s%s_proc1.clock(clk);\n\n", INDENT[1], project_name);
 
   if(ACGDBIntegrationFlag)
     fprintf( output, "%sgdbstub = new AC_GDB(%s_proc1. %s_mc, PORT_NUM);\n\n",
@@ -2629,7 +2613,7 @@ void CreateMainTmpl() {
   fprintf( output, "%sac_trace(\"%s_proc1.trace\");\n", INDENT[1], project_name);
   fprintf( output, "#endif \n\n");
 
-  fprintf(output, "%s%s_proc1.init(ac, av, clk.period().to_double());\n", INDENT[1], project_name);
+  fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf(output, "%ssc_start(-1);\n\n", INDENT[1]);
@@ -3734,9 +3718,9 @@ void EmitUpdateMethod( FILE *output){
 
   //Emiting Update Method.
   COMMENT(INDENT[0],"Updating Regs for behavioral simulation.");               
-  fprintf( output, "%svoid %s::ac_update_regs(){\n\n", INDENT[0], project_name);
-
-  fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
+//   fprintf( output, "%svoid %s::ac_update_regs(){\n\n", INDENT[0], project_name);
+// 
+//   fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
 
   fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
   if( ACDelayFlag ){
@@ -3766,12 +3750,12 @@ void EmitUpdateMethod( FILE *output){
     }
   }
   fprintf(output, "%sif (ac_stop_flag == 0)\n", INDENT[1]);
-  fprintf( output, "%sdo_it = do_it ^1;\n\n", INDENT[2]);
+  fprintf( output, "%swait(SC_ZERO_TIME);\n", INDENT[2]);
 
-  fprintf(output, "%swait();\n\n", INDENT[1]);
-  fprintf(output, "%s}\n\n", INDENT[1]);
+  fprintf(output, "%selse return;\n\n", INDENT[1]);
 
   fprintf( output, "%s}\n", INDENT[0]);
+  fprintf( output, "%s}\n\n", INDENT[0]);
 }
 
 /**************************************/
@@ -4020,14 +4004,15 @@ void EmitProcessorBhv( FILE *output){
 
   fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
   fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
-  fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
+  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+    fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
   fprintf( output, "%s}\n", INDENT[1]);
 
-  fprintf(output, "%swait();\n\n", INDENT[1]);
-
-  fprintf( output, "%s}\n\n", INDENT[1]);
-
-  fprintf( output, "}\n\n");
+//   fprintf(output, "%swait();\n\n", INDENT[1]);
+// 
+//   fprintf( output, "%s}\n\n", INDENT[1]);
+// 
+//   fprintf( output, "}\n\n");
 
 }
 
@@ -4064,16 +4049,17 @@ void EmitProcessorBhv_ABI( FILE *output){
 
   fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
   fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
-  fprintf( output, "%sdone.write(1);\n", INDENT[2]);
+  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+    fprintf( output, "%sdone.write(1);\n", INDENT[2]);
 
   //Closing else.
   fprintf( output, "%s}\n", INDENT[1]);
 
-  fprintf(output, "%swait();\n\n", INDENT[1]);
-
-  fprintf( output, "%s}\n\n", INDENT[1]);
-
-  fprintf( output, "}\n\n");
+//   fprintf(output, "%swait();\n\n", INDENT[1]);
+// 
+//   fprintf( output, "%s}\n\n", INDENT[1]);
+// 
+//   fprintf( output, "}\n\n");
 
 }
 
