@@ -203,6 +203,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
+    req.data = rsp.data;
     ((uint8_t*)&(req.data))[0] = *(buf.ptr8);
     rsp = (*this)->transport(req);
     break;
@@ -212,6 +213,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
+    req.data = rsp.data;
     ((uint16_t*)&(req.data))[0] =
       *(buf.ptr16);
     rsp = (*this)->transport(req);
@@ -222,6 +224,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
+    req.data = rsp.data;
     ((uint32_t*)&(req.data))[0] =
       *(buf.ptr32);
     rsp = (*this)->transport(req);
