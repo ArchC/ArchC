@@ -1456,7 +1456,7 @@ void CreateProcessorHeader() {
 
   fprintf( output, "public:\n\n");
 
-  fprintf( output, "%ssc_signal<unsigned> bhv_pc;\n", INDENT[1]);
+  fprintf( output, "%sunsigned bhv_pc;\n", INDENT[1]);
 
   if( HaveMultiCycleIns)
     fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
@@ -3647,7 +3647,7 @@ void EmitPipeUpdateMethod( FILE *output){
     fprintf( output, "%sac_pc.commit_delays( sc_simulation_time() );\n", INDENT[1]);
   }
 
-  fprintf( output, "%sbhv_pc.write( ac_pc );\n", INDENT[1]);
+  fprintf( output, "%sbhv_pc = ac_pc;\n", INDENT[1]);
 
   fprintf( output, "%s}\n", INDENT[0]);
 }
@@ -3700,7 +3700,7 @@ void EmitMultiPipeUpdateMethod( FILE *output){
     fprintf( output, "%sac_pc.commit_delays( sc_simulation_time() );\n", INDENT[1]);
   }
 	
-  fprintf( output, "%sbhv_pc.write( ac_pc );\n", INDENT[1]);
+  fprintf( output, "%sbhv_pc = ac_pc;\n", INDENT[1]);
 	
   fprintf( output, "%s}\n", INDENT[0]);
 }
@@ -3735,7 +3735,7 @@ void EmitUpdateMethod( FILE *output){
 
   }
         
-  fprintf( output, "%sbhv_pc.write( ac_pc );\n", INDENT[2]);
+  fprintf( output, "%sbhv_pc = ac_pc;\n", INDENT[2]);
   if( HaveMultiCycleIns)
     fprintf( output, "%sbhv_cycle.write( ac_cycle );\n", INDENT[2]);
   fprintf( output, "%s}\n", INDENT[1]);
@@ -3949,12 +3949,12 @@ void EmitFetchInit( FILE *output, int base_indent){
 
 
   if (!ACDecCacheFlag){
-    fprintf( output, "%sif( bhv_pc.read() >= APP_MEM->get_size()){\n", INDENT[base_indent]);
+    fprintf( output, "%sif( bhv_pc >= APP_MEM->get_size()){\n", INDENT[base_indent]);
   }
   else
-    fprintf( output, "%sif( bhv_pc.read() >= dec_cache_size){\n", INDENT[base_indent]);
+    fprintf( output, "%sif( bhv_pc >= dec_cache_size){\n", INDENT[base_indent]);
 
-  fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << bhv_pc.read() << \").\" << endl;\n", INDENT[base_indent+1]);
+  fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << bhv_pc << \").\" << endl;\n", INDENT[base_indent+1]);
 	//  fprintf( output, "%scout = cerr;\n", INDENT[base_indent+1]);
 
   if( ACVerifyFlag ){
@@ -3984,7 +3984,7 @@ void EmitFetchInit( FILE *output, int base_indent){
     //fprintf( output, "%sfree(instr_dec);\n", INDENT[base_indent+2]);
     fprintf( output, "%sdelete(instr_vec);\n", INDENT[base_indent+2]);
   }
-  fprintf( output, "%sdecode_pc = bhv_pc.read();\n", INDENT[base_indent+2]);
+  fprintf( output, "%sdecode_pc = bhv_pc;\n", INDENT[base_indent+2]);
   fprintf( output, "%s}\n \n", INDENT[base_indent+1]);
   
 }
