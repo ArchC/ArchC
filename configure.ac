@@ -3,11 +3,10 @@
 
 AC_PREREQ(2.59)
 AC_INIT(ArchC, 2.0alpha1)
+AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE
 
 AC_CONFIG_SRCDIR([src/accsim/accsim.c])
-AC_CONFIG_AUX_DIR(config)
-#AM_CONFIG_HEADER([archc_config.h])
 
 # Getting system configuration - copy from SystemC
 AC_CANONICAL_HOST

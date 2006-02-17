@@ -8,6 +8,5 @@ SUBDIRS = src
 
 ## Special ArchC configuration file installation
 sysconf_DATA = archc.conf
-CLEANFILES += archc.conf
 archc.conf: archc.conf.m4
 	m4 -P -Darchc_path=${prefix} -Dsystemc_path=${SC_DIR} -Dcompiler=${CXX} -Dsystemc_target=${TARGET_ARCH} $< > $@
