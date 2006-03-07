@@ -31,7 +31,7 @@
   needed by the ArchC Simulator.                              */
 ////////////////////////////////////////////////////////////////
 
-/** @defgroup acpp ArchC simulator generator
+/** @defgroup acsim ArchC simulator generator
  * @{
  */
 

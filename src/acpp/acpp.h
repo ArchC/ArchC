@@ -31,6 +31,13 @@
   needed by the ArchC Pre-processor.                        */
 ////////////////////////////////////////////////////////////////
 
+/** @defgroup acpp acpp - The ArchC pre-processor
+ * The ArchC pre-processor module contains the lexer and parser
+ * definitions (GNU lex and bison) and the data types filled by
+ * the semantic rules.
+ * @{
+ */
+
 
 #ifndef _ACCP_H_
 #define _ACCP_H_
@@ -43,6 +50,7 @@ extern int acppLoad(char *filename);
 extern void acppUnload();
 extern int acppRun();
 
+/** @} */
 
 #endif /*_ACCP_H_*/
 

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(ArchC, 2.0alpha1)
+AC_INIT(archc, 2.0alpha1)
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE
 
@@ -31,6 +31,7 @@ SC_DIR=
 TLM_DIR=
 MAYBE_TLM=
 MAYBE_TLM_OBJ=
+BINUTILS_DIR=
 
 AC_ARG_WITH(systemc,
             AC_HELP_STRING([--with-systemc=PATH],
@@ -40,14 +41,21 @@ AC_ARG_WITH(systemc,
 
 AC_ARG_WITH(tlm,
             AC_HELP_STRING([--with-tlm=PATH],
-                           [Sets the directory where the TLM libraries are installed]),
+                           [Sets the directory where the TLM libraries are installed.]),
             [TLM_DIR=$withval; MAYBE_TLM=ac_tlm; MAYBE_TLM_OBJ=ac_tlm/ac_tlm_port.o],
             [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
+
+AC_ARG_WITH(binutils,
+            AC_HELP_STRING([--with-binutils=PATH],
+                           [Sets the directory where the Binutils source files are stored.]),
+            [BINUTILS_DIR=$withval],
+            [AC_MSG_NOTICE([Binutils path not specified.])])
 
 AC_SUBST(SC_DIR)
 AC_SUBST(TLM_DIR)
 AC_SUBST(MAYBE_TLM)
 AC_SUBST(MAYBE_TLM_OBJ)
+AC_SUBST(BINUTILS_DIR)
 
 # Checks for libraries.
 
@@ -72,7 +80,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([dup2 memset socket strchr strdup strerror strstr strtol])
 
 # Configuration files
-AC_CONFIG_FILES([Makefile src/Makefile src/acpp/Makefile src/aclib/Makefile src/aclib/ac_core/Makefile src/aclib/ac_decoder/Makefile src/aclib/ac_encoder/Makefile src/aclib/ac_gdb/Makefile src/aclib/ac_storage/Makefile src/aclib/ac_syscall/Makefile src/aclib/ac_tlm/Makefile src/aclib/ac_utils/Makefile src/acsim/Makefile src/accsim/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/acpp/Makefile src/aclib/Makefile src/aclib/ac_core/Makefile src/aclib/ac_decoder/Makefile src/aclib/ac_encoder/Makefile src/aclib/ac_gdb/Makefile src/aclib/ac_storage/Makefile src/aclib/ac_syscall/Makefile src/aclib/ac_tlm/Makefile src/aclib/ac_utils/Makefile src/acsim/Makefile src/accsim/Makefile src/acbinutils/Makefile])
 
 # Output
 AC_OUTPUT

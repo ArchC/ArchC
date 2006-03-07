@@ -83,6 +83,13 @@ HEXA_DIGIT [0-9A-Fa-f]
 
    }
 
+<INITIAL,ARCH>"+"   {
+     #if DEBUG_LEX
+              printf( "PLUS: %s\n", yytext );
+     #endif
+            return PLUS; 
+
+   }
 
 <INITIAL,ARCH>"."   { 
      #if DEBUG_LEX

@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 //Fix for Cygwin users, that do not have elf.h
 #ifdef __CYGWIN__
@@ -58,6 +59,10 @@ int msqid;
 
 
 #endif
+
+#define BYTE_GET(field)	byte_get((unsigned char *)field, sizeof (*field))
+static unsigned int (*byte_get) (unsigned char *, int);
+
 
 int ac_stop_flag = 0;
 int ac_exit_status = 0;
@@ -249,24 +254,59 @@ void ac_init_app( int ac, char* av[]){
 
 }
 
-unsigned int convert_endian(unsigned int size, unsigned int num)
+
+/*
+  Transforms the data pointed by field (with size) to little endian 
+*/
+unsigned int byte_get_little_endian(unsigned char *field, int size) 
 {
-  unsigned char *in = (unsigned char*) &num;
-  unsigned int out = 0;
+  switch (size)
+    {
+    case 1:
+      return *field;
 
-  if (! AC_MATCH_ENDIAN) {
-    for(; size>0; size--) {
-      out <<= 8;
-      out |= in[0];
-      in++;
+    case 2:
+      return  ((unsigned int) (field[0]))
+	|    (((unsigned int) (field[1])) << 8);
+
+    case 4:
+      return  ((unsigned long) (field[0]))
+	|    (((unsigned long) (field[1])) << 8)
+	|    (((unsigned long) (field[2])) << 16)
+	|    (((unsigned long) (field[3])) << 24);
+
+    default:
+      AC_ERROR("Internal error: Invalid byte size.\n");
+      exit(EXIT_FAILURE);
     }
-  }
-  else {
-    out = num;
-  }
-
-  return out;
 }
+
+
+/*
+  Transforms the data pointed by field (with size) to big endian 
+*/
+unsigned int byte_get_big_endian(unsigned char *field, int size)
+{
+  switch (size)
+    {
+    case 1:
+      return *field;
+
+    case 2:
+      return ((unsigned int) (field[1])) | (((int) (field[0])) << 8);
+
+    case 4:
+      return ((unsigned long) (field[3]))
+	|   (((unsigned long) (field[2])) << 8)
+	|   (((unsigned long) (field[1])) << 16)
+	|   (((unsigned long) (field[0])) << 24);
+
+    default:
+      AC_ERROR("Internal error: Invalid byte size.\n");
+      exit(EXIT_FAILURE);
+    }
+}
+
 
 //Loading binary application
 int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size)
@@ -274,58 +314,111 @@ int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size)
   Elf32_Ehdr    ehdr;
   Elf32_Shdr    shdr;
   Elf32_Phdr    phdr;
-  int           fd;
+  FILE          *fd;
   unsigned int  i;
 
-  //Open application
-  if (!filename || ((fd = open(filename, 0)) == -1)) {
-    AC_ERROR("Openning application file '" << filename << "': " << strerror(errno) << endl);
+  /*
+   Most code was taken from the Binutils readelf application
+  */
+
+  /* Open up the file for reading */
+  fd = fopen (filename, "rb");
+  if (fd == NULL) {
+    AC_ERROR("Opening application file '" << filename << "': " << strerror(errno) << endl);
     exit(EXIT_FAILURE);
   }
 
-  //Test if it's an ELF file
-  if ((read(fd, &ehdr, sizeof(ehdr)) != sizeof(ehdr)) ||  // read header
-      (strncmp((char *)ehdr.e_ident, ELFMAG, 4) != 0) ||          // test elf magic number
-      0) {
-    close(fd);
+ /* Read in the identity array.  */
+  if (fread (ehdr.e_ident, EI_NIDENT, 1, fd) != 1) {
+    AC_ERROR("Error reading file '" << filename << endl);
+    exit(EXIT_FAILURE);
+  }
+    
+
+  /* Determine how to read the rest of the header.  */
+  switch (ehdr.e_ident[EI_DATA]) {
+  default: /* fall through */
+  case ELFDATANONE: /* fall through */
+  case ELFDATA2LSB:
+    byte_get = byte_get_little_endian;
+    //    byte_put = byte_put_little_endian;
+    break;
+  case ELFDATA2MSB:
+    byte_get = byte_get_big_endian;
+    //    byte_put = byte_put_big_endian;
+    break;
+  }
+
+
+  // TODO: Consider the case when the file is not 32-bit
+
+  /* Get the rest of the header data */
+  if (fread ((unsigned char *)&ehdr.e_type, sizeof (ehdr) - EI_NIDENT, 1, fd) != 1) {
+    AC_ERROR("Error reading file %s\n" << filename << endl);
+    exit(EXIT_FAILURE);
+  }
+
+  ehdr.e_type      = BYTE_GET (&ehdr.e_type);
+  ehdr.e_machine   = BYTE_GET (&ehdr.e_machine);
+  ehdr.e_version   = BYTE_GET (&ehdr.e_version);
+  ehdr.e_entry     = BYTE_GET (&ehdr.e_entry);
+  ehdr.e_phoff     = BYTE_GET (&ehdr.e_phoff);
+  ehdr.e_shoff     = BYTE_GET (&ehdr.e_shoff);
+  ehdr.e_flags     = BYTE_GET (&ehdr.e_flags);
+  ehdr.e_ehsize    = BYTE_GET (&ehdr.e_ehsize);
+  ehdr.e_phentsize = BYTE_GET (&ehdr.e_phentsize);
+  ehdr.e_phnum     = BYTE_GET (&ehdr.e_phnum);
+  ehdr.e_shentsize = BYTE_GET (&ehdr.e_shentsize);
+  ehdr.e_shnum     = BYTE_GET (&ehdr.e_shnum);
+  ehdr.e_shstrndx  = BYTE_GET (&ehdr.e_shstrndx);
+
+
+  /* Check if the file is in fact an ELF */
+  if (   ehdr.e_ident[EI_MAG0] != ELFMAG0
+      || ehdr.e_ident[EI_MAG1] != ELFMAG1
+      || ehdr.e_ident[EI_MAG2] != ELFMAG2
+      || ehdr.e_ident[EI_MAG3] != ELFMAG3)
+  {
+    fclose(fd);
     return EXIT_FAILURE;
   }
 
+
   //Set start address
-  ac_start_addr = convert_endian(4,ehdr.e_entry);
+  ac_start_addr = ehdr.e_entry;
   if (ac_start_addr > data_mem_size) {
     AC_ERROR("the start address of the application is beyond model memory\n");
-    close(fd);
+    fclose(fd);
     exit(EXIT_FAILURE);
   }
 
-  if (convert_endian(2,ehdr.e_type) == ET_EXEC) {
+  if (ehdr.e_type == ET_EXEC) {
     //It is an ELF file
     AC_SAY("Reading ELF application file: " << filename << endl);
 
     //Get program headers and load segments
     //    lseek(fd, convert_endian(4,ehdr.e_phoff), SEEK_SET);
-    for (i=0; i<convert_endian(2,ehdr.e_phnum); i++) {
+    for (i=0; i < ehdr.e_phnum; i++) {
 
       //Get program headers and load segments
-      lseek(fd, convert_endian(4,ehdr.e_phoff) + convert_endian(2,ehdr.e_phentsize) * i, SEEK_SET);
-      if (read(fd, &phdr, sizeof(phdr)) != sizeof(phdr)) {
+      fseek(fd, ehdr.e_phoff + ehdr.e_phentsize*i, SEEK_SET);
+      if (fread(&phdr, sizeof(phdr), 1, fd) != 1) {
         AC_ERROR("reading ELF program header\n");
-        close(fd);
+        fclose(fd);
         exit(EXIT_FAILURE);
       }
 
-      if (convert_endian(4,phdr.p_type) == PT_LOAD) {
+      if (BYTE_GET (&phdr.p_type) == PT_LOAD) {
         Elf32_Word j;
-        Elf32_Addr p_vaddr = convert_endian(4,phdr.p_vaddr);
-        Elf32_Word p_memsz = convert_endian(4,phdr.p_memsz);
-        Elf32_Word p_filesz = convert_endian(4,phdr.p_filesz);
-        Elf32_Off  p_offset = convert_endian(4,phdr.p_offset);
+        Elf32_Addr p_vaddr  = BYTE_GET (&phdr.p_vaddr);
+        Elf32_Word p_memsz  = BYTE_GET (&phdr.p_memsz);
+        Elf32_Word p_filesz = BYTE_GET (&phdr.p_filesz);
+        Elf32_Off  p_offset = BYTE_GET (&phdr.p_offset);
 
         //Error if segment greater then memory
         if (data_mem_size < p_vaddr + p_memsz) {
           AC_ERROR("not enough memory in ArchC model to load application.\n");
-          close(fd);
+          fclose(fd);
           exit(EXIT_FAILURE);
         }
 
@@ -333,61 +426,59 @@ int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size)
         if (ac_heap_ptr < p_vaddr + p_memsz) ac_heap_ptr = p_vaddr + p_memsz;
 
         //Load and correct endian
-        lseek(fd, p_offset, SEEK_SET);
+        fseek(fd, p_offset, SEEK_SET);
         for (j=0; j < p_filesz; j+=sizeof(ac_fetch)) {
           int tmp;
-          read(fd, &tmp, sizeof(ac_fetch));
-          *(ac_fetch *) (data_mem + p_vaddr + j) = convert_endian(sizeof(ac_fetch), tmp);
+          fread(&tmp, sizeof(ac_fetch), 1, fd);
+          *(ac_fetch *) (data_mem + p_vaddr + j) = byte_get((unsigned char *)&tmp, sizeof(ac_fetch));
         }
         memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
       }
 
-      //next header/segment
-      //      lseek(fd, convert_endian(4,ehdr.e_phoff) + convert_endian(2,ehdr.e_phentsize) * i, SEEK_SET);
     }
   }
-  else if (convert_endian(2,ehdr.e_type) == ET_REL) {
+  else if (ehdr.e_type == ET_REL) {
 
     AC_SAY("Reading ELF relocatable file: " << filename << endl);
 
     // first load the section name string table
     char *string_table;
-    int   shoff = convert_endian(4,ehdr.e_shoff);
-    short shndx = convert_endian(2,ehdr.e_shstrndx);
-    short shsize = convert_endian(2,ehdr.e_shentsize);
+    int   shoff  = ehdr.e_shoff;
+    short shndx  = ehdr.e_shstrndx;
+    short shsize = ehdr.e_shentsize;
 
-    lseek(fd, shoff+(shndx*shsize), SEEK_SET);
-    if (read(fd, &shdr, sizeof(shdr)) != sizeof(shdr)) {
+    fseek(fd, shoff+(shndx*shsize), SEEK_SET);
+    if (fread(&shdr, sizeof(shdr), 1, fd) != 1) {
       AC_ERROR("reading ELF section header\n");
-      close(fd);
+      fclose(fd);
       exit(EXIT_FAILURE);
     }
     
-    string_table = (char *) malloc(convert_endian(4,shdr.sh_size));
-    lseek(fd, convert_endian(4,shdr.sh_offset), SEEK_SET);
-    read(fd, string_table, convert_endian(4,shdr.sh_size));
+    string_table = (char *) malloc(BYTE_GET (&shdr.sh_size));
+    fseek(fd, BYTE_GET (&shdr.sh_offset), SEEK_SET);
+    fread(string_table, BYTE_GET (&shdr.sh_size), 1, fd);
 
     // load .text, .data and .bss sections    
-    for (i=0; i<convert_endian(2,ehdr.e_shnum); i++) {
+    for (i=0; i < ehdr.e_shnum; i++) {
 
-      lseek(fd, shoff + shsize*i, SEEK_SET);
+      fseek(fd, shoff + shsize*i, SEEK_SET);
       
-      if (read(fd, &shdr, sizeof(shdr)) != sizeof(shdr)) {
+      if (fread(&shdr, sizeof(shdr), 1, fd) != 1) {
         AC_ERROR("reading ELF section header\n");
-        close(fd);
+        fclose(fd);
         exit(EXIT_FAILURE);
       }
 
-
-      if (!strcmp(string_table+convert_endian(4,shdr.sh_name), ".text") ||
-          !strcmp(string_table+convert_endian(4,shdr.sh_name), ".data") ||
-          !strcmp(string_table+convert_endian(4,shdr.sh_name), ".bss")) {
+      Elf32_Word name = BYTE_GET (&shdr.sh_name);
+      if (!strcmp(string_table+name, ".text") ||
+          !strcmp(string_table+name, ".data") ||
+          !strcmp(string_table+name, ".bss")) {
         
         //        printf("Section %s:\n", string_table+convert_endian(4,shdr.sh_name));
 
-        Elf32_Off  tshoff  = convert_endian(4,shdr.sh_offset);
-        Elf32_Word tshsize = convert_endian(4,shdr.sh_size);
-        Elf32_Addr tshaddr = convert_endian(4,shdr.sh_addr);
+        Elf32_Off  tshoff  = BYTE_GET (&shdr.sh_offset);
+        Elf32_Word tshsize = BYTE_GET (&shdr.sh_size);
+        Elf32_Addr tshaddr = BYTE_GET (&shdr.sh_addr);
 
         if (tshsize == 0) {
           // printf("--- empty ---\n");
@@ -396,25 +487,25 @@ int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size)
 
         if (data_mem_size < tshaddr + tshsize) {
           AC_ERROR("not enough memory in ArchC model to load application.\n");
-          close(fd);
+          fclose(fd);
           exit(EXIT_FAILURE);
         }
 
         //Set heap to the end of the segment
         if (ac_heap_ptr < tshaddr + tshsize) ac_heap_ptr = tshaddr + tshsize;
 
-        if (!strcmp(string_table+convert_endian(4,shdr.sh_name), ".bss")) {
+        if (!strcmp(string_table+BYTE_GET (&shdr.sh_name), ".bss")) {
           memset(data_mem + tshaddr, 0, tshsize);
           //continue;
           break; // .bss is supposed to be the last one
         }
 
         //Load and correct endian
-        lseek(fd, tshoff, SEEK_SET);
+        fseek(fd, tshoff, SEEK_SET);
         for (Elf32_Word j=0; j < tshsize; j+=sizeof(ac_fetch)) {
           int tmp;
-          read(fd, &tmp, sizeof(ac_fetch));
-          *(ac_fetch *) (data_mem + tshaddr + j) = convert_endian(sizeof(ac_fetch), tmp);
+          fread(&tmp, sizeof(ac_fetch), 1, fd);
+          *(ac_fetch *) (data_mem + tshaddr + j) = byte_get((unsigned char *)&tmp, sizeof(ac_fetch));
 
           // printf("0x%08x %08x \n", tshaddr+j, *(ac_fetch *) (data_mem+tshaddr+j));
         }
@@ -425,7 +516,7 @@ int ac_load_elf(char* filename, char* data_mem, unsigned int data_mem_size)
   }
     
   //Close file
-  close(fd);
+  fclose(fd);
 
   return EXIT_SUCCESS;
 }

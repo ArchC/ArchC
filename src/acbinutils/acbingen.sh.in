@@ -1,0 +1,186 @@
+#!/bin/sh
+
+
+#
+# command line parsing
+#
+me=`echo "$0" | sed -e 's,.*/,,'`
+
+usage="\
+Usage: $0 [options] <archc source file> <architecture name>
+
+Create gas target source files and copy them to the binutils tree.
+
+Options:
+  -c, --create-only  only create the files, do not copy to binutils tree
+  -h, --help         print this help
+  -v, --version      print version number
+
+Report bugs and patches to ArchC Team."
+
+version="\
+ArchC assembler generator script version 1.6.0"
+
+help="
+Try \`$me --help' for more information."
+
+CREATE_ONLY=0
+PATCH_BINUTILS=1  #1 means to patch, 0 otherwise
+
+# Parse command line
+while test $# -gt 0 ; do
+  case $1 in
+    --version | -v )
+       echo "$version" ; exit 0 ;;
+    --help | --h* | -h )
+       echo "$usage"; exit 0 ;;
+    --create-only | -c )
+       CREATE_ONLY=1; shift; break ;;  
+#    -- )     # Stop option processing
+#       shift; break ;;
+    -* )
+       echo "$me: invalid option $1$help"
+       exit 1 ;;
+    * )
+       break ;;
+  esac
+done
+
+case $# in
+ 0 | 1) echo "$me: missing argument$help" >&2
+    exit 1;;
+ 2 | 3) ;;
+ *) echo "$me: too many arguments$help" >&2
+    exit 1;;
+esac
+
+ARCH_NAME=$2
+
+ARCH_INVALID_CHAR=`echo "$2" | sed -e 's/[a-zA-Z][_a-zA-Z0-9]*//'`
+
+if [ ! -z "$ARCH_INVALID_CHAR" ]; then
+  echo "Invalid architecture name: ${ARCH_NAME}"  
+  echo "Valid characters include letters, numbers and underscore (only"\
+       "letters can begin a name)."
+  exit 1
+fi
+
+if [ -z "$BINUTILS_PATH" ]; then
+  BINUTILS_PATH=`grep BINUTILS_PATH @sysconfdir@/archc.conf | cut -d = -f2`
+  BINUTILS_PATH=`echo $BINUTILS_PATH`
+  
+  if [ -z "$BINUTILS_PATH" ]; then
+    echo "BINUTILS_PATH environment variable not set"
+    exit 1
+  fi 
+fi
+
+
+# check for '/' at the end and take it out
+BINUTILS_DIR=`echo "$BINUTILS_PATH" | sed -e 's/\/$//'`
+
+
+FILES_TO_PATCH="@patchfiles@" 
+FILES_TO_COPY="@copyfiles@"
+
+
+if [ "$CREATE_ONLY" -eq 0 ]; then
+# tell the user if the architecture name already exists in Binutils
+  $BINUTILS_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "==================="
+    echo "asmgen.sh has detected that your Binutils distribution already uses the"
+    echo "architecture name '${ARCH_NAME}'."
+    echo
+    echo "It is not recommended to continue if you have not set it by yourself."
+#  echo "If you continue, the Binutils files will not be patched."
+    echo "==================="
+    echo
+    read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+    echo
+    case $USER_ANSWER in 
+        y | yes | Y | YES) PATCH_BINUTILS=0; break;;
+        * ) echo "Quitting ..."; echo; exit 1;;
+    esac
+  fi
+fi
+
+# creates binutils directory tree (if none was built)
+cp -rf @pkgdatadir@/binutils .
+
+
+# executes acasm to generate the files in the binutils tree
+echo "Generating machine dependent code..."
+@bindir@/bmdsfg $1 -a${ARCH_NAME}
+[ $? -ne 0 ] && exit $?
+
+
+# change the name of template files
+m4 -P defines.m4 binutils/ld/emulparams/xxxxxelf.sh > binutils/ld/emulparams/${ARCH_NAME}elf.sh
+m4 -P defines.m4 binutils/include/opcode/xxxxx.h > binutils/include/opcode/${ARCH_NAME}.h
+m4 -P defines.m4 binutils/bfd/cpu-xxxxx.c > binutils/bfd/cpu-${ARCH_NAME}.c
+m4 -P defines.m4 binutils/gas/config/tc-xxxxx.h > binutils/gas/config/tc-${ARCH_NAME}.h
+m4 -P defines.m4 binutils/opcodes/xxxxx-opc.c > binutils/opcodes/${ARCH_NAME}-opc.c
+m4 -P defines.m4 binutils/include/elf/xxxxx.h > binutils/include/elf/${ARCH_NAME}.h
+m4 -P defines.m4 binutils/bfd/elf32-xxxxx.c > binutils/bfd/elf32-${ARCH_NAME}.c
+m4 -P defines.m4 binutils/gas/config/tc-xxxxx.c > binutils/gas/config/tc-${ARCH_NAME}.c
+
+
+if [ "$CREATE_ONLY" -ne 0 ]; then
+  echo "Done. No files copied."
+  echo
+  exit 0
+fi
+
+# check if we need to patch the files
+#$BINUTILS_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
+
+if [ "$PATCH_BINUTILS" -ne 0 ]; then
+# applies the patch 
+    echo "Patching... "
+    for file in $FILES_TO_PATCH
+    do
+      
+      if [ ! -f "$BINUTILS_DIR/$file" ]; then
+
+	    if [ $file = "gas/configure.tgt" ]; then
+	      # Starting from 2.16, binutils uses configure.tgt
+	      # For compatibility with older versions, redirect to 'configure'
+	      file="gas/configure"
+	      cp -f binutils/gas/configure.tgt.sed binutils/gas/configure.sed > /dev/null 2>&1
+	    else           	  
+  	      echo "Source file $file not found."
+  	      exit 1
+        fi
+      fi
+
+  # creates a backup
+      mv -f $BINUTILS_DIR/$file $BINUTILS_DIR/$file.bkp > /dev/null 2>&1
+      if [ $? -ne 0 ]; then
+	  echo "Cannot move file $file."
+	  exit 1
+      fi
+
+      sed s/xxxxx/${ARCH_NAME}/g binutils/$file.sed > binutils/$file.sed2
+      sed -f binutils/$file.sed2 $BINUTILS_DIR/$file.bkp > $BINUTILS_DIR/$file
+
+    done
+   
+    chmod a+x $BINUTILS_DIR/config.sub
+    chmod a+x $BINUTILS_DIR/bfd/config.bfd
+
+else
+    echo "Skipping patching..."
+fi
+
+# copies the generated files into binutils tree
+echo "Copying files to binutils source tree..."
+for file in $FILES_TO_COPY
+do
+  cpfile=`echo "$file" | sed -e "s/xxxxx/${ARCH_NAME}/g"`
+  cp -f binutils/${cpfile} $BINUTILS_DIR/$file
+  [ $? -ne 0 ] && exit $?
+done
+
+echo "All done successfully."
+echo
