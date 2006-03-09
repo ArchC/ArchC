@@ -42,14 +42,23 @@ extern int yyparse();
 extern FILE *yyin;
 //extern int *yydebug 
 extern int line_num;
+extern int force_setasm_syntax;
 
 /*!
    Initializes the pre-processor. Always call this before any other Acpp calls.
  */
-void acppInit()
+void acppInit(int force_asm_syntax)
 {
   //Initialize to 1 for parser debug
   //   *yydebug =1; 
+  force_setasm_syntax = force_asm_syntax;
+
+  project_name = NULL;
+  isa_filename = NULL;
+  wordsize = 0;
+  fetchsize = 0;
+  ac_tgt_endian = 1; /* defaults to big endian */
+
 
   yyin = NULL;
 }

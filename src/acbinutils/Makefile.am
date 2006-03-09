@@ -3,7 +3,7 @@
 #SUBDIRS = binutils
 
 ## Includes
-INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../acpp
+INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../acpp -I../acsim
 
 BINUTILS_ROOT = binutils
 

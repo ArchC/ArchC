@@ -178,7 +178,7 @@ echo "Copying files to binutils source tree..."
 for file in $FILES_TO_COPY
 do
   cpfile=`echo "$file" | sed -e "s/xxxxx/${ARCH_NAME}/g"`
-  cp -f binutils/${cpfile} $BINUTILS_DIR/$file
+  cp -f binutils/${cpfile} $BINUTILS_DIR/${cpfile}
   [ $? -ne 0 ] && exit $?
 done
 

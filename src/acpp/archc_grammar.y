@@ -36,114 +36,64 @@
 /***************
  C declarations 
 *****************/
+//#include <stdlib.h>
+//#include <stdio.h>
+//#include <string.h>
+//#include <assert.h>
+//#include <ctype.h>
 #include "acsim.h"
-#include "parser.asm.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <ctype.h>
+#include "core_actions.h"
+#include "asm_actions.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE
 #define ADD_DEBUG 1
 
+/*!type used to identify which unit is being used for storage devices */
+enum _sto_unit { BYTE=1, KBYTE=1024, MBYTE=1048576, GBYTE=1073741824};
+typedef enum _sto_unit sto_unit;
+
 /*!type used to identify the kind of list being declared */
 enum _commalist { INSTR_L, STAGE_L, REG_L, PIPE_L, REGBANK_L, CACHE_L, MEM_L, TLM_PORT_L, TLM_INTR_PORT_L };
-/*!type used to identify the kind of list being declared */
 typedef enum _commalist commalist;
 
 /*!type used to identify which description is being parsed */
 enum _descr { ISA_D, ARCH_D};
-/*!type used to identify which description is being parsed */
 typedef enum _descr description;
 
-/*!type used to identify which unit is being used for storage devices */
-enum _sto_unit { BYTE=1, KBYTE=1024, MBYTE=1048576, GBYTE=1073741824};
-/*!type used to identify which  unit is being used for storage devices */
-typedef enum _sto_unit sto_unit ;
 
-int parse_error=0;                    //!< Indicates parse error occurred 
+/* buffer variables */
 
-FILE *output = NULL;                  //!< The output file being written.
-char *current_type;                   //!< The name of the type/format associated to the object currently being parsed.
-char *current_instr;                  //!< The name of the instruction currently being parsed.
+static char *current_type;                   //!< The name of the insn type/format associated to the object currently being parsed.
+static ac_dec_instr *current_instr;           //!< Pointer to the current instruction
+static ac_dec_format *current_format;         //!< Pointer to the current format
+static sto_unit current_unit;     //!< Indicates what storage unit is being used.
+static ac_pipe_list *current_pipe;
+static ac_sto_types cache_type;   //!< Indicates the type of cache being declared.
+
+
+static commalist list_type;       //!< Indicates what type of list of declarations is being parsed.
+static char error_msg[500];
+static int is_in_old_setasm_mode;
+
+static description descrp;        //!< Indicates what type of description is being parsed.
+
+static int parse_error = 0;                    //!< Indicates parse error occurred 
+
+
+/* global */
 char *project_name;                   //!< Name of the ArchC project being processed.
 char *isa_filename;                   //!< Name for the isa class file.
-char *aux;
-
-ac_dec_format *format_ins_list;       //! Format List for instructions.
-ac_dec_format *format_ins_list_tail;
-
-ac_dec_format *format_reg_list;      //!< Format List for registers.
-ac_dec_format *format_reg_list_tail;
-
-ac_dec_instr *instr_list;            //!< Instruction List.
-ac_dec_instr *instr_list_tail;
-
-ac_dec_instr *pinstr;        //!< Pointer to handle instruction list (finding an insn)
-ac_dec_format *pformat;              //!< Same for format list (used only in bison code)
-
-ac_dec_field *field_list= NULL;      //!< Field List.
-
-static char error_msg[500];
-int support_extended_setasm = 0;     // tools should set this flag if the new set_asm syntax is required
-static int is_in_old_setasm_mode = 0;
-
-//@{
-/** Pipe List management variables. */
-ac_pipe_list  *pipe_list = NULL, *ppipe, *current_pipe=NULL, *pipe_list_tail = NULL;
-//@}
-
-
-/******************************
- * This list is used for single pipe declarations like:
- * ac_stages ST1, ST2, ST3;
- */
-//@{
-/** Stage List management variables. */
-ac_stg_list  *stage_list = NULL, *pstage, *stage_list_tail = NULL;
-//@}
-
-//@{
-/** Storage List management. */
-ac_sto_list  *storage_list, *pstorage, *storage_list_tail;
-//@}
-
-//@{
-/** Cache parameter list management. */
-ac_cache_parms  *parms_list, *pparms, *parms_list_tail;
-//@}
-
-//@{
-/** Boolean flag passed to the SystemC generator*/
-int HaveFormattedRegs = 0,  HaveMultiCycleIns = 0, HaveMemHier=0, HaveCycleRange=0;
-int ControlInstrInfoLevel = 0;
-int HaveTLMPorts = 0;
-int HaveTLMIntrPorts = 0;
-//@}
-
-commalist list_type;       //!< Indicates what type of list of declarations is being parsed.
-description descrp;        //!< Indicates what type of description is being parsed.
-sto_unit current_unit;     //!< Indicates what storage unit is being used.
-ac_sto_types cache_type;   //!< Indicates the type of cache being declared.
-ac_sto_types port_type;    //!< Indicates the type of port being declared.
-ac_sto_list *fetch_device; //!< Indicates the device used for fetching instructions.
-
-int instr_num;    //!< Number of Instructions 
-int declist_num;  //!< Number of Decodification lists
-int format_num;   //!< Number of Formats
-int const_count;  //!< Number of Constants
-int stage_num;    //!< Number of Stages
-int pipe_num;     //!< Number of Pipelines
 int wordsize;     //!< Size of the word type in bits for the current project.
-int reg_width;   //!< Bit width of registers in a regbank.
 int fetchsize;    //!< Size of the fetch word type in bits for the current project.
+int ac_tgt_endian;  //!< Indicate the endianess of the target architecture.
+int force_setasm_syntax;     //!< tools should set this flag if the new set_asm syntax is required
+
+
+/* lexer interface variable */
 int line_num;    //!< Input file line counter.
 
-int ac_tgt_endian;  //!< Indicate the endianess of the target architecture.
 
-int first_format = 1, largest_format_size=0;
 
 //@}
 
@@ -211,402 +161,6 @@ void print_comment( FILE* output, char* description ){
 }
 
 
-/********************************************************/
-/*!Parse format string generating field list.
-  @ingroup parser
-  \param fieldstr Reference to string containing field declarations.
-  \param sum_size Sum of bits of previous fields.
-  \param size_limit Limit of size for this field group
-  \param field_list_head Head of the field list.
-  \param field_list_tail Tail of the field list.        */
-/********************************************************/
-int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_field **field_list_head, ac_dec_field **field_list_tail)
-{
-  char *str = *fieldstr;
-  int first_bit = sum_size;
-  char *fieldend;
-  
-  //Eat spaces
-  for (; **fieldstr && isspace(**fieldstr); (*fieldstr)++);
-
-  /* Building field_list */
-  while (**fieldstr != 0) {
-
-    //Start group?
-    if (**fieldstr == '[') {
-      (*fieldstr)++;
-      sum_size = parse_format(fieldstr, sum_size, -1, field_list_head, field_list_tail);
-    }
-
-    //Close group?
-    else if (**fieldstr == ']') {
-      (*fieldstr)++;
-      if ((size_limit != -1) && (size_limit != sum_size)) {
-      yyerror("Size mismatch in format choices for \"%s\"", str);
-      }
-      return sum_size;
-    }
-
-    //New choice?
-    else if (**fieldstr == '|') {
-      (*fieldstr)++;
-      if (size_limit != -1) {
-        if (size_limit != sum_size) {
-        yyerror("Size mismatch in format choices for \"%s\"", str);
-        }
-      }
-      else {
-        size_limit = sum_size;
-      }
-      sum_size = first_bit;
-    }
-
-    //This must be a kind of field
-    else {
-      int value;
-      ac_dec_field *pfield = (ac_dec_field*) malloc( sizeof(ac_dec_field));
-
-      //Is it a constant number?
-      value == strtol(*fieldstr, &fieldend, 0);
-      if (fieldend != *fieldstr) {
-        //Set name
-        pfield->name = (char*) calloc(10,sizeof(char));
-        snprintf( pfield->name, 10, "CONST_%d", const_count);
-        const_count++;
-        //Set value
-        pfield->val = value;
-      }
-
-      //It is a regular field
-      else {
-        if (**fieldstr == '%') (*fieldstr)++;
-        for (fieldend = *fieldstr; *fieldend && *fieldend!=':'; fieldend++);
-        //Set name
-        pfield->name = (char*) calloc((fieldend-(*fieldstr)+1),sizeof(char));
-        strncpy(pfield->name, *fieldstr, (fieldend-(*fieldstr)));
-        //Set value
-        pfield->val = 0;
-      }
-      
-      //Set size
-      if (*fieldend != ':') yyerror("Size not given in \"%s\"", *fieldstr);
-      *fieldstr = fieldend+1;
-      value = strtol(*fieldstr, &fieldend, 0);
-      if (fieldend == *fieldstr) yyerror("Invalid size in \"%s\", character %d", str, (*fieldstr)-str);
-      pfield->size = value;
-      //Set sign
-      pfield->sign=0;
-      *fieldstr = fieldend;
-      if (**fieldstr == ':') {
-        (*fieldstr)++;
-        if ((**fieldstr == 's') || (**fieldstr == 'S'))
-          pfield->sign=1;
-        else if ((**fieldstr != 'u') && (**fieldstr != 'U'))
-          yyerror("Invalid sign specification in \"%s\", character %d", str, (*fieldstr)-str);
-        (*fieldstr)++;
-      }
-      //Set first bit
-      sum_size += pfield->size;
-      pfield->first_bit = sum_size-1;
-      //Set id
-      pfield->id = 0;
-    
-      //Put the new field in the list
-      pfield->next = NULL;
-      if(*field_list_head){
-        (*field_list_tail)->next = pfield;
-        (*field_list_tail) = pfield;
-      }
-      else{
-        *field_list_tail = *field_list_head = pfield;
-      }
-    }
-    
-    //Eat spaces
-    for (; **fieldstr && isspace(**fieldstr); (*fieldstr)++);
-  }
-    
-  return sum_size;
-}
-
-
-/***************************************/
-/*!Add format to instr/reg format lists.
-  @ingroup parser
-  \param head Head of the format list.
-  \param tail Tail of the format list.
-  \param name The name of the instruction to be added.
-  \param str  String containg field declarations */
-/***************************************/
-void add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* str){
-
-  ac_dec_field * field_list_tail = field_list;
-  ac_dec_format *pformat;
-  int sum_size = parse_format(&str, 0, -1, &field_list, &field_list_tail);
-  
-  //Create new format
-  pformat = (ac_dec_format*) malloc( sizeof(ac_dec_format));
-  pformat->name  = name;
-  pformat->size  = sum_size;
-  pformat->fields = field_list;
-  pformat->next = NULL;
-
-  //Clear field_list pointer
-  field_list = 0;
-
-  //Keeping track of the largest format
-  if( sum_size >largest_format_size ) 
-    largest_format_size = sum_size;
-
-  //Put new format in the formats list
-  if( (*tail) ){
-    (*tail)->next = pformat;
-    (*tail) = pformat;
-  }
-  else  { /*  First format being added to the list */
-    (*tail) = (*head) = pformat;
-  }
-  
-  //Increment format count if inside ISA description
-  if( descrp == ISA_D )
-    format_num++;
-}
- 
-/***************************************/
-/*!Add instruction to instruction list.
-  @ingroup parser
-  \param name The name of the instruction to be added. */
-/***************************************/
-void add_instr( char* name){
-
-  ac_dec_instr *ppins;
-
-  pinstr = (ac_dec_instr*) malloc( sizeof(ac_dec_instr));
-  pinstr->name = (char*) malloc( strlen(name)+1);
-  pinstr->format = (char*) malloc( strlen(current_type)+1);
-  strcpy(pinstr->name, name);
-  strcpy(pinstr->format, current_type);
-  pinstr->mnemonic = NULL;
-  pinstr->asm_str = NULL;
-  instr_num++;
-  pinstr->id = instr_num;
-  pinstr->cycles = 1;
-  pinstr->min_latency = 1;
-  pinstr->max_latency = 1;
-  pinstr->dec_list = NULL;
-  pinstr->cflow = NULL;
-  pinstr->next = NULL;
-  if( instr_list_tail ){
-
-    for( ppins =  instr_list; ppins!=NULL; ppins= ppins->next ){
-      if( !strcmp( ppins->name, name )){
-        yyerror("Duplicated instruction name: %s", name);
-        exit(1);
-      }
-    }
-    instr_list_tail->next = pinstr;
-    instr_list_tail = pinstr;
-  }
-  else  { /*  First instruction being added to the list */
-     instr_list_tail = instr_list = pinstr;
-  }
-}
-
-
-/**************************************/
-/*! Add a pipeline to pipe list.
-  \param name The name of the pipeline to be added. */
-/***************************************/
-void add_pipe( char* name ){
-
-  pipe_num++;
-  ppipe = (ac_pipe_list*) malloc( sizeof(ac_pipe_list));
-  ppipe->name = (char*) malloc( strlen(name)+1);
-  strcpy(ppipe->name, name);  
-  ppipe->id = pipe_num;
-  ppipe->stages = NULL;
-  ppipe->next = NULL;
-
-  if( pipe_list_tail ){
-     pipe_list_tail->next = ppipe;
-     pipe_list_tail = ppipe;
-  }
-  else  { /*  First pipe being added to the list */
-     pipe_list_tail = pipe_list = ppipe;
-  }
-
-  /* Updating the current pipeline being declared */
-  current_pipe = ppipe;
-
-}
-
-/**************************************/
-/*! Add stage to stage list.
-  \param name The name of the stage to be added. */
-/***************************************/
-void add_stage( char* name, ac_stg_list** listp ){
-
-  ac_stg_list* list;
-
-  stage_num++;
-  pstage = (ac_stg_list*) malloc( sizeof(ac_stg_list));
-  pstage->name = (char*) malloc( strlen(name)+1);
-  strcpy(pstage->name, name); 
-  pstage->id = stage_num;
-  pstage->next = NULL;
-
-  list = *listp;
-  /* Inserting at the tail */
-  if( list ){
-
-     /* finding list tail */
-     for(; list->next != NULL; list= list->next ){}
-
-     /* Adding stage */
-     list->next = pstage;
-  }
-  else  { /*  First stage being added to the list */
-     *listp = pstage;
-  }
-
-}
-
-
-/**************************************/
-/*! Add a new device to the storage list.
-  @ingroup parser
-  \param name The name of the device to be added. 
-  \param size The size of the device to be added.
-  \param type The type of the device to be added. */
-/***************************************/
-void add_storage( char* name, unsigned size, ac_sto_types type){
-
-  pstorage = (ac_sto_list*) malloc( sizeof(ac_sto_list));
-  pstorage->name = (char*) malloc( strlen(name)+1);
-  strcpy(pstorage->name,name);
-  if( type == REG && current_type){
-    pstorage->format = (char*) malloc( strlen(current_type)+1);
-    strcpy(pstorage->format,current_type);
-  }
-  else
-    pstorage->format = NULL;
-    
-  if( type == MEM || type == CACHE || type == ICACHE || type == DCACHE || type == TLM_PORT )
-    pstorage->size = size * current_unit;
-  else
-    pstorage->size = size;
-
-
-  /* In this case we may have a cache declaration with a parameter list or a generic cache*/
-  if( (type == CACHE || type == ICACHE || type == DCACHE)  ){
-
-    if( parms_list ){
-      /* Plugging paramenters for ac_cache instantiation. */
-      pstorage->parms = parms_list;
-      /* Reseting list for future declarations */
-      parms_list = parms_list_tail = NULL;
-    }
-    else{ /* Generic cache object */
-      if (pstorage->size==0){
-        yyerror("Invalid size in cache declaration: %s", name);
-        exit(1);
-      }
-      else
-        pstorage->parms = NULL;
-    }   
-  }
-
-  pstorage->type = type;
-  pstorage->next = NULL;
-  pstorage->higher = NULL;
-  pstorage->level = 0;
-
-  if(  type == ICACHE  ){
-    fetch_device = pstorage;
-  }
-
-  //Checking if the user declared a specific register width for this bank
-  if(  type == REGBANK && reg_width != 0  ){
-    pstorage->width = reg_width;
-  }
-
-  if( storage_list_tail ){
-     storage_list_tail->next = pstorage;
-     storage_list_tail = pstorage;
-  }
-  else  { /*  First device being added to the list */
-     storage_list_tail = storage_list = pstorage;
-  }  
-}
-
-
-/**************************************/
-/*! Add a new field to the end of the decoding sequence list.
-  @ingroup parser
-  \param pinstr Pointer to the current instruction.
-  \param name   The name of the field to be added.
-  \param value  The value of the field to be added. */
-/***************************************/
-int add_dec_list( ac_dec_instr *pinstr, char* name, int value){
-
-  ac_dec_list *pdec_list;
-  ac_dec_format *pformat;
-  ac_dec_field *pfield;
-
-  /* Find format */
-  for( pformat = format_ins_list;
-       pformat != NULL && strcmp(pformat->name, pinstr->format);
-       pformat = pformat->next);
-  if( pformat == NULL ) {
-    yyerror("Instr %s: Format not found for this instruction", pinstr->name);
-    return 0;
-  }
-
-  /* Find field */
-  for( pfield = pformat->fields;
-       pfield != NULL && strcmp(pfield->name, name);
-       pfield = pfield->next);
-  if( pfield == NULL ) {
-    yyerror("Instr %s: Field '%s' not found in type %s", pinstr->name, name, pformat->name);
-    return 0;
-  }
-
-  /* Check if value fits in field size */
-  if (value > ((1<<pfield->size)-1)) {
-    yyerror("Instr %s: Field '%s' value %d too big", pinstr->name, name, value);
-    value = ((1<<pfield->size)-1);
-  }
-
-  /* Create new decoding list node */
-  pdec_list = (ac_dec_list*) malloc( sizeof(ac_dec_list));
-  pdec_list->name = (char*) malloc( strlen(name)+1);
-  strcpy(pdec_list->name, name);
-  pdec_list->value = value;
-  pdec_list->next = NULL;
-
-  if( pinstr->dec_list == NULL )
-    pinstr->dec_list = pdec_list;
-  else{
-    ac_dec_list *aux;
-    for(aux =pinstr->dec_list; aux->next != NULL; aux = aux->next);
-    aux->next = pdec_list;      
-  }
-  return 1;
-}
-
-
-/**************************************/
-/*! Get the existing structure for control flow instructions or create one.
-  @ingroup parser
-  \param pinstr Pointer to the current instruction.
-/***************************************/
-ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
-{
-  if (!pinstr->cflow)
-    pinstr->cflow = calloc(sizeof(ac_control_flow),1);
-  return pinstr->cflow;
-}
-
 
 %}  /* End of C declarations */
 
@@ -617,8 +171,8 @@ ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
 
 /*General used Tokens */
 %token <value> INT
-%token <text>  STR
-%token <text>  BLOCK
+%token <text> STR
+%token <text> BLOCK
 %token <text> DOT "."
 %token <text> COMMA "," 
 %token <text> SEMICOLON ";"
@@ -713,9 +267,10 @@ ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
 input:    /* empty string */  
       { 
         yyerror("No valid declaration provided");
+        YYERROR;
       }
-      | isadec        { }
-      | archdec       { }
+      | isadec        { if (parse_error) YYERROR; }
+      | archdec       { if (parse_error) YYERROR; }
       ;
 
 /*************************************************/
@@ -727,7 +282,6 @@ isadec: AC_ISA_UPPER LPAREN ID RPAREN LBRACE
       }
       isadecbody RBRACE SEMICOLON
       {
-        if (parse_error) YYERROR;
       }
       ;
 
@@ -744,10 +298,14 @@ formatdeclist: formatdeclist formatdec
 
 formatdec: AC_FORMAT ID EQ STR SEMICOLON
       {
-        if( descrp == ISA_D )
-          add_format( &format_ins_list, &format_ins_list_tail, $2, $4);
+        if( descrp == ISA_D ) {
+          if (!add_format( &format_ins_list, &format_ins_list_tail, $2, $4, error_msg))
+            yyerror(error_msg);
+          format_num++;
+        }
         else if( descrp == ARCH_D )
-          add_format( &format_reg_list, &format_reg_list_tail, $2, $4);
+          if (!add_format( &format_reg_list, &format_reg_list_tail, $2, $4, error_msg))
+            yyerror(error_msg);
         else
           yyerror("Internal Bug. Invalid description type. It should be ISA_D or ARCH_D");
       }                 
@@ -766,7 +324,8 @@ instrdec: AC_INSTR LT ID GT ID
         /* Add to the  instruction declaration list. */
         current_type = (char*) malloc( strlen($3)+1);
         strcpy(current_type,$3);
-        add_instr($5);
+        if (!add_instr($5, current_type, &current_instr, error_msg))
+          yyerror(error_msg);
         list_type = INSTR_L;
       }
 
@@ -867,33 +426,34 @@ ctordecbody:  asmdec ctordecbody
 
 asmdec: ID DOT SET_ASM LPAREN STR 
       {
-  // search for the instruction and store it in 'pinstr' for future use
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
-           yyerror("Undeclared instruction: %s", $1);
-        }
-        else {
-          if (pinstr->asm_str == NULL) {
-            pinstr->asm_str = (char*) malloc(strlen($5)+1);
-            strcpy(pinstr->asm_str, $5);
-          }
-          if (pinstr->mnemonic == NULL) {
-            aux = $5;
-            while(*aux != ' ' && *aux != '\0') aux++;
-            pinstr->mnemonic =(char*) malloc(aux-$5+1);
-            memcpy(pinstr->mnemonic, $5, aux-$5);
-            pinstr->mnemonic[aux-$5] = '\0';
-          }
+        // search for the instruction and store it in 'current_instr' for future use
+        current_instr = find_instr($1);
 
-          // search for the insn format and store it in 'pformat' for future use
-          for(pformat = format_ins_list ; pformat != NULL && strcmp(pinstr->format, pformat->name); pformat = pformat->next);
-          if( pformat == NULL )
+        if( current_instr == NULL )
+           yyerror("Undeclared instruction: %s", $1);
+        else {
+          if (current_instr->asm_str == NULL) {
+            current_instr->asm_str = (char*) malloc(strlen($5)+1);
+            strcpy(current_instr->asm_str, $5);
+          }
+          if (current_instr->mnemonic == NULL) {
+            char *aux = $5;
+            while (*aux != ' ' && *aux != '\0') aux++;
+            current_instr->mnemonic =(char*) malloc(aux-$5+1);
+            memcpy(current_instr->mnemonic, $5, aux-$5);
+            current_instr->mnemonic[aux-$5] = '\0';
+          }          
+
+          // search for the insn format and store it in 'current_format' for future use
+          current_format = find_format(current_instr->format);
+
+          if( current_format == NULL )
             yyerror("Invalid format");
 
           acpp_asm_new_insn();
 
           if (!acpp_asm_parse_asm_string($5, 0, error_msg)) {
-            if (!support_extended_setasm) {
+            if (!force_setasm_syntax) {
               if (!is_in_old_setasm_mode) {
                 yywarn("Entering old set_asm() syntax compatible mode");
                 is_in_old_setasm_mode = 1;
@@ -906,8 +466,8 @@ asmdec: ID DOT SET_ASM LPAREN STR
       }
       id_list RPAREN SEMICOLON
       {
-        if (!acpp_asm_end_insn(pinstr, error_msg)) {
-          if (!support_extended_setasm) {
+        if (!acpp_asm_end_insn(current_instr, error_msg)) {
+          if (!force_setasm_syntax) {
             if (!is_in_old_setasm_mode) {
               yywarn("Entering old set_asm() syntax compatible mode");
               is_in_old_setasm_mode = 1;
@@ -921,34 +481,34 @@ asmdec: ID DOT SET_ASM LPAREN STR
 
 id_list: COMMA ID   
       { 
-        support_extended_setasm = 1;
-        if (!acpp_asm_parse_asm_argument(pformat, $2, 0, error_msg))
+        force_setasm_syntax = 1;
+        if (!acpp_asm_parse_asm_argument(current_format, $2, 0, error_msg))
           yyerror(error_msg);
       }
       id_list
       | COMMA ID EQ INT
       {
-        support_extended_setasm = 1;
-        if (!acpp_asm_parse_const_asm_argument(pformat, $2, $4, NULL, error_msg)) 
+        force_setasm_syntax = 1;
+        if (!acpp_asm_parse_const_asm_argument(current_format, $2, $4, NULL, error_msg)) 
           yyerror(error_msg);
       }
       id_list
       | COMMA ID EQ STR
       {
-        support_extended_setasm = 1;
-        if (!acpp_asm_parse_const_asm_argument(pformat, $2, 0, $4, error_msg))
+        force_setasm_syntax = 1;
+        if (!acpp_asm_parse_const_asm_argument(current_format, $2, 0, $4, error_msg))
           yyerror(error_msg);
       }
       id_list
     /* TODO: support more than 2 fields concatenation */
       | COMMA ID PLUS ID
       {
-        support_extended_setasm = 1;
+        force_setasm_syntax = 1;
 
-        if (!acpp_asm_parse_asm_argument(pformat, $2, 0, error_msg))
+        if (!acpp_asm_parse_asm_argument(current_format, $2, 0, error_msg))
           yyerror(error_msg);
 
-        if (!acpp_asm_parse_asm_argument(pformat, $4, 1, error_msg))
+        if (!acpp_asm_parse_asm_argument(current_format, $4, 1, error_msg))
           yyerror(error_msg);
       }
       id_list
@@ -958,12 +518,13 @@ id_list: COMMA ID
 decoderdec: ID DOT SET_DECODER LPAREN ID EQ INT
       { 
         /* Middle rule action to look for the instr. */
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
-          yyerror("Undeclared instruction: %s", $1);
-        }
-        else{
-          add_dec_list(pinstr, $5, $7);
+        current_instr = find_instr($1);
+
+        if ( current_instr == NULL )
+          yyerror("Undeclared instruction: %s", $1);        
+        else {
+          if (!add_dec_list(current_instr, $5, $7, error_msg))
+            yyerror(error_msg);
         }
 
       } /* End of action */
@@ -972,27 +533,26 @@ decoderdec: ID DOT SET_DECODER LPAREN ID EQ INT
 
 cyclesdec: ID DOT SET_CYCLES LPAREN INT RPAREN SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+
+        if( current_instr == NULL )
           yyerror("undeclared instruction: %s", $1);
-        }
         else{
-          pinstr->cycles = $5;
+          current_instr->cycles = $5;
           HaveMultiCycleIns = 1;
         }
       }
       ;
 
 rangedec: ID DOT CYCLE_RANGE LPAREN INT
-
     /* action */
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+        
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
         else{
-          pinstr->min_latency = $5;
+          current_instr->min_latency = $5;
         }
 
         HaveCycleRange=1;
@@ -1030,19 +590,20 @@ pseudobody: STR SEMICOLON
       ;
 
 interval: COMMA INT 
-    /* pinstr is now poiting to the instruction given by ID field in the rule above */
+    /* current_instr is now pointing to the instruction given by ID field in the rule above */
       {
-        if( pinstr == NULL ){
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
-        else{
-          pinstr->max_latency = $2;
-        }
+        else
+          current_instr->max_latency = $2;
       }
 
       | /* empty string */    
       { 
-        pinstr->max_latency = pinstr->min_latency;    
+        if (current_instr == NULL)
+          yyerror("Internal error");
+        else
+          current_instr->max_latency = current_instr->min_latency;    
       }
       ;
 
@@ -1053,43 +614,43 @@ fieldinitlist: COMMA fieldinit fieldinitlist   {}
 fieldinit: ID EQ INT  
       {
         /* Adding field to the end of the decoding sequence list */
-        add_dec_list(pinstr, $1, $3);
+        if (!add_dec_list(current_instr, $1, $3, error_msg))
+          yyerror(error_msg);
       }
       ;
 
 is_jumpdec: ID DOT IS_JUMP BLOCK SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+        
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
         else{
-          get_control_flow_struct(pinstr)->target = $4;
-          get_control_flow_struct(pinstr)->cond = "1";
+          get_control_flow_struct(current_instr)->target = $4;
+          get_control_flow_struct(current_instr)->cond = "1";
         }
       }
       ;
 
 is_branchdec: ID DOT IS_BRANCH BLOCK SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
-        else{
-          get_control_flow_struct(pinstr)->target = $4;
-        }
+        else 
+          get_control_flow_struct(current_instr)->target = $4;
       }
       ;
 
 conddec: ID COND BLOCK SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
         else{
-          get_control_flow_struct(pinstr)->cond = $3;
+          get_control_flow_struct(current_instr)->cond = $3;
           ControlInstrInfoLevel = 2;
         }
       }
@@ -1097,13 +658,12 @@ conddec: ID COND BLOCK SEMICOLON
 
 delaydec: ID DOT DELAY BLOCK SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+        if( current_instr == NULL ) 
           yyerror("Undeclared instruction: %s", $1);
-        }
         else{
-          get_control_flow_struct(pinstr)->delay_slot = strtol($4,0,0);
-          get_control_flow_struct(pinstr)->delay_slot_cond = "1";
+          get_control_flow_struct(current_instr)->delay_slot = strtol($4,0,0);
+          get_control_flow_struct(current_instr)->delay_slot_cond = "1";
           if (ControlInstrInfoLevel == 0) ControlInstrInfoLevel = 1;
         }
       }
@@ -1111,25 +671,23 @@ delaydec: ID DOT DELAY BLOCK SEMICOLON
 
 delayconddec: ID DOT DELAY_COND BLOCK SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+        
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
-        else{
-          get_control_flow_struct(pinstr)->delay_slot_cond = $4;
-        }
+        else
+          get_control_flow_struct(current_instr)->delay_slot_cond = $4;
       }
       ;
 
 behaviordec: ID DOT BEHAVIOR BLOCK SEMICOLON
       {
-        for( pinstr = instr_list; pinstr != NULL && strcmp(pinstr->name, $1); pinstr = pinstr->next);
-        if( pinstr == NULL ){
+        current_instr = find_instr($1);
+        
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
-        }
-        else{
-          get_control_flow_struct(pinstr)->action = $4;
-        }
+        else
+          get_control_flow_struct(current_instr)->action = $4;
       }
       ;
 
@@ -1143,15 +701,22 @@ archdec: AC_ARCH LPAREN ID RPAREN LBRACE
         project_name = malloc(strlen($3)+1);
         strcpy(project_name,$3);
 
-      /* Initializing Parser Variables */
-        const_count = 0;
         descrp = ARCH_D;
-        instr_num = format_num = declist_num = stage_num = wordsize = fetchsize = 0;
-        instr_list_tail = instr_list = NULL;
-        format_ins_list_tail = format_ins_list = NULL;
-        storage_list_tail = storage_list = NULL;
-        parms_list_tail = parms_list = NULL;
-        fetch_device = NULL;
+
+      /* Initialisation section */
+      /* local variables */
+        current_type = NULL;
+        current_instr = NULL;
+        current_format = NULL;
+        current_unit = BYTE;
+        current_pipe = NULL;
+        cache_type = CACHE; 
+        list_type = MEM_L;  /* it does not matter */
+        error_msg[0] = '\0';
+        is_in_old_setasm_mode = 0;
+        parse_error = 0; 
+
+        init_core_actions();
       
       } /* End of action */
       archdecbody RBRACE SEMICOLON
@@ -1214,7 +779,8 @@ storagedec: cachedec
 memdec: AC_MEM ID COLON INT unit 
       {
         /* Including device in storage list. */
-        add_storage( $2, $4, (ac_sto_types)MEM );
+        if (!add_storage( $2, $4*current_unit, (ac_sto_types)MEM, NULL, error_msg))
+          yyerror(error_msg);
         list_type = MEM_L;
       }
 
@@ -1225,7 +791,8 @@ memdec: AC_MEM ID COLON INT unit
 portdec: AC_TLM_PORT ID COLON INT unit 
       {
         /* Including port in storage list */
-        add_storage( $2, $4, (ac_sto_types)TLM_PORT );
+        if (!add_storage( $2, $4*current_unit, (ac_sto_types)TLM_PORT, NULL, error_msg))
+          yyerror(error_msg);
         list_type = TLM_PORT_L;
         HaveTLMPorts = 1;
       }
@@ -1237,7 +804,8 @@ portdec: AC_TLM_PORT ID COLON INT unit
 intrportdec: AC_TLM_INTR_PORT ID
       {
         /* Including port in storage list */
-        add_storage( $2, 0, (ac_sto_types)TLM_INTR_PORT );
+        if (!add_storage( $2, 0, (ac_sto_types)TLM_INTR_PORT, NULL, error_msg))
+          yyerror(error_msg);
         list_type = TLM_INTR_PORT_L;
         HaveTLMIntrPorts = 1;
       }
@@ -1267,7 +835,8 @@ cachedec: AC_CACHE
 cacheobjdec: ID COLON INT unit  /* Generic cache. Just a container for data */
       {
         /* Including device in storage list. */
-        add_storage( $1, $3, cache_type );
+        if (!add_storage( $1, $3*current_unit, cache_type, NULL, error_msg ))
+          yyerror(error_msg);
         list_type = CACHE_L;
       }
       storagelist SEMICOLON
@@ -1280,7 +849,8 @@ cacheobjdec: ID COLON INT unit  /* Generic cache. Just a container for data */
            /* associativity        nblocks         blocksize        replacestrtgy/writemethod          */ 
       | ID LPAREN cachesparm COMMA cachenparm COMMA cachenparm COMMA cachesparm COMMA cachesparm cacheobjdec1
       {
-        add_storage( $1, 0, cache_type );
+        if (!add_storage( $1, 0, cache_type, NULL, error_msg ))
+          yyerror(error_msg);
       }
       ;
 
@@ -1293,15 +863,7 @@ cacheobjdec1: COMMA cachesparm RPAREN SEMICOLON
 /* numeric parameter */
 cachenparm: INT
       {
-        pparms = (ac_cache_parms*) malloc( sizeof(ac_cache_parms));
-        pparms->value = $1;
-        pparms->next = NULL;
-        if( parms_list == NULL )
-          parms_list = parms_list_tail= pparms;
-        else{
-          parms_list_tail->next = pparms;
-          parms_list_tail = pparms;
-        }       
+        add_parms(NULL, $1);
       }
 
 //  | /* empty string */ {}
@@ -1310,16 +872,7 @@ cachenparm: INT
 /* string parameter */
 cachesparm: STR 
       { 
-        pparms = (ac_cache_parms*) malloc( sizeof(ac_cache_parms));
-        pparms->str = (char*) malloc( strlen($1)+1); 
-        strcpy(pparms->str, $1);
-        pparms->next = NULL;
-        if( parms_list == NULL )
-          parms_list = parms_list_tail= pparms;
-        else{
-          parms_list_tail->next = pparms;
-          parms_list_tail = pparms;
-        }       
+        add_parms($1, 0);
       }
 
 //  | /* empty string */ {}
@@ -1329,7 +882,8 @@ cachesparm: STR
 regbankdec: AC_REGBANK assignwidth ID COLON INT 
       {
         /* Including device in storage list. */
-        add_storage( $3, $5, (ac_sto_types)REGBANK );
+        if (!add_storage( $3, $5, (ac_sto_types)REGBANK, NULL, error_msg ))
+          yyerror(error_msg);
         list_type = REGBANK_L;
       }
       storagelist SEMICOLON
@@ -1339,13 +893,15 @@ regbankdec: AC_REGBANK assignwidth ID COLON INT
 regdec: AC_REG assignformat ID 
       {
         /* Including device in storage list. */
-        add_storage( $3, 0, (ac_sto_types)REG );
+        if (!add_storage( $3, 0, (ac_sto_types)REG, current_type, error_msg ))
+          yyerror(error_msg);
         list_type = REG_L;
       }
       commalist SEMICOLON 
       {
-        if(current_type)
+        if (current_type)
           free(current_type);
+          current_type = NULL;
       }    
       ;
 
@@ -1355,15 +911,20 @@ storagelist: COMMA ID COLON INT
       {
         /* Including device in storage list. */
         if( list_type == CACHE_L )
-           add_storage( $2, $4, (ac_sto_types)CACHE );
+          if (!add_storage( $2, $4*current_unit, (ac_sto_types)CACHE, NULL, error_msg ))
+            yyerror(error_msg);
         else if( list_type == REGBANK_L )
-           add_storage( $2, $4, (ac_sto_types)REGBANK );
+          if (!add_storage( $2, $4, (ac_sto_types)REGBANK, NULL, error_msg ))
+            yyerror(error_msg);
         else if( list_type == MEM_L )
-           add_storage( $2, $4, (ac_sto_types)MEM );
+          if (!add_storage( $2, $4*current_unit, (ac_sto_types)MEM, NULL, error_msg ))
+            yyerror(error_msg);
         else if( list_type == TLM_PORT_L )
-           add_storage( $2, $4, (ac_sto_types)TLM_PORT );
+          if (!add_storage( $2, $4*current_unit, (ac_sto_types)TLM_PORT, NULL, error_msg ))
+            yyerror(error_msg);
         else if( list_type == TLM_INTR_PORT_L )
-           add_storage( $2, $4, (ac_sto_types)TLM_INTR_PORT );
+          if (!add_storage( $2, $4, (ac_sto_types)TLM_INTR_PORT, NULL, error_msg ))
+            yyerror(error_msg);
         else {
           /* Should never enter here. */
           yyerror("Internal Bug. Invalid list type. It should be CACHE_L, REGBANK_L or MEM_L");
@@ -1426,7 +987,7 @@ pipedec: AC_PIPE ID EQ LBRACE ID
         list_type = PIPE_L;
 
         /* Adding to the pipe list */
-        add_pipe( $2 );
+        current_pipe = add_pipe( $2 );
 
         /* Adding the first stage to the pipe's stage list */
         add_stage( $5, &current_pipe->stages );
@@ -1471,33 +1032,34 @@ archctordecbody: AC_ISA LPAREN STR RPAREN SEMICOLON archctordecbody
         else if( !strcmp( $3, "big") || !strcmp( $3, "BIG") )
           ac_tgt_endian = 1;
         else{
-          yyerror("Invalid endian initialization. It should be \"little\" or \"big\"");
+          yyerror("Invalid endian: \"%s\"", $3);
         }
       }
 
       | ID DOT BIND_TO LPAREN ID RPAREN SEMICOLON archctordecbody
       {
-        ac_sto_list* plow;
+        ac_sto_list *plow, *pstorage;
 
         /* Warning acpp that a memory hierarchy was declared */
         HaveMemHier = 1;
 
         /* Looking for the low level device */
-        for( pstorage = storage_list; pstorage != NULL && strcmp(pstorage->name, $1); pstorage = pstorage->next);
-        if( pstorage == NULL ){
-          yyerror("Undeclared storage device: %s", $1);
-        }
-        plow = pstorage;
+        plow = find_storage($1);
 
+        if (plow == NULL)
+          yyerror("Undeclared storage device: %s", $1);
+
+        
         /* Looking for the high level device */
-        for( pstorage = storage_list; pstorage != NULL && strcmp(pstorage->name, $5); pstorage = pstorage->next);
-        if( pstorage == NULL ){
+        pstorage = find_storage($5);
+
+        if (pstorage == NULL)
           yyerror("Undeclared storage device: %s", $5);
-        }
+
         plow->higher = pstorage;
 
         //Updating hierarchy level, from this level to the top.
-        for( pstorage = plow; pstorage->higher != NULL; pstorage = pstorage->higher)
+        for ( pstorage = plow; pstorage->higher != NULL; pstorage = pstorage->higher)
           pstorage->higher->level = pstorage->level+1;
 
       }
@@ -1513,7 +1075,8 @@ commalist: COMMA ID
         switch(list_type){
 
         case INSTR_L:
-          add_instr( $2);    /* Add to instruction list. */
+          if (!add_instr($2, current_type, &current_instr, error_msg)) /* Add to instruction list. */
+            yyerror(error_msg);
           break;
 
         case STAGE_L:
@@ -1524,7 +1087,8 @@ commalist: COMMA ID
           break;
 
         case REG_L:
-          add_storage( $2, 0, (ac_sto_types) REG);    /* Add to reg list. */
+          if (!add_storage( $2, 0, (ac_sto_types) REG, current_type, error_msg ))    /* Add to reg list. */
+            yyerror(error_msg);
           break;
 
         case PIPE_L:

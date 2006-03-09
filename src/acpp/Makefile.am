@@ -8,5 +8,5 @@ AM_YFLAGS = -d
 
 ## The ArchC parser/preprocessor library 
 lib_LIBRARIES = libacpp.a
-BUILT_SOURCES = archc_parser.h
-libacpp_a_SOURCES = parser.asm.h archc_lex.l archc_parser.y archc_parser.h acpp.h acpp.c parser.asm.c
+BUILT_SOURCES = archc_grammar.h
+libacpp_a_SOURCES = archc_lex.l archc_grammar.y archc_grammar.h acpp.c acpp.h core_actions.c core_actions.h asm_actions.c asm_actions.h

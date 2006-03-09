@@ -171,9 +171,10 @@ int main( argc, argv )
   extern ac_dec_instr *instr_list;
   // Structures to be passed to the simulator generator 
   extern ac_stg_list *stage_list;
-  extern ac_pipe_list *pipe_list, *ppipe;
+  extern ac_pipe_list *pipe_list;
   extern int HaveFormattedRegs;
   extern ac_decoder_full *decoder;
+  ac_pipe_list *ppipe;
 
   //Uncomment the line bellow if you want to debug the parser.
   //extern int yydebug; 
@@ -187,7 +188,7 @@ int main( argc, argv )
   //yydebug =1; 
 
   //Initializes the pre-processor
-  acppInit();
+  acppInit(0);
 
   ++argv, --argc;  /* skip over program name */
 

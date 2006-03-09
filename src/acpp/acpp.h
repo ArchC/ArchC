@@ -42,10 +42,20 @@
 #ifndef _ACCP_H_
 #define _ACCP_H_
 
+#include "core_actions.h"
+#include "asm_actions.h"
+
+extern char *project_name;
+extern char *isa_filename;
+extern int wordsize;
+extern int fetchsize;
+extern int ac_tgt_endian;
+
+
 ///////////////////////////////////////
 // Function Prototypes               //
 ///////////////////////////////////////
-extern void acppInit();
+extern void acppInit(int force_asm_syntax);
 extern int acppLoad(char *filename);
 extern void acppUnload();
 extern int acppRun();

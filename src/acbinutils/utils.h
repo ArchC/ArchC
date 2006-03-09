@@ -3,7 +3,7 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-#include "parser.asm.h"
+#include "acpp.h"
 
 /* Indentation */
 #define IND1 "  "

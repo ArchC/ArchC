@@ -294,8 +294,7 @@ Some conventions:
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-#include "ac_decoder.h"
-#include "parser.asm.h"
+#include "asm_actions.h"
 
 
 /* 

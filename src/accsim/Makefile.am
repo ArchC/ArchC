@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../aclib/ac_syscall
+INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../acpp -I../aclib/ac_syscall
 
 ## yacc options
 AM_YFLAGS = -d -p eval_

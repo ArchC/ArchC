@@ -27,12 +27,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <getopt.h>
 
 #include "utils.h"
 #include "opcodes.h"
 #include "bfd.h"
 #include "gas.h"
-#include <getopt.h>
 
 static int Createm4File();
 
@@ -107,11 +107,7 @@ char *file_name = NULL; /* name of the main ArchC file */
 int main(int argc, char **argv)
 {
   /* Initializes the pre-processor */
-  /* TODO: make acppInit() accept a parameter telling whether extended 
-     set_asm parameter is to be recognized or not */
-  extern int support_extended_setasm;
-  support_extended_setasm = 1;
-  acppInit();
+  acppInit(1);
 
 
   /* Command line parsing code */
