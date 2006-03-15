@@ -34,11 +34,9 @@
 */
 //////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "acpp.h"
 #include "acsim.h"
+#include "stdlib.h"
+#include "string.h"
 
 //#define DEBUG_STORAGE
 
@@ -157,9 +155,9 @@ int main( argc, argv )
   // Structures to be passed to the simulator generator 
   extern ac_stg_list *stage_list;
   extern ac_pipe_list *pipe_list;
+  ac_pipe_list *ppipe;
   extern int HaveFormattedRegs;
   extern ac_decoder_full *decoder;
-  ac_pipe_list *ppipe;
 
   //Uncomment the line bellow if you want to debug the parser.
   //extern int yydebug; 
@@ -508,12 +506,11 @@ void CreateArchHeader() {
     fprintf( output, "#include  \"ac_fmt_regs.H\"\n");
   fprintf( output, " \n");
 
-  if( ACGDBIntegrationFlag ) {
-    fprintf( output, "#ifndef PORT_NUM\n" );
-    fprintf( output, "#define PORT_NUM 5000 // Port to which GDB binds for remote debugging\n" );
-    fprintf( output, "#endif /* PORT_NUM */\n" );
+  if (ACGDBIntegrationFlag) {
+    fprintf(output, "// AC_GDB template class forward declaration\n");
+    fprintf(output, "template <typename ac_word> class AC_GDB;\n\n");
   }
-  
+
   //Declaring Architecture Resources class.
   COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.\n");
   fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
@@ -670,6 +667,11 @@ void CreateArchHeader() {
   COMMENT(INDENT[1],"Module finalization method.");
   fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
 
+  if (ACGDBIntegrationFlag) {
+    COMMENT(INDENT[1], "GDB stub access virtual method declaration.");
+    fprintf(output, "%svirtual AC_GDB<%s_parms::ac_word>* get_gdbstub() = 0;\n\n", INDENT[1], project_name);
+  }
+  
   COMMENT(INDENT[1],"Virtual destructor declaration.");
   fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
 
@@ -939,8 +941,8 @@ void CreateParmHeader() {
   if( HaveCycleRange )
     fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
 
-  /* parms class definition */
-  fprintf(output, "struct %s_parms {\n\n", project_name);
+  /* parms namespace definition */
+  fprintf(output, "namespace %s_parms {\n\n", project_name);
 
   fprintf( output, "\nstatic const unsigned int AC_DEC_FIELD_NUMBER = %d; \t //!< Number of Fields used by decoder.\n", decoder->nFields);
   fprintf( output, "static const unsigned int AC_DEC_INSTR_NUMBER = %d; \t //!< Number of Instructions declared.\n", instr_num);
@@ -953,6 +955,9 @@ void CreateParmHeader() {
   fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n", ac_tgt_endian);
   fprintf( output, "static const unsigned int AC_RAMSIZE = %u; \t //!< Architecture RAM size in bytes (storage %s).\n", load_device->size, load_device->name);
   fprintf( output, "static const unsigned int AC_RAM_END = %u; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
+
+  if (ACGDBIntegrationFlag)
+  fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
 
   fprintf( output, "\n\n");
   COMMENT(INDENT[0],"Word type definitions.");
@@ -1069,9 +1074,9 @@ void CreateParmHeader() {
   //Closing enum declaration
   fprintf( output, "};\n\n");
     
-  /* closing class declaration */
+  /* closing namespace declaration */
 
-  fprintf( output, "};\n\n");
+  fprintf( output, "}\n\n");
     
   //Create a compiler error if delay assignment is used without the -dy option
   COMMENT(INDENT[0],"Create a compiler error if delay assignment is used without the -dy option");
@@ -1098,7 +1103,8 @@ void CreateISAHeader() {
   extern int wordsize;
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
-  ac_dec_field *pfield;
+  ac_dec_field *pfield, *pf, *ppf, *pgenfield;
+  int initializing = 1;
 
   char filename[256];
   char description[] = "Instruction Set Architecture header file.";
@@ -1106,19 +1112,12 @@ void CreateISAHeader() {
   // File containing ISA declaration
   FILE  *output;
 
-  // [ARCHC_2_0]
-  // nome muda para _isa.H
-
   sprintf( filename, "%s_isa.H", project_name);
 
   if ( !(output = fopen( filename, "w"))){
     perror("ArchC could not open output file");
     exit(1);
   }
-
-  // [ARCHC_2_0]
-  // Includes: ac_storage.H ac_reg.H ac_regbank.H arquivos_de_tipos.H
-  //           ac_decoder.h ac_parms.H ac_instr_info.H
 
   print_comment( output, description);
   fprintf( output, "#ifndef _%s_ISA_H\n", project_name);
@@ -1161,7 +1160,76 @@ void CreateISAHeader() {
 
   /* Instruction Behavior Method declarations */
   /* instruction */
-    fprintf(output, "%svoid _behavior_instruction();\n\n", INDENT[1]);
+  /* Selecting fields that are common to all formats. */
+  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next){
+
+    if( initializing ){
+
+      //This is the first format being processed. Put all of its fields.
+      for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){
+
+        pf = (ac_dec_field*) malloc( sizeof(ac_dec_field));
+        pf = memcpy( pf, pfield, sizeof(ac_dec_field) );
+
+        if( pfield == pformat->fields ){
+          pgenfield = pf;
+          pgenfield->next = NULL;
+        }
+        else{
+          pf->next = pgenfield;
+          pgenfield = pf;
+        }
+      }
+      initializing =0;
+			
+    }
+    else{  //We already have candidate fields. Check if they are present in all formats.
+
+      ppf = NULL;
+
+      //Keep fields that are common to all instructions
+      pf = pgenfield; 
+
+      while( pf ){
+
+        //Looking for pf into pformat
+        for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){ 
+
+          if( !strcmp( pf->name, pfield->name) )
+            break;
+        }
+
+        if( !pfield) { //Did not find. Delete pf from pgenfield
+					
+          if(ppf){
+            ppf->next = pf->next;
+            free(pf);
+            pf = ppf->next;
+          }
+          else{  //Deleting the first field
+            pgenfield = pf->next;
+            free(pf);
+            pf = pgenfield;
+          }
+        }
+        else{  //Found. Keep the field and step to the next.
+          ppf = pf;
+          pf = pf->next;
+        }
+      }
+    }	
+  }
+  fprintf(output, "%svoid _behavior_instruction(", INDENT[1]);
+  /* pgenfield has the list of fields for the generic instruction. */
+  for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
+    if( pfield->sign )
+      fprintf(output, "int %s", pfield->name);
+    else
+      fprintf(output, "unsigned %s", pfield->name);
+    if (pfield->next != NULL)
+      fprintf(output, ", ");
+  }
+  fprintf(output, ");\n\n");
 
   /* begin & end */
   fprintf(output, "%svoid _behavior_begin();\n", INDENT[1]);
@@ -1223,9 +1291,17 @@ void CreateISAHeader() {
   fprintf( output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr ()\n\n");
 
   /* ac_behavior 2nd level macros - generic instruction */
-  fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction()\n", project_name);
-
-  fprintf(output, "\n");
+  fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction(", project_name);
+  /* pgenfield has the list of fields for the generic instruction. */
+  for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
+    if( pfield->sign )
+      fprintf(output, "int %s", pfield->name);
+    else
+      fprintf(output, "unsigned %s", pfield->name);
+    if (pfield->next != NULL)
+      fprintf(output, ", ");
+  }
+  fprintf(output, ")\n\n");
 
   /* ac_behavior 2nd level macros - pseudo-instructions begin, end */
   fprintf(output, "#define AC_BEHAVIOR_begin() %s_isa::_behavior_begin()\n", project_name);
@@ -1446,12 +1522,16 @@ void CreateProcessorHeader() {
   if(ACGDBIntegrationFlag) {
     fprintf( output, "#include \"ac_gdb_interface.H\"\n");
     fprintf( output, "#include \"ac_gdb.H\"\n");
-    fprintf( output, "extern AC_GDB *gdbstub;\n");
   }
   
   fprintf(output, "\n\n");
 
-  fprintf( output, "class %s: public ac_module, public %s_arch {\n",project_name, project_name);
+  fprintf(output, "class %s: public ac_module, public %s_arch", project_name, project_name);
+
+  if (ACGDBIntegrationFlag)
+    fprintf(output, ", public AC_GDB_Interface<%s_parms::ac_word>", project_name);
+
+  fprintf(output, " {\n");
 
   fprintf(output, "private:\n");
   fprintf(output, "%stypedef cache_item<%s_parms::AC_DEC_FIELD_NUMBER> cache_item_t;\n", INDENT[1], project_name);
@@ -1483,6 +1563,9 @@ void CreateProcessorHeader() {
   fprintf( output, "%sbool start_up;\n", INDENT[1]);
   fprintf( output, "%sunsigned* instr_dec;\n", INDENT[1]);
   fprintf( output, "%sac_instr_t* instr_vec;\n\n", INDENT[1]);
+
+  if (ACGDBIntegrationFlag)
+    fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n\n", INDENT[1], project_name);
 
   COMMENT(INDENT[1], "Behavior execution method.");
   fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
@@ -1517,6 +1600,9 @@ void CreateProcessorHeader() {
   if( ACDasmFlag )
     fprintf( output, "%sdasmfile.open(\"%s.dasm\");\n\n", INDENT[2], project_name);
 
+  if (ACGDBIntegrationFlag)
+    fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", INDENT[2], project_name, project_name);
+
   fprintf( output, "%s}\n", INDENT[1]);  //end constructor
 
   if(ACDecCacheFlag){
@@ -1530,15 +1616,23 @@ void CreateProcessorHeader() {
     fprintf( output, "%s * GDB Support - user supplied methods\n", INDENT[1]);
     fprintf( output, "%s * For further information, look at $ARCHC_PATH/src/aclib/ac_gdb/ac_gdb_interface.H\n", INDENT[1]);
     fprintf( output, "%s ***********/\n\n", INDENT[1]);
+
+    fprintf( output, "%s/* Processor Feature Support */\n", INDENT[1]);
+    fprintf( output, "%sbool get_ac_mt_endian();\n\n", INDENT[1]);
+    fprintf( output, "%svoid ac_stop();\n\n", INDENT[1]);
     
     fprintf( output, "%s/* Register access */\n", INDENT[1]);
     fprintf( output, "%sint nRegs(void);\n", INDENT[1]);
-    fprintf( output, "%sac_word reg_read(int reg);\n", INDENT[1]);
-    fprintf( output, "%svoid reg_write( int reg, ac_word value );\n\n", INDENT[1]);
+    fprintf( output, "%s%s_parms::ac_word reg_read(int reg);\n", INDENT[1], project_name);
+    fprintf( output, "%svoid reg_write( int reg, %s_parms::ac_word value );\n", INDENT[1], project_name);
+    fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
     
     fprintf( output, "%s/* Memory access */\n", INDENT[1]);
     fprintf( output, "%sunsigned char mem_read( unsigned int address );\n", INDENT[1]);
     fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", INDENT[1]);
+    
+    fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
+    fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1]);
   }
   
     fprintf( output, "\n%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
@@ -2108,6 +2202,7 @@ void CreateProcessorImpl() {
   extern char *project_name;
   extern int stage_num;
   extern int HaveMultiCycleIns, HaveMemHier;
+  extern int ACGDBIntegrationFlag;
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
   ac_pipe_list *ppipe;
@@ -2317,10 +2412,6 @@ void CreateProcessorImpl() {
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
   fprintf(output, "#endif\n\n");
 
-  fprintf(output, "#ifdef USE_GDB\n");
-  fprintf(output, "%sif (gdbstub && !gdbstub->is_disabled()) \n", INDENT[1]);
-  fprintf(output, "%sgdbstub->connect();\n", INDENT[2]);
-  fprintf(output, "#endif /* USE_GDB */\n");
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
   fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", INDENT[1]);
   fprintf(output, "%sInitStat();\n\n", INDENT[1]);
@@ -2351,10 +2442,6 @@ void CreateProcessorImpl() {
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
   fprintf(output, "#endif\n\n");
 
-  fprintf(output, "#ifdef USE_GDB\n");
-  fprintf(output, "%sif (gdbstub && !gdbstub->is_disabled()) \n", INDENT[1]);
-  fprintf(output, "%sgdbstub->connect();\n", INDENT[2]);
-  fprintf(output, "#endif /* USE_GDB */\n");
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
   fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", INDENT[1]);
   fprintf(output, "%sInitStat();\n\n", INDENT[1]);
@@ -2387,6 +2474,32 @@ void CreateProcessorImpl() {
   fprintf(output, "#endif\n");
   fprintf(output, "}\n\n");
 
+  /* Some simple GDB support methods */
+  if (ACGDBIntegrationFlag) {
+    /* get_gdbstub() */
+    fprintf(output, "// Returns pointer to gdbstub\n");
+    fprintf(output, "AC_GDB<%s_parms::ac_word>* %s::get_gdbstub() {\n", project_name, project_name);
+    fprintf(output, "%sreturn gdbstub;\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* get_ac_mt_endian() */
+    fprintf(output, "// Returns true if model endianness doesn't match with host's, false otherwise\n");
+    fprintf(output, "bool %s::get_ac_mt_endian() {\n", project_name);
+    fprintf(output, "%sreturn ac_mt_endian;\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* ac_stop() */
+    fprintf(output, "// Stops the processor\n");
+    fprintf(output, "void %s::ac_stop() {\n", project_name);
+    fprintf(output, "%sstop();\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* set_ac_pc() */
+    fprintf(output, "// Assigns value to ac_pc\n");
+    fprintf(output, "void %s::set_ac_pc(unsigned int value) {\n", project_name);
+    fprintf(output, "%sac_pc = value;\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+  }
 
   //!END OF FILE.
   fclose(output);
@@ -2590,21 +2703,12 @@ void CreateMainTmpl() {
     fprintf( output, "#include  \"ac_encoder.H\"\n");
   }
 
-  if (ACGDBIntegrationFlag) {
-    fprintf( output, "\n#include \"ac_gdb.H\"\n");
-    fprintf( output, "AC_GDB *gdbstub;\n\n");
-  }
-
   fprintf( output, "\n\n");
   fprintf( output, "int sc_main(int ac, char *av[])\n");
   fprintf( output, "{\n\n");
 
   COMMENT(INDENT[1],"%sISA simulator", INDENT[1]);               
   fprintf( output, "%s%s %s_proc1(\"%s\");\n\n", INDENT[1], project_name, project_name, project_name);
-
-  if(ACGDBIntegrationFlag)
-    fprintf( output, "%sgdbstub = new AC_GDB(%s_proc1. %s_mc, PORT_NUM);\n\n",
-             INDENT[1], project_name, project_name );
 
   if (ACEncoderFlag) {
     fprintf( output, "%s//!Encoder tools\n", INDENT[1]);
@@ -3150,8 +3254,6 @@ void CreateMakefile(){
   //Declaring FILES variable
   COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
   COMMENT_MAKE("They are stored in the archc/src/aclib directory");
-  fprintf( output, "ACFILES := %s",
-           (ACGDBIntegrationFlag)?"ac_gdb.cpp breakpoints.cpp ":"");
 
   if( HaveMemHier )
     fprintf( output, "ac_cache.cpp ac_mem.cpp ac_cache_if.cpp ");
@@ -3179,7 +3281,13 @@ void CreateMakefile(){
   //Declaring FILESHEAD variable
   COMMENT_MAKE("These are the headers files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/include directory");
-  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) $(ACLIBFILES:.o=.H) ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
+  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
+  if(ACABIFlag)
+    fprintf(output, "ac_syscall.H ");
+  if(HaveTLMPorts)
+    fprintf(output, "ac_tlm_port.H ");
+  if(HaveTLMIntrPorts)
+    fprintf(output, "ac_tlm_intr_port.H ");
   if (HaveTLMPorts || HaveTLMIntrPorts)
     fprintf(output, "ac_tlm_protocol.H ");
   fprintf(output, "\n\n");
@@ -3297,6 +3405,7 @@ void EmitGenInstrClass(FILE *output) {
   fprintf( output, "%sunsigned ac_instr_min_latency;\n", INDENT[1]);
   fprintf( output, "%sunsigned ac_instr_max_latency;\n", INDENT[1]);
 
+  // THIS NEEDS TO GO INTO THE ISA MACROS AND STUFF
   //Selecting fields that are common to all formats.
   for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next){
 
@@ -3857,7 +3966,9 @@ void EmitInstrExec( FILE *output, int base_indent){
 
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
-  ac_dec_field *pfield;
+  ac_dec_field *pfield, *pf, *ppf, *pgenfield;
+
+  int initializing = 1;
 
 
   if( ACGDBIntegrationFlag )
@@ -3872,7 +3983,73 @@ void EmitInstrExec( FILE *output, int base_indent){
 /*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
   }
   else{
-    fprintf( output, "%sISA._behavior_instruction();\n", INDENT[base_indent]);
+    for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
+  
+      if( initializing ){
+  
+        //This is the first format being processed. Put all of its fields.
+        for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){
+  
+          pf = (ac_dec_field*) malloc( sizeof(ac_dec_field));
+          pf = memcpy( pf, pfield, sizeof(ac_dec_field) );
+  
+          if( pfield == pformat->fields ){
+            pgenfield = pf;
+            pgenfield->next = NULL;
+          }
+          else{
+            pf->next = pgenfield;
+            pgenfield = pf;
+          }
+        }
+        initializing =0;
+
+      }
+      else{  //We already have candidate fields. Check if they are present in all formats.
+  
+        ppf = NULL;
+  
+        //Keep fields that are common to all instructions
+        pf = pgenfield; 
+  
+        while( pf ){
+  
+          //Looking for pf into pformat
+          for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){ 
+  
+            if( !strcmp( pf->name, pfield->name) )
+              break;
+          }
+  
+          if( !pfield) { //Did not find. Delete pf from pgenfield
+                                          
+            if(ppf){
+              ppf->next = pf->next;
+              free(pf);
+              pf = ppf->next;
+            }
+            else{  //Deleting the first field
+              pgenfield = pf->next;
+              free(pf);
+              pf = pgenfield;
+            }
+          }
+          else{  //Found. Keep the field and step to the next.
+            ppf = pf;
+            pf = pf->next;
+          }
+        }
+      }	
+    }
+    fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
+    /* pgenfield has the list of fields for the generic instruction. */
+    for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
+      fprintf(output, "instr_vec->get(%d)", pfield->id);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+    fprintf(output, ");\n");
+
     /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))();\n", INDENT[base_indent], project_name); */
     /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))();\n", INDENT[base_indent], project_name); */
   }

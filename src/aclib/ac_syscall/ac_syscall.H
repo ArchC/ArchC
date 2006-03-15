@@ -30,8 +30,6 @@
 
 #ifdef USE_GDB
 #include "ac_gdb.H"
-
-extern AC_GDB *gdbstub;
 #endif /* USE_GDB */
 
 #include "ac_arch_ref.H"
@@ -239,7 +237,7 @@ void ac_syscall<ac_word, ac_Hword>::_exit()
   DEBUG_SYSCALL("_exit");
   int ac_exit_status = get_int(0);
 #ifdef USE_GDB
-  if (gdbstub) gdbstub->exit(ac_exit_status);
+  if (ref.get_gdbstub()) (ref.get_gdbstub())->exit(ac_exit_status);
 #endif /* USE_GDB */
   ref.stop(ac_exit_status);
 }

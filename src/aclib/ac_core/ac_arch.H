@@ -24,6 +24,10 @@
 
 template <typename T, typename U> class ac_memport;
 
+#ifdef USE_GDB
+template <typename ac_word> class AC_GDB;
+#endif // USE_GDB
+
 ///ArchC class for Architecture Resources.
 
 template <typename ac_word, typename ac_Hword> class ac_arch {
@@ -153,6 +157,10 @@ public:
   virtual void init(int ac, char *av[]) = 0;
 
   virtual void stop(int status = 0) = 0;
+
+#ifdef USE_GDB
+  virtual AC_GDB<ac_word>* get_gdbstub() = 0;
+#endif // USE_GDB
 
   virtual ~ac_arch() {
     delete[] buffer;

@@ -23,8 +23,8 @@ void sigusr1_handler(int signal)
 #ifdef USE_GDB
 void sigusr2_handler(int signal)
 {
-  fprintf(stderr, "ArchC: Received signal %d. Starting GDB support\n", signal);
-  gdbstub->enable();
-  gdbstub->connect();
+  fprintf(stderr, "ArchC: Received signal %d. Starting GDB support (not implemented).\n", signal);
+/*  gdbstub->enable();
+  gdbstub->connect();*/
 }
 #endif /* USE_GDB */

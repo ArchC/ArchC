@@ -171,8 +171,23 @@
 /** AC_GDB_Interface
  * Interface for processor dependent methods to the GDB protocol.
  */
+template <typename ac_word>
 class AC_GDB_Interface {
 public:
+
+  /* Processor Feature Support */
+
+  /**
+   * Returns whether the processor endianness matches the host's.
+   *
+   * @return false when simulated processor endianness doesn't match the host's, true otherwise.
+   */
+  virtual bool get_ac_mt_endian() = 0;
+
+  /**
+   * Stops the processor.
+   */
+  virtual void ac_stop() = 0;
 
   /* Register Support */
 
@@ -201,6 +216,12 @@ public:
   virtual void reg_write( int reg, ac_word value ) = 0;
   
 
+  /**
+   * Writes address value to the processor ac_pc (Default Program Counter) register.
+   *
+   * @param value Address value to be written in the ac_pc register.
+   */
+  virtual void set_ac_pc(unsigned int value) = 0;
 
   /* Memory Access *************************************************************/
   
