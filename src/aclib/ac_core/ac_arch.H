@@ -154,9 +154,23 @@ public:
     }
   }
 
+  virtual void init() = 0;
+
   virtual void init(int ac, char *av[]) = 0;
 
   virtual void stop(int status = 0) = 0;
+
+  /**
+   * Loads program into the processor instruction memory during elaboration.
+   * @param program Path of the binary file containing the program.
+   */
+  virtual void load(char* program) = 0;
+
+  /**
+   * Loads program into the processor instruction memory during simulation.
+   * @param program Path of the binary file containing the program.
+   */
+  virtual void delayed_load(char* program) = 0;
 
 #ifdef USE_GDB
   virtual AC_GDB<ac_word>* get_gdbstub() = 0;

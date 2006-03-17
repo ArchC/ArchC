@@ -1476,9 +1476,6 @@ void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
   }
 }
 
-// [ARCHC_2_0]
-// Módulo de processador incorpora as declarações do ARCH header.
-
 //!Creates Processor Module Header File
 void CreateProcessorHeader() {
 
@@ -1540,7 +1537,7 @@ void CreateProcessorHeader() {
   fprintf( output, "public:\n\n");
 
   fprintf( output, "%sunsigned bhv_pc;\n", INDENT[1]);
-
+  
   if( HaveMultiCycleIns)
     fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
   
@@ -1550,6 +1547,9 @@ void CreateProcessorHeader() {
     fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
 
   fprintf( output, "\n");
+  
+  fprintf(output, "%sbool has_delayed_load = false;\n", INDENT[1]);
+  fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
 
   fprintf( output, "%s%s_isa ISA;\n", INDENT[1], project_name );
   if (ACABIFlag)
@@ -1636,7 +1636,9 @@ void CreateProcessorHeader() {
   }
   
     fprintf( output, "\n%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
-    fprintf( output, "%svoid init(char* program);\n\n", INDENT[1]);
+    fprintf( output, "%svoid init();\n\n", INDENT[1]);
+    fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
+    fprintf( output, "%svoid delayed_load(char* program);\n\n", INDENT[1]);
     fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
 
     fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
@@ -2251,6 +2253,12 @@ void CreateProcessorImpl() {
 /*     fprintf( output, "%schar fetch[AC_WORDSIZE/8];\n\n", INDENT[1]); */
 /*   } */
 
+  /* Delayed program loading */
+  fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
+  fprintf(output, "%sAPP_MEM->load(delayed_load_program);\n", INDENT[2]);
+  fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
+  fprintf(output, "%s}\n\n", INDENT[1]);
+
   if( HaveMemHier ) {
     fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[1]);
     fprintf( output, "%sreturn;\n", INDENT[2]);
@@ -2401,12 +2409,9 @@ void CreateProcessorImpl() {
   fprintf(output, "#include <ac_sighandlers.H>\n\n");
 
   /* init() and stop() */
-  /* init() with 3 parameters */
-  fprintf(output, "void %s::init(int ac, char *av[]) {\n", project_name);
-  fprintf(output, "%sextern char* appfilename;\n", INDENT[1]);
-  fprintf(output, "%sac_init_opt( ac, av);\n", INDENT[1]);
-  fprintf(output, "%sac_init_app( ac, av);\n", INDENT[1]);
-  fprintf(output, "%sAPP_MEM->load(appfilename);\n", INDENT[1]);
+  /* init() with no parameters */
+  fprintf(output, "void %s::init() {\n",
+          project_name);
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2432,11 +2437,12 @@ void CreateProcessorImpl() {
   fprintf(output, "#endif\n");
   fprintf(output, "}\n\n");
 
-
-  /* init() with 2 parameters */
-  fprintf(output, "void %s::init(char* program) {\n",
-          project_name);
-  fprintf(output, "%sAPP_MEM->load(program);\n", INDENT[1]);
+  /* init() with 3 parameters */
+  fprintf(output, "void %s::init(int ac, char *av[]) {\n", project_name);
+  fprintf(output, "%sextern char* appfilename;\n", INDENT[1]);
+  fprintf(output, "%sac_init_opt( ac, av);\n", INDENT[1]);
+  fprintf(output, "%sac_init_app( ac, av);\n", INDENT[1]);
+  fprintf(output, "%sAPP_MEM->load(appfilename);\n", INDENT[1]);
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2472,6 +2478,21 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_stopped();\n", INDENT[1]);
   fprintf(output, "#endif\n");
+  fprintf(output, "}\n\n");
+
+  /* Program loading functions */
+  /* load() */
+  fprintf(output, "void %s::load(char* program) {\n",
+          project_name);
+  fprintf(output, "%sAPP_MEM->load(program);\n", INDENT[1]);
+  fprintf(output, "}\n\n");
+
+  /* delayed_load() */
+  fprintf(output, "void %s::delayed_load(char* program) {\n",
+          project_name);
+  fprintf(output, "%shas_delayed_load = true;\n", INDENT[1]);
+  fprintf(output, "%sdelayed_load_program = new char[strlen(program)];\n", INDENT[1]);
+  fprintf(output, "%sstrcpy(delayed_load_program, program);\n", INDENT[1]);
   fprintf(output, "}\n\n");
 
   /* Some simple GDB support methods */
