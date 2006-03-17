@@ -65,7 +65,7 @@ static const char *INDENT[]={"","  ","    ","      ","        ","          ","  
  * They are extracted from the config/archc.conf file.
  * @{
  */
-char *ARCHC_PATH;     //!<Path where ArchC is installed.
+//char *ARCHC_PATH;     //!<Path where ArchC is installed.
 char *SYSTEMC_PATH;   //!<Path where SystemC is installed.
 char *TARGET_ARCH;    //!<Architecture of the host machine.
 char *CC_PATH;        //!<C/C++ compiler path

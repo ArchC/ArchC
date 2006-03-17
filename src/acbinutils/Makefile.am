@@ -3,7 +3,7 @@
 #SUBDIRS = binutils
 
 ## Includes
-INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../acpp -I../acsim
+INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
 
 BINUTILS_ROOT = binutils
 
@@ -58,18 +58,18 @@ edit = sed \
 bin_SCRIPTS = acbingen.sh
 
 
-acbingen.sh: Makefile acbingen.sh.in
-	$(edit) acbingen.sh.in > acbingen.sh
+acbingen.sh: Makefile $(srcdir)/acbingen.sh.in
+	$(edit) $(srcdir)/acbingen.sh.in > acbingen.sh
 
 install-data-hook:
 	for directory in $(BINUTILS_ROOT) $(BINUTILS_TREE); do \
 	  mkdir -p $(pkgdatadir)/$${directory}; \
 	done;	
 	for file in $(FILES_TO_PATCH); do \
-	  cp -f $(BINUTILS_ROOT)/$${file}.sed $(pkgdatadir)/$(BINUTILS_ROOT)/$${file}.sed; \
+	  cp -f $(srcdir)/$(BINUTILS_ROOT)/$${file}.sed $(pkgdatadir)/$(BINUTILS_ROOT)/$${file}.sed; \
 	done;
 	for file in $(FILES_TO_COPY); do \
-	  cp -f $(BINUTILS_ROOT)/$${file} $(pkgdatadir)/$(BINUTILS_ROOT)/$${file}; \
+	  cp -f $(srcdir)/$(BINUTILS_ROOT)/$${file} $(pkgdatadir)/$(BINUTILS_ROOT)/$${file}; \
 	done
 
 uninstall-hook:

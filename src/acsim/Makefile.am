@@ -1,10 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-INCLUDES = -I. -I.. -I../aclib/ac_decoder -I../acpp
+INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp
 
 ## Passing the sysconfdir to the compiler
-CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" @CPPFLAGS@
+CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DINCLUDEDIR=\"$(pkgincludedir)\" -DBINDIR=\"$(bindir)\" -DLIBDIR=\"$(libdir)\" @CPPFLAGS@
 
 ## The ArchC interpreted behavioral simulator tool
 bin_PROGRAMS = acsim

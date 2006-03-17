@@ -1548,7 +1548,7 @@ void CreateProcessorHeader() {
 
   fprintf( output, "\n");
   
-  fprintf(output, "%sbool has_delayed_load = false;\n", INDENT[1]);
+  fprintf(output, "%sbool has_delayed_load;\n", INDENT[1]);
   fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
 
   fprintf( output, "%s%s_isa ISA;\n", INDENT[1], project_name );
@@ -1593,6 +1593,7 @@ void CreateProcessorHeader() {
   }
 
   fprintf( output,"%sbhv_pc = 0; \n", INDENT[2]);
+  fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
   fprintf( output, "%sid = %d;\n\n", INDENT[2], 1);
@@ -1614,7 +1615,7 @@ void CreateProcessorHeader() {
   if(ACGDBIntegrationFlag) {
     fprintf( output, "%s/***********\n", INDENT[1]);
     fprintf( output, "%s * GDB Support - user supplied methods\n", INDENT[1]);
-    fprintf( output, "%s * For further information, look at $ARCHC_PATH/src/aclib/ac_gdb/ac_gdb_interface.H\n", INDENT[1]);
+    fprintf( output, "%s * For further information, look at ~/src/aclib/ac_gdb/ac_gdb_interface.H\n", INDENT[1]);
     fprintf( output, "%s ***********/\n\n", INDENT[1]);
 
     fprintf( output, "%s/* Processor Feature Support */\n", INDENT[1]);
@@ -3171,7 +3172,7 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
   COMMENT_MAKE("Variable that points to ArchC installation path");
-  fprintf( output, "ARCHC := %s\n", ARCHC_PATH);
+  fprintf( output, "ARCHC := %s\n", BINDIR);
 
   fprintf( output, "\n");
 
@@ -3180,11 +3181,11 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
         
-  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include -I$(SYSTEMC)/include ");
+  fprintf( output, "INC_DIR := -I. -I%s -I$(SYSTEMC)/include ", INCLUDEDIR);
   if (HaveTLMPorts || HaveTLMIntrPorts)
     fprintf(output, "-I$(SYSTEMC)/include/sysc/tlm ");
   fprintf(output, "\n");
-  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L$(ARCHC)/lib\n");
+  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n", LIBDIR);
 
   fprintf( output, "\n");
  
@@ -3333,7 +3334,7 @@ void CreateMakefile(){
   //Declaring dependencie rules
   fprintf( output, ".SUFFIXES: .cc .cpp .o .x\n\n");
 
-  fprintf( output, "all: $(addprefix $(ARCHC)/include/, $(ACFILESHEAD)) $(ACFILES) $(EXE)\n\n");
+  fprintf( output, "all: $(addprefix %s/, $(ACFILESHEAD)) $(ACFILES) $(EXE)\n\n", INCLUDEDIR);
 
   fprintf( output, "$(EXE): $(OBJS) %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
@@ -3360,27 +3361,6 @@ void CreateMakefile(){
   fprintf( output, "distclean: sim_clean\n");
   fprintf( output, "\trm -f main.cpp Makefile.archc\n\n");
 
-  fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_storage/%%.cpp\n");
-  fprintf( output, "\tcp $< $@\n");
-
-  fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_syscall/%%.cpp\n");
-  fprintf( output, "\tcp $< $@\n");
-
-  fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_core/%%.cpp\n");
-  fprintf( output, "\tcp $< $@\n");
-
-  fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_utils/%%.cpp\n");
-  fprintf( output, "\tcp $< $@\n");
-
-  if(ACGDBIntegrationFlag) {
-    fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_gdb/%%.cpp\n");
-    fprintf( output, "\tcp $< $@\n");
-  }
-
-  if(ACEncoderFlag) {
-    fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_encoder/%%.cpp\n");
-    fprintf( output, "\tcp $< $@\n");
-  }
 }
 
 //!Create dummy function file
@@ -4604,7 +4584,7 @@ void ReadConfFile(){
 
   char *conf_filename_local;
   char *conf_filename_global;
-  extern char *ARCHC_PATH;
+//  extern char *ARCHC_PATH;
   extern char *SYSTEMC_PATH;
   extern char *CC_PATH;
   extern char *OPT_FLAGS;
@@ -4652,11 +4632,11 @@ void ReadConfFile(){
         sscanf(line, "%s",var);
         strcpy( value, strchr(line, '=')+1);
 
-        if( !strcmp(var, "ARCHC_PATH") ){
-          ARCHC_PATH =  (char*) malloc(strlen(value)+1);
-          ARCHC_PATH = strcpy(ARCHC_PATH, value);
-        }
-        else if( !strcmp(var, "SYSTEMC_PATH") ){
+//        if( !strcmp(var, "ARCHC_PATH") ){
+//          ARCHC_PATH =  (char*) malloc(strlen(value)+1);
+//          ARCHC_PATH = strcpy(ARCHC_PATH, value);
+//        }
+        if( !strcmp(var, "SYSTEMC_PATH") ){
           SYSTEMC_PATH = (char*) malloc(strlen(value)+1);
           SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);
           if (strlen(value) <= 2) {
