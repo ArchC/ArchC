@@ -7,6 +7,6 @@ INCLUDES = -I. -I.. -I../ac_core/ -I../ac_decoder/ -I../ac_encoder/ -I..ac_gdb/ 
 noinst_LIBRARIES = libacsyscall.a
 
 ## ArchC library includes
-include_HEADERS = ac_syscall_codes.h ac_syscall.H ac_syscall.def
+pkginclude_HEADERS = ac_syscall_codes.h ac_syscall.H ac_syscall.def
 
 libacsyscall_a_SOURCES = ac_syscall.cpp

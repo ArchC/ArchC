@@ -7,6 +7,6 @@ INCLUDES = -I. -I.. -I../ac_core -I../ac_decoder -I../ac_encoder -I../ac_gdb -I.
 noinst_LIBRARIES = libacdecoder.a
 
 ## ArchC library includes
-include_HEADERS = ac_decoder_rt.H ac_decoder.h
+pkginclude_HEADERS = ac_decoder_rt.H ac_decoder.h
 
 libacdecoder_a_SOURCES = ac_decoder.c ac_decoder_rt.cpp
