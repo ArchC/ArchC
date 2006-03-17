@@ -8,5 +8,5 @@ SUBDIRS = src
 
 ## Special ArchC configuration file installation
 sysconf_DATA = archc.conf
-archc.conf: archc.conf.m4
+archc.conf: archc.conf.m4 Makefile
 	m4 -P -Darchc_path=${prefix} -Dsystemc_path=${SC_DIR} -Dcompiler=${CXX} -Dsystemc_target=${TARGET_ARCH} -Dbinutils_path=${BINUTILS_DIR} $< > $@
