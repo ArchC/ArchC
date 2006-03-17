@@ -3935,7 +3935,7 @@ void EmitDecodification( FILE *output, int base_indent){
   }
   else{
     fprintf( output, "%sinstr_dec = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n", INDENT[base_indent]);
-    fprintf( output, "%sinstr_vec = new ac_instr<%s_parms::AC_DEC_FIELD>( instr_dec);\n", INDENT[base_indent], project_name);
+    fprintf( output, "%sinstr_vec = new ac_instr<%s_parms::AC_DEC_FIELD_NUMBER>( instr_dec);\n", INDENT[base_indent], project_name);
   }
   
   //Checking if it is a valid instruction
@@ -4039,8 +4039,9 @@ void EmitInstrExec( FILE *output, int base_indent){
             pf = pf->next;
           }
         }
-      }	
+      }
     }
+    fprintf(output, "%sif (!ac_annul_sig) {\n", INDENT[base_indent++]);
     fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
     /* pgenfield has the list of fields for the generic instruction. */
     for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
@@ -4082,7 +4083,8 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf(output, ");\n");
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
-  fprintf(output, "} // switch (ins_id)\n\n", INDENT[base_indent]);
+  fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent--]);
+  fprintf(output, "%s} // if (!ac_annul_sig)\n\n", INDENT[base_indent]);
 
   if( ACDasmFlag ){
     fprintf( output, PRINT_DASM , INDENT[base_indent]);
