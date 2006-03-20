@@ -1588,8 +1588,12 @@ void CreateProcessorHeader() {
 
   //!Declaring ARCH Constructor.
   COMMENT(INDENT[1], "Constructor.");
-  fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this), syscall(*this) {\n\n", INDENT[1], project_name, project_name);
-  
+  fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", INDENT[1], project_name, project_name);
+  if (ACABIFlag)
+    fprintf(output, ", syscall(*this)");
+
+  fprintf(output, " {\n\n");
+
   fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
 
   if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
@@ -2812,11 +2816,10 @@ void CreateImplTmpl(){
     exit(1);
   }
 
-
-
   print_comment( output, description);
   fprintf( output, "#include  \"%s_isa.H\"\n", project_name);
-  fprintf( output, "#include  \"%s\"\n", initfilename );
+  fprintf( output, "#include  \"%s_isa_init.cpp\"\n", project_name);
+  fprintf(output, "#include \"%s_bhv_macros.H\"\n", project_name);
   fprintf( output, " \n");
 
   fprintf( output, " \n");
@@ -2904,19 +2907,18 @@ void CreateImplTmpl(){
       fprintf( output, "%svoid ac_behavior( %s ){}\n\n", INDENT[0], pinstr->name); 
     }
   }
-  
+
   //!END OF FILE.
   fclose(output);
 
 
-  //Now writing ISA initialization file.
+  /* ac_isa_init creation starts here */
+  /* Name for ISA initialization file. */
   sprintf( initfilename, "%s_isa_init.cpp", project_name);
   if ( !(output = fopen( initfilename, "w"))){
     perror("ArchC could not open output file");
     exit(1);
   }
-    
-  /* ac_isa_init creation starts here */
 
   print_comment( output, "AC_ISA Initialization File");
 
