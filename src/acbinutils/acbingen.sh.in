@@ -9,7 +9,7 @@ me=`echo "$0" | sed -e 's,.*/,,'`
 usage="\
 Usage: $0 [options] <archc source file> <architecture name>
 
-Create gas target source files and copy them to the binutils tree.
+Create binutils target source files and copy them to the binutils tree.
 
 Options:
   -c, --create-only  only create the files, do not copy to binutils tree
@@ -19,7 +19,7 @@ Options:
 Report bugs and patches to ArchC Team."
 
 version="\
-ArchC assembler generator script version 1.6.0"
+ArchC binutils generator script version @VERSION@"
 
 help="
 Try \`$me --help' for more information."

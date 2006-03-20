@@ -5,6 +5,8 @@
 ## Includes
 INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
 
+CFLAGS = -DACVERSION=\"$(VERSION)\"
+
 BINUTILS_ROOT = binutils
 
 BINUTILS_TREE = \
@@ -53,7 +55,8 @@ edit = sed \
 	-e 's,@bindir\@,${bindir},g' \
 	-e 's,@prefix\@,$(prefix),g' \
 	-e 's,@patchfiles\@,$(FILES_TO_PATCH),g' \
-	-e 's,@copyfiles\@,$(FILES_TO_COPY),g'
+	-e 's,@copyfiles\@,$(FILES_TO_COPY),g' \
+	-e 's,@VERSION\@,$(VERSION),g'
 
 bin_SCRIPTS = acbingen.sh
 

@@ -59,7 +59,7 @@ int  ACVerifyTimedFlag=0;                       //!<Indicates whether verificati
 int  ACEncoderFlag=0;                           //!<Indicates whether encoder tools will be included in the simulator
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 
-char *ACVersion = "2.0alpha1";                        //!<Stores ArchC version number.
+//char *ACVersion = "2.0alpha1";                        //!<Stores ArchC version number.
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
 char *arch_filename;                            //!<Stores ArchC arquitecture file
@@ -115,10 +115,10 @@ static void DisplayHelp (){
   int i;
   char line[]="====================";
 
-  line[strlen(ACVersion)+1] = '\0';
+  line[strlen(ACVERSION)+1] = '\0';
 
   printf ("===============================================%s\n", line);
-  printf (" This is the ArchC Simulator Generator version %s\n", ACVersion);
+  printf (" This is the ArchC Simulator Generator version %s\n", ACVERSION);
   printf ("===============================================%s\n\n", line);
   printf ("Usage: acsim input_file [options]\n");
   printf ("       Where input_file stands for your AC_ARCH description file.\n\n");
@@ -183,7 +183,7 @@ int main( argc, argv )
     }
 
     if( !strcmp(argv[0], "--version") | !strcmp(argv[0], "-vrs")){
-      printf("This is ArchC version %s\n", ACVersion);
+      printf("This is ArchC version %s\n", ACVERSION);
       return 0;
     }
 
@@ -2716,7 +2716,7 @@ void CreateMainTmpl() {
 
   fprintf( output, "const char *project_name=\"%s\";\n", project_name);
   fprintf( output, "const char *project_file=\"%s\";\n", arch_filename);
-  fprintf( output, "const char *archc_version=\"%s\";\n", ACVersion);
+  fprintf( output, "const char *archc_version=\"%s\";\n", ACVERSION);
   fprintf( output, "const char *archc_options=\"%s\";\n", ACOptions);
   fprintf( output, "\n");
 

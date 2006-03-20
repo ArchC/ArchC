@@ -83,7 +83,7 @@ static void show_usage(FILE * stream)
 /* Show version number (--version) */
 static void show_version(FILE *stream)
 {
-  fprintf(stream, "This is bmdsfg version 1.6.0\n");
+  fprintf(stream, "This is bmdsfg version %s\n", ACVERSION);
 }
 
 
