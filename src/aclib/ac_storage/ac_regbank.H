@@ -65,9 +65,8 @@ protected:
   
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
-#endif
-
   double& time_step;
+#endif // AC_DELAY
 
 public:
   
@@ -121,12 +120,15 @@ public:
   }
 #endif
 
-  //!Constructor
-//   ac_regbank(string nm, unsigned s=sizeof(ac_word)):
-//     Name(nm), Data(new ac_word[s]) {}
+  /// Default Constructor
+  ac_regbank(string nm):
+    Name(nm) {}
 
+#ifdef AC_DELAY
+  /// Constructor with delay parameter.
   ac_regbank(string nm, double& ts) : 
     time_step(ts), Name(nm) {}
+#endif // AC_DELAY
 
   //!Dump the entire contents of a regbank device
   void dump(){

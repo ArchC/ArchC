@@ -63,9 +63,8 @@ protected:
   
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
-#endif
-
   double& time_step;
+#endif // AC_DELAY
 
 public:
   
@@ -86,12 +85,17 @@ public:
  
   }
 
-  //!Constructor
-  ac_reg(char* name, T value, double& ts):
-    Data(value), Name(name), time_step(ts) {}
+  /// Default constructor
+  ac_reg(char* name, T value):
+    Data(value), Name(name) {}
 
 #ifdef AC_DELAY
+  /// Constructor with delay parameter
+  ac_reg(char* name, T value, double& ts):
+    Data(value), Name(name), time_step(ts) {}
+#endif // AC_DELAY
 
+#ifdef AC_DELAY
   //!Writing to an address. Overloaded Method.
   void write( T datum, unsigned time ) { 
     delays.push_back( chg_log( 0, datum, (time * time_step) + time_step + sc_simulation_time()));
@@ -114,7 +118,6 @@ public:
     delays.push_back( data );
     return *this;
   }
-
 #endif  //AC_DELAY
 
   //!Convertion operator

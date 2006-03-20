@@ -83,11 +83,13 @@ public:
     argc = ac;
     argv = av;
   }
- 
+
+#ifdef AC_DELAY
   /// Delayed Assignment.
   change_log<ac_word> delay(ac_word val, unsigned clocks) {
     return change_log<ac_word>( 0, val, clocks + ac_cycle_counter );
   }
+#endif // AC_DELAY
 
   /// Stall method.
   /// Put the simulator on the wait state.

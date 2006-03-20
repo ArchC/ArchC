@@ -1081,7 +1081,7 @@ void CreateParmHeader() {
   //Create a compiler error if delay assignment is used without the -dy option
   COMMENT(INDENT[0],"Create a compiler error if delay assignment is used without the -dy option");
   fprintf( output, "#ifndef AC_DELAY\n");
-  fprintf( output, "extern ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n");
+  fprintf( output, "extern %s_parms::ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n", project_name);
   fprintf( output, "#define delay(a,b) ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___\n");
   fprintf( output, "#endif\n");
 
@@ -2589,17 +2589,25 @@ void CreateArchImpl() {
     case REG:
 
       //Formatted registers have a special class.
-      if( pstorage->format != NULL ){
-        fprintf( output, "%s%s(*this, \"%s\", time_step)", INDENT[1], pstorage->name, pstorage->name);
+      if (pstorage->format != NULL) {
+        fprintf(output, "%s%s(*this, \"%s\"", INDENT[1], pstorage->name, pstorage->name);
       }
-      else{
-        fprintf( output, "%s%s(\"%s\", time_step)", INDENT[1], pstorage->name, pstorage->name);
+      else {
+        fprintf(output, "%s%s(\"%s\", 0", INDENT[1], pstorage->name, pstorage->name);
       }
+      if (ACDelayFlag) {
+        fprintf(output, ", time_step");
+      }
+      fprintf(output, ")");
       break;
 
     case REGBANK:
       //Emiting register bank. Checking is a register width was declared.
-      fprintf( output, "%s%s(\"%s\", time_step)", INDENT[1], pstorage->name, pstorage->name);
+      fprintf( output, "%s%s(\"%s\"", INDENT[1], pstorage->name, pstorage->name);
+      if (ACDelayFlag) {
+        fprintf(output, ", time_step");
+      }
+      fprintf(output, ")");
       break;
 
     case CACHE:

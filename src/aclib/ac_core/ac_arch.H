@@ -77,7 +77,11 @@ public:
     ac_parallel_sig(0),
     ac_annul_sig(0),
     ac_mt_endian(0),
+#ifdef AC_DELAY
     ac_pc("ac_pc", 0xffffffff, time_step),
+#else
+    ac_pc("ac_pc", 0xffffffff),
+#endif // AC_DELAY
     ac_start_addr(0),
     ac_instr_counter(0),
     ac_cycle_counter(0),
@@ -95,11 +99,13 @@ public:
     argc = ac;
     argv = av;
   };
- 
+
+#ifdef AC_DELAY 
   /// Delayed Assignment.
   chg_log delay(ac_word value, unsigned clocks){
     return chg_log(0, value, clocks + ac_cycle_counter );
   };
+#endif // AC_DELAY
 
   /// Stall method.
   /// Puts the simulator on the wait state.
