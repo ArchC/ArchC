@@ -1155,9 +1155,6 @@ void CreateISAHeader() {
   fprintf( output, "#include \"%s_arch_ref.H\"\n", project_name);
   fprintf( output, "\n");
 
-  /* 'using' declaration to allow use of ac_word type */
-  fprintf(output, "using %s_parms::ac_word;\n\n\n", project_name);
-
   fprintf( output, "class %s_isa: public %s_arch_ref {\n", project_name,
            project_name);
 
@@ -1315,8 +1312,8 @@ void CreateISAHeader() {
   fprintf( output, "#ifndef _%s_BHV_MACROS_H\n", project_name);
   fprintf( output, "#define _%s_BHV_MACROS_H\n\n", project_name);
   
-  /* ac_memory macro */
-  fprintf(output, "#define ac_memory ac_memport<ac_word>\n\n");
+  /* ac_memory TYPEDEF */
+  fprintf(output, "typedef ac_memport<%s_parms::ac_word, %s_parms::ac_Hword> ac_memory;\n\n", project_name, project_name);
 
   /* ac_behavior main macro */
   fprintf( output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr ()\n\n");

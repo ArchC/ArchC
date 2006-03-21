@@ -13,9 +13,9 @@
 
 #ifdef DEBUG_MODEL
 #  include <stdio.h>
-#  define dprintf(...) fprintf (stderr, "DBG: " __VA_ARGS__)
+#  define dbg_printf(args...) fprintf (stderr, "DBG: " args)
 #  define _d_(arg) arg
 #else
-#  define dprintf(...)
+#  define dbg_printf(args...)
 #  define _d_(arg)
 #endif

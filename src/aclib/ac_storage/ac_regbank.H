@@ -71,7 +71,6 @@ protected:
 public:
   
   string Name;
-//   ac_word* Data;
   ac_word Data[nregs];
 
   //!Reading the content of an address. Overloaded Method.
@@ -219,9 +218,17 @@ public:
   }
 #endif
 
-  // Destructor
+  /**
+   * Individual register access operator.
+   * @param reg Index of the register in the bank.
+   * @return Reference to register data element.
+   */
+  ac_word& operator [] (int reg) {
+    return Data[reg];
+  }
+
+  /// Destructor
   ~ac_regbank() {
-//     delete[] Data;
   }
 
 };

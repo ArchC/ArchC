@@ -33,6 +33,8 @@ template<class T, class U> class ac_memport;
 
 /// Class containing references to the ac_arch fields.
 template <typename ac_word, typename ac_Hword> class ac_arch_ref {
+private:
+  ac_arch<ac_word, ac_Hword>& archref;
 public:
 
   /// Indicates the storage device from where instructions are fetched.
@@ -62,6 +64,7 @@ public:
 
   /// Default constructor
   ac_arch_ref(ac_arch<ac_word, ac_Hword>& arch) :
+    archref(arch),
     IM(arch.IM),
     APP_MEM(arch.APP_MEM),
     ac_wait_sig(arch.ac_wait_sig),
@@ -114,6 +117,10 @@ public:
 
   /// Flush method.
   void ac_flush(char *stage) {
+  }
+
+  void stop(int status = 0) {
+    archref.stop(status);
   }
 
 };
