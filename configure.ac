@@ -80,7 +80,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([dup2 memset socket strchr strdup strerror strstr strtol])
 
 # Configuration files
-AC_CONFIG_FILES([Makefile src/Makefile src/acpp/Makefile src/aclib/Makefile src/aclib/ac_core/Makefile src/aclib/ac_decoder/Makefile src/aclib/ac_encoder/Makefile src/aclib/ac_gdb/Makefile src/aclib/ac_storage/Makefile src/aclib/ac_syscall/Makefile src/aclib/ac_tlm/Makefile src/aclib/ac_utils/Makefile src/acsim/Makefile src/accsim/Makefile src/acbinutils/Makefile])
+AC_CONFIG_FILES([Makefile Doxyfile src/Makefile src/acpp/Makefile src/aclib/Makefile src/aclib/ac_core/Makefile src/aclib/ac_decoder/Makefile src/aclib/ac_encoder/Makefile src/aclib/ac_gdb/Makefile src/aclib/ac_storage/Makefile src/aclib/ac_syscall/Makefile src/aclib/ac_tlm/Makefile src/aclib/ac_utils/Makefile src/acsim/Makefile src/accsim/Makefile src/acbinutils/Makefile])
 
 # Output
 AC_OUTPUT
