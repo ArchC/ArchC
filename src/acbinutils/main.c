@@ -53,6 +53,7 @@ static int Createm4File();
 #define FIELD_SIZE_FN_FILE "fieldsize.fn"
 #define INSN_SIZE_FN_FILE  "insnsize.fn"
 
+#define GEN_DIR "acbingenbuilddir/"
 
 
 /* 
@@ -106,9 +107,10 @@ char *file_name = NULL; /* name of the main ArchC file */
 */
 int main(int argc, char **argv)
 {
+  char buffer[200];
+  
   /* Initializes the pre-processor */
   acppInit(1);
-
 
   /* Command line parsing code */
   while (1) {
@@ -200,50 +202,65 @@ int main(int argc, char **argv)
   // Create the relocation list first
   create_relocation_list();
 
-
-  if (!CreateOpcodeTable(OPCODE_TABLE_FILE)) {     /* write the opcode table */
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, OPCODE_TABLE_FILE);
+  if (!CreateOpcodeTable(buffer)) {     /* write the opcode table */
     fprintf(stderr, "Error creating opcode table.\n");
     exit(1);
   }
 
-  if (!CreateAsmSymbolTable(SYMBOL_TABLE_FILE)) {  /* write the symbol table */
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, SYMBOL_TABLE_FILE);  
+  if (!CreateAsmSymbolTable(buffer)) {  /* write the symbol table */
     fprintf(stderr, "Error creating symbol table.\n");
     exit(1);
   }
 
-  if (!CreatePseudoOpsTable(PSEUDO_TABLE_FILE)) {  /* write the pseudo-op table */
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, PSEUDO_TABLE_FILE);
+  if (!CreatePseudoOpsTable(buffer)) {  /* write the pseudo-op table */
     fprintf(stderr, "Error creating pseudo table.\n");
     exit(1);
   }
- 
   
-  if (!CreateRelocIds(RELOC_IDS_FILE)) {
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, RELOC_IDS_FILE);
+  if (!CreateRelocIds(buffer)) {
     fprintf(stderr, "Error creating relocation IDs.\n");
     exit(1);
   }
 
-  if (!CreateRelocHowto(RELOC_HOWTO_FILE)) {
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, RELOC_HOWTO_FILE);
+  if (!CreateRelocHowto(buffer)) {
     fprintf(stderr, "Error creating relocation HOWTO structure.\n");
     exit(1);
   }
 
-  if (!CreateRelocMap(RELOC_MAP_FILE)) {
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, RELOC_MAP_FILE);
+  if (!CreateRelocMap(buffer)) {
     fprintf(stderr, "Error creating relocation map.\n");
     exit(1);
   }
 
-
-  if (!CreateEncodingFunc(ENCODING_FN_FILE)) {
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, ENCODING_FN_FILE);
+  if (!CreateEncodingFunc(buffer)) {
     fprintf(stderr, "Error creating encoding function.\n");
     exit(1);
   }
 
-  if (!CreateGetFieldSizeFunc(FIELD_SIZE_FN_FILE)) {
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, FIELD_SIZE_FN_FILE);
+  if (!CreateGetFieldSizeFunc(buffer)) {
     fprintf(stderr, "Error creating field size function.\n");
     exit(1);
   }
 
-  if (!CreateGetInsnSizeFunc(INSN_SIZE_FN_FILE)) {
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, INSN_SIZE_FN_FILE);
+  if (!CreateGetInsnSizeFunc(buffer)) {
     fprintf(stderr, "Error creating insn size function.\n");
     exit(1);
   }
@@ -257,7 +274,7 @@ static int Createm4File()
 {
   FILE *output;
 
-  if ((output = fopen("defines.m4", "w")) == NULL) 
+  if ((output = fopen("acbingenbuilddir/defines.m4", "w")) == NULL) 
     return 0;
 
   /* disable comments */
