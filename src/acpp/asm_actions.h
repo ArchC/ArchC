@@ -14,7 +14,7 @@
 */
 
 /********************************************************/
-/* parser.asm.h: ArchC parser (asm module)  .           */
+/* asm_actions.h: ArchC parser (asm module).            */
 /* Author: Alexandro Baldassin                          */
 /* Date: 01-06-2005                                     */
 /*                                                      */
@@ -24,27 +24,146 @@
 /* http://www.lsc.ic.unicamp.br                         */
 /********************************************************/
 
-/*! \file parser.asm.h
- *  \brief ArchC parser for asm-related constructs
- *  This file contains the structures and interface 
- *  functions with the ArchC grammar (bison file)
+/*! \file asm_actions.h
+ * \brief ArchC assembly-related semantic actions
  */
 
-/** @defgroup acppasm asm-related parser 
- * @ingroup acpp
+/*! \defgroup asmact_group Assembly semantic actions 
+ * \ingroup bison_group
  *
+ * This module provides the functions called by the 
+ * language rules to deal with assembly-related constructs.
+ * 
+ *
+ * General overview of the constructs and the way things work.
+ *
+ * ********************
+ *    ac_asm_map
+ * ********************
+ *
+ * A list of the mappings declared is stored in the 'mapping_list' variable. 
+ * It can be retrieved through the 'ac_asm_get_mapping_list()' function. 
+ * It's up to the caller to get the info they need in the list, just be sure
+ * you don't change it ;)
+ *
+ * Basic Parser Info:
+ *   
+ * Upon finding the 'ac_asm_map' keyword, the parser should call
+ * 'acpp_asm_create_mapping_block()' with the ID as an argument. This will 
+ * check for redefinition of the ID and add it to the internal list. After 
+ * this, each <symbol> found in the right side of the attribution must be 
+ * added calling either 'acpp_asm_add_mapping_symbol()' or 
+ * 'acpp_asm_add_mapping_symbol_range()' depending if the symbol include a 
+ * range [] or not. The value (or the range of values) can then be assigned 
+ * through the 'acpp_asm_add_symbol_value()' function. The dependency among
+ *  the calls to the functions is:
+ * 
+ * Step 1 - call acpp_asm_create_mapping_block() to create a mapping block
+ * 
+ * Step 2 - call acpp_asm_add_mapping_symbol() or
+ *          acpp_asm_add_mapping_symbol_range() to stack symbol definitions 
+ *          for that block
+ *          
+ * Step 3 - call acpp_asm_add_symbol_value() to assign a value (or a range of
+ *          values) to the symbol(s) stacked
+ *          
+ * Step 4 - either add more symbols going to step 2 or create another mapping
+ *          block going to step 1
+ *
+ *
+ * ********************
+ *    set_asm
+ * ********************
+ *
+ * set_asm is tied up to an 'ac_instr' type. It's the type used by the ArchC
+ * language so that instructions can be created.  Every insn declared by
+ * 'ac_instr' can use a property called 'set_asm' to declared its assembly 
+ * syntax and encoding scheme.  'set_asm' resembles the standard C function
+ * 'scanf': there's a string with literal and formatting characters (those 
+ * starting with the '%' char) and a list of arguments for each of the 
+ * formatting characters. The syntax string is not parsed by the bison 
+ * itself; it uses some of the functions implemented here. 
+ *
+ *
+ * A list of the insn syntaxes declared are stored in the 'asm_insn_list'
+ * variable. It can be retrieved through the 'ac_asm_get_asm_insn_list()'
+ * function. It's up to the caller to get the info they need in the list, 
+ * just be sure you don't change it ;)
+ * 
+ * Basic Parser Info:
+ *
+ * When a 'set_asm' directive is found in the ArchC source file and its syntax
+ * should be checked, you must call the init function 'acpp_asm_new_insn()'. 
+ * It initializes some internal states. After that, syntax strings are parsed
+ * through a calling to the function 'acpp_asm_parse_asm_string()'. Arguments
+ * and constant arguments are processed by calling 'acpp_asm_parse_asm_argument()' 
+ * or 'acpp_asm_parse_const_asm_argument()'. To insert the insn to the list, 
+ * call 'acpp_asm_end_insn()'. It's the last step when parsing the whole 
+ * 'set_asm' stuff. Those functions work by creating internal representation 
+ * of the strings being parsed. end_insn is responsable for creating the final
+ * asm string and insert it into the asm_insn_list.
+ *
+ * The dependency among the calls to the functions is:
+ *
+ * Step 1 - call acpp_asm_new_insn() before any other function, to initialize 
+ *          internal states
+ *          
+ * Step 2 - call acpp_asm_parse_asm_insn() to parse the syntax string
+ * 
+ * Step 3 - either call acpp_asm_parse_asm_argument() or 
+ *          acpp_asm_parse_const_asm_argument() to process the each argument
+ *          
+ * Step 4 - call acpp_asm_end_insn() to create a new ac_asm_insn and insert it
+ *          in the list of insns
+ *
+ * 
+ * ********************
+ *    pseudo_instr
+ * ********************
+ *
+ * A pseudo insn is also stored in the 'asm_insn_list'. However, some fields 
+ * of the structure ac_asm_insn has some fixed values.  'mnemonic' and 
+ * 'operand' fields store the mnemonic and operands strings of 
+ * <pseudo_declaration>. 'insn' field is always NULL since there is no 
+ * ac_dec_instr attached to a pseudo. 'const_image' is always 0 since 
+ * pseudo-ops don't have arguments. 'pseudo_list' is a string list with all 
+ * <pseudo_member> as declared in the ArchC source file. 'num_pseudo' is the 
+ * number of pseudo members in the 'pseudo_list' field.
+ *
+ * Basic Parser Info:
+ *
+ * 'acpp_asm_parse_asm_insn()' is also used to parse <pseudo_declaration> 
+ * setting the flag 'is_pseudo' to 0 (like a native insn).  Only after that 
+ * one should call 'acpp_asm_new_pseudo()'. To insert each <pseudo_member>, 
+ * call 'acpp_asm_add_pseudo_member()'. It will insert them in the pseudo_list. 
+ * To finish, call 'acpp_asm_end_insn()' to insert it in the asm_insn_list.
+ * The dependency among the calls to the functions is:
+ *
+ * Step 1 - call acpp_asm_parse_asm_insn() to parse the base pseudo-op string
+ *           (<pseudo_declaration>)
+   *           
+ * Step 2 - call acpp_asm_new_pseudo() to initialize internal states in 
+ *          pseudo-op processing
+ *          
+ * Step 3 - call acpp_asm_add_pseudo_member() for each insn of the pseudo 
+ *           declaration
+ *
+ * Step 4 - call acpp_asm_end_insn() to insert all in the asm_insn_list
+ *
+ *
+ * 
  * @{
  */
 
-#ifndef _PARSER_ASM_H_
-#define _PARSER_ASM_H_
+#ifndef _ASM_ACTIONS_H_
+#define _ASM_ACTIONS_H_
 
 #include "ac_decoder.h"
 
-/*
-  A general structure to hold string list. Not sure if here is the best place
-  to put it.
-*/
+/*!
+ * A general structure to hold string list. Not sure if here is the best place
+ * to put it.
+ */
 typedef struct _strlist {
   char *str;
   struct _strlist *next;
@@ -52,32 +171,30 @@ typedef struct _strlist {
 
 
 
-/**********************************************
-
- ACASM parser structures
-
-**********************************************/
-
 /*
-  Structure used to hold a symbol element in an 'ac_asm_map' declaration.
-*/
+ * Binary utilities parser structures
+ */
+
+/*!
+ * Structure used to hold a symbol element in an 'ac_asm_map' declaration.
+ */
 typedef struct _ac_asm_symbol {
-  char *symbol;                     /* the symbol name */
-  int value;                        /* symbol's value */
-  struct _ac_asm_symbol *next;      /* pointer to next symbol element */
+  char *symbol;                     /*!< the symbol name */
+  int value;                        /*!< symbol's value */
+  struct _ac_asm_symbol *next;      /*!< pointer to next symbol element */
 } ac_asm_symbol;
 
 
-/*
-  Structure used to hold an 'ac_asm_map' declaration. It's made up of a marker
-(a mapping name), and a symbol list representing the mapping between strings
-and values.
-*/
+/*!
+ * Structure used to hold an 'ac_asm_map' declaration. It's made up of a marker
+ * (a mapping name), and a symbol list representing the mapping between strings
+ * and values.
+ */
 typedef struct _ac_asm_map_list {
-  char *marker;                    /* mapping name - must be unique */
-  int used_where;                  /* 0 - not used, 1 - operand, 2 - mnemonic, 3- both of them */
-  ac_asm_symbol *symbol_list;      /* symbol mapping list */
-  struct _ac_asm_map_list *next;   /* pointer to next ac_asm_map element */
+  char *marker;                    /*!< mapping name - must be unique */
+  int used_where;                  /*!< 0 - not used, 1 - operand, 2 - mnemonic, 3- both of them */
+  ac_asm_symbol *symbol_list;      /*!< symbol mapping list */
+  struct _ac_asm_map_list *next;   /*!< pointer to next ac_asm_map element */
 } ac_asm_map_list;
 
 
@@ -96,16 +213,16 @@ typedef struct _ac_asm_insn_field {
 typedef struct _ac_modifier_list {
   operand_modifier type;
   unsigned int addend;
-  unsigned int sign;       /* 0 - unsigned, 1 - signed */ 
-  unsigned int carry;      /* 0 - no carry, 1 - carry */
+  unsigned int sign;       /*!< 0 - unsigned, 1 - signed */ 
+  unsigned int carry;      /*!< 0 - no carry, 1 - carry */
   struct _ac_modifier_list *next;  
 } ac_modifier_list;
 
 typedef struct _ac_operand_list {
-  char *str;                      /* operand string */
-  operand_type type;              /* operand type */
-  ac_modifier_list *modifiers;    /* modifiers assigned to this operand */
-  ac_asm_insn_field *fields;      /* a chain of fields this operand is assigned to */
+  char *str;                      /*!< operand string */
+  operand_type type;              /*!< operand type */
+  ac_modifier_list *modifiers;    /*!< modifiers assigned to this operand */
+  ac_asm_insn_field *fields;      /*!< a chain of fields this operand is assigned to */
   struct _ac_operand_list *next;
 } ac_operand_list;
 
@@ -115,36 +232,33 @@ typedef struct _ac_const_field_list {
   struct _ac_const_field_list *next;
 } ac_const_field_list;
 
-/*
-  It's the main asm structure. It represents an instruction (insn) as seen by
-  the asm module.  You can think of it as an expansion of the ac_dec_instr
-  structure, used by the decoder.
-*/
+/*!
+ * It's the main asm structure. It represents an instruction (insn) as seen by
+ * the asm module.  You can think of it as an expansion of the ac_dec_instr
+ * structure, used by the decoder.
+ */
 typedef struct _ac_asm_insn {
-  char *mnemonic;             /* mnemonic part of asm syntax */
+  char *mnemonic;             /*!< mnemonic part of asm syntax */
   char *op_literal;             
   ac_operand_list *operands;
-  ac_dec_instr *insn;         /* pointer to original ac_dec_instr - NULL if it's a pseudo insn */
+  ac_dec_instr *insn;         /*!< pointer to original ac_dec_instr - NULL if it's a pseudo insn */
   ac_const_field_list *const_fields;
-  strlist *pseudolist;        /* if a pseudo insn, it holds a list of the insns that make up the pseudo */
-  long num_pseudo;            /* number of pseudo insns - only for speed reasons */
-  unsigned reloc_id;         /* Relocation id */
-  struct _ac_asm_insn *next;  /* pointer to next element */
+  strlist *pseudolist;        /*!< if a pseudo insn, it holds a list of the insns that make up the pseudo */
+  long num_pseudo;            /*!< number of pseudo insns - only for speed reasons */
+  unsigned reloc_id;          /*!< Relocation id */
+  struct _ac_asm_insn *next;  /*!< pointer to next element */
 } ac_asm_insn;
 
 
 
-/**********************************************
+/*!
+ * Binary utilities parser exported functions
+ * For further hints, look at the .c file
+ */
 
- ACASM parser exported functions
- For further hints, look at the .c file
-
-**********************************************/
-
-
-/*
- Parser interface functions
-*/
+/*!
+ * Parser interface functions
+ */
 
 /* ac_asm_map relative functions */
 extern int acpp_asm_create_mapping_block(char *marker, char *error_msg);
@@ -167,17 +281,16 @@ extern int acpp_asm_add_pseudo_member(char *pseudo, char *error_msg);
 
 
 
+/*!
+ * Tool-related interface functions
+ */
 
-/*
- ASM-related interface functions
-*/
-
-/* gets the pointer to the asm insn list generated by the parser */
+/*! gets the pointer to the asm insn list generated by the parser */
 extern ac_asm_insn* ac_asm_get_asm_insn_list();
 
-/* gets the pointer to the asm map list generated by the parser */
+/*! gets the pointer to the asm map list generated by the parser */
 extern ac_asm_map_list* ac_asm_get_mapping_list();
 
-/** @} */
+/*@}*/
 
-#endif /* _PARSER_ACASM_H */
+#endif /* _ASM_ACTIONS_H */

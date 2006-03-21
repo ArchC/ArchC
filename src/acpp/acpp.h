@@ -15,7 +15,7 @@
 */
 
 /********************************************************/
-/* Acpp.h: The ArchC pre-processor.                     */
+/* acpp.h: The ArchC pre-processor.                     */
 /* Author: Sandro Rigo                                  */
 /* Date: 16-07-2002                                     */
 /*                                                      */
@@ -23,18 +23,21 @@
 /* Computer Systems Laboratory (LSC)                    */
 /* IC-UNICAMP                                           */
 /* http://www.lsc.ic.unicamp.br                         */
-////////////////////////////////////////////////////////////////
+/********************************************************/
 
-/*!\file acpp.h                                                
-  \brief ArchC Pre-processor header file                      
-  This file contains the structures and macro definitions    
-  needed by the ArchC Pre-processor.                        */
-////////////////////////////////////////////////////////////////
+/*! \file acpp.h
+ * \brief ArchC Pre-processor header file.
+ *   
+ *  This file contains wrapper functions to interface with 
+ *  the GNU bison/flex files. In the future it should scale
+ *  to support an intermediate file representation.
+ */
 
-/** @defgroup acpp acpp - The ArchC pre-processor
+/*! \defgroup acpp_group The ArchC pre-processor (acpp)
+ * 
  * The ArchC pre-processor module contains the lexer and parser
  * definitions (GNU lex and bison) and the data types filled by
- * the semantic rules.
+ * the semantic action rules.
  * @{
  */
 
@@ -47,18 +50,46 @@
 
 extern char *project_name;
 extern char *isa_filename;
-extern int wordsize;
-extern int fetchsize;
-extern int ac_tgt_endian;
+extern int  wordsize;
+extern int  fetchsize;
+extern int  ac_tgt_endian;
 
+/* Function prototypes */
 
-///////////////////////////////////////
-// Function Prototypes               //
-///////////////////////////////////////
+/*! 
+ * Initialises the pre-processor.
+ * Always call this functions before doing any other acpp function
+ * call.
+ *
+ * \param[in] force_asm_syntax 
+ *            1- forces the new assembly syntax (need by the binary utilities generation tool)
+ *            0- accepts an old and lazy assembly syntax (compatible with old models)
+ */
 extern void acppInit(int force_asm_syntax);
-extern int acppLoad(char *filename);
+
+/*!
+ * Loads the file to be used by AcppRun()
+ *
+ * \parm[in] filename name of the file to be parsed
+ * \return 1 if file is open, 0 otherwise
+ */
+extern int  acppLoad(char *filename);
+
+/*!
+ * Unloads any previously loaded file.
+ *
+ */
 extern void acppUnload();
-extern int acppRun();
+
+/*!
+ * Parses the file loaded with acppLoad().
+ * After returning from this function, the parser will have filled the main
+ * data structures (and hence they can be used by generation tools)
+ *
+ * \return  1 if an error ocurred while parsing, 0 otherwise
+ */
+extern int  acppRun();
+
 
 /** @} */
 

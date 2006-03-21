@@ -5,6 +5,25 @@
 #ifndef _CORE_ACTIONS_H_
 #define _CORE_ACTIONS_H_
 
+/*! \file core_actions.c
+ * \brief Core language semantic actions
+ *
+ * This file contain the semantic actions and variables called/used
+ * by the main parser module \ref bison_group
+ */
+
+/*! \defgroup coreact_group Core semantic actions
+ * \ingroup bison_group
+ *
+ * Exported variables are filled by the parser and then can be used by
+ * the generator tools. The interface functions are used by the parser
+ * to deal with the data structures.
+ * In the future each variable should be changed by an interface 
+ * function, hence avoiding global variables.
+ * 
+ * @{
+ */
+
 #include "ac_decoder.h"
 #include "acsim.h"
 
@@ -17,22 +36,19 @@ extern ac_pipe_list *pipe_list;           //!< Pipe list
 extern ac_stg_list  *stage_list;          //!< old 'ac_stages' list for pipe stages
 extern ac_sto_list  *storage_list;        //!< Storage list
 
-//@{
 /** Boolean flag passed to the SystemC simulator generator */
 extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveCycleRange;
 extern int ControlInstrInfoLevel;
 extern int HaveTLMPorts;
 extern int HaveTLMIntrPorts;
-//@}
 
-/* TODO: Check if all of these variables must be global */
 extern int instr_num;    //!< Number of Instructions 
 extern int declist_num;  //!< Number of Decodification lists
 extern int format_num;   //!< Number of Formats
 extern int const_count;  //!< Number of Constants
 extern int stage_num;    //!< Number of Stages
 extern int pipe_num;     //!< Number of Pipelines
-extern int reg_width;   //!< Bit width of registers in a regbank.
+extern int reg_width;    //!< Bit width of registers in a regbank.
 extern int largest_format_size;
 
 extern ac_sto_list *fetch_device; //!< Indicates the device used for fetching instructions.
@@ -53,4 +69,6 @@ extern int add_dec_list( ac_dec_instr *pinstr, char* name, int value, char *erro
 extern ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr);
 extern void add_parms(char *name, int value);
    
+/*@}*/
+
 #endif /* _CORE_ACTIONS_H_ */

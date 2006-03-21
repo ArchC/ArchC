@@ -14,7 +14,7 @@
 */
 
 /********************************************************/
-/* parser.asm.c: ArchC parser (asm module)              */
+/* asm_actions.c: ArchC parser (asm module)             */
 /* Author: Alexandro Baldassin                          */
 /* Date: 01-06-2005                                     */
 /*                                                      */
@@ -62,47 +62,13 @@
 
   Info:
 
-  A list of the mappings declared is stored in the 'mapping_list' variable. It
-can be retrieved through the 'ac_asm_get_mapping_list()' function. It's up to
-the caller to get the info they need in the list, just be sure you don't change
-it ;)
-
-
-  Basic Parser Info:
-    
-  Upon finding the 'ac_asm_map' keyword, the parser should call
-'acpp_asm_create_mapping_block()' with the ID as an argument. This will check
-for redefinition of the ID and add it to the internal list. After this, each
-<symbol> found in the right side of the attribution must be added calling
-either 'acpp_asm_add_mapping_symbol()' or 'acpp_asm_add_mapping_symbol_range()'
-depending if the symbol include a range [] or not. The value (or the range of
-values) can then be assigned through the 'acpp_asm_add_symbol_value()'
-function.
-  The dependency among the calls to the functions is:
-
-   Step 1 - call acpp_asm_create_mapping_block() to create a mapping block
-   Step 2 - call acpp_asm_add_mapping_symbol() or
-            acpp_asm_add_mapping_symbol_range() to stack symbol definitions for
-            that block
-   Step 3 - call acpp_asm_add_symbol_value() to assign a value (or a range of
-            values) to the symbol(s) stacked
-   Step 4 - either add more symbols going to step 2 or create another mapping
-            block going to step 1
 
 
 ******************************* 
  -> set_asm
 ******************************* 
 
-  set_asm is tied up to an 'ac_instr' type. It's the type used by the ArchC
-language so that instructions can be created.  Every insn declared by
-'ac_instr' can use a property called 'set_asm' to declared its assembly syntax
-and encoding scheme.  'set_asm' resembles the standard C function 'scanf':
-there's a string with literal and formatting characters (those starting with
-the '%' char) and a list of arguments for each of the formatting
-characters. The syntax string is not parsed by the bison itself; it uses some
-of the functions implemented here. The general format of a set_asm declaration
-is:
+ The general format of a set_asm declaration is:
 
     <archc_instr>'.''set_asm' '(' <syntax_string> { ',' <list_of_arguments> } ')' ';'
 
@@ -175,33 +141,6 @@ is:
 
   asm Info:
 
-  A list of the insn syntaxes declared are stored in the 'asm_insn_list'
-variable. It can be retrieved through the 'ac_asm_get_asm_insn_list()'
-function. It's up to the caller to get the info they need in the list, just be
-sure you don't change it ;)
-
-
-  Basic Parser Info:
-
-  When a 'set_asm' directive is found in the ArchC source file and its syntax
-should be checked, you must call the init function 'acpp_asm_new_insn()'. It
-initializes some internal states. After that, syntax strings are parsed
-through a calling to the function 'acpp_asm_parse_asm_string()'. Arguments and
-constant arguments are processed by calling 'acpp_asm_parse_asm_argument()' or
-'acpp_asm_parse_const_asm_argument()'. To insert the insn to the list, call
-'acpp_asm_end_insn()'. It's the last step when parsing the whole 'set_asm'
-stuff. Those functions work by creating internal representation of the strings
-being parsed. end_insn is responsable for creating the final asm string and
-insert it into the asm_insn_list.
-  The dependency among the calls to the functions is:
-
-   Step 1 - call acpp_asm_new_insn() before any other function, to initialize 
-            internal states
-   Step 2 - call acpp_asm_parse_asm_insn() to parse the syntax string
-   Step 3 - either call acpp_asm_parse_asm_argument() or 
-            acpp_asm_parse_const_asm_argument() to process the each argument
-   Step 4 - call acpp_asm_end_insn() to create a new ac_asm_insn and insert it 
-            in the list of insns
 
 
 ******************************* 
@@ -238,35 +177,6 @@ insert it into the asm_insn_list.
 
 
   asm Info:
-
-  A pseudo insn is also stored in the 'asm_insn_list'. However, some fields of
-the structure ac_asm_insn has some fixed values.  'mnemonic' and 'operand'
-fields store the mnemonic and operands strings of <pseudo_declaration>. 'insn'
-field is always NULL since there is no ac_dec_instr attached to a
-pseudo. 'const_image' is always 0 since pseudo-ops don't have
-arguments. 'pseudo_list' is a string list with all <pseudo_member> as declared
-in the ArchC source file. 'num_pseudo' is the number of pseudo members in the
-'pseudo_list' field.
-
-
-  Basic Parser Info:
-
- 'acpp_asm_parse_asm_insn()' is also used to parse <pseudo_declaration> setting
-the flag 'is_pseudo' to 0 (like a native insn).  Only after that one should
-call 'acpp_asm_new_pseudo()'. To insert each <pseudo_member>, call
-'acpp_asm_add_pseudo_member()'. It will insert them in the pseudo_list. To
-finish, call 'acpp_asm_end_insn()' to insert it in the asm_insn_list.
-  The dependency among the calls to the functions is:
-       
-   Step 1 - call acpp_asm_parse_asm_insn() to parse the base pseudo-op string 
-            (<pseudo_declaration>)
-   Step 2 - call acpp_asm_new_pseudo() to initialize internal states in 
-            pseudo-op processing
-   Step 3 - call acpp_asm_add_pseudo_member() for each insn of the pseudo 
-            declaration
-   Step 4 - call acpp_asm_end_insn() to insert all in the asm_insn_list
-
-
 
 
 Some conventions:

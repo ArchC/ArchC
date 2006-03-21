@@ -74,13 +74,13 @@ void init_core_actions()
   HaveTLMPorts = 0;
   HaveTLMIntrPorts = 0;   
 
-  instr_num = 0;    //!< Number of Instructions 
-  declist_num = 0;  //!< Number of Decodification lists
-  format_num = 0;   //!< Number of Formats
-  const_count = 0;  //!< Number of Constants
-  stage_num = 0;    //!< Number of Stages
-  pipe_num = 0;     //!< Number of Pipelines
-  reg_width = 0;   //!< Bit width of registers in a regbank.
+  instr_num = 0;     
+  declist_num = 0;  
+  format_num = 0;   
+  const_count = 0;  
+  stage_num = 0;    
+  pipe_num = 0;     
+  reg_width = 0;  
   largest_format_size = 0;
 
   fetch_device = NULL;
@@ -138,7 +138,6 @@ ac_dec_field *find_field(ac_dec_format *pformat, char *name)
 
 /***************************************/
 /*!Add format to instr/reg format lists.
-  @ingroup parser
   \param head Head of the format list.
   \param tail Tail of the format list.
   \param name The name of the instruction to be added.
@@ -182,7 +181,6 @@ int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* st
 
 /***************************************/
 /*!Add instruction to instruction list.
-  @ingroup parser
   \param name The name of the instruction to be added. */
 /***************************************/
 int add_instr(char* name, char *typestr, ac_dec_instr **pinstr, char *error_msg) 
@@ -285,7 +283,6 @@ void add_stage( char* name, ac_stg_list** listp )
 
 /**************************************/
 /*! Add a new device to the storage list.
-  @ingroup parser
   \param name The name of the device to be added. 
   \param size The size of the device to be added.
   \param type The type of the device to be added. */
@@ -304,9 +301,6 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
   else
     pstorage->format = NULL;
     
-//  if ( type == MEM || type == CACHE || type == ICACHE || type == DCACHE || type == TLM_PORT )
-//    pstorage->size = size * current_unit;
-//  else
   pstorage->size = size;
 
 
@@ -358,7 +352,6 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
 
 /**************************************/
 /*! Add a new field to the end of the decoding sequence list.
-  @ingroup parser
   \param pinstr Pointer to the current instruction.
   \param name   The name of the field to be added.
   \param value  The value of the field to be added. */
@@ -412,8 +405,7 @@ int add_dec_list( ac_dec_instr *pinstr, char* name, int value, char *error_msg)
 
 /**************************************/
 /*! Get the existing structure for control flow instructions or create one.
-  @ingroup parser
-  \param pinstr Pointer to the current instruction.
+  \param pinstr Pointer to the current instruction. */
 /***************************************/
 ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
 {
@@ -455,7 +447,6 @@ void add_parms(char *name, int value)
    
 /********************************************************/
 /*!Parse format string generating field list.
-  @ingroup parser
   \param fieldstr Reference to string containing field declarations.
   \param sum_size Sum of bits of previous fields.
   \param size_limit Limit of size for this field group

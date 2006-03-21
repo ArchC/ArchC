@@ -15,7 +15,7 @@
 */
 
 /********************************************************/
-/* Acpp.c: The ArchC pre-processor.                     */
+/* acpp.c: The ArchC pre-processor.                     */
 /* Author: Sandro Rigo                                  */
 /* Date: 16-07-2002                                     */
 /*                                                      */
@@ -24,33 +24,23 @@
 /* IC-UNICAMP                                           */
 /* http://www.lsc.ic.unicamp.br                         */
 /********************************************************/
-//////////////////////////////////////////////////////////
-/*!\file acpp.c
-  \brief The ArchC pre-processor.
 
-  This file contains wrapper functions to interface with 
-  the GNU bison/flex files. In the future it should scale
-  to support an intermediate file representation.
-*/
-//////////////////////////////////////////////////////////
+/*! \file acpp.c
+ * \brief ArchC pre-processor implementation file.
+ */
 
-#include "acpp.h"
-/* #include <stdlib.h> */
 #include <stdio.h>
+#include "acpp.h"
 
+/*! bison/flex related imported functions/variables */
 extern int yyparse();
 extern FILE *yyin;
-//extern int *yydebug 
 extern int line_num;
 extern int force_setasm_syntax;
 
-/*!
-   Initializes the pre-processor. Always call this before any other Acpp calls.
- */
+
 void acppInit(int force_asm_syntax)
 {
-  //Initialize to 1 for parser debug
-  //   *yydebug =1; 
   force_setasm_syntax = force_asm_syntax;
 
   project_name = NULL;
@@ -59,14 +49,10 @@ void acppInit(int force_asm_syntax)
   fetchsize = 0;
   ac_tgt_endian = 1; /* defaults to big endian */
 
-
   yyin = NULL;
 }
 
 
-/*!
-   Loads the file to be used by the AcppRun() call.
-*/
 int acppLoad(char *filename)
 {
   acppUnload();
@@ -74,9 +60,6 @@ int acppLoad(char *filename)
 }
 
 
-/*!
-   Unloads any previous loaded file.
-*/
 void acppUnload()
 {
   if (yyin != NULL) fclose(yyin);
@@ -84,9 +67,6 @@ void acppUnload()
 }
 
 
-/*!
-  Calls the parser using the file associated with AcppLoad().
-*/
 int acppRun()
 {
   line_num = 1;

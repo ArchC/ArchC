@@ -1,0 +1,31 @@
+/* ex: set tabstop=2 expandtab: */
+
+/*! \mainpage The ArchC Language and Tools Developer's Guide
+
+\section intro_sec Introduction
+
+<p> ArchC is an architectural description language based on  <a
+href="http://www.systemc.org">SystemC</a>. The main goal in designing
+ArchC is to provide architecture designers with a language that can
+speed up the task of specifying and verifying a new architecture, and
+allow automatic synthesis of processor simulators, assemblers  and
+compilers starting from ArchC descriptions. ArchC is being developed
+at <a href="http://www.lsc.ic.unicamp.br">Computer Systems Laboratory
+(LSC)</a>, which is part of the <a
+href="http://www.ic.unicamp.br">Institute of Computing</a>, at <a
+href="http://www.unicamp.br">University of Campinas (UNICAMP)</a>.</p>
+
+<p>This guide was prepared as a quick reference and documentation for 
+the ArchC language and tools implementation. Its  main goal is to 
+provide a starting point for new ArchC developers and maintainers. It 
+is not appropriated for ArchC users, who should refer to ArchC 
+Language Reference Manual.</p>
+
+<br>
+
+\section contact_sec  Contact
+
+If you have any comments or doubts, please refer to the
+ArchC homepage: http://www.archc.org
+*/
+

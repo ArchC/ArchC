@@ -240,35 +240,3 @@ void ReadConfFile(void);                          //!< Read archc.conf contents.
 
 
 #endif /*_ACSIM_H_*/
-
- 
-////////////////////////////////////////////////////////////////
-//   This is used by DoxyGen !!! 
-///////////////////////////////////////////////////////////////
-/*!\mainpage The ArchC Simulator Generator Developers Guide
-
-\section Introduction Introduction
-
-<P>ArchC   is  an   architectural  description   language  based   on  <a
-href="http://www.systemc.org">SystemC</a>. The  main goal in designing
-ArchC is  to provide architecture  designers with a language  that can
-speed up the  task of specifying and verifying  a new architecture, and
-allow  automatic  synthesis of  processor  simulators, assemblers  and
-compilers starting from ArchC  descriptions.  ArchC is being developed
-at <A  HREF="http://www.lsc.ic.unicamp.br">Computer Systems Laboratory
-(LSC)</A>,       which       is       part       of       the       <A
-HREF="http://www.ic.unicamp.br">Institute  of   Computing</A>,  at  <A
-HREF="http://www.unicamp.br">University of Campinas (UNICAMP)</A>.</P>
-
-<p>This  guide  was  prepared  as  a  quick  reference  for  the  ArchC
-simulator generator (acsim) implementation. Its  main goal is to provide a
-starting point for new ArchC developers and maintainers. It is not appropriated
-for ArchC users, who should refer to ArchC Language Reference Manual.</P>
-
-\section Contact  Contact
-
-If you have any comments or doubts, please refer to the
-ArchC homepage: http://www.archc.org
-
-*/
-  ////////////////////////////////////////////////////////////////
