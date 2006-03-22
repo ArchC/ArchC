@@ -71,8 +71,9 @@ void ac_init_app( int ac, char* av[]);
 #define IDENT         0
 
 
-#define AC_ERROR( msg )    cerr<< "ArchC ERROR: " << msg  <<'\n'
-#define AC_SAY( msg )      cerr<< "ArchC: " << msg  <<'\n'
+#define AC_ERROR( msg )    std::cerr<< "ArchC ERROR: " << msg  <<'\n'
+#define AC_WARN( msg )     std::cerr<< "ArchC Warning: " << msg  <<'\n'
+#define AC_SAY( msg )      std::cerr<< "ArchC: " << msg  <<'\n'
 
 #define AC_RUN_ERROR( str, args...) \
   fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, (int) ac_pc, ac_instr_counter , ##args)

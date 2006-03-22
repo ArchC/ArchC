@@ -3190,7 +3190,7 @@ void CreateArchSyscallHeader()
           "class %s_syscall : public ac_syscall<%s_parms::ac_word, %s_parms::ac_Hword>, public %s_arch_ref\n"
           "{\n"
           "public:\n"
-          "  %s_syscall(%s_arch& ref) : ac_syscall<%s_parms::ac_word, %s_parms::ac_Hword>(ref), %s_arch_ref(ref) {};\n"
+          "  %s_syscall(%s_arch& ref) : ac_syscall<%s_parms::ac_word, %s_parms::ac_Hword>(ref, %s_parms::AC_RAMSIZE), %s_arch_ref(ref) {};\n"
           "  virtual ~%s_syscall() {};\n\n"
           "  void get_buffer(int argn, unsigned char* buf, unsigned int size);\n"
           "  void set_buffer(int argn, unsigned char* buf, unsigned int size);\n"
@@ -3205,7 +3205,8 @@ void CreateArchSyscallHeader()
           , project_name, project_name, project_name, project_name,
           project_name, project_name, project_name, project_name,
           project_name, project_name, project_name, project_name,
-          project_name, project_name, project_name, project_name);
+          project_name, project_name, project_name, project_name,
+          project_name);
 
   fclose( output);
 }
@@ -3949,8 +3950,8 @@ void EmitUpdateMethod( FILE *output){
 
   fprintf(output, "%selse return;\n\n", INDENT[1]);
 
-  fprintf( output, "%s}\n", INDENT[0]);
-  fprintf( output, "%s}\n\n", INDENT[0]);
+  fprintf( output, "%s} // for (;;)\n", INDENT[0]);
+  fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
 }
 
 /**************************************/
@@ -4142,7 +4143,7 @@ void EmitInstrExec( FILE *output, int base_indent){
   fprintf(output, "%sswitch (ins_id) {\n", INDENT[base_indent]);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     /* opens case statement */
-    fprintf(output, "%scase %d:\n", INDENT[base_indent], pinstr->id);
+    fprintf(output, "%scase %d: // Instruction %s\n", INDENT[base_indent], pinstr->id, pinstr->name);
     /* emits format behavior method call */
     for (pformat = format_ins_list;
          (pformat != NULL) && strcmp(pinstr->format, pformat->name);
@@ -4317,7 +4318,7 @@ void EmitProcessorBhv_ABI( FILE *output){
   if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
     fprintf( output, "%sdone.write(1);\n", INDENT[2]);
 
-  //Closing else.
+  //Closing for.
   fprintf( output, "%s}\n", INDENT[1]);
 
 //   fprintf(output, "%swait();\n\n", INDENT[1]);

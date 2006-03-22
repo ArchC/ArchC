@@ -269,5 +269,25 @@
 #define __NR_set_tid_address	258
 
 
+/*
+ * Special definitions for compatibility glibc->newlib
+ */
+
+#define __AC_BASE                       (1<<16)
+
+#define __AC_struct_stat_st_dev         __AC_BASE + 0
+#define __AC_struct_stat_st_ino	        __AC_BASE + 1
+#define __AC_struct_stat_st_mode        __AC_BASE + 2
+#define __AC_struct_stat_st_nlink       __AC_BASE + 3
+#define __AC_struct_stat_st_uid         __AC_BASE + 4
+#define __AC_struct_stat_st_gid         __AC_BASE + 5
+#define __AC_struct_stat_st_rdev        __AC_BASE + 6
+#define __AC_struct_stat_st_size        __AC_BASE + 7
+#define __AC_struct_stat_st_blksize     __AC_BASE + 8
+#define __AC_struct_stat_st_blocks      __AC_BASE + 9
+#define __AC_struct_stat_st_atime       __AC_BASE + 10
+#define __AC_struct_stat_st_mtime       __AC_BASE + 11
+#define __AC_struct_stat_st_ctime       __AC_BASE + 12
+
 
 #endif /* _AC_SYSCALL_CODES_ */

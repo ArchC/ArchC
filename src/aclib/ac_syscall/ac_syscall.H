@@ -33,15 +33,15 @@
 #endif /* USE_GDB */
 
 #include "ac_arch_ref.H"
+#include "ac_utils.H"
 
 template <class ac_word, class ac_Hword> class ac_syscall {
 private:
   ac_arch<ac_word, ac_Hword>& ref;
+  const unsigned int ramsize;
 
 public:
-//   ac_arch_ref ref;
-
-  ac_syscall(ac_arch<ac_word, ac_Hword>& r) : ref(r) {};
+  ac_syscall(ac_arch<ac_word, ac_Hword>& r, unsigned int rs) : ref(r), ramsize(rs) {};
 
 #define AC_SYSC(NAME,LOCATION) \
   void NAME();
@@ -93,6 +93,9 @@ void correct_flags( int* val );
 template <class ac_word, class ac_Hword>
 void ac_syscall<ac_word, ac_Hword>::open()
 {
+#ifdef AC_MEM_HIERARCHY
+  if (!flush_cache()) return;
+#endif
   DEBUG_SYSCALL("open");
   unsigned char pathname[100];
   get_buffer(0, pathname, 100);
@@ -140,6 +143,9 @@ void ac_syscall<ac_word, ac_Hword>::close()
 template <class ac_word, class ac_Hword>
 void ac_syscall<ac_word, ac_Hword>::read()
 {
+#ifdef AC_MEM_HIERARCHY
+  if (!flush_cache()) return;
+#endif  
   DEBUG_SYSCALL("read");
   int fd = get_int(0);
   unsigned count = get_int(2);
@@ -158,6 +164,9 @@ void ac_syscall<ac_word, ac_Hword>::read()
 template <class ac_word, class ac_Hword>
 void ac_syscall<ac_word, ac_Hword>::write()
 {
+#ifdef AC_MEM_HIERARCHY
+  if (!flush_cache()) return;
+#endif
   DEBUG_SYSCALL("write");
   int fd = get_int(0);
   unsigned count = get_int(2);
@@ -187,20 +196,29 @@ template <class ac_word, class ac_Hword>
 void ac_syscall<ac_word, ac_Hword>::sbrk()
 {
   DEBUG_SYSCALL("sbrk");
-  int base;
-//   extern unsigned int ac_heap_ptr;
+  unsigned int base = ref.ac_heap_ptr;
+  unsigned int increment = get_int(0);
+  ref.ac_heap_ptr += increment;
 
-  int increment = get_int(0);
-  if ((ref.IM->get_size() - ref.ac_heap_ptr - increment) >= 0) {
-    base = ref.ac_heap_ptr;
-    (ref.ac_heap_ptr) += increment;
+  // Test if there is enough space in the target memory 
+  // OBS: 1kb is reserved at the end of memory to command line parameters
+  if (ref.ac_heap_ptr > ramsize-1024) {
+    // Show error only once
+    static bool show_error = true;
+    if (show_error) {
+      AC_WARN("Target application failed to allocate " << increment <<
+               " bytes: heap(=" << ref.ac_heap_ptr << ") > ramsize(=" <<
+               ramsize << ")");
+      AC_WARN("If target application does not treat allocation error, it may crash.");
+    }
+    show_error = false;
+    ref.ac_heap_ptr = base;
+    set_int(0, -1);
   }
   else {
-    AC_RUN_ERROR("System Call sbrk: Not enough memory left in the virtual machine to allocate %d bytes (ram size=%u, heap=%u)\n", increment, ref.IM->get_size(), ref.ac_heap_ptr);
-    exit(EXIT_FAILURE);
+    set_int(0, base);
   }
 
-  set_int(0, base);
   return_from_syscall();
 }
 
@@ -220,6 +238,12 @@ template <class ac_word, class ac_Hword>
 void ac_syscall<ac_word, ac_Hword>::fstat()
 {
   DEBUG_SYSCALL("fstat");
+  static bool fstat_warn = true;
+  if (fstat_warn) {
+    AC_WARN("This version of fstat should not be called!");
+    AC_WARN("Please, recompile your target application with an updated libac_sysc.");
+    fstat_warn = false;
+  }
   int fd = get_int(0);
   struct stat buf;
   int ret = ::fstat(fd, &buf);
@@ -281,7 +305,8 @@ void ac_syscall<ac_word, ac_Hword>::ac_syscall_wrapper()
   int ret = -1;
   unsigned char pathname[100];
   int mode;
-  int oldfd, newfd;
+  int fd, newfd;
+  static struct stat buf_stat;
 
   int syscall_code = get_int(0);
 
@@ -301,16 +326,49 @@ void ac_syscall<ac_word, ac_Hword>::ac_syscall_wrapper()
 
   case __NR_dup:
     DEBUG_SYSCALL("dup");
-    oldfd = get_int(1);
-    ret = ::dup(oldfd);
+    fd = get_int(1);
+    ret = ::dup(fd);
     break;
 
   case __NR_dup2:
     DEBUG_SYSCALL("dup2");
-    oldfd = get_int(1);
+    fd = get_int(1);
     newfd = get_int(2);
-    ret = ::dup2(oldfd, newfd);
+    ret = ::dup2(fd, newfd);
     break;
+
+  case __NR_fstat:
+    DEBUG_SYSCALL("fstat");
+    fd = get_int(1);
+    ret = ::fstat(fd, &buf_stat);
+    break;
+
+
+    /* Special cases for the fields of the "struct stat":
+       to convert from glibc to newlib */
+
+#define FILL_STRUCT_STAT(x) \
+  case __AC_struct_stat_##x: \
+    DEBUG_SYSCALL("filling struct stat field: " #x); \
+    ret = buf_stat.x; \
+    break
+
+    FILL_STRUCT_STAT(st_dev);
+    FILL_STRUCT_STAT(st_ino);
+    FILL_STRUCT_STAT(st_mode);
+    FILL_STRUCT_STAT(st_nlink);
+    FILL_STRUCT_STAT(st_uid);
+    FILL_STRUCT_STAT(st_gid);
+    FILL_STRUCT_STAT(st_rdev);
+    FILL_STRUCT_STAT(st_size);
+    FILL_STRUCT_STAT(st_blksize);
+    FILL_STRUCT_STAT(st_blocks);
+    FILL_STRUCT_STAT(st_atime);
+    FILL_STRUCT_STAT(st_mtime);
+    FILL_STRUCT_STAT(st_ctime);
+
+#undef FILL_STRUCT_STAT
+
 
   default:
     AC_RUN_ERROR("System Call code %d not implemented yet.\n", syscall_code);
