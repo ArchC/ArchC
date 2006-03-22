@@ -490,7 +490,7 @@ void CreateArchHeader() {
   extern ac_stg_list *stage_list;
   extern char* project_name;
 
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, reg_width;
+  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
 
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
@@ -561,13 +561,35 @@ void CreateArchHeader() {
         fprintf( output, "%sac_%s %s;\n", INDENT[1], pstorage->name, pstorage->name);
       }
       else{
-        fprintf( output, "%sac_reg<unsigned> %s;\n", INDENT[1], pstorage->name);      
+        switch( (unsigned)(pstorage->width) ){
+          case 0:
+            fprintf( output, "%sac_reg<%s_parms::ac_word> %s;\n", INDENT[1], project_name, pstorage->name);
+            break;
+          case 1:
+            fprintf( output, "%sac_reg<bool> %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 8:
+            fprintf( output, "%sac_reg<unsigned char> %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 16:
+            fprintf( output, "%sac_reg<unsigned short> %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 32:
+            fprintf( output, "%sac_reg<unsigned long> %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 64:
+            fprintf( output, "%sac_reg<unsigned long long> %s;\n", INDENT[1], pstorage->name);
+            break;
+          default:
+            AC_ERROR("Register width not supported: %d\n", pstorage->width);
+            break;
+        }
       }
       break;
                         
     case REGBANK:
       //Emiting register bank. Checking is a register width was declared.
-      switch( (unsigned)reg_width ){
+      switch( (unsigned)(pstorage->width) ){
       case 0:
         fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword> %s;\n", INDENT[1], pstorage->size, project_name, project_name, pstorage->name);
         break;
@@ -584,7 +606,7 @@ void CreateArchHeader() {
         fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       default:
-        AC_ERROR("Register width not supported: %d\n", reg_width);
+        AC_ERROR("Register width not supported: %d\n", pstorage->width);
         break;
       }
 
@@ -716,7 +738,7 @@ void CreateArchRefHeader() {
   extern ac_stg_list *stage_list;
   extern char* project_name;
 
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts, reg_width;
+  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts;
 
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
@@ -771,13 +793,35 @@ void CreateArchRefHeader() {
         fprintf( output, "%sac_%s& %s;\n", INDENT[1], pstorage->name, pstorage->name);
       }
       else{
-        fprintf( output, "%sac_reg<unsigned>& %s;\n", INDENT[1], pstorage->name);      
+        switch( (unsigned)(pstorage->width) ){
+          case 0:
+            fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n", INDENT[1], project_name, pstorage->name);
+            break;
+          case 1:
+            fprintf( output, "%sac_reg<bool>& %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 8:
+            fprintf( output, "%sac_reg<unsigned char>& %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 16:
+            fprintf( output, "%sac_reg<unsigned short>& %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 32:
+            fprintf( output, "%sac_reg<unsigned long>& %s;\n", INDENT[1], pstorage->name);
+            break;
+          case 64:
+            fprintf( output, "%sac_reg<unsigned long long>& %s;\n", INDENT[1], pstorage->name);
+            break;
+          default:
+            AC_ERROR("Register width not supported: %d\n", pstorage->width);
+            break;
+        }
       }
       break;
                         
     case REGBANK:
       //Emiting register bank. Checking is a register width was declared.
-      switch( (unsigned)reg_width ){
+      switch( (unsigned)(pstorage->width) ){
       case 0:
         fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n", INDENT[1], pstorage->size, project_name, project_name, pstorage->name);
         break;
@@ -794,7 +838,7 @@ void CreateArchRefHeader() {
         fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       default:
-        AC_ERROR("Register width not supported: %d\n", reg_width);
+        AC_ERROR("Register width not supported: %d\n", pstorage->width);
         break;
       }
 

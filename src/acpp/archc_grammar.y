@@ -194,7 +194,7 @@ static void yywarn(const char *format, ...)
 %type <text> archdec archdecbody stagedec pipedec declist worddec fetchdec archctordec
 %type <text> storagedec storagelist memdec regbankdec cachedec cachenparm
 %type <text> portdec intrportdec
-%type <text> cachesparm cacheobjdec cacheobjdec1 regdec assignformat assignwidth
+%type <text> cachesparm cacheobjdec cacheobjdec1 regdec assignregparm assignwidth
 
 /* General non-terminals */
 %type <text> commalist id_list
@@ -839,7 +839,7 @@ regbankdec: AC_REGBANK assignwidth ID COLON INT
       ;
 
 /* Single Register Declaration */
-regdec: AC_REG assignformat ID 
+regdec: AC_REG assignregparm ID 
       {
         /* Including device in storage list. */
         if (!add_storage( $3, 0, (ac_sto_types)REG, current_type, error_msg ))
@@ -882,21 +882,29 @@ storagelist: COMMA ID COLON INT
       | /* empty string */{}
       ;
 
-
 /* Assign a format to a register must be optional,
    that is why we need a non-terminal and a new rule. */
-assignformat: LT ID GT
+assignregparm: LT ID GT
       {
         /* Assign a format to storage device. */
         /* capturing format name */
         current_type = (char*) malloc( strlen($2)+1);
         strcpy(current_type,$2);
         HaveFormattedRegs = 1;
+        reg_width = 0;
+      }
+
+      | LT INT GT
+      {
+        /* Assign a width to a register, instead of a format. */
+        current_type = NULL;
+        reg_width = $2;
       }
 
       | /* empty string */
       { 
         current_type = NULL;
+        reg_width = 0;
       }
       ;
 

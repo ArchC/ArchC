@@ -332,8 +332,8 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
     fetch_device = pstorage;
   }
 
-  //Checking if the user declared a specific register width for this bank
-  if(  type == REGBANK && reg_width != 0  ){
+  //Checking if the user declared a specific register width
+  if(  ((type == REGBANK) || (type == REG)) && reg_width != 0  ){
     pstorage->width = reg_width;
   }
 
