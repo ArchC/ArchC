@@ -70,14 +70,14 @@ enum ac_tlm_rsp_status {
 struct ac_tlm_req {
   ac_tlm_req_type type;
   uint32_t addr;
-  uint64_t data;
+  uint32_t data;
 };
 
 /// ArchC TLM response packet.
 struct ac_tlm_rsp {
   ac_tlm_rsp_status status;
   ac_tlm_req_type req_type;
-  uint64_t data;
+  uint32_t data;
 };
 
 /// ArchC TLM transport interface type.
