@@ -1695,7 +1695,7 @@ void CreateProcessorHeader() {
     fprintf( output, "%s ***********/\n\n", INDENT[1]);
 
     fprintf( output, "%s/* Processor Feature Support */\n", INDENT[1]);
-    fprintf( output, "%sbool get_ac_mt_endian();\n\n", INDENT[1]);
+    fprintf( output, "%sbool get_ac_tgt_endian();\n\n", INDENT[1]);
     fprintf( output, "%svoid ac_stop();\n\n", INDENT[1]);
     
     fprintf( output, "%s/* Register access */\n", INDENT[1]);
@@ -2580,10 +2580,10 @@ void CreateProcessorImpl() {
     fprintf(output, "%sreturn gdbstub;\n", INDENT[1]);
     fprintf(output, "}\n\n");
 
-    /* get_ac_mt_endian() */
+    /* get_ac_tgt_endian() */
     fprintf(output, "// Returns true if model endianness doesn't match with host's, false otherwise\n");
-    fprintf(output, "bool %s::get_ac_mt_endian() {\n", project_name);
-    fprintf(output, "%sreturn ac_mt_endian;\n", INDENT[1]);
+    fprintf(output, "bool %s::get_ac_tgt_endian() {\n", project_name);
+    fprintf(output, "%sreturn ac_tgt_endian;\n", INDENT[1]);
     fprintf(output, "}\n\n");
 
     /* ac_stop() */
@@ -2730,7 +2730,10 @@ void CreateArchImpl() {
   fprintf(output, " {\n\n");
 
   /* setting endianness match */
-  fprintf(output, "%sac_mt_endian = %s_parms::AC_MATCH_ENDIAN;\n\n", INDENT[1], project_name);
+  fprintf(output, "%sac_mt_endian = %s_parms::AC_MATCH_ENDIAN;\n", INDENT[1], project_name);
+
+  /* setting target endianness */
+  fprintf(output, "%sac_tgt_endian = %s_parms::AC_PROC_ENDIAN;\n\n", INDENT[1], project_name);
 
   /* Determining which device is gonna be used for fetching instructions */
   if( !fetch_device ){

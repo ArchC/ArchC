@@ -178,11 +178,11 @@ public:
   /* Processor Feature Support */
 
   /**
-   * Returns whether the processor endianness matches the host's.
+   * Returns whether the processor is big-endian.
    *
-   * @return false when simulated processor endianness doesn't match the host's, true otherwise.
+   * @return false when simulated processor is little-endian, true when big-endian.
    */
-  virtual bool get_ac_mt_endian() = 0;
+  virtual bool get_ac_tgt_endian() = 0;
 
   /**
    * Stops the processor.

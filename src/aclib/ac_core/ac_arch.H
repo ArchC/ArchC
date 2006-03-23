@@ -47,6 +47,7 @@ public:
   bool ac_parallel_sig;
   bool ac_annul_sig;
   bool ac_mt_endian;
+  bool ac_tgt_endian;
   ac_reg<unsigned> ac_pc;
   unsigned ac_start_addr;
   unsigned long long ac_instr_counter;
@@ -77,6 +78,7 @@ public:
     ac_parallel_sig(0),
     ac_annul_sig(0),
     ac_mt_endian(0),
+    ac_tgt_endian(0),
 #ifdef AC_DELAY
     ac_pc("ac_pc", 0xffffffff, time_step),
 #else

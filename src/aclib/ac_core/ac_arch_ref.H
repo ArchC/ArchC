@@ -48,6 +48,7 @@ public:
   bool& ac_parallel_sig;
   bool& ac_annul_sig;
   bool& ac_mt_endian;
+  bool& ac_tgt_endian;
   ac_reg<unsigned>& ac_pc;
   unsigned& ac_start_addr;
   unsigned long long& ac_instr_counter;
@@ -71,6 +72,7 @@ public:
     ac_parallel_sig(arch.ac_parallel_sig),
     ac_annul_sig(arch.ac_annul_sig),
     ac_mt_endian(arch.ac_mt_endian),
+    ac_tgt_endian(arch.ac_tgt_endian),
     ac_pc(arch.ac_pc),
     ac_start_addr(arch.ac_start_addr),
     ac_instr_counter(arch.ac_instr_counter),

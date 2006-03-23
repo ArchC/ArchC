@@ -268,6 +268,8 @@ void AC_GDB<ac_word>::reg_read(char *ib, char *ob) {
   for ( i = 0; i < proc->nRegs(); i ++ )
     {
       r = proc->reg_read( i );
+      if (proc->get_ac_tgt_endian() == false)
+        r = changeendianess(r);
       sprintf( ob + strlen( ob ), fmt, r );
     }
 }
@@ -293,6 +295,8 @@ void AC_GDB<ac_word>::reg_write(char *ib, char *ob) {
 
   for ( i = 0; i < 32; i ++) {
     sscanf( ib, fmt, &aux );
+    if (proc->get_ac_tgt_endian() == false)
+      aux = changeendianess(aux);
     proc->reg_write( i, aux );
     ib += ss;
   }
