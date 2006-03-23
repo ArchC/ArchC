@@ -1,5 +1,5 @@
 /* ex: set tabstop=2 expandtab: 
-   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*- 
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 
 /*  ArchC Language Grammar for GNU Bison
@@ -17,18 +17,18 @@
 */
 
 
-/* 
+/*
  * C declaration block 
  */
 %{
 /*! \file archc_parser.c
  * \brief ArchC parser
  *
- * This file contains the generated bison grammar rules for 
+ * This file contains the generated bison grammar rules for
  * the ArchC language.
 */
 
-/*! \defgroup bison_group Bison generated parser 
+/*! \defgroup bison_group Bison generated parser
  * \ingroup acpp_group
  *
  * The ArchC parser is generated using the GNU tools Bison and Flex.
@@ -67,6 +67,7 @@ static ac_dec_instr *current_instr;    //!< Pointer to the current instruction
 static ac_dec_format *current_format;  //!< Pointer to the current format
 static sto_unit current_unit;          //!< Indicates what storage unit is being used.
 static ac_pipe_list *current_pipe;
+static ac_pipe_list *anonymous_pipe = NULL;
 static ac_sto_types cache_type;        //!< Indicates the type of cache being declared.
 
 static commalist list_type;            //!< Indicates what type of list of declarations is being parsed.
@@ -75,7 +76,7 @@ static int is_in_old_setasm_mode;
 
 static description descrp;             //!< Indicates what type of description is being parsed.
 
-static int parse_error = 0;            //!< Indicates parse error occurred 
+static int parse_error = 0;            //!< Indicates parse error occurred.
 
 
 /* global */
@@ -92,7 +93,7 @@ int line_num;                         //!< Input file line counter.
 
 
 /*! Error reporting function
- * \param[in] format A string to be used as error message. 
+ * \param[in] format A string to be used as error message.
  */
 static void yyerror(const char *format, ...)
 {
@@ -107,7 +108,7 @@ static void yyerror(const char *format, ...)
 
 
 /*! Warning reporting function
- * \param[in] format A string to be used as warning message. 
+ * \param[in] format A string to be used as warning message.
  */
 static void yywarn(const char *format, ...)
 {
@@ -177,7 +178,7 @@ static void yywarn(const char *format, ...)
 %token <text> AC_CACHE
 %token <text> AC_ICACHE
 %token <text> AC_DCACHE
-%token <text> AC_MEM  
+%token <text> AC_MEM
 %token <text> AC_PC
 %token <text> AC_REGBANK
 %token <text> AC_REG
@@ -213,8 +214,8 @@ static void yywarn(const char *format, ...)
 /* Micro-architecture and Stage  declarations    */
 /*************************************************/
 %%
-input:    /* empty string */  
-      { 
+input:    /* empty string */
+      {
         yyerror("No valid declaration provided");
         YYERROR;
       }
@@ -253,11 +254,13 @@ formatdec: AC_FORMAT ID EQ STR SEMICOLON
           format_num++;
         }
         else if( descrp == ARCH_D )
+        {
           if (!add_format( &format_reg_list, &format_reg_list_tail, $2, $4, error_msg))
             yyerror(error_msg);
+        }
         else
           yyerror("Internal Bug. Invalid description type. It should be ISA_D or ARCH_D");
-      }                 
+      }
       ;
 
 /************************************/
@@ -281,7 +284,7 @@ instrdec: AC_INSTR LT ID GT ID
       commalist SEMICOLON
       {
         free(current_type);
-      }    
+      }
       ;
 
 
@@ -293,7 +296,7 @@ asmmaplist: asmmaplist asmmapdec
       | {}
       ;
 
-asmmapdec: AC_ASM_MAP ID 
+asmmapdec: AC_ASM_MAP ID
       {
         if (!acpp_asm_create_mapping_block($2, error_msg))
           yyerror(error_msg);
@@ -303,9 +306,9 @@ asmmapdec: AC_ASM_MAP ID
 
 mapbodylist: mapbodylist mapbody
       | mapbody
-      ; 
+      ;
 
-mapbody: STR 
+mapbody: STR
       {
         if (!acpp_asm_add_mapping_symbol($1, error_msg))
           yyerror(error_msg);
@@ -343,7 +346,7 @@ mapbody: STR
       ;
 
 symbollist: COMMA STR 
-      { 
+      {
         if (!acpp_asm_add_mapping_symbol($2, error_msg))
           yyerror(error_msg);
       }
@@ -373,7 +376,7 @@ ctordecbody:  asmdec ctordecbody
       | /* empty string */    {}
       ;
 
-asmdec: ID DOT SET_ASM LPAREN STR 
+asmdec: ID DOT SET_ASM LPAREN STR
       {
         // search for the instruction and store it in 'current_instr' for future use
         current_instr = find_instr($1);
@@ -391,7 +394,7 @@ asmdec: ID DOT SET_ASM LPAREN STR
             current_instr->mnemonic =(char*) malloc(aux-$5+1);
             memcpy(current_instr->mnemonic, $5, aux-$5);
             current_instr->mnemonic[aux-$5] = '\0';
-          }          
+          }
 
           // search for the insn format and store it in 'current_format' for future use
           current_format = find_format(current_instr->format);
@@ -411,7 +414,7 @@ asmdec: ID DOT SET_ASM LPAREN STR
             else
               yyerror(error_msg);
           }
-        }   
+        }
       }
       id_list RPAREN SEMICOLON
       {
@@ -423,13 +426,13 @@ asmdec: ID DOT SET_ASM LPAREN STR
             }
           }
           else
-            yyerror(error_msg); 
+            yyerror(error_msg);
         }
       }
       ;
 
-id_list: COMMA ID   
-      { 
+id_list: COMMA ID
+      {
         force_setasm_syntax = 1;
         if (!acpp_asm_parse_asm_argument(current_format, $2, 0, error_msg))
           yyerror(error_msg);
@@ -470,7 +473,7 @@ decoderdec: ID DOT SET_DECODER LPAREN ID EQ INT
         current_instr = find_instr($1);
 
         if ( current_instr == NULL )
-          yyerror("Undeclared instruction: %s", $1);        
+          yyerror("Undeclared instruction: %s", $1);
         else {
           if (!add_dec_list(current_instr, $5, $7, error_msg))
             yyerror(error_msg);
@@ -497,7 +500,7 @@ rangedec: ID DOT CYCLE_RANGE LPAREN INT
     /* action */
       {
         current_instr = find_instr($1);
-        
+
         if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
         else{
@@ -520,8 +523,8 @@ pseudodec: PSEUDO_INSTR LPAREN STR RPAREN
         // don't change the order
         acpp_asm_new_pseudo();
       }
-      LBRACE pseudobodylist RBRACE    
-      {     
+      LBRACE pseudobodylist RBRACE
+      {
         if (!acpp_asm_end_insn(NULL, error_msg))
           yyerror(error_msg);
       }
@@ -548,11 +551,11 @@ interval: COMMA INT
       }
 
       | /* empty string */    
-      { 
+      {
         if (current_instr == NULL)
           yyerror("Internal error");
         else
-          current_instr->max_latency = current_instr->min_latency;    
+          current_instr->max_latency = current_instr->min_latency;
       }
       ;
 
@@ -560,7 +563,7 @@ fieldinitlist: COMMA fieldinit fieldinitlist   {}
       | /* empty string */    {}
       ;
 
-fieldinit: ID EQ INT  
+fieldinit: ID EQ INT
       {
         /* Adding field to the end of the decoding sequence list */
         if (!add_dec_list(current_instr, $1, $3, error_msg))
@@ -571,7 +574,7 @@ fieldinit: ID EQ INT
 is_jumpdec: ID DOT IS_JUMP BLOCK SEMICOLON
       {
         current_instr = find_instr($1);
-        
+
         if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
         else{
@@ -608,7 +611,7 @@ conddec: ID COND BLOCK SEMICOLON
 delaydec: ID DOT DELAY BLOCK SEMICOLON
       {
         current_instr = find_instr($1);
-        if( current_instr == NULL ) 
+        if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
         else{
           get_control_flow_struct(current_instr)->delay_slot = strtol($4,0,0);
@@ -621,7 +624,7 @@ delaydec: ID DOT DELAY BLOCK SEMICOLON
 delayconddec: ID DOT DELAY_COND BLOCK SEMICOLON
       {
         current_instr = find_instr($1);
-        
+
         if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
         else
@@ -632,7 +635,7 @@ delayconddec: ID DOT DELAY_COND BLOCK SEMICOLON
 behaviordec: ID DOT BEHAVIOR BLOCK SEMICOLON
       {
         current_instr = find_instr($1);
-        
+
         if( current_instr == NULL )
           yyerror("Undeclared instruction: %s", $1);
         else
@@ -643,8 +646,8 @@ behaviordec: ID DOT BEHAVIOR BLOCK SEMICOLON
 /******************************************************/
 /* ArchC Grammar for ARCH  declarations               */
 /******************************************************/
-archdec: AC_ARCH LPAREN ID RPAREN LBRACE    
-      { 
+archdec: AC_ARCH LPAREN ID RPAREN LBRACE
+      {
 
       /* Middle rule action to start emiting ARCH module declaration. */
         project_name = malloc(strlen($3)+1);
@@ -659,14 +662,14 @@ archdec: AC_ARCH LPAREN ID RPAREN LBRACE
         current_format = NULL;
         current_unit = BYTE;
         current_pipe = NULL;
-        cache_type = CACHE; 
+        cache_type = CACHE;
         list_type = MEM_L;  /* it does not matter */
         error_msg[0] = '\0';
         is_in_old_setasm_mode = 0;
-        parse_error = 0; 
+        parse_error = 0;
 
         init_core_actions();
-      
+
       } /* End of action */
       archdecbody RBRACE SEMICOLON
       {
@@ -708,9 +711,9 @@ unit: ID
           current_unit = GBYTE;
         else 
           yyerror("Invalid storage unit. It should be \"K\", \"M\", \"G\"");
-      } 
+      }
       | /* empty */
-      { 
+      {
         current_unit = BYTE;
       }
       ;
@@ -725,7 +728,7 @@ storagedec: cachedec
       ;
 
 /* Generic Memory Declaration */
-memdec: AC_MEM ID COLON INT unit 
+memdec: AC_MEM ID COLON INT unit
       {
         /* Including device in storage list. */
         if (!add_storage( $2, $4*current_unit, (ac_sto_types)MEM, NULL, error_msg))
@@ -763,20 +766,20 @@ intrportdec: AC_TLM_INTR_PORT ID
       ;
 
 /* Cache Declaration */
-cachedec: AC_CACHE 
+cachedec: AC_CACHE
       {
         cache_type = (ac_sto_types)CACHE;
-      } 
+      }
       cacheobjdec
       | AC_ICACHE 
       {
         cache_type = (ac_sto_types)ICACHE;
-      } 
+      }
       cacheobjdec
       | AC_DCACHE 
       {
         cache_type = (ac_sto_types)DCACHE;
-      } 
+      }
       cacheobjdec
       ;
 
@@ -819,8 +822,8 @@ cachenparm: INT
       ;
 
 /* string parameter */
-cachesparm: STR 
-      { 
+cachesparm: STR
+      {
         add_parms($1, 0);
       }
 
@@ -828,7 +831,7 @@ cachesparm: STR
       ;
 
 /* Register Bank Declaration */
-regbankdec: AC_REGBANK assignwidth ID COLON INT 
+regbankdec: AC_REGBANK assignwidth ID COLON INT
       {
         /* Including device in storage list. */
         if (!add_storage( $3, $5, (ac_sto_types)REGBANK, NULL, error_msg ))
@@ -839,7 +842,7 @@ regbankdec: AC_REGBANK assignwidth ID COLON INT
       ;
 
 /* Single Register Declaration */
-regdec: AC_REG assignregparm ID 
+regdec: AC_REG assignregparm ID
       {
         /* Including device in storage list. */
         if (!add_storage( $3, 0, (ac_sto_types)REG, current_type, error_msg ))
@@ -851,7 +854,7 @@ regdec: AC_REG assignregparm ID
         if (current_type)
           free(current_type);
           current_type = NULL;
-      }    
+      }
       ;
 
 /* Managing a list of devices declaraded in the same line
@@ -860,24 +863,35 @@ storagelist: COMMA ID COLON INT
       {
         /* Including device in storage list. */
         if( list_type == CACHE_L )
+        {
           if (!add_storage( $2, $4*current_unit, (ac_sto_types)CACHE, NULL, error_msg ))
             yyerror(error_msg);
+        }
         else if( list_type == REGBANK_L )
+        {
           if (!add_storage( $2, $4, (ac_sto_types)REGBANK, NULL, error_msg ))
             yyerror(error_msg);
+        }
         else if( list_type == MEM_L )
+        {
           if (!add_storage( $2, $4*current_unit, (ac_sto_types)MEM, NULL, error_msg ))
             yyerror(error_msg);
+        }
         else if( list_type == TLM_PORT_L )
+        {
           if (!add_storage( $2, $4*current_unit, (ac_sto_types)TLM_PORT, NULL, error_msg ))
             yyerror(error_msg);
+        }
         else if( list_type == TLM_INTR_PORT_L )
+        {
           if (!add_storage( $2, $4, (ac_sto_types)TLM_INTR_PORT, NULL, error_msg ))
             yyerror(error_msg);
-        else {
+        }
+        else
+        {
           /* Should never enter here. */
           yyerror("Internal Bug. Invalid list type. It should be CACHE_L, REGBANK_L or MEM_L");
-        } 
+        }
       }
       | /* empty string */{}
       ;
@@ -902,7 +916,7 @@ assignregparm: LT ID GT
       }
 
       | /* empty string */
-      { 
+      {
         current_type = NULL;
         reg_width = 0;
       }
@@ -917,24 +931,32 @@ assignwidth: LT INT GT
       }
 
       | /* empty string */
-      { 
+      {
         reg_width = 0;
       }
       ;
-  
+
 /****************************************************/
 /* Rules to parse the ARCH stage declaration       */
 /****************************************************/
 
-stagedec: AC_STAGE ID 
+stagedec: AC_STAGE ID
       {
+        /* Create an anonymous pipe if it does not already exist. */
+        if (!anonymous_pipe)
+        {
+         anonymous_pipe = add_pipe("");
+         add_stage($2, &anonymous_pipe->stages);
+         stage_list = anonymous_pipe->stages;
+        }
+        else
+         add_stage($2, &anonymous_pipe->stages);
         /* Add to the stage list. */
-        add_stage($2, &stage_list);
         list_type = STAGE_L;
       }
       commalist SEMICOLON
       ;
-    
+
 /****************************************************/
 /* Rules to parse the ARCH pipeline declaration     */
 /****************************************************/
@@ -1006,7 +1028,7 @@ archctordecbody: AC_ISA LPAREN STR RPAREN SEMICOLON archctordecbody
         if (plow == NULL)
           yyerror("Undeclared storage device: %s", $1);
 
-        
+
         /* Looking for the high level device */
         pstorage = find_storage($5);
 
@@ -1027,7 +1049,7 @@ archctordecbody: AC_ISA LPAREN STR RPAREN SEMICOLON archctordecbody
 /* Rules used into several other rules to help parsing   */
 /* several ArchC constructions                           */
 /*********************************************************/
-commalist: COMMA ID   
+commalist: COMMA ID
       {
         switch(list_type){
 
@@ -1040,7 +1062,7 @@ commalist: COMMA ID
             /* This case is reached when a pipe declaration like 
                ac_stages ST1, ST2, ST3;
                is used. So, add stage to  the generic stage list */
-          add_stage( $2, &stage_list );
+          add_stage( $2, &anonymous_pipe->stages );
           break;
 
         case REG_L:
