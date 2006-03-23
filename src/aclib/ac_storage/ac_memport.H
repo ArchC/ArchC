@@ -121,7 +121,8 @@ public:
   inline uint8_t read_byte(uint32_t address) {
 
     if (!ac_mt_endian) {
-      storage->read(&aux_word, ((address >> sizeof(ac_Hword)) << sizeof(ac_Hword)), sizeof(ac_word) * 8);
+      uint32_t oset_addr = address % sizeof(ac_word);
+      storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
 #ifdef AC_STATS
       ac_sim_stats.add_access(name);
 #endif      
@@ -140,13 +141,12 @@ public:
   inline ac_Hword read_half(uint32_t address) {
 
     if (!ac_mt_endian) {
-      storage->read(&aux_word, ((address >> sizeof(ac_word)) << sizeof(ac_word)), sizeof(ac_word) * 8);
+      uint32_t oset_addr = address % sizeof(ac_word);
+      storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
 #ifdef AC_STATS
       ac_sim_stats.add_access(name);
 #endif
-      return (ac_Hword) (((ac_Hword*)(&aux_word))[
-		(address % sizeof(ac_word)) == 0 ]);
-// 		(address % sizeof(ac_word)) ? 0 : 1 ]);
+      return (ac_Hword) (((ac_Hword*)(&aux_word))[oset_addr == 0]);
     }
     else {
       storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
