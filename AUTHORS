@@ -1,0 +1,39 @@
+==============
+The ArchC Team
+==============
+
+
+Active Developers:
+------------------
+
+Alexandro Baldassin <alebal@ic.unicamp.br> - ArchC Master, binary utilities 
+Thiago Sigrist <ra002560@ic.unicamp.br> - interpreted simulator (ArchC 2.x)
+Marilia Chiozo <ra030038@ic.unicamp.br> - cycle-accurate simulator (Archc 2.x)
+Daniel Casarotto <casaroto@inf.ufsc.br> - binary utilities (linker)
+Cristiano Coelho de Araújo <> - platform development
+Pablo Viana da Silva <> - cache implementation
+Bruno Albertini <balbertini@gmail.com> - language application and demos
+
+
+Retired:
+--------
+
+Sandro Rigo <sandro@ic.unicamp.br> - language and interpreted simulator creator
+Marcus Bartholomeu <bartho@ic.unicamp.br> - compiled simulation
+
+
+Staff:
+------
+
+* IC-UNICAMP 
+  Guido Araújo, PI
+  Paulo César Centoducatte
+  Rodolfo Jardim de Azevedo
+  Sandro Rigo
+
+* Cin - UFPE
+  Edna Natividade Barros
+
+* LAPS - UFSC
+  Luíz Cláudio Villar dos Santos
+  Olinto J. V. Furtado
