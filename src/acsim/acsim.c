@@ -1170,9 +1170,10 @@ void CreateISAHeader() {
   extern ac_dec_instr *instr_list;
   extern int HaveMultiCycleIns;
   extern int wordsize;
+  extern ac_dec_field *common_instr_field_list;
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
-  ac_dec_field *pfield, *pf, *ppf, *pgenfield;
+  ac_dec_field *pfield, *pf;
   int initializing = 1;
 
   char filename[256];
@@ -1229,68 +1230,9 @@ void CreateISAHeader() {
 
   /* Instruction Behavior Method declarations */
   /* instruction */
-  /* Selecting fields that are common to all formats. */
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next){
-
-    if( initializing ){
-
-      //This is the first format being processed. Put all of its fields.
-      for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){
-
-        pf = (ac_dec_field*) malloc( sizeof(ac_dec_field));
-        pf = memcpy( pf, pfield, sizeof(ac_dec_field) );
-
-        if( pfield == pformat->fields ){
-          pgenfield = pf;
-          pgenfield->next = NULL;
-        }
-        else{
-          pf->next = pgenfield;
-          pgenfield = pf;
-        }
-      }
-      initializing =0;
-			
-    }
-    else{  //We already have candidate fields. Check if they are present in all formats.
-
-      ppf = NULL;
-
-      //Keep fields that are common to all instructions
-      pf = pgenfield; 
-
-      while( pf ){
-
-        //Looking for pf into pformat
-        for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){ 
-
-          if( !strcmp( pf->name, pfield->name) )
-            break;
-        }
-
-        if( !pfield) { //Did not find. Delete pf from pgenfield
-					
-          if(ppf){
-            ppf->next = pf->next;
-            free(pf);
-            pf = ppf->next;
-          }
-          else{  //Deleting the first field
-            pgenfield = pf->next;
-            free(pf);
-            pf = pgenfield;
-          }
-        }
-        else{  //Found. Keep the field and step to the next.
-          ppf = pf;
-          pf = pf->next;
-        }
-      }
-    }	
-  }
   fprintf(output, "%svoid _behavior_instruction(", INDENT[1]);
-  /* pgenfield has the list of fields for the generic instruction. */
-  for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
+  /* common_instr_field_list has the list of fields for the generic instruction. */
+  for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
     if( pfield->sign )
       fprintf(output, "int %s", pfield->name);
     else
@@ -1364,8 +1306,8 @@ void CreateISAHeader() {
 
   /* ac_behavior 2nd level macros - generic instruction */
   fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction(", project_name);
-  /* pgenfield has the list of fields for the generic instruction. */
-  for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
+  /* common_instr_field_list has the list of fields for the generic instruction. */
+  for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
     if( pfield->sign )
       fprintf(output, "int %s", pfield->name);
     else
@@ -4047,16 +3989,14 @@ void EmitInstrExec( FILE *output, int base_indent){
   extern ac_pipe_list *pipe_list;
   extern ac_dec_instr *instr_list;
   extern ac_dec_format *format_ins_list;
+  extern ac_dec_field *common_instr_field_list;
   extern int HaveCycleRange;
 
   extern char* project_name;
 
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
-  ac_dec_field *pfield, *pf, *ppf, *pgenfield;
-
-  int initializing = 1;
-
+  ac_dec_field *pfield, *pf;
 
   if( ACGDBIntegrationFlag )
     fprintf( output, "%sif (gdbstub && gdbstub->stop(decode_pc)) gdbstub->process_bp();\n\n", INDENT[base_indent]);
@@ -4070,68 +4010,10 @@ void EmitInstrExec( FILE *output, int base_indent){
 /*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
   }
   else{
-    for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-  
-      if( initializing ){
-  
-        //This is the first format being processed. Put all of its fields.
-        for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){
-  
-          pf = (ac_dec_field*) malloc( sizeof(ac_dec_field));
-          pf = memcpy( pf, pfield, sizeof(ac_dec_field) );
-  
-          if( pfield == pformat->fields ){
-            pgenfield = pf;
-            pgenfield->next = NULL;
-          }
-          else{
-            pf->next = pgenfield;
-            pgenfield = pf;
-          }
-        }
-        initializing =0;
-
-      }
-      else{  //We already have candidate fields. Check if they are present in all formats.
-  
-        ppf = NULL;
-  
-        //Keep fields that are common to all instructions
-        pf = pgenfield; 
-  
-        while( pf ){
-  
-          //Looking for pf into pformat
-          for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){ 
-  
-            if( !strcmp( pf->name, pfield->name) )
-              break;
-          }
-  
-          if( !pfield) { //Did not find. Delete pf from pgenfield
-                                          
-            if(ppf){
-              ppf->next = pf->next;
-              free(pf);
-              pf = ppf->next;
-            }
-            else{  //Deleting the first field
-              pgenfield = pf->next;
-              free(pf);
-              pf = pgenfield;
-            }
-          }
-          else{  //Found. Keep the field and step to the next.
-            ppf = pf;
-            pf = pf->next;
-          }
-        }
-      }
-    }
     fprintf(output, "%sif (!ac_annul_sig) {\n", INDENT[base_indent++]);
     fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
-    /* pgenfield has the list of fields for the generic instruction. */
-    for( pfield = pgenfield; pfield != NULL; pfield = pfield->next){
+    /* common_instr_field_list has the list of fields for the generic instruction. */
+    for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
       fprintf(output, "instr_vec->get(%d)", pfield->id);
       if (pfield->next != NULL)
         fprintf(output, ", ");
