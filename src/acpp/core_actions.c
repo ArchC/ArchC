@@ -18,12 +18,17 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
 
 ac_dec_format *format_ins_list;    
 ac_dec_format *format_ins_list_tail;
+ac_dec_field  *common_instr_field_list;
+ac_dec_field  *common_instr_field_list_tail;
 ac_dec_format *format_reg_list;    
 ac_dec_format *format_reg_list_tail;
 ac_dec_instr *instr_list;          
 ac_pipe_list *pipe_list;           
 ac_stg_list  *stage_list;          
 ac_sto_list  *storage_list;        
+ac_sto_list  *tlm_intr_port_list;
+ac_sto_list  *tlm_intr_port_list_tail;
+
 
 int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveCycleRange;
 int ControlInstrInfoLevel;
@@ -59,12 +64,16 @@ void init_core_actions()
   /* interface variables */
   format_ins_list = NULL; 
   format_ins_list_tail = NULL;
+  common_instr_field_list = NULL;
+  common_instr_field_list_tail = NULL;
   format_reg_list = NULL; 
   format_reg_list_tail = NULL;
   instr_list = NULL;
   pipe_list = NULL;
   stage_list = NULL;
   storage_list = NULL;
+  tlm_intr_port_list = NULL;
+  tlm_intr_port_list_tail = NULL;
 
   HaveFormattedRegs = 0; 
   HaveMultiCycleIns = 0;
@@ -138,14 +147,16 @@ ac_dec_field *find_field(ac_dec_format *pformat, char *name)
 
 /***************************************/
 /*!Add format to instr/reg format lists.
-  \param head Head of the format list.
-  \param tail Tail of the format list.
-  \param name The name of the instruction to be added.
-  \param str  String containg field declarations */
+  \param head     Head of the format list.
+  \param tail     Tail of the format list.
+  \param name     The name of the instruction to be added.
+  \param str      String containg field declarations.
+  \param is_instr 0 for a register format, nonzero for instruction format. */
 /***************************************/
-int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* str, char *error_msg)
+int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* str, char *error_msg, int is_instr)
 {
   ac_dec_field *field_list_tail = field_list;
+  ac_dec_field *pfield, *pf, *ppf;
   ac_dec_format *pformat;
   int sum_size = parse_format(&str, 0, -1, &field_list, &field_list_tail, error_msg);
 
@@ -172,6 +183,65 @@ int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* st
   }
   else  { /*  First format being added to the list */
     (*tail) = (*head) = pformat;
+  }
+
+  /* Instruction formats require extra processing,
+  to populate the common field list. */
+  if (is_instr) {
+    if (common_instr_field_list) {
+      /* We already have candidate fields. Check if they are present in all formats. */
+      ppf = NULL;
+
+      /* Keep fields that are common to all instructions. */
+      pf = common_instr_field_list;
+
+      while (pf) {
+
+        /* Looking for pf into pformat */
+        for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+          if (!strcmp(pf->name, pfield->name))
+            break;
+        }
+
+        if (!pfield) { /* Did not find. Delete pf from pgenfield. */
+          /* Updating list tail */
+          if (pf->next = NULL) {
+            common_instr_field_list_tail = ppf;
+          }
+          if (ppf) {
+            ppf->next = pf->next;
+            free(pf);
+            pf = ppf->next;
+          }
+          else{ /* Deleting the first field */
+            common_instr_field_list = pf->next;
+            free(pf);
+            pf = common_instr_field_list;
+          }
+        }
+        else{ /* Found. Keep the field and step to the next. */
+          ppf = pf;
+          pf = pf->next;
+        }
+      }
+    }
+    else {
+      /* This is the first format being processed. Put all of its fields. */
+      for(pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+
+        pf = (ac_dec_field*) malloc(sizeof(ac_dec_field));
+        pf = memcpy(pf, pfield, sizeof(ac_dec_field));
+
+        if (common_instr_field_list_tail) { /* commons list already has fields */
+          common_instr_field_list_tail->next = pf;
+          common_instr_field_list_tail = pf;
+        }
+        else { /* first member of the commons list */
+          common_instr_field_list_tail = common_instr_field_list = pf;
+          common_instr_field_list_tail->next = NULL;
+        }
+      }
+    }
   }
 
   return 1;
@@ -344,6 +414,17 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
   else  { /*  First device being added to the list */
      storage_list_tail = storage_list = pstorage;
   }  
+
+  /* Adding TLM Interrupt port to the Interrupt port list */
+  if (type == TLM_INTR_PORT) {
+    if (tlm_intr_port_list_tail) {
+      tlm_intr_port_list_tail->next = pstorage;
+      tlm_intr_port_list_tail = pstorage;
+    }
+    else {
+      tlm_intr_port_list_tail = tlm_intr_port_list = pstorage;
+    }
+  }
 
   return 1;
 }

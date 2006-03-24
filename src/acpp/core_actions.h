@@ -29,12 +29,16 @@
 
 extern ac_dec_format *format_ins_list;    //! Format List for instructions.
 extern ac_dec_format *format_ins_list_tail;
+extern ac_dec_field  *common_instr_field_list;  //!< List containing all the fields common to all instructions.
+extern ac_dec_field  *common_instr_field_list_tail;
 extern ac_dec_format *format_reg_list;    //!< Format List for registers.
 extern ac_dec_format *format_reg_list_tail;
 extern ac_dec_instr *instr_list;          //!< Instruction List.
 extern ac_pipe_list *pipe_list;           //!< Pipe list
 extern ac_stg_list  *stage_list;          //!< old 'ac_stages' list for pipe stages
 extern ac_sto_list  *storage_list;        //!< Storage list
+extern ac_sto_list  *tlm_intr_port_list;  //!< List of TLM Interrupt ports
+extern ac_sto_list  *tlm_intr_port_list_tail;
 
 /** Boolean flag passed to the SystemC simulator generator */
 extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveCycleRange;
@@ -60,7 +64,7 @@ extern ac_dec_instr *find_instr(char *name);
 extern ac_dec_format *find_format(char *name);
 extern ac_sto_list *find_storage(char *name);
 extern ac_dec_field *find_field(ac_dec_format *pformat, char *name);   
-extern int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* str, char *error_msg);
+extern int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* str, char *error_msg, int is_instr);
 extern int add_instr(char* name, char *typestr, ac_dec_instr **pinstr, char *error_msg);
 extern ac_pipe_list *add_pipe(char* name);
 extern void add_stage( char* name, ac_stg_list** listp );

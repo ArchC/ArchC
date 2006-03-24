@@ -249,13 +249,13 @@ formatdeclist: formatdeclist formatdec
 formatdec: AC_FORMAT ID EQ STR SEMICOLON
       {
         if( descrp == ISA_D ) {
-          if (!add_format( &format_ins_list, &format_ins_list_tail, $2, $4, error_msg))
+          if (!add_format( &format_ins_list, &format_ins_list_tail, $2, $4, error_msg, 1))
             yyerror(error_msg);
           format_num++;
         }
         else if( descrp == ARCH_D )
         {
-          if (!add_format( &format_reg_list, &format_reg_list_tail, $2, $4, error_msg))
+          if (!add_format( &format_reg_list, &format_reg_list_tail, $2, $4, error_msg, 0))
             yyerror(error_msg);
         }
         else
