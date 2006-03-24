@@ -1,29 +1,41 @@
-
-                    README file for ArchC v2.0alpha1
-                    ================================
-                    
 LICENSE
 =======
 
  - ArchC tools are  provided under the GNU GPL license. See
    COPYING file for details on this license.
 
+/* REVER ESSE PARAGRAFO -> necessario? */
  - ArchC utility library, i.e., all  files stored in the src directory
    of the ArchC source tree are provided under the  GNU  LGPL license.
    See the  COPYING.LIB file  for details  on this license.
 
 
-INSTALL
-=======
+BUILDING THE PACKAGE
+====================
 
-- Run make
+ArchC package uses the GNU autotools framework to build the source
+files and install them into the host system. General instructions 
+regarding autotools basic installation can be found in INSTALL file.
 
-ArchC will build its tools  and place them inside the "bin" directory,
-and the installation script will prompt you every time it needs to set
-a  configuration variable.   Notice  that the  script  will suggest  a
-default value for  each variable, if you think that it  is OK for your
-installation you  just press enter to  confirm it.  This  data will be
-stored at the archc.conf file, in the config directory.
+In brief:
+
+  1. enter ArchC root source tree (you may as well create a new
+directory for use in the building process)
+  2. execute:
+    ./configure --with-systemc=<systemc-path>
+  
+  NOTES:
+    a) --with-systemc flag is -MANDATORY-. Other optional flags include:
+    --with-binutils=<binutils-path> -> if you plan to generate binary 
+                                       utilities
+    --with-tlm=<tlm-path> -> if ...
+
+    b) by default, the installation process will install the package in
+    the /usr/local directory. If you want any other directory to be used,
+    just use the --prefix flag.
+
+  3. make
+  4. make install
 
 
 MORE INFO
@@ -31,8 +43,10 @@ MORE INFO
 
   Remember that ArchC models and SystemC library must be compiled with
   the same GCC version, otherwise you will get compilation problems.
+
+  News about the latest version of ArchC can be found in the NEWS file.
   
-  You can find a language overview, models, and documentation at
+  You can find language overview, models, and documentation at
   http://www.archc.org
 
 
