@@ -2,6 +2,9 @@
 
 #SUBDIRS = binutils
 
+EXTRA_DIST = acbingen.sh.in \
+             binutils
+
 ## Includes
 INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
 
@@ -60,7 +63,6 @@ edit = sed \
 
 bin_SCRIPTS = acbingen.sh
 
-
 acbingen.sh: Makefile $(srcdir)/acbingen.sh.in
 	$(edit) $(srcdir)/acbingen.sh.in > acbingen.sh
 
@@ -77,3 +79,4 @@ install-data-hook:
 
 uninstall-hook:
 	rm -rf $(pkgdatadir)/$(BINUTILS_ROOT)
+	rm acbingen.sh

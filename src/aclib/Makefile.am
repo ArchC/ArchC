@@ -5,6 +5,7 @@ INCLUDES = -I. -I.. -I./ac_core -I./ac_decoder -I./ac_encoder -I./ac_gdb -I./ac_
 
 ## Subdirectories
 SUBDIRS = ac_core ac_decoder ac_encoder ac_gdb ac_storage ac_syscall $(MAYBE_TLM) ac_utils
+DIST_SUBDIRS = ac_core ac_decoder ac_encoder ac_gdb ac_storage ac_syscall ac_tlm ac_utils
 
 ## The ArchC libraries
 lib_LIBRARIES = libarchc.a

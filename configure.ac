@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([archc], [2.0alpha1])
+AC_INIT([archc], [2.0beta1])
 AC_CONFIG_AUX_DIR(config)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 

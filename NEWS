@@ -1,6 +1,6 @@
 -*- text -*-
 
-Changes in version Beta00
+Changes in version 2.0beta1
 
 * Binary utilities generation is carried out by acbingen.sh
 script (assembler and linker generation)
