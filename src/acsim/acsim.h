@@ -177,28 +177,31 @@ void print_comment( FILE* output, char* description);
  * @{
  */
 
-void CreateArchHeader(void);                  //!< Create the header file for ac_resources class.
-void CreateArchImpl(void);                        //!< Create the .cpp file for _arch class.
-void CreateArchRefHeader(void);                  //!< Create the header file for proj_arch_ref class.
-void CreateArchRefImpl(void);                  //!< Create the .cpp file for proj_arch_ref class.
-void CreateTypeHeader(void);                      //!< Create the header file for ArchC types.
-void CreateISAHeader(void);                       //!< Create the header file for the AC_ISA derived class.
-void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name);  //!< Create the header files for pipeline stages.
-void CreateProcessorHeader(void);                 //!< Create the header file for the processor module.
-void CreateParmHeader(void);                      //!< Create the header file for ArchC common parameters.
-void CreateRegsHeader(void);                      //!< Create the header file for ArchC formatted registers.
-void CreateCoverifHeader(void);                   //!< Create the header file for ArchC co-verification class.
-void CreateStatsHeader(void);                     //!< Create the header file for ArchC statistics collection class.    
-void CreateArchSyscallHeader(void);               //!< Create the header file for ArchC model syscalls. 
-void CreateMakefile(void);                        //!< Create a Makefile for teh ArchC nodel.
-void CreateDummy(int, char*);                     //!< Create dummy function to use if real one is undefined
+void CreateArchHeader(void);                  //!< Creates the header file for ac_resources class.
+void CreateArchImpl(void);                        //!< Creates the .cpp file for _arch class.
+void CreateArchRefHeader(void);                  //!< Creates the header file for proj_arch_ref class.
+void CreateArchRefImpl(void);                  //!< Creates the .cpp file for proj_arch_ref class.
+void CreateTypeHeader(void);                      //!< Creates the header file for ArchC types.
+void CreateISAHeader(void);                       //!< Creates the header file for the AC_ISA derived class.
+void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name);  //!< Creates the header files for pipeline stages.
+void CreateProcessorHeader(void);                 //!< Creates the header file for the processor module.
+void CreateParmHeader(void);                      //!< Creates the header file for ArchC common parameters.
+void CreateRegsHeader(void);                      //!< Creates the header file for ArchC formatted registers.
+void CreateCoverifHeader(void);                   //!< Creates the header file for ArchC co-verification class.
+void CreateStatsHeader(void);                     //!< Creates the header file for ArchC statistics collection class.    
+void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls. 
+void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
+void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.
+void CreateMakefile(void);                        //!< Creates a Makefile for teh ArchC nodel.
+void CreateDummy(int, char*);                     //!< Creates dummy function to use if real one is undefined
 
-void CreateResourceImpl(void);                    //!< Create the .cpp file for ac_resources class.
-void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name); //!< Create the .cpp file for pipeline stages.
-void CreateRegsImpl(void);                        //!< Create the .cpp template file for formatted registers.
-void CreateImplTmpl(void);                        //!< Create the .cpp template file for behavior description.
-void CreateMainTmpl(void);                        //!< Create the .cpp template file for the main function.
-void CreateProcessorImpl(void);                   //!< Create the .cpp file for processor module.
+void CreateResourceImpl(void);                    //!< Creates the .cpp file for ac_resources class.
+void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name); //!< Creates the .cpp file for pipeline stages.
+void CreateRegsImpl(void);                        //!< Creates the .cpp template file for formatted registers.
+void CreateImplTmpl(void);                        //!< Creates the .cpp template file for behavior description.
+void CreateIntrTmpl(void);                        //!< Creates the .cpp template file for interrupt handlers.
+void CreateMainTmpl(void);                        //!< Creates the .cpp template file for the main function.
+void CreateProcessorImpl(void);                   //!< Creates the .cpp file for processor module.
 
 /** @defgroup emitfunc Emit Functions
  * @ingroup acsim

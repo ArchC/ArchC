@@ -8,7 +8,7 @@ EXTRA_DIST = acbingen.sh.in \
 ## Includes
 INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
 
-CFLAGS = -DACVERSION=\"$(VERSION)\"
+AM_CFLAGS = -DACVERSION=\"$(VERSION)\"
 
 BINUTILS_ROOT = binutils
 

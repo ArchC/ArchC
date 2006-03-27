@@ -29,6 +29,7 @@ AC_PROG_YACC
 # SystemC base and TLM library options
 SC_DIR=
 TLM_DIR=
+TLM_OBJ="ac_tlm/ac_tlm_port.o ac_tlm/ac_tlm_intr_port.o"
 MAYBE_TLM=
 MAYBE_TLM_OBJ=
 BINUTILS_DIR=
@@ -42,7 +43,7 @@ AC_ARG_WITH(systemc,
 AC_ARG_WITH(tlm,
             AC_HELP_STRING([--with-tlm=PATH],
                            [Sets the directory where the TLM libraries are installed.]),
-            [TLM_DIR=$withval; MAYBE_TLM=ac_tlm; MAYBE_TLM_OBJ=ac_tlm/ac_tlm_port.o],
+            [TLM_DIR=$withval; MAYBE_TLM=ac_tlm; MAYBE_TLM_OBJ=${TLM_OBJ};],
             [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
 
 AC_ARG_WITH(binutils,

@@ -407,14 +407,6 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
     pstorage->width = reg_width;
   }
 
-  if( storage_list_tail ){
-     storage_list_tail->next = pstorage;
-     storage_list_tail = pstorage;
-  }
-  else  { /*  First device being added to the list */
-     storage_list_tail = storage_list = pstorage;
-  }  
-
   /* Adding TLM Interrupt port to the Interrupt port list */
   if (type == TLM_INTR_PORT) {
     if (tlm_intr_port_list_tail) {
@@ -423,6 +415,15 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
     }
     else {
       tlm_intr_port_list_tail = tlm_intr_port_list = pstorage;
+    }
+  }
+  else { /* Adding to normal storage list */
+    if( storage_list_tail ){
+      storage_list_tail->next = pstorage;
+      storage_list_tail = pstorage;
+    }
+    else  { /*  First device being added to the list */
+      storage_list_tail = storage_list = pstorage;
     }
   }
 

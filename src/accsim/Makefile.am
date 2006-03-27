@@ -7,7 +7,7 @@ INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$
 AM_YFLAGS = -d -p eval_
 
 ## Passing the sysconfdir to the compiler
-CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" @CPPFLAGS@
+AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" @CPPFLAGS@
 
 ## The ArchC compiled simulator generation tool 
 bin_PROGRAMS = accsim

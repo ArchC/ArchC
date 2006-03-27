@@ -182,6 +182,7 @@ int main( argc, argv )
   extern ac_pipe_list *pipe_list;
   ac_pipe_list *ppipe;
   extern int HaveFormattedRegs;
+  extern int HaveTLMIntrPorts;
   extern ac_decoder_full *decoder;
 
   //Uncomment the line bellow if you want to debug the parser.
@@ -440,6 +441,12 @@ int main( argc, argv )
       //CreateRegsImpl();  This is not used anymore.
     }
 
+    if (HaveTLMIntrPorts) {
+      CreateIntrHeader();
+      CreateIntrMacrosHeader();
+      CreateIntrTmpl();
+    }
+
     //Creating co-verification class header file.
     //if( ACVerifyFlag )
     //  CreateCoverifHeader();
@@ -640,14 +647,9 @@ void CreateArchHeader() {
 
       break;
 
-    /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT */
     case TLM_PORT:
       fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[1], pstorage->name);
       fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      break;
-
-    case TLM_INTR_PORT:
-      fprintf(output, "%sac_tlm_intr_port %s;\n", INDENT[1], pstorage->name);
       break;
 
     default:
@@ -870,11 +872,6 @@ void CreateArchRefHeader() {
 
       break;
 
-    case TLM_INTR_PORT:
-      fprintf(output, "%sac_tlm_intr_port& %s;\n", INDENT[1], pstorage->name);
-      break;
-
-      
     default:
       fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
       break;
@@ -1174,7 +1171,6 @@ void CreateISAHeader() {
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
   ac_dec_field *pfield, *pf;
-  int initializing = 1;
 
   char filename[256];
   char description[] = "Instruction Set Architecture header file.";
@@ -1498,8 +1494,11 @@ void CreateProcessorHeader() {
   extern char *project_name;
   extern int stage_num;
   extern int HaveMultiCycleIns;
+  extern int HaveTLMIntrPorts;
+  extern ac_sto_list *tlm_intr_port_list;
   ac_stg_list *pstage;
   ac_pipe_list *ppipe;
+  ac_sto_list *pport;
   int i;
   char filename[256];
   char description[] = "Architecture Module header file.";
@@ -1529,6 +1528,11 @@ void CreateProcessorHeader() {
 
   if (ACABIFlag)
     fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
+
+  if (HaveTLMIntrPorts) {
+    fprintf(output, "#include \"ac_tlm_intr_port.H\"\n");
+    fprintf(output, "#include \"%s_intr_handlers.H\"\n", project_name);
+  }
 
   if(ACGDBIntegrationFlag) {
     fprintf( output, "#include \"ac_gdb_interface.H\"\n");
@@ -1569,6 +1573,13 @@ void CreateProcessorHeader() {
   if (ACABIFlag)
     fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
 
+  if (HaveTLMIntrPorts) {
+    for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
+      fprintf(output, "%s%s_%s_handler %s_hnd;\n", INDENT[1], project_name, pport->name, pport->name);
+      fprintf(output, "%sac_tlm_intr_port %s;\n\n", INDENT[1], pport->name);
+    }
+  }
+
   if(ACDecCacheFlag){
     fprintf( output, "%scache_item_t* DEC_CACHE;\n\n", INDENT[1]);
   }
@@ -1599,6 +1610,13 @@ void CreateProcessorHeader() {
   fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", INDENT[1], project_name, project_name);
   if (ACABIFlag)
     fprintf(output, ", syscall(*this)");
+
+  if (HaveTLMIntrPorts) {
+    for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
+      fprintf(output, ", %s_hnd(*this)", pport->name);
+      fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
+    }
+  }
 
   fprintf(output, " {\n\n");
 
@@ -2649,14 +2667,9 @@ void CreateArchImpl() {
       }
       break;
 
-    /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT fall to default... add the behaviors here */
     case TLM_PORT:
       fprintf(output, "%s%s_port(\"%s_port\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-      break;
-
-    case TLM_INTR_PORT:
-      fprintf(output, "%s%s(\"%s\"),\n", INDENT[1], pstorage->name, pstorage->name);
       break;
 
     default:
@@ -3070,6 +3083,41 @@ void CreateImplTmpl(){
 }
 
 
+///Creates the .cpp template file for interrupt handlers.
+void CreateIntrTmpl() {
+  extern ac_sto_list *tlm_intr_port_list;
+  extern char* project_name;
+
+  ac_sto_list *pport;
+
+  FILE *output;
+  char filename[256];
+  char description[] = "Interrupt Handlers implementation file.";
+
+  sprintf(filename, "%s_intr_handlers.cpp.tmpl", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment( output, description);
+
+  fprintf(output, "#include \"ac_intr_handler.H\"\n");
+  fprintf(output, "#include \"%s_intr_handlers.H\"\n\n", project_name);
+  fprintf(output, "#include \"%s_ih_bhv_macros.H\"\n\n", project_name);
+
+  //Declaring formatted register behavior methods.
+  for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", pport->name);
+    fprintf(output, "void ac_behavior(%s, value) {\n}\n\n", pport->name);
+  }
+
+  //END OF FILE.
+  fclose(output);
+}
+
+
 //!Creates Formatted Registers Implementation File.
 void CreateRegsImpl() {
   extern ac_sto_list *storage_list;
@@ -3154,6 +3202,89 @@ void CreateArchSyscallHeader()
           project_name);
 
   fclose( output);
+}
+
+
+///Creates the header file for interrupt handlers.
+void CreateIntrHeader() {
+
+  extern ac_sto_list *tlm_intr_port_list;
+  extern char *project_name;
+
+  ac_sto_list *pport;
+
+  char filename[256];
+  char description[] = "Interrupt Handlers header file.";
+ 
+  // Header File.
+  FILE  *output;
+
+  sprintf(filename, "%s_intr_handlers.H", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment(output, description);
+  fprintf(output, "#ifndef _%s_INTR_HANDLERS_H\n", project_name);
+  fprintf(output, "#define _%s_INTR_HANDLERS_H\n\n", project_name);
+  fprintf(output, "#include \"ac_intr_handler.H\"\n");
+  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
+  fprintf(output, "#include \"%s_arch.H\"\n", project_name);
+  fprintf(output, "#include \"%s_arch_ref.H\"\n", project_name);
+  fprintf(output, "\n");
+
+  /* Creating interrupt handler classes for each ac_tlm_intr_port */
+  for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, "class %s_%s_handler :\n", project_name, pport->name);
+    fprintf(output, "%spublic ac_intr_handler,\n", INDENT[1]);
+    fprintf(output, "%spublic %s_arch_ref\n", INDENT[1], project_name);
+    fprintf(output, "{\n");
+    fprintf(output, " public:\n\n");
+    fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",
+            INDENT[1], project_name, pport->name, project_name, project_name);
+    fprintf(output, "%svoid handle(uint32_t value);\n\n", INDENT[1]);
+    fprintf(output, "};\n\n\n");
+  }
+
+  fprintf(output, "#endif // _%s_INTR_HANDLERS_H\n", project_name);
+
+  //END OF FILE
+  fclose(output);
+
+}
+
+///Creates the header file with ac_behavior macros for interrupt handlers.
+void CreateIntrMacrosHeader() {
+  extern char *project_name;
+
+  char filename[256];
+  char description[] = "Interrupt Handlers ac_behavior macros header file.";
+
+  // Header File.
+  FILE  *output;
+
+  sprintf(filename, "%s_ih_bhv_macros.H", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment(output, description);
+  fprintf(output, "#ifndef _%s_IH_BHV_MACROS_H\n", project_name);
+  fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", project_name);
+
+  /* ac_behavior main macro */
+  fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
+          project_name);
+
+  fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", project_name);
+
+  //END OF FILE
+  fclose(output);
+
 }
 
 
@@ -3298,6 +3429,9 @@ void CreateMakefile(){
   if(ACABIFlag)
     fprintf( output, "$(MODULE)_syscall.H ");
 
+  if(HaveTLMIntrPorts)
+    fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
+
   fprintf( output, "\n\n");
  
  
@@ -3349,6 +3483,9 @@ void CreateMakefile(){
 
   if(ACABIFlag)
     fprintf( output, " $(MODULE)_syscall.cpp");
+
+  if(HaveTLMIntrPorts)
+    fprintf( output, " $(MODULE)_intr_handlers.cpp");
 
   fprintf( output, "\n\n");
 
