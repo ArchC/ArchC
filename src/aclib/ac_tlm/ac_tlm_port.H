@@ -57,7 +57,7 @@ using std::string;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/// Main class of the skeleton file.
+/// ArchC TLM initiator port class.
 class ac_tlm_port : public sc_port<ac_tlm_transport_if>,
 		    public ac_inout_if {
 public:
@@ -67,6 +67,7 @@ public:
   /** 
    * Default constructor.
    * 
+   * @param name Port name.
    * @param size Size or address range of the element to be attached.
    * 
    */

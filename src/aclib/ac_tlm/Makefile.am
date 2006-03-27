@@ -7,6 +7,6 @@ INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_core -I$(top_srcdir)/src/aclib/ac_de
 noinst_LIBRARIES = libactlm.a
 
 ## ArchC library includes
-pkginclude_HEADERS = ac_tlm_protocol.H ac_tlm_port.H
+pkginclude_HEADERS = ac_tlm_protocol.H ac_tlm_port.H ac_tlm_intr_port.H ac_intr_handler.H
 
-libactlm_a_SOURCES = ac_tlm_port.cpp
+libactlm_a_SOURCES = ac_tlm_port.cpp ac_tlm_intr_port.cpp
