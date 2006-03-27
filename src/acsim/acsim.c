@@ -2843,10 +2843,11 @@ void CreateImplTmpl(){
   print_comment( output, description);
   fprintf( output, "#include  \"%s_isa.H\"\n", project_name);
   fprintf( output, "#include  \"%s_isa_init.cpp\"\n", project_name);
-  fprintf(output, "#include \"%s_bhv_macros.H\"\n", project_name);
-  fprintf( output, " \n");
+  fprintf(output, "#include  \"%s_bhv_macros.H\"\n", project_name);
+  fprintf( output, "\n");
 
-  fprintf( output, " \n");
+  COMMENT(INDENT[0], "'using namespace' statement to allow access to all %s-specific datatypes", project_name);
+  fprintf( output, "using namespace %s_parms;\n\n", project_name);
 
   //Behavior to begin simulation.
   COMMENT(INDENT[0],"Behavior executed before simulation begins.");
@@ -3106,6 +3107,9 @@ void CreateIntrTmpl() {
   fprintf(output, "#include \"ac_intr_handler.H\"\n");
   fprintf(output, "#include \"%s_intr_handlers.H\"\n\n", project_name);
   fprintf(output, "#include \"%s_ih_bhv_macros.H\"\n\n", project_name);
+
+  COMMENT(INDENT[0], "'using namespace' statement to allow access to all %s-specific datatypes", project_name);
+  fprintf( output, "using namespace %s_parms;\n\n", project_name);
 
   //Declaring formatted register behavior methods.
   for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
@@ -3508,6 +3512,12 @@ void CreateMakefile(){
   COMMENT_MAKE("Copy from template if main.cpp not exist");
   fprintf( output, "main.cpp:\n");
   fprintf( output, "\tcp main.cpp.tmpl main.cpp\n\n");
+
+  if (HaveTLMIntrPorts) {
+    COMMENT_MAKE("Copy from template if %s_intr_handlers.cpp not exist", project_name);
+    fprintf( output, "%s_intr_handlers.cpp:\n", project_name);
+    fprintf( output, "\tcp %s_intr_handlers.cpp.tmpl %s_intr_handlers.cpp\n\n", project_name, project_name);
+  }
 
   fprintf( output, ".cpp.o:\n");
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) -c $<\n\n");
