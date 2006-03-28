@@ -4,11 +4,9 @@ LICENSE
  - ArchC tools are  provided under the GNU GPL license. See
    COPYING file for details on this license.
 
-/* REVER ESSE PARAGRAFO -> necessario? */
-/* eu acho que é -- thiago */
- - ArchC utility library, i.e., all  files stored in the src directory
-   of the ArchC source tree are provided under the  GNU  LGPL license.
-   See the  COPYING.LIB file  for details  on this license.
+ - ArchC utility library, i.e. all  files stored in the src/aclib 
+   directory of the ArchC source tree, are provided under the GNU LGPL 
+   license. See the  COPYING.LIB file  for details  on this license.
 
 
 BUILDING THE PACKAGE
