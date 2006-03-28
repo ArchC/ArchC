@@ -38,6 +38,7 @@
 #include "stdlib.h"
 #include "string.h"
 
+
 //#define DEBUG_STORAGE
 
 //Defining Traces and Dasm strings
@@ -593,7 +594,7 @@ void CreateArchHeader() {
         }
       }
       break;
-                        
+
     case REGBANK:
       //Emiting register bank. Checking is a register width was declared.
       switch( (unsigned)(pstorage->width) ){
@@ -604,10 +605,10 @@ void CreateArchHeader() {
         fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char> %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       case 16:
-        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned char> %s;\n", INDENT[1], pstorage->size, pstorage->name);
+        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       case 32:
-        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned short> %s;\n", INDENT[1], pstorage->size, pstorage->name);
+        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       case 64:
         fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
@@ -820,7 +821,7 @@ void CreateArchRefHeader() {
         }
       }
       break;
-                        
+
     case REGBANK:
       //Emiting register bank. Checking is a register width was declared.
       switch( (unsigned)(pstorage->width) ){
@@ -831,13 +832,13 @@ void CreateArchRefHeader() {
         fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       case 16:
-        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned char>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       case 32:
-        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned short>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       case 64:
-        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
         break;
       default:
         AC_ERROR("Register width not supported: %d\n", pstorage->width);
@@ -4697,6 +4698,7 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 //!Read the archc.conf configuration file
 void ReadConfFile(){
 
+  char *user_homedir;
   char *conf_filename_local;
   char *conf_filename_global;
 //  extern char *ARCHC_PATH;
@@ -4718,8 +4720,12 @@ void ReadConfFile(){
 /*    AC_ERROR("You should set the ARCHC_PATH environment variable.\n"); */
 /*    exit(1); */
 /*  } */
-                
-  conf_filename_local = "~/.archc/archc.conf";
+
+  user_homedir = getenv("HOME");
+  conf_filename_local = malloc(strlen(user_homedir) + 19);
+  strcpy(conf_filename_local, user_homedir);
+  strcat(conf_filename_local, "/.archc/archc.conf");
+
   conf_filename_global = malloc(strlen(SYSCONFDIR) + 12);
   strcpy(conf_filename_global, SYSCONFDIR);
   strcat(conf_filename_global, "/archc.conf");
