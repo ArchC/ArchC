@@ -50,7 +50,7 @@ FILES_TO_COPY = \
 
 bin_PROGRAMS = bmdsfg 
 bmdsfg_SOURCES = main.c utils.c utils.h opcodes.c opcodes.h bfd.c bfd.h gas.c gas.h 
-bmdsfg_LDADD = ../acpp/libacpp.a
+bmdsfg_LDADD = ../acpp/libacpp.la
 
 edit = sed \
 	-e 's,@pkgdatadir\@,$(pkgdatadir),g' \

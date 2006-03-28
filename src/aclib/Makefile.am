@@ -8,7 +8,7 @@ SUBDIRS = ac_core ac_decoder ac_encoder ac_gdb ac_storage ac_syscall $(MAYBE_TLM
 DIST_SUBDIRS = ac_core ac_decoder ac_encoder ac_gdb ac_storage ac_syscall ac_tlm ac_utils
 
 ## The ArchC libraries
-lib_LIBRARIES = libarchc.a
+lib_LTLIBRARIES = libarchc.la
 # libarchc.a has no sources, they've already been compiled in the subdirs.
-libarchc_a_SOURCES =
-libarchc_a_LIBADD = ac_core/ac_module.o ac_decoder/ac_decoder.o ac_decoder/ac_decoder_rt.o ac_storage/ac_storage.o ac_syscall/ac_syscall.o $(MAYBE_TLM_OBJ) ac_utils/ac_utils.o ac_gdb/breakpoints.o
+libarchc_la_SOURCES =
+libarchc_la_LIBADD = ac_core/libaccore.la ac_decoder/libacdecoder.la ac_storage/libacstorage.la ac_syscall/libacsyscall.la $(MAYBE_TLM_LIB) ac_utils/libacutils.la ac_gdb/libacgdb.la

@@ -13,4 +13,4 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" @CPPFLAGS@
 bin_PROGRAMS = accsim
 BUILT_SOURCES = eval.h
 accsim_SOURCES = accsim_extras.h accsim.h acsim.h acsim.c eval.y eval.h accsim.c
-accsim_LDADD = ../acpp/libacpp.a ../aclib/libarchc.a
+accsim_LDADD = ../acpp/libacpp.la ../aclib/libarchc.la

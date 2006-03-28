@@ -18,20 +18,22 @@ case "$host_os" in
 esac
 AC_SUBST(TARGET_ARCH)
 
+AC_DISABLE_SHARED
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
+AC_PROG_LIBTOOL
 AM_PROG_LEX
 AC_PROG_YACC
 
 # SystemC base and TLM library options
 SC_DIR=
 TLM_DIR=
-TLM_OBJ="ac_tlm/ac_tlm_port.o ac_tlm/ac_tlm_intr_port.o"
+TLM_LIB="ac_tlm/libactlm.la"
 MAYBE_TLM=
-MAYBE_TLM_OBJ=
+MAYBE_TLM_LIB=
 BINUTILS_DIR=
 
 AC_ARG_WITH(systemc,
@@ -43,7 +45,7 @@ AC_ARG_WITH(systemc,
 AC_ARG_WITH(tlm,
             AC_HELP_STRING([--with-tlm=PATH],
                            [Sets the directory where the TLM libraries are installed.]),
-            [TLM_DIR=$withval; MAYBE_TLM=ac_tlm; MAYBE_TLM_OBJ=${TLM_OBJ};],
+            [TLM_DIR=$withval; MAYBE_TLM=ac_tlm; MAYBE_TLM_LIB=${TLM_LIB};],
             [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
 
 AC_ARG_WITH(binutils,
