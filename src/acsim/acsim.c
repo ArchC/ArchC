@@ -3346,7 +3346,7 @@ void CreateMakefile(){
         
   fprintf( output, "INC_DIR := -I. -I%s -I$(SYSTEMC)/include ", INCLUDEDIR);
   if (HaveTLMPorts || HaveTLMIntrPorts)
-    fprintf(output, "-I$(SYSTEMC)/include/sysc/tlm ");
+    fprintf(output, "-I%s", TLM_PATH);
   fprintf(output, "\n");
   fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n", LIBDIR);
 
@@ -4701,6 +4701,7 @@ void ReadConfFile(){
   char *conf_filename_global;
 //  extern char *ARCHC_PATH;
   extern char *SYSTEMC_PATH;
+  extern char *TLM_PATH;
   extern char *CC_PATH;
   extern char *OPT_FLAGS;
   extern char *DEBUG_FLAGS;
@@ -4747,10 +4748,10 @@ void ReadConfFile(){
         sscanf(line, "%s",var);
         strcpy( value, strchr(line, '=')+1);
 
-//        if( !strcmp(var, "ARCHC_PATH") ){
-//          ARCHC_PATH =  (char*) malloc(strlen(value)+1);
-//          ARCHC_PATH = strcpy(ARCHC_PATH, value);
-//        }
+        if( !strcmp(var, "TLM_PATH") ){
+          TLM_PATH =  (char*) malloc(strlen(value)+1);
+          TLM_PATH = strcpy(TLM_PATH, value);
+        }
         if( !strcmp(var, "SYSTEMC_PATH") ){
           SYSTEMC_PATH = (char*) malloc(strlen(value)+1);
           SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);

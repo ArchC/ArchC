@@ -67,6 +67,7 @@ static const char *INDENT[]={"","  ","    ","      ","        ","          ","  
  */
 //char *ARCHC_PATH;     //!<Path where ArchC is installed.
 char *SYSTEMC_PATH;   //!<Path where SystemC is installed.
+char *TLM_PATH;       //!<Path to the TLM directory
 char *TARGET_ARCH;    //!<Architecture of the host machine.
 char *CC_PATH;        //!<C/C++ compiler path
 char *OPT_FLAGS;      //!<Optimization flags to be passed to the compiler

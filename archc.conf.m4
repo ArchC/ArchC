@@ -5,6 +5,7 @@
 # Paths
 #---------------------------------------------------------------------------
 SYSTEMC_PATH = systemc_path()
+TLM_PATH = tlm_path()
 BINUTILS_PATH = binutils_path()
 CC = compiler()
 
