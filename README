@@ -5,6 +5,7 @@ LICENSE
    COPYING file for details on this license.
 
 /* REVER ESSE PARAGRAFO -> necessario? */
+/* eu acho que é -- thiago */
  - ArchC utility library, i.e., all  files stored in the src directory
    of the ArchC source tree are provided under the  GNU  LGPL license.
    See the  COPYING.LIB file  for details  on this license.
@@ -28,7 +29,8 @@ directory for use in the building process)
     a) --with-systemc flag is -MANDATORY-. Other optional flags include:
     --with-binutils=<binutils-path> -> if you plan to generate binary 
                                        utilities
-    --with-tlm=<tlm-path> -> if ...
+    --with-tlm=<tlm-path> -> if you want the new ArchC TLM communication
+                               capabilities
 
     b) by default, the installation process will install the package in
     the /usr/local directory. If you want any other directory to be used,
