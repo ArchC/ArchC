@@ -4038,7 +4038,7 @@ void EmitUpdateMethod( FILE *output){
     }
   }
   fprintf(output, "%sif (ac_stop_flag == 0)\n", INDENT[1]);
-  fprintf( output, "%swait(SC_ZERO_TIME);\n", INDENT[2]);
+  fprintf( output, "%swait(1, SC_NS);\n", INDENT[2]);
 
   fprintf(output, "%selse return;\n\n", INDENT[1]);
 
