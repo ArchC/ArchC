@@ -1,0 +1,159 @@
+HOW-TO: ARCHC 2.0 TLM FEATURES
+------------------------------
+
+
+1. TLM initiator port
+
+   ArchC 2.0 provides a TLM initiator port to your processor, allowing
+   it to communicate with external modules. In order to create a TLM
+   initiator port, you have to declare it on the modelname.ac
+   file. Here's an example we made with our mips1 model, replacing the
+   DM element from ac_cache to ac_tlm_port:
+AC_ARCH(mips1){
+  //ac_cache    DM:5M;
+  ac_tlm_port DM:5M;
+  ac_regbank  RB:34;
+//...
+
+   We substituted the ac_cache (main memory) with an ac_tlm_port
+   because we want to use this model with an external TLM memory. Now
+   all you have to do is run acsim and it will generate the simulator
+   code with the ac_tlm_port already in place. Please note that a
+   range must be declared with the ac_tlm_port, indicating the range
+   of addresses (starting on 0x0) that will be accessible via the port
+   (in this case, 5 megabytes).
+
+   One important thing about ArchC 2.0 is that the processor access to
+   either ac_tlm_ports or internal memories (elements of type
+   ac_storage) is always made via an ac_memport. In this case, the
+   ac_memport correspondent to the ac_tlm_port we've declared will be
+   called DM, and the port itself will be called DM_port. That is, the
+   ac_tlm_port gets a '_port' suffix in its name.
+
+   All right, now an illustration of how this works. Whenever you want
+   to access the port from the inside of the processor, that is, on
+   instruction behaviors, for instance, you use the ac_memport called
+   DM, like this (in the modelname_isa.cpp file):
+value = DM.read(address);
+
+   However, all access to this port from outside the processor will
+   have to use the ac_tlm_port object, which in this case is called
+   DM_port. The main use of this will be in binding the port to an
+   external module, like this:
+proc_instance.DM_port(ext_memory);
+
+   Which is a binding of the port present in proc_instance to an
+   external memory ext_memory.
+
+   After that, what you absolutely need to know is what to implement
+   in the external modules so that communication is possible. And that
+   is known as the ArchC TLM protocol. It works like this: an
+   ac_tlm_port is-a (ie, extends) sc_port<ac_tlm_transport_if>, where
+   ac_tlm_transport_if is the same as tlm_transport_if<ac_tlm_req,
+   ac_tlm_rsp>.
+
+   Basically this means that you can only bind an ac_tlm_port to a
+   module that extends ac_tlm_transport_if (which would be,
+   technically, a channel) or to an sc_export<ac_tlm_transport_if>
+   that is bound to such an object.
+
+   So the first requisite is that your external module responsible for
+   communicating directly with the processor must inherit from
+   ac_tlm_transport_if.
+
+   That obliges this module ext_module to implement the:
+ac_tlm_rsp ext_module::transport(const ac_tlm_req& req);
+
+   method that is declared by tlm_transport_if<>. This method will
+   receive a reference to an ArchC TLM transaction request packet
+   (declared at the ac_tlm_protocol.H file), process it accordingly,
+   and return an ArchC TLM transaction response packet (also declared
+   at the ac_tlm_protocol.H) informing the transaction requester (that
+   is, our processor module) of the transaction status, whether it
+   failed or succeeded.
+
+   By doing this on the external slave module, you're ready to go!
+   Just bind the port from the processor instance to the module or
+   module export and you can already access it via the read/write
+   methods of the ac_memport DM, inside the instruction behaviors.
+
+
+2. TLM interrupt port
+
+   ArchC 2.0 also features communication initiated from an external
+   module, with the processor module as a slave, via its interrupt
+   mechanism. To enable an interrupt mechanism on your model, first
+   you have to declare an ac_tlm_intr_port on the modelname.ac
+   file. As an example, you can add an interrupt port to our mips1
+   model just by doing this:
+AC_ARCH(mips1){
+
+  ac_cache   DM:5M;
+  ac_regbank RB:34;
+
+  ac_tlm_intr_port inta; // Add this line
+//...
+
+   Great! Now we have an interrupt port on our mips1 model, called
+   inta. By running the acsim tool on it, we'll see that it generated
+   some extra files related to interrupts. The one we'll modify is
+   modelname_intr_handlers.cpp. First, we'll copy
+   modelname_intr_handlers.cpp.tmpl to
+   modelname_intr_handlers.cpp. Then we'll edit the file.
+
+   When you open the file, you'll see that it contains an ac_behavior
+   definition, pretty much in the same way as the modelname_isa.cpp
+   file:
+// Interrupt handler behavior for interrupt port inta.
+void ac_behavior(inta, value) {
+}
+
+   Inside this ac_behavior, you can write pretty much standard
+   behavior code, altering register values, the program counter,
+   writing or reading the memory... Basically, this behavior code
+   represents whatever the processor hardware does when it encounters
+   an interrupt. Note that it receives a value from the interrupt,
+   which can be used on the interrupt handling. Your choice
+   really. Another possibility is declaring more than one
+   ac_tlm_intr_ports on the modelname.ac file, which will lead to each
+   of them having its separate interrupt handler method defined on
+   this modelname_intr_handlers.cpp file. So there are lots of options
+   to implement interrupt behavior on your model. The ArchC interrupt
+   system is very flexible because we don't want to hinder the
+   developers' options.
+
+   Now that we know how interrupts work inside the processor, what we
+   have to understand is how an external module interrupts the
+   processor. First, whenever you declare an ac_tlm_intr_port on your
+   modelname.ac it means that you will have an ac_tlm_intr_port as a
+   member of your modelname module.
+
+   This ac_tlm_intr_port will have the exact same name you declare on
+   modelname.ac, which in this case is inta. The ac_tlm_intr_port is-a
+   (inherits from) sc_export<ac_tlm_transport_if>, and this export is
+   bound to itself, because ac_tlm_intr_port also implements the
+   transport() method mentioned above, and this transport() method has
+   a fixed implementation, which calls an interrupt handler that is
+   bound to a port (those are the ones you implement on the
+   modelname_intr_handlers.cpp, one for each port).
+
+   Then, to make an external module interrupt a processor, all you
+   have to do is binding an sc_port<ac_tlm_transport_if> of this
+   module to the ac_tlm_intr_port of the processor, like this:
+ext_module.out_port(proc_module.inta);
+
+   and then have the external module call the transport() method via
+   this port, passing an ac_tlm_req transaction request
+   packet. Whatever value there is on the data field of the packet
+   will be passed as the 'value' parameter of the interrupt handler.
+
+
+   This small tutorial covers how to use the TLM features of this
+   ArchC 2.0 beta. However, if you have any doubts, questions or
+   suggestions regarding the ArchC TLM features, feel free to contact
+   us ArchC developers, preferrably via the forums, to hear from you
+   and answer your questions.
+
+All the best,
+
+ -- The ArchC Team
