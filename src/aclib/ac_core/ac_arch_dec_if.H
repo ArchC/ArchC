@@ -39,14 +39,14 @@ public:
 
   int ExpandInstrBuffer(int index) {
     //Expand the instruction buffer word by word, the number necessary to read position index
-    int read = (index + 1) - quant;
+    int read = (index + 1) - (this->quant);
     
     for(int i=0; i<read; i++){
-      buffer[quant+i] = IM->read( decode_pc +  (quant + i)*sizeof(ac_word) );
+      (this->buffer)[(this->quant)+i] = (this->IM)->read( (this->decode_pc) +  ((this->quant) + i)*sizeof(ac_word) );
     }
     
-    quant += read;
-    return quant;
+    (this->quant) += read;
+    return (this->quant);
   }
 
   unsigned long long GetBits(unsigned char* bu, int* quant, int last,
@@ -65,7 +65,7 @@ public:
     unsigned long long value = 0;
     int i;
   
-    if (!ac_mt_endian) {  
+    if (!(this->ac_mt_endian)) {  
       //big-endian: first  last
       //          0xAA BB CC DD
       

@@ -120,7 +120,7 @@ public:
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
 
-    if (!ac_mt_endian) {
+    if (!this->ac_mt_endian) {
       uint32_t oset_addr = address % sizeof(ac_word);
       storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
 #ifdef AC_STATS
@@ -140,7 +140,7 @@ public:
   ///Reads half word
   inline ac_Hword read_half(uint32_t address) {
 
-    if (!ac_mt_endian) {
+    if (!this->ac_mt_endian) {
       uint32_t oset_addr = address % sizeof(ac_word);
       storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
 #ifdef AC_STATS
@@ -162,7 +162,7 @@ public:
 
   //!Writing a byte 
   inline void write_byte(uint32_t address, uint8_t datum) {
-    if (!ac_mt_endian) {
+    if (!this->ac_mt_endian) {
       uint32_t oset_addr = address % sizeof(ac_word);
       uint32_t base_addr = address - oset_addr;
       oset_addr = ((sizeof(ac_word) - 1) - oset_addr);
@@ -175,7 +175,7 @@ public:
 
   //!Writing a short int 
   inline void write_half(uint32_t address, ac_Hword datum) {
-    if (!ac_mt_endian) {
+    if (!this->ac_mt_endian) {
       uint32_t oset_addr = address % sizeof(ac_word);
       uint32_t base_addr = address - oset_addr;
       if (oset_addr) {
@@ -204,7 +204,7 @@ public:
 
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    if (!ac_mt_endian) {
+    if (!this->ac_mt_endian) {
       oset_addr = ((sizeof(ac_word) - 1) - oset_addr);
     }
 
@@ -221,7 +221,7 @@ public:
 
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    if (!ac_mt_endian) {
+    if (!this->ac_mt_endian) {
 //       oset_addr = oset_addr ? 0 : 1;
       oset_addr = oset_addr == 0;
     }
@@ -311,10 +311,10 @@ public:
     Data = new unsigned char[storage->get_size()];
 
     //Try to read as ELF first
-    if (ac_load_elf<ac_word>(file, Data, storage->get_size(), ac_heap_ptr, ac_start_addr, ac_mt_endian) == EXIT_SUCCESS) {
+    if (ac_load_elf<ac_word>(file, Data, storage->get_size(), this->ac_heap_ptr, this->ac_start_addr, this->ac_mt_endian) == EXIT_SUCCESS) {
       //init decode cache and return
-      if(!dec_cache_size)
-	dec_cache_size = ac_heap_ptr;
+      if(!this->dec_cache_size)
+	this->dec_cache_size = this->ac_heap_ptr;
       storage->write(Data, 0, 8, storage->get_size());
       delete[] Data;
       return;
@@ -356,7 +356,7 @@ public:
 	    is_addr = 0;
 	    if( is_text && first_addr ){
 	      first_addr = 0;
-	      ac_start_addr = addr;
+	      this->ac_start_addr = addr;
 	    }
 	  }
 	  else{
@@ -369,8 +369,8 @@ public:
 	}
       }
     }
-    if(!dec_cache_size)
-      dec_cache_size = addr;
+    if(!this->dec_cache_size)
+      this->dec_cache_size = addr;
 
     input.close();
 
@@ -384,8 +384,8 @@ public:
   //!Method to load device content from an array.
   void load_array(const uint8_t* d, const uint32_t s) {
     unsigned char* Data;
-    if (size < s) {
-      fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", name);
+    if (storage->get_size() < s) {
+      fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", "");
       exit(EXIT_FAILURE);
     }
     storage->write(d, 0, 8, s);

@@ -45,7 +45,8 @@
 #include <systemc.h>
 
 #include "ac_log.H"
-  
+#include "ac_utils.H"
+
 using std::string;
 using std::istringstream;
 using std::fstream;
