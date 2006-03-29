@@ -95,19 +95,14 @@ char *OTHER_FLAGS;    //!<Miscellaneous flags to be passed to the compiler
 //! Enumeration type for command line options
 enum _ac_cmd_options {
   OPABI,
-  OPDasm,
   OPDebug,
   OPDelay,
   OPDDecoder,
   OPHelp,
-  /*OPQuiet,*/
   OPDecCache,
   OPStats,
   OPVerbose,
-  /*OPVerify,*/
-  /*OPVerifyTimed,*/
   OPVersion,
-  OPEncoder,
   OPGDBIntegration,
   ACNumberOfOptions
 };

@@ -43,11 +43,9 @@
 
 //Defining Traces and Dasm strings
 #define PRINT_TRACE "%strace_file << hex << decode_pc << dec <<\"\\n\";\n"
-#define PRINT_DASM "%sdasmfile << hex << decode_pc << dec << \": \" << *instr << *format <<\"\t\t(\" << instr->get_name() << \",\" << format->get_name() << \")\" <<endl;\n"
 
 //Command-line options flags
 int  ACABIFlag=0;                               //!<Indicates whether an ABI was provided or not
-int  ACDasmFlag=0;                              //!<Indicates whether disassembler option is turned on or not
 int  ACDebugFlag=0;                             //!<Indicates whether debugger option is turned on or not
 int  ACDecCacheFlag=1;                          //!<Indicates whether the simulator will cache decoded instructions or not
 int  ACDelayFlag=0;                             //!<Indicates whether delay option is turned on or not
@@ -57,7 +55,6 @@ int  ACStatsFlag=0;                             //!<Indicates whether statistics
 int  ACVerboseFlag=0;                           //!<Indicates whether verbose option is turned on or not
 int  ACVerifyFlag=0;                            //!<Indicates whether verification option is turned on or not
 int  ACVerifyTimedFlag=0;                       //!<Indicates whether verification option is turned on for a timed behavioral model
-int  ACEncoderFlag=0;                           //!<Indicates whether encoder tools will be included in the simulator
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 
 //char *ACVersion = "2.0alpha1";                        //!<Stores ArchC version number.
@@ -93,19 +90,14 @@ ac_sto_list* load_device=0;
   for each option encountered; the first one that matches, wins.  */
 struct option_map option_map[] = {
   {"--abi-included"  , "-abi"        ,"Indicate that an ABI for system call emulation was provided." ,"o"},
-  {"--disassembler"  , "-dasm"       ,"Dump executing instructions in assembly format (Not completely implemented)." ,"o"},
   {"--debug"         , "-g"          ,"Enable simulation debug features: traces, update logs." ,"o"},
   {"--delay"         , "-dy"          ,"Enable delayed assignments to storage elements." ,"o"},
   {"--dumpdecoder"   , "-dd"         ,"Dump the decoder data structure." ,"o"},
   {"--help"          , "-h"          ,"Display this help message."       , 0},
-  //  {"--quiet"         , "-q"          ,".", "o"},
   {"--no-dec-cache"  , "-ndc"        ,"Disable cache of decoded instructions." ,"o"},
   {"--stats"         , "-s"          ,"Enable statistics collection during simulation." ,"o"},
   {"--verbose"       , "-vb"         ,"Display update logs for storage devices during simulation.", "o"},
-/*   {"--verify"        , "-v"          ,"Enable co-verification mechanism." ,"o"}, */
-  //  {"--verify-timed"  , "-vt"         ,"Enable co-verification mechanism. Timed model." ,"o"},
   {"--version"       , "-vrs"        ,"Display ACSIM version.", 0},
-  {"--encoder"       , "-enc"        ,"Use encoder tools with the simulator (beta version).", 0},
   {"--gdb-integration", "-gdb"       ,"Enable support for debbuging programs running on the simulator.", 0},
   0
 };
@@ -249,10 +241,6 @@ int main( argc, argv )
               ACABIFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
-            case OPDasm:
-              ACDasmFlag = 1;
-              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
-              break;
             case OPDebug:
               ACDebugFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
@@ -265,15 +253,10 @@ int main( argc, argv )
               ACDDecoderFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
-              /* case OPQuiet: */
-              /*   ACQuietFlag = 1; */
-              /*   ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
-              /*   break; */
             case OPDecCache:
               ACDecCacheFlag = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
-
             case OPStats:
               ACStatsFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
@@ -281,21 +264,6 @@ int main( argc, argv )
             case OPVerbose:
               ACVerboseFlag = 1;
               AC_MSG("Simulator running on verbose mode.\n");
-              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
-              break;
-/*             case OPVerify: */
-/*               ACVerifyFlag =1; */
-/*               AC_MSG("Simulator running on co-verification mode. Use it ONLY along with the ac_verifier tool.\n"); */
-/*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
-/*               break; */
-              /* case OPVerifyTimed: */
-              /*   ACVerifyFlag = ACVerifyTimedFlag = 1; */
-              /*   AC_MSG("Co-verification is turned on, running on timed mode.\n"); */
-              /*   ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
-              /*   break; */
-            case OPEncoder:
-              ACEncoderFlag = 1;
-              AC_MSG("Simulator will have encoder extra tools (beta version).\n");
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             case OPGDBIntegration:
@@ -476,8 +444,6 @@ int main( argc, argv )
                 
     //Issuing final messages to the user.
     AC_MSG("%s model files generated.\n", project_name);
-    if( ACDasmFlag)
-      AC_MSG("Disassembler file is: %s.dasm\n", project_name);
   }
 
   return 0;
@@ -659,10 +625,6 @@ void CreateArchHeader() {
       break;
     }
   }
-
-  //Disassembler file
-  if( ACDasmFlag )
-    fprintf( output, "%sofstream dasmfile;\n", INDENT[1]);
 
   fprintf( output, " \n");
   fprintf( output, "\n");
@@ -992,9 +954,6 @@ void CreateParmHeader() {
   if( ACStatsFlag )
     fprintf( output, "#define  AC_STATS \t //!< Indicates that statistics collection is turned on.\n");
       
-
-  if( ACDasmFlag )
-    fprintf( output, "#define  AC_DISASSEMBLER \t //!< Indicates that disassembler option is turned on.\n\n");
 
   if( ACDebugFlag )
     fprintf( output, "#define  AC_DEBUG \t //!< Indicates that debug option is turned on.\n\n");
@@ -1462,10 +1421,7 @@ void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
       fprintf( output, "%sstart_up=1;\n", INDENT[2]);
     }
     fprintf( output, "%sid = %d;\n\n", INDENT[2], pstage->id);
-                
-    if( ACDasmFlag && pstage->id == 1)
-      fprintf( output, "%sdasmfile.open(\"%s.dasm\");\n\n", INDENT[2], project_name);
-    
+
     //end of constructor
     fprintf( output, "%s}\n", INDENT[1]); 
 
@@ -1634,9 +1590,6 @@ void CreateProcessorHeader() {
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
   fprintf( output, "%sid = %d;\n\n", INDENT[2], 1);
-
-  if( ACDasmFlag )
-    fprintf( output, "%sdasmfile.open(\"%s.dasm\");\n\n", INDENT[2], project_name);
 
   if (ACGDBIntegrationFlag)
     fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", INDENT[2], project_name, project_name);
@@ -2760,26 +2713,12 @@ void CreateMainTmpl() {
   fprintf( output, "#include  <systemc.h>\n");
   fprintf( output, "#include  \"%s.H\"\n\n", project_name);
 
-  if (ACEncoderFlag) {
-    if (ac_tgt_endian == 0)
-      fprintf( output, "#define USE_LITTLE_ENDIAN\n");
-    else
-      fprintf( output, "//#define USE_LITTLE_ENDIAN\n");
-    fprintf( output, "#include  \"ac_encoder.H\"\n");
-  }
-
   fprintf( output, "\n\n");
   fprintf( output, "int sc_main(int ac, char *av[])\n");
   fprintf( output, "{\n\n");
 
   COMMENT(INDENT[1],"%sISA simulator", INDENT[1]);               
   fprintf( output, "%s%s %s_proc1(\"%s\");\n\n", INDENT[1], project_name, project_name, project_name);
-
-  if (ACEncoderFlag) {
-    fprintf( output, "%s//!Encoder tools\n", INDENT[1]);
-    fprintf( output, "%sac_decoder_full *decoder = %s_proc1. %s_mc->ISA.decoder;\n", INDENT[1], project_name, project_name);
-    fprintf( output, "%sac_encoder(ac,av,decoder);\n\n", INDENT[1]);
-  }
 
   fprintf( output, "#ifdef AC_DEBUG\n");
   fprintf( output, "%sac_trace(\"%s_proc1.trace\");\n", INDENT[1], project_name);
@@ -3449,9 +3388,6 @@ void CreateMakefile(){
 
   if(ACStatsFlag)
     fprintf( output, "ac_stats.cpp ");
-
-  if(ACEncoderFlag)
-    fprintf( output, "ac_encoder.cpp ");
 
   fprintf( output, "\n\n");
 
@@ -4203,10 +4139,6 @@ void EmitInstrExec( FILE *output, int base_indent){
   fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent--]);
   fprintf(output, "%s} // if (!ac_annul_sig)\n\n", INDENT[base_indent]);
 
-  if( ACDasmFlag ){
-    fprintf( output, PRINT_DASM , INDENT[base_indent]);
-  }
-
   if( ACStatsFlag ){
     fprintf( output, "%sif((!ac_annul_sig) && (!ac_wait_sig)) {\n", INDENT[base_indent]);
     fprintf( output, "%sac_sim_stats.instr_executed++;\n", INDENT[base_indent+1]);
@@ -4387,10 +4319,6 @@ void EmitMultiCycleProcessorBhv( FILE *output){
   if( ACDebugFlag ){
     fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[3]);
     fprintf( output, PRINT_TRACE, INDENT[4]);
-  }
-
-  if( ACDasmFlag ){
-    fprintf( output, PRINT_DASM , INDENT[4]);
   }
 
   if( ACStatsFlag ){
