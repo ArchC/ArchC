@@ -160,10 +160,7 @@ void print_comment( FILE* output, char* description ){
 //////////////////////////////////////////
 /*!Main routine of  ArchC pre-processor.*/
 //////////////////////////////////////////
-int main( argc, argv )
-     int argc;
-     char **argv;
-{
+int main(int argc, char** argv) {
   extern char *project_name, *isa_filename;
   extern int wordsize;
   extern int fetchsize;
@@ -367,7 +364,6 @@ int main( argc, argv )
     CreateArchRefHeader();
     //Creating Resources Impl File
     CreateArchImpl();
-    /*CreateResourceImpl();*/
     CreateArchRefImpl();
     //Creating ISA Header File
     CreateISAHeader();
@@ -1718,135 +1714,6 @@ void CreateRegsHeader() {
   }
 }
 
-
-//!Create the header file for ArchC co-verification class.
-void CreateCoverifHeader(void){
- 
-  extern ac_sto_list *storage_list;
-  ac_sto_list *pstorage;
-
-  FILE *output;
-  char filename[] = "ac_verify.H";
-
-
-  
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-
-  print_comment( output, "ArchC Co-verification Class header file.");
-
-  fprintf( output, "#ifndef  _AC_VERIFY_H\n");
-  fprintf( output, "#define  _AC_VERIFY_H\n\n");
-        
-  fprintf( output, "#include  <fstream>\n");
-  fprintf( output, "#include  <list>\n");
-  fprintf( output, "#include  \"archc.H\"\n");
-  fprintf( output, "#include  \"ac_parms.H\"\n");
-  fprintf( output, "#include  \"ac_resources.H\"\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "\n\n");
-
-  COMMENT(INDENT[0],"ArchC Co-verification class.\n");
-  fprintf( output, "class ac_verify:public ac_resources {\n\n");
-  
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "%slog_list %s_changes;\n", INDENT[1], pstorage->name);
-  }
-
-  fprintf( output, "public:\n\n");
-
-  fprintf( output, "%sofstream output;\n", INDENT[1]);
-
-  //Printing log method.
-  COMMENT(INDENT[1],"Logging structural model changes.");
-
-  fprintf( output, "%svoid log( char *name, unsigned address, ac_word datum, double time ){\n\n", INDENT[1]);
-  fprintf( output, "%slog_list *pdevchg;\n", INDENT[2]);
-
-  fprintf( output, "%s", INDENT[2]);
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "if( !strcmp( name, \"%s\") )\n", pstorage->name);
-    fprintf( output, "%spdevchg = &%s_changes;\n", INDENT[3], pstorage->name);
-    fprintf( output, "%selse ", INDENT[2]);
-  }
-
-  fprintf( output, "{\n");
-
-  fprintf( output, "%sAC_ERROR(\"Logging aborted! Unknown storage device used for verification: \" << name);", INDENT[3]);
-  fprintf( output, "%sreturn;", INDENT[3]);
-  fprintf( output, "%s}\n", INDENT[2]);
-
-  fprintf( output, "\n\n");
-
-  fprintf( output, "%sadd_log( pdevchg, address, datum, time);\n", INDENT[2]);
-
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  //Printing check_clock method.
-  COMMENT(INDENT[1],"Checking device logs at a given simulation time");
-
-  fprintf( output, "%svoid check_clock( double time ){\n\n", INDENT[1]);
-
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "%smatch_logs( &%s, &%s_changes, time );\n", INDENT[2], pstorage->name, pstorage->name);
-  }
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  //Printing checker_timed method.
-  COMMENT(INDENT[1],"Finalize co-verification for timed model.");
-
-  fprintf( output, "%svoid checker_timed( double time ){\n\n", INDENT[1]);
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "%smatch_logs( &%s, &%s_changes, time );\n", INDENT[2], pstorage->name, pstorage->name);
-    fprintf( output, "%scheck_final( &%s, &%s_changes );\n", INDENT[2], pstorage->name, pstorage->name);
-  }
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  //Printing checker method.
-  COMMENT(INDENT[1],"Finalize co-verification for untimed model.");
-
-  fprintf( output, "%svoid checker( ){\n\n", INDENT[1]);
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "%scheck_final( &%s, &%s_changes );\n", INDENT[2], pstorage->name, pstorage->name);
-  }
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  //Printing class constructor.
-  COMMENT(INDENT[1],"Constructor");
-
-  fprintf( output, "%sac_verify( ){\n\n", INDENT[1]);
-  fprintf( output, "%soutput.open( \"ac_verification.log\");\n", INDENT[2]);
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  //Printing add_log method.
-  COMMENT(INDENT[1],"Logging structural model changes for a given device");
-
-  fprintf( output, "%svoid add_log( log_list *pdevchg, unsigned address, ac_word datum, double time );\n\n", INDENT[1]);
-
-  //Printing match_logs method.
-  COMMENT(INDENT[1],"Match device's behavioral and structural logs at a given simulation time");
-
-  fprintf( output, "%svoid match_logs( ac_storage *pdevice, log_list *pdevchange, double time );\n\n", INDENT[1]);
-
-  //Printing check_final method.
-  COMMENT(INDENT[1],"Check behavioral and structural logs for a given device in the end of simulation");
-
-  fprintf( output, "%svoid check_final( ac_storage *pdevice, log_list *pdevchange );\n\n", INDENT[1]);
-
-  fprintf( output, "};\n");
-
-  //END OF FILE!
-  fprintf( output, "#endif //_AC_VERIFY_H\n");
-  fclose(output);
-
-}
 
 //!Create the header file for ArchC statistics collection class.
 void CreateStatsHeader(void){
@@ -3382,6 +3249,8 @@ void CreateMakefile(){
   //Declaring FILES variable
   COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
   COMMENT_MAKE("They are stored in the archc/src/aclib directory");
+  fprintf( output, "ACFILES := ");
+
 
   if( HaveMemHier )
     fprintf( output, "ac_cache.cpp ac_mem.cpp ac_cache_if.cpp ");
@@ -3473,22 +3342,6 @@ void CreateMakefile(){
   fprintf( output, "distclean: sim_clean\n");
   fprintf( output, "\trm -f main.cpp Makefile.archc\n\n");
 
-}
-
-//!Create dummy function file
-void CreateDummy(int id, char* content) {
-
-  FILE *output;
-  char filename[30];
-  sprintf( filename, "ac_dummy%d.cpp", id);
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "Dummy function used if real one is missing.");
-  fprintf( output, "%s\n", content);
 }
 
 
