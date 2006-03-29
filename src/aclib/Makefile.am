@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-INCLUDES = -I. -I.. -I./ac_core -I./ac_decoder -I./ac_encoder -I./ac_gdb -I./ac_storage -I./ac_syscall -I./ac_utils -I$(SC_DIR)/include
+INCLUDES = -I. -I.. -I./ac_core -I./ac_decoder -I./ac_gdb -I./ac_storage -I./ac_syscall -I./ac_utils -I$(SC_DIR)/include
 
 
 if TLM_SUPPORT
@@ -14,7 +14,7 @@ endif
 
 
 ## Subdirectories
-SUBDIRS = ac_core ac_decoder ac_encoder ac_gdb ac_storage ac_syscall $(TLM_MODULE) ac_utils
+SUBDIRS = ac_core ac_decoder ac_gdb ac_storage ac_syscall $(TLM_MODULE) ac_utils
 
 ## The ArchC libraries
 lib_LTLIBRARIES = libarchc.la
