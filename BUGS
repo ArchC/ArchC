@@ -1,4 +1,4 @@
-KNOWN BUGS IN ARCHC 2.0 BETA
+KNOWN BUGS IN ARCHC 2.0 BETA1
 ----------------------------
 
  ** acsim:
@@ -8,3 +8,4 @@ KNOWN BUGS IN ARCHC 2.0 BETA
       - Memory hierarchy does not work (it's not supported);
       - acsim runs on a cycle-accurate model without warnings or errors, and produces garbage instead of the required errors (since acsim should not generate cycle-accurate simulators);
       - GDB can't find the address of the entry point of a program (_start on mips1), but except for this it seems to be working fine;
+      - accsim tool is not working
