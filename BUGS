@@ -1,11 +1,15 @@
 KNOWN BUGS IN ARCHC 2.0 BETA1
-----------------------------
+-----------------------------
 
  ** acsim:
-      - Option -g (debug) does not do much, it only makes simulators generate a trace file with the program counter;
-      - Option -s (stats) does not work (model doesn't compile);
-      - Option -vb (verbose) does not work (model doesn't compile);
-      - Memory hierarchy does not work (it's not supported);
-      - acsim runs on a cycle-accurate model without warnings or errors, and produces garbage instead of the required errors (since acsim should not generate cycle-accurate simulators);
-      - GDB can't find the address of the entry point of a program (_start on mips1), but except for this it seems to be working fine;
+      - Option -g (debug) does not do much, it only makes simulators generate
+          a trace file with the program counter
+      - Option -s (stats) does not work (model doesn't compile)
+      - Option -vb (verbose) does not work (model doesn't compile)
+      - Memory hierarchy does not work (it's not supported)
+      - acsim runs on a cycle-accurate model without warnings or errors, and
+          produces garbage instead of the required errors (since acsim should
+          not generate cycle-accurate simulators)
+
+ ** general:
       - accsim tool is not working

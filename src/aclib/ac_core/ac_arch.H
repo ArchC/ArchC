@@ -80,9 +80,9 @@ public:
     ac_mt_endian(0),
     ac_tgt_endian(0),
 #ifdef AC_DELAY
-    ac_pc("ac_pc", 0xffffffff, time_step),
+    ac_pc("ac_pc", 0, time_step),
 #else
-    ac_pc("ac_pc", 0xffffffff),
+    ac_pc("ac_pc", 0),
 #endif // AC_DELAY
     ac_start_addr(0),
     ac_instr_counter(0),
