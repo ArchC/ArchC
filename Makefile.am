@@ -5,6 +5,7 @@
 #DISTCHECK_CONFIGURE_FLAGS = "--with-systemc"
 
 EXTRA_DIST = archc.conf.m4 \
+             BUGS \
              acstone \
              doc
 
