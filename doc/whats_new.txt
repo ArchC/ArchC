@@ -4,7 +4,8 @@ WHAT'S NEW IN ARCHC 2.0
 Greetings, ArchC user!
 
 In this document, you will find a high-level description of the ArchC
-changes in this 2.0 beta version, relative to 1.6.x stable.
+changes in this 2.0 beta version, relative to 1.6.x stable, concerning
+the simulation tool.
 
 
 1. Speed improvements in interpreted simulator.

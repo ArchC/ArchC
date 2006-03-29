@@ -47,6 +47,8 @@ MORE INFO
   the same GCC version, otherwise you will get compilation problems.
 
   News about the latest version of ArchC can be found in the NEWS file.
+  Several documents which further information can be found in the 'doc'
+  subdirectory.
   
   You can find language overview, models, and documentation at
   http://www.archc.org
