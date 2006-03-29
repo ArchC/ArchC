@@ -32,21 +32,18 @@ AC_PROG_YACC
 # SystemC base and TLM library options
 SC_DIR=
 TLM_DIR=
-TLM_LIB="ac_tlm/libactlm.la"
-MAYBE_TLM=
-MAYBE_TLM_LIB=
 BINUTILS_DIR=
 
 AC_ARG_WITH(systemc,
             AC_HELP_STRING([--with-systemc=PATH],
                            [Sets the directory where SystemC is installed.]),
             [SC_DIR=$withval],
-            [AC_MSG_ERROR([Setting SystemC path via --with-systemc=PATH is required.])])
+            [AC_MSG_NOTICE([ArchC will be compiled without SystemC.])])
 
 AC_ARG_WITH(tlm,
             AC_HELP_STRING([--with-tlm=PATH],
                            [Sets the directory where the TLM libraries are installed.]),
-            [TLM_DIR=$withval; MAYBE_TLM=ac_tlm; MAYBE_TLM_LIB=${TLM_LIB};],
+            [TLM_DIR=$withval],
             [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
 
 AC_ARG_WITH(binutils,
@@ -57,9 +54,10 @@ AC_ARG_WITH(binutils,
 
 AC_SUBST(SC_DIR)
 AC_SUBST(TLM_DIR)
-AC_SUBST(MAYBE_TLM)
-AC_SUBST(MAYBE_TLM_OBJ)
 AC_SUBST(BINUTILS_DIR)
+
+AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
+AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
 
 # Checks for libraries.
 

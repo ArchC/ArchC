@@ -5,7 +5,8 @@
 #DISTCHECK_CONFIGURE_FLAGS = "--with-systemc"
 
 EXTRA_DIST = archc.conf.m4 \
-             acstone 
+             acstone \
+             doc
 
 ## Automake options
 AUTOMAKE_OPTIONS = foreign

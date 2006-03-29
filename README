@@ -21,14 +21,16 @@ In brief:
   1. enter ArchC root source tree (you may as well create a new
 directory for use in the building process)
   2. execute:
-    ./configure --with-systemc=<systemc-path>
+    ./configure 
   
   NOTES:
-    a) --with-systemc flag is -MANDATORY-. Other optional flags include:
+    a) optional flags:
+    --with-systemc=<systemc-path> -> NEEDED if simulators are to be
+                                     generated 
     --with-binutils=<binutils-path> -> if you plan to generate binary 
                                        utilities
     --with-tlm=<tlm-path> -> if you want the new ArchC TLM communication
-                               capabilities
+                             capabilities
 
     b) by default, the installation process will install the package in
     the /usr/local directory. If you want any other directory to be used,
