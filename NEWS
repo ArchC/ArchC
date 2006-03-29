@@ -8,3 +8,18 @@ script (assembler and linker generation)
 * Assembler generation is now part of binary utilities
 
 * Linker generation and integration with assembler added
+
+* acsim simulation generation tool now only generates functional simulators
+   (there will be a separate tool for cycle-accurate, called actsim)
+
+* acsim-generated functional simulators are now up to 3~5 times faster
+   compared to ArchC 1.6
+
+* self-contained acsim-generated functional simulators: it's possible to
+   instantiate multiple simulators and integrate them to your system model
+   written in pure SystemC
+
+* support for SystemC TLM communication: it is possible to declare TLM
+   initiator ports on your processor, as well as interrupt ports
+
+* preliminary interrupt handling mechanism support

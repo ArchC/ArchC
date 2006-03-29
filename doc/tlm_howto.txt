@@ -12,7 +12,7 @@ HOW-TO: ARCHC 2.0 TLM FEATURES
 AC_ARCH(mips1){
   //ac_cache    DM:5M;
   ac_tlm_port DM:5M;
-  ac_regbank  RB:34;
+  ac_regbank  RB:32;
 //...
 
    We substituted the ac_cache (main memory) with an ac_tlm_port
@@ -89,7 +89,7 @@ ac_tlm_rsp ext_module::transport(const ac_tlm_req& req);
 AC_ARCH(mips1){
 
   ac_cache   DM:5M;
-  ac_regbank RB:34;
+  ac_regbank RB:32;
 
   ac_tlm_intr_port inta; // Add this line
 //...
