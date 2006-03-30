@@ -24,6 +24,21 @@
 /* http://www.lsc.ic.unicamp.br                         */
 /********************************************************/
 
+/*! \file main.cpp
+ * \brief ArchC binary utilities generator main file
+ *
+ * This file drives the generation of the GNU binutils target-dependent files.
+ * The main libraries and tools are: BFD, Opcodes, gas, ld
+ *
+ */
+
+/*! \defgroup binutils_group The ArchC binary utilities generator
+ *
+ * The ArchC binutils generator is composed of severals sub-modules, each
+ * dealing with a specific component of files generation.
+ *
+ * @{
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,9 +50,6 @@
 #include "gas.h"
 
 static int Createm4File();
-
-
-
 
 
 /*
@@ -306,3 +318,6 @@ static int Createm4File()
 
   return 1;
 }
+
+/** @} */
+

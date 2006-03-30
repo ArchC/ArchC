@@ -1,4 +1,16 @@
+/* ex: set tabstop=2 expandtab: */
 
+/*! \file utils.h
+ * \brief Utilities routines for the acbinutils module
+ *
+ * \defgroup utils_group Utilities routines
+ * \ingroup binutils_group
+ *
+ * This module implements common routines shared by the 
+ * binary utilities generation files.
+ *  
+ * @{
+ */
 
 #ifndef _UTILS_H_
 #define _UTILS_H_
@@ -28,3 +40,5 @@ extern ac_dec_format *format_ins_list;
 
 
 #endif /* _UTILS_H_ */
+
+/* @} */
