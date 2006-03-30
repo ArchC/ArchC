@@ -4571,5 +4571,9 @@ void ReadConfFile(){
       }
     }
   }
+
+  fclose(conf_file);
+
+  free(conf_filename_local);
   free(conf_filename_global);
 }

@@ -187,6 +187,7 @@ int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* st
 
   /* Instruction formats require extra processing,
   to populate the common field list. */
+  pf = NULL;
   if (is_instr) {
     if (common_instr_field_list) {
       /* We already have candidate fields. Check if they are present in all formats. */
@@ -397,6 +398,7 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
   pstorage->next = NULL;
   pstorage->higher = NULL;
   pstorage->level = 0;
+  pstorage->width = 0;
 
   if(  type == ICACHE  ){
     fetch_device = pstorage;
