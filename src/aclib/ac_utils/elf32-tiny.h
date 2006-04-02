@@ -85,6 +85,25 @@ typedef struct
 #define	ELFMAG		"\177ELF"
 
 
+/* Legal values for e_type (object file type).  */
+
+#define ET_NONE		0		/* No file type */
+#define ET_REL		1		/* Relocatable file */
+#define ET_EXEC		2		/* Executable file */
+#define ET_DYN		3		/* Shared object file */
+#define ET_CORE		4		/* Core file */
+#define	ET_NUM		5		/* Number of defined types */
+#define ET_LOOS		0xfe00		/* OS-specific range start */
+#define ET_HIOS		0xfeff		/* OS-specific range end */
+#define ET_LOPROC	0xff00		/* Processor-specific range start */
+#define ET_HIPROC	0xffff		/* Processor-specific range end */
+
+
+/* Legal values for e_machine (architecture).  */
+
+#define EM_NONE		 0		/* No machine */
+
+
 /* Section header.  */
 
 typedef struct
