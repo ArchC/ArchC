@@ -1169,6 +1169,9 @@ void CreateISAHeader() {
 
   fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
 
+  /* current instruction ID */
+  fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
+  
   //Emiting Constructor.
   COMMENT(INDENT[1], "Constructor.");
   fprintf( output,"%s%s_isa(%s_arch& ref) : %s_arch_ref(ref) {\n", INDENT[1],
@@ -1179,6 +1182,14 @@ void CreateISAHeader() {
 
   /* Closing constructor declaration. */
   fprintf( output,"%s}\n\n", INDENT[1] );
+
+  /* getter methods for current instruction */
+  fprintf(output, "%sinline char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
+  fprintf(output, "%sinline char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
+  fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
+  fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
+  fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
+  fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", INDENT[1]);
 
   /* Instruction Behavior Method declarations */
   /* instruction */
@@ -3940,6 +3951,9 @@ void EmitInstrExec( FILE *output, int base_indent){
   
   fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
 
+  fprintf(output, "%sif (!ac_annul_sig) {\n", INDENT[base_indent++]);
+  fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent++]);
+
   //Pipelined archs can annul an instruction through pipelining flushing.
   if(stage_list || pipe_list ){
     fprintf( output, "%sISA._behavior_instruction( (ac_stage_list) id );\n", INDENT[base_indent]);
@@ -3947,7 +3961,6 @@ void EmitInstrExec( FILE *output, int base_indent){
 /*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
   }
   else{
-    fprintf(output, "%sif (!ac_annul_sig) {\n", INDENT[base_indent++]);
     fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
     /* common_instr_field_list has the list of fields for the generic instruction. */
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
