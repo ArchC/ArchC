@@ -336,11 +336,6 @@ public:
       this->dec_cache_size = addr;
 
     input.close();
-
-    // copies Data[] to storage
-    storage->write(Data, 0, 8, storage->get_size());
-    delete[] Data;
-
   }
 
   /// ***** EDIT *****
