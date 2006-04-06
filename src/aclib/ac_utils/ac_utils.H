@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdint.h>
 
 //Fix for Cygwin users, that do not have elf.h
 #ifdef __CYGWIN__
@@ -82,7 +83,41 @@ void ac_init_app( int ac, char* av[]);
 #define ac_trace( f )      extern ofstream trace_file; extern bool ac_do_trace; ac_do_trace = 1; trace_file.open( f )
 #define ac_close_trace     trace_file.close
 
+// byte_swap functions, with special assembly-language optimizations for the
+// i486 or greater processors.
+#ifdef __i486__
+inline uint16_t byte_swap(uint16_t value) {
+  asm ("rol $8, %0"
+       : "=r" (value)
+       : "r"  (value)
+      );
+  return value;
+}
 
+inline uint32_t byte_swap(uint32_t value) {
+  asm ("bswap %0"
+       : "=r" (value)
+       : "r"  (value)
+      );
+  return value;
+}
+#endif // __i486__
+
+template <typename T>
+inline T byte_swap(T value) {
+  unsigned char aux;
+  T result = 0;
+  for (int i = 0; i < sizeof(T); i++) {
+    aux = value;
+    value  >>= 8;
+    result <<= 8;
+    result |=  aux;
+  }
+  return result;
+}
+
+// convert_endian is redundant, the idea is to use byte_swap for all
+// endianness conversions in the future.
 unsigned int convert_endian(unsigned int size, unsigned int num, bool match_endian);
 
 //Loading binary application

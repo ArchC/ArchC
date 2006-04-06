@@ -53,43 +53,6 @@ private:
   ac_Hword aux_Hword;
   uint8_t aux_byte;
 
-  inline uint32_t byte_swap(uint32_t value) {
-#ifdef __I486_OPT_
-    asm ("bswap %0"
-	 : "=r"(value)
-	 : "r"(value)
-	 );
-    return value;
-#else
-    return  ((value  & 0xFF000000) >> 24)        |
-            (((value & 0x00FF0000) >> 16) << 8)  |
-            (((value & 0x0000FF00) >> 8)  << 16) |
-            ((value  & 0x000000FF) << 24);
-#endif
-  }
-
-  inline uint64_t byte_swap(uint64_t value) {
-    uint32_t value_low  = (uint32_t) (((uint32_t*)(&value))[0]);
-    uint32_t value_high = (uint32_t) (((uint32_t*)(&value))[1]);
-    return ((uint64_t) byte_swap(value_low)) | (((uint64_t) byte_swap(value_high)) << 32);
-  }
-
-  inline uint32_t half_swap(uint32_t value) {
-#ifdef __I486_OPT_
-    asm ("rol $16, %0"
-	 : "=r"(value)
-	 : "r"(value)
-	 );
-    return value;
-#else
-    return (value >> 16) | (value << 16);
-#endif
-  }
-
-  inline uint64_t half_swap(uint64_t value) {
-    return (value >> 32) | (value << 32);
-  }
-
 protected:
   typedef list<change_log<ac_word> > log_list;
 #ifdef AC_UPDATE_LOG
