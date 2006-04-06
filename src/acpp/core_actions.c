@@ -206,7 +206,7 @@ int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* st
 
         if (!pfield) { /* Did not find. Delete pf from pgenfield. */
           /* Updating list tail */
-          if (pf->next = NULL) {
+          if (pf->next == NULL) {
             common_instr_field_list_tail = ppf;
           }
           if (ppf) {
