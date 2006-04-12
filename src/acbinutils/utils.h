@@ -4,7 +4,7 @@
  * \brief Utilities routines for the acbinutils module
  *
  * \defgroup utils_group Utilities routines
- * \ingroup binutils_group
+ * \ingroup binutils_group gas_group bfd_group opcodes_group
  *
  * This module implements common routines shared by the 
  * binary utilities generation files.

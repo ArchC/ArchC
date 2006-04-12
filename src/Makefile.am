@@ -1,10 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 
-## Subdirectories
+
+EXTRA_DIST = main.dox
+
 
 if SYSTEMC_SUPPORT
   SC_DEP_DIRS = aclib acsim accsim
 else
   SC_DEP_DIRS =
 endif
-SUBDIRS = acpp $(SC_DEP_DIRS) acbinutils
+
+SUBDIRS = replace acpp $(SC_DEP_DIRS) acbinutils

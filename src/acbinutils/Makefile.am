@@ -6,7 +6,7 @@ EXTRA_DIST = acbingen.sh.in \
              binutils
 
 ## Includes
-INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
+INCLUDES = -I. -I$(top_srcdir)/src/replace -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
 
 AM_CFLAGS = -DACVERSION=\"$(VERSION)\"
 
@@ -50,7 +50,7 @@ FILES_TO_COPY = \
 
 bin_PROGRAMS = bmdsfg 
 bmdsfg_SOURCES = main.c utils.c utils.h opcodes.c opcodes.h bfd.c bfd.h gas.c gas.h 
-bmdsfg_LDADD = ../acpp/libacpp.la
+bmdsfg_LDADD = ../acpp/libacpp.la ../replace/libreplace.la
 
 edit = sed \
 	-e 's,@pkgdatadir\@,$(pkgdatadir),g' \

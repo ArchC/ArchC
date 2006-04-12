@@ -49,14 +49,6 @@
 #include "bfd.h"
 #include "gas.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#ifndef GETOPT_LONG_ONLY
-#define getopt_long_only getopt_long
-#endif
-
 
 static int Createm4File();
 

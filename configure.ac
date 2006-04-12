@@ -8,6 +8,7 @@ AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
 AC_CONFIG_SRCDIR([src/acsim/acsim.c])
+AC_CONFIG_LIBOBJ_DIR([src/replace])
 
 # Getting system configuration - copy from SystemC
 AC_CANONICAL_HOST
@@ -80,10 +81,35 @@ AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([dup2 memset socket strchr strdup strerror strstr strtol] getopt_long_only)
+AC_CHECK_FUNCS([dup2 memset socket strchr strdup strerror strstr strtol])
+
+AC_CHECK_FUNC([getopt_long_only],, 
+[
+  AC_LIBOBJ(getopt) 
+  AC_LIBOBJ(getopt1)
+])
 
 # Configuration files
-AC_CONFIG_FILES([Makefile Doxyfile src/Makefile src/acpp/Makefile src/aclib/Makefile src/aclib/ac_core/Makefile src/aclib/ac_decoder/Makefile src/aclib/ac_gdb/Makefile src/aclib/ac_storage/Makefile src/aclib/ac_syscall/Makefile src/aclib/ac_tlm/Makefile src/aclib/ac_utils/Makefile src/acsim/Makefile src/accsim/Makefile src/acbinutils/Makefile src/acbinutils/binutils/gas/config/tc-xxxxx.c])
+AC_CONFIG_FILES(
+[
+  Makefile 
+  Doxyfile 
+  src/Makefile 
+  src/replace/Makefile 
+  src/acpp/Makefile 
+  src/aclib/Makefile 
+  src/aclib/ac_core/Makefile 
+  src/aclib/ac_decoder/Makefile 
+  src/aclib/ac_gdb/Makefile 
+  src/aclib/ac_storage/Makefile 
+  src/aclib/ac_syscall/Makefile 
+  src/aclib/ac_tlm/Makefile 
+  src/aclib/ac_utils/Makefile 
+  src/acsim/Makefile 
+  src/accsim/Makefile 
+  src/acbinutils/Makefile 
+  src/acbinutils/binutils/gas/config/tc-xxxxx.c 
+])
 
 # Output
 AC_OUTPUT
