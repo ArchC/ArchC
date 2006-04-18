@@ -7,6 +7,24 @@
 #include `"elf/'___arch_name___`.h"'
 #include "libiberty.h"
 
+
+static reloc_howto_type* ___arch_name___`_reloc_type_lookup' (bfd *, bfd_reloc_code_real_type);
+static void ___arch_name___`_elf_info_to_howto' (bfd *, arelent *, Elf_Internal_Rela *);
+
+
+/* ArchC generic relocation routine prototype*/
+static bfd_reloc_status_type
+bfd_elf_archc_reloc (bfd *abfd,
+             arelent *reloc_entry,
+             asymbol *symbol,
+             void *data,
+             asection *input_section,
+             bfd *output_bfd,
+             char **error_message ATTRIBUTE_UNUSED);
+
+static long long getbits(unsigned int bitsize, char *location, int endian);
+static void putbits(unsigned int bitsize, char *location, long long value, int endian);
+
 /* carry relocation function prototype */
 bfd_reloc_status_type
 `_bfd_'___arch_name___`_elf_carry_reloc' (bfd *abfd, arelent *reloc_entry, asymbol *symbol,
@@ -81,7 +99,232 @@ bfd_reloc_status_type
     reloc_entry->addend += (vallo + mask1) & mask2;
   }
 
-  return bfd_elf_generic_reloc (abfd, reloc_entry, symbol, data, input_section, output_bfd, error_message);
+  return bfd_elf_archc_reloc (abfd, reloc_entry, symbol, data, input_section, output_bfd, error_message);
+}
+
+
+static bfd_reloc_status_type
+bfd_elf_archc_reloc (bfd *abfd,
+             arelent *reloc_entry,
+             asymbol *symbol,
+             void *data,
+             asection *input_section,
+             bfd *output_bfd,
+             char **error_message ATTRIBUTE_UNUSED)
+{
+  bfd_vma relocation;
+  bfd_size_type octets = reloc_entry->address * bfd_octets_per_byte (abfd); 
+  bfd_vma output_base = 0;
+  reloc_howto_type *howto = reloc_entry->howto;
+  asection *reloc_target_output_section;
+//  asymbol *symbol = *(reloc_entry->sym_ptr_ptr);
+        
+   
+  /*
+   * Taken from bfd_elf_generic_reloc
+   * It is basicly a short circuit if the output is relocatable
+   * 
+   * TODO: maybe print an error message if output is relocatable?
+   */
+  if (output_bfd != NULL
+      && (symbol->flags & BSF_SECTION_SYM) == 0
+      && (! reloc_entry->howto->partial_inplace
+      || reloc_entry->addend == 0))
+     {
+       reloc_entry->address += input_section->output_offset;
+       return bfd_reloc_ok;
+     }
+  
+  /*
+   * This part is mainly copied from bfd_perform_relocation, but
+   * here we use generic get/put bits
+   * Field 'size' of HOWTO structure now indicates the -bit size-
+   */
+
+  /* Is the address of the relocation really within the section?  */
+  if (reloc_entry->address > bfd_get_section_limit (abfd, input_section))
+    return bfd_reloc_outofrange;
+
+  /* Work out which section the relocation is targeted at and the
+   * initial relocation command value.  */
+
+  /* Get symbol value.  (Common symbols are special.)  */
+  if (bfd_is_com_section (symbol->section))
+    relocation = 0;
+  else
+    relocation = symbol->value;
+
+  reloc_target_output_section = symbol->section->output_section;
+
+  /* Convert input-section-relative symbol value to absolute.  */
+  if ((output_bfd && ! howto->partial_inplace)
+      || reloc_target_output_section == NULL)
+    output_base = 0;
+  else
+    output_base = reloc_target_output_section->vma;
+   
+  relocation += output_base + symbol->section->output_offset;
+
+  /* Add in supplied addend.  */
+  relocation += reloc_entry->addend;
+
+  /* Here the variable relocation holds the final address of the
+   * symbol we are relocating against, plus any addend.  
+   */
+
+
+  if (howto->pc_relative) {
+    relocation -= input_section->output_section->vma + input_section->output_offset;
+     
+    if (howto->pcrel_offset)
+      relocation -= reloc_entry->address;
+  }
+     
+  if (output_bfd != NULL) {
+    /* TODO: deal with relocatable output?!? */
+  }
+  else 
+    reloc_entry->addend = 0;
+     
+ /*
+  * Overflow checking is NOT being done!!! 
+  */
+
+
+
+  relocation >>= (bfd_vma) howto->rightshift;
+
+  /* Shift everything up to where it's going to be used.  */
+  relocation <<= (bfd_vma) howto->bitpos;
+
+  /*  
+   * Now the real stuff... get, apply and put back the relocation from/into 
+   * object file image
+   */
+
+  
+#define DOIT(x) \
+     x = ( (x & ~howto->dst_mask) | (((x & howto->src_mask) +  relocation) & howto->dst_mask))
+  
+  long long x;
+
+  x = getbits(howto->size, (char *) data + octets , ___endian_val___);
+
+  DOIT (x);
+
+  putbits(howto->size, (char *) data + octets, x, ___endian_val___); 
+
+  
+  
+  return bfd_reloc_ok;
+}
+
+
+
+/*
+ * 1 = big, 0 = little
+ *
+ * limitations:
+ * . endianess affects 8-bit bytes
+ * . maximum word size: 64-bit
+ */
+static long long getbits(unsigned int bitsize, char *location, int endian)
+{
+  long long data = 0;
+  unsigned int number_bytes = (bitsize / 8);
+  unsigned int bits_remain = bitsize % 8;
+	
+  if (bits_remain) number_bytes++;
+
+  int index, inc;
+  if (endian == 1) { /* big */
+    index = 0;
+    inc = 1;		
+  }
+  else { /* little */
+    index = number_bytes - 1;
+    inc = -1;
+  }
+	
+  while (number_bytes) {
+    data = (data << 8) | (unsigned char)location[index];
+		
+    index += inc;
+    number_bytes--;
+  }	
+
+/*
+ * if bitsize is not multiple of 8 then clear/pack the remaining bits
+ */
+  long long mask = 0;
+  for (; bitsize; bitsize--) 
+    mask = (mask << 1) | 1;
+	
+  if (bits_remain) {
+    if (endian == 1) {
+      long long temp = data >> (8 - bits_remain);
+      temp &= (mask << bits_remain);
+			
+      data = temp | (data & ~(mask << bits_remain));
+    }
+  }
+	
+  return data & mask;
+}
+
+
+static void putbits(unsigned int bitsize, char *location, long long value, int endian)
+{
+  unsigned int number_bytes = (bitsize / 8);
+  unsigned int bits_remain = bitsize % 8;
+  unsigned char bytes[8];
+  unsigned int i;
+  int index;
+  unsigned char mask = 0;
+
+  /*
+	* Fill the bytes array so as not to depend on the host endian
+	*
+	* bytes[0] -> least significant byte
+	*/
+  for (i=0; i<8; i++) 
+    bytes[i] = (value & (0xFF << (i*8))) >> 8*i;
+
+  if (bits_remain) {
+    for (i=0; i<bits_remain; i++)
+	   mask = (mask << 1) | 1;	
+  }
+	 
+  if (endian == 0) { /* little */
+    index = 0;
+
+    while ((unsigned int)index != number_bytes) {    
+      location[index] = bytes[index];
+	  
+      index++;
+    }
+
+	 if (bits_remain) 
+     location[number_bytes] = (location[number_bytes] & ~mask) | (bytes[number_bytes] & mask);
+	 	 
+  }
+  else { /* big */
+    index = number_bytes - 1;
+	
+    i = 0;	 
+    while (index >= 0) {    
+      if (bits_remain) 
+        location[i] = ((bytes[index+1] & mask) << (8-bits_remain)) | (bytes[index] >> bits_remain);
+      else		 
+        location[i] = bytes[index];
+
+      i++;
+      index--;
+    }
+
+    if (bits_remain) 
+      location[number_bytes] = (bytes[0] & mask) | (location[number_bytes] & ~mask);
+  }	
 }
 
 

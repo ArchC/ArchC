@@ -87,7 +87,7 @@ int CreateRelocHowto(const char *reloc_howto_filename)
   if ((output = fopen(reloc_howto_filename, "w")) == NULL) 
     return 0;
 
-  fprintf(output, "%sHOWTO (R_%s_NONE, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_generic_reloc, \"R_%s_NONE\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
+  fprintf(output, "%sHOWTO (R_%s_NONE, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_archc_reloc, \"R_%s_NONE\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
   
   unsigned reloc_id = 1;
   ac_relocation_type *relocation = find_relocation_by_id(reloc_id);
@@ -104,7 +104,7 @@ int CreateRelocHowto(const char *reloc_howto_filename)
       relocation->pc_relative ? "TRUE" : "FALSE",
       relocation->bitpos,
       "complain_overflow_dont",
-      relocation->uses_carry ? relocation_function : "bfd_elf_generic_reloc",
+      relocation->uses_carry ? relocation_function : "bfd_elf_archc_reloc",
       relocation->name,
       "FALSE", // PENDENTE. Isso mesmo?
       0, // PENDENTE - Usar o mesmo do de baixo ou 0?
@@ -115,13 +115,13 @@ int CreateRelocHowto(const char *reloc_howto_filename)
     relocation = find_relocation_by_id(reloc_id);
   }
   // Generic data relocations
-  fprintf(output, "%sHOWTO (R_%s_8,  0, 0,  8, FALSE, 0, complain_overflow_bitfield, bfd_elf_generic_reloc,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield, bfd_elf_generic_reloc,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield, bfd_elf_generic_reloc,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_8,  0, 8,  8, FALSE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_16, 0, 16, 16, FALSE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_32, 0, 32, 32, FALSE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
 
-  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 0,  8, TRUE, 0, complain_overflow_bitfield, bfd_elf_generic_reloc,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield, bfd_elf_generic_reloc,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, bfd_elf_generic_reloc,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 8,  8, TRUE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 16, 16, TRUE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 32, 32, TRUE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
 
   fclose(output);
   return 1;
@@ -216,8 +216,12 @@ static void process_instruction_relocation(ac_asm_insn *asml)
        * reloc_size
        * - size of the relocation field
        *   it is the size of the instruction
+       *
+       *   NOTE: Since we've made our own relocation routines, this value
+       *   is being used as the bit size
        */
-      unsigned reloc_size = log_table[get_insn_size(asml)/8];
+      //unsigned reloc_size = log_table[get_insn_size(asml)/8];
+      unsigned reloc_size = get_insn_size(asml);
 
       /*
        * bitsize
