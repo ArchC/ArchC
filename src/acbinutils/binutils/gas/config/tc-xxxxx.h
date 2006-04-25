@@ -10,6 +10,8 @@
 #define TARGET_FORMAT `"elf32-'___arch_name___`"'
 #define WORKING_DOT_WORD
 #define LOCAL_LABELS_FB 1
+#define LOCAL_LABELS_DOLLAR 1
+#define LOCAL_LABEL_PREFIX '$'
 
 typedef struct fix_addend {
   unsigned long insn_format_id;

@@ -56,7 +56,7 @@ static int get_expression(expressionS *, char **);
 static int get_operand(expressionS *ep, char **str);
 static int ac_valid_symbol(char *ac_symbol, char *parser_symbol, 
                            long int *value);
-static void ac_parse_operands(char *s_pos, char *args);
+static int ac_parse_operands(char *s_pos, char *args);
 static void apply_hi_operator(unsigned long *value, 
                               unsigned long field_size);
 static void sign_extend(unsigned long *value, int bit_size, 
@@ -201,6 +201,8 @@ md_begin()
 }
 
 
+#define KEEP_GOING 1
+#define STOP_INSN  0
 
 void 
 md_assemble(char *str)
@@ -264,8 +266,11 @@ md_assemble(char *str)
     out_insn.op_num = 0;    
     out_insn.is_pseudo = insn->pseudo_idx;
     insn_error = NULL;
-    ac_parse_operands(s_pos, buffer); /* parse the operands */
+    int go_next = ac_parse_operands(s_pos, buffer); /* parse the operands */
 
+    if (go_next == STOP_INSN)
+      break;
+    
     /* try the next insn (overload) if the current failed */
     if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
         (!strcmp(insn->mnemonic, insn[1].mnemonic))) 
@@ -305,7 +310,7 @@ md_assemble(char *str)
   an instruction.
 */  
 static 
-void ac_parse_operands(char *s_pos, char *args)
+int ac_parse_operands(char *s_pos, char *args)
 {
   /* an ArchC symbol value (gas symbols use expressionS) */
   long int symbol_value; 
@@ -339,7 +344,7 @@ void ac_parse_operands(char *s_pos, char *args)
     if (ISSPACE(*args)){
       if (!ISSPACE(*s_pos)) {
         insn_error = "invalid instruction syntax";
-        return;
+        return KEEP_GOING;
       }
       args++;
       s_pos++;
@@ -356,7 +361,7 @@ void ac_parse_operands(char *s_pos, char *args)
        like "add $03,$04,$05" */
     if (*s_pos == '\0') { 
       insn_error = "invalid instruction syntax";
-      return;
+      return KEEP_GOING;
     }
 
     /*
@@ -429,35 +434,58 @@ void ac_parse_operands(char *s_pos, char *args)
 
         switch (bi_type & BI_BASE_MASK) {
 
-            /* Expression operand - 'expr' */
+          /* Expression operand - 'expr' */
           case (BI_BASE_EXP_BIT):
                 /* only suporting one symbol in an expression */
 
-            if (!get_expression(&ref_expr, &s_pos)) return;
+            if (!get_expression(&ref_expr, &s_pos)) 
+              return KEEP_GOING;
 
-            if (ref_expr.X_op == O_symbol) {   /* X_add_symbol + X_add_number */
-              create_fixup(bi_type, field_id1, reloc_id_f1);
-              if (need_f2) create_fixup(bi_type, field_id2, reloc_id_f2);
-            }
-            else if (ref_expr.X_op == O_constant) {/* X_add_number */
-              if (need_f2) {
-                encode_cons_field(ref_expr.X_add_number >> get_field_size(out_insn.format, field_id2), bi_type, field_id1);
-                encode_cons_field(ref_expr.X_add_number, bi_type, field_id2);
-              }
-              else encode_cons_field(ref_expr.X_add_number, bi_type, field_id1);
-            }    
-            else {
-              insn_error = "invalid expression";
-              return;
+            switch (ref_expr.X_op) {
+              case O_symbol:  /* X_add_symbol + X_add_number */
+                create_fixup(bi_type, field_id1, reloc_id_f1);
+                if (need_f2) 
+                  create_fixup(bi_type, field_id2, reloc_id_f2);
+                break;
+                
+              case O_constant: /* X_add_number */
+                if (need_f2) {
+                  encode_cons_field(ref_expr.X_add_number >> get_field_size(out_insn.format, field_id2), bi_type, field_id1);
+                  encode_cons_field(ref_expr.X_add_number, bi_type, field_id2);
+                }
+                else encode_cons_field(ref_expr.X_add_number, bi_type, field_id1);                
+                break;
+
+              case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
+              case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
+              case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
+              case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
+              case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
+              case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
+              case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
+              case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
+              case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
+              case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
+              case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
+              case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
+                insn_error = "operation not supported with relocatable symbol";
+                return STOP_INSN;
+                break;
+
+             default:
+                insn_error = "invalid expression";
+                return KEEP_GOING;
+                
             }
           break;
+
 
           /* Immediate operand - 'imm' */
           case (BI_BASE_IMM_BIT):
             in_imm_mode = 1;
             if (!get_operand(&ref_expr, &s_pos)) {
               in_imm_mode = 0;
-              return;
+              return KEEP_GOING;
             }
             in_imm_mode = 0;
 
@@ -470,11 +498,11 @@ void ac_parse_operands(char *s_pos, char *args)
 
           /* Address operand - 'addr' */
           case (BI_BASE_ADDR_BIT):
-            if (!get_expression(&ref_expr, &s_pos)) return;
+            if (!get_expression(&ref_expr, &s_pos)) return KEEP_GOING;
 
             if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
               insn_error = "invalid operand, expected a symbolic address";
-              return;
+              return KEEP_GOING;
             }
 
             create_fixup(bi_type, field_id1, reloc_id_f1);
@@ -502,7 +530,7 @@ void ac_parse_operands(char *s_pos, char *args)
 
           if (!ac_valid_symbol(op_buf, s_pos, &symbol_value)) {
             insn_error = "unrecognized operand symbol";
-            return;
+            return KEEP_GOING;
           }
 
           /* s_pos string has been recognized, so advance it till its end */
@@ -525,12 +553,12 @@ void ac_parse_operands(char *s_pos, char *args)
 
           if (*s_start == *s_pos) { /* add ,$3,$2 */
             insn_error = "operand missing";
-            return;
+            return KEEP_GOING;
           }
 
           if (*s_pos == '\0') { /* add $2 */
             insn_error = "operand missing";
-            return;
+            return KEEP_GOING;
           }
 
              /* we dont need to treat the case where s == ' ' because we know s was not pointing to a ' ' 
@@ -544,7 +572,7 @@ void ac_parse_operands(char *s_pos, char *args)
                 //      printf("-- %s --\n", op_buf);
             insn_error = "unrecognized operand symbol";
             *s_pos = save_c;
-            return;
+            return KEEP_GOING;
           }
 
           *s_pos = save_c;                
@@ -577,7 +605,7 @@ void ac_parse_operands(char *s_pos, char *args)
 
       if (*s_pos != *args) {  
         insn_error = "invalid instruction syntax";
-        return;
+        return KEEP_GOING;
       }
       args++;
       s_pos++;
@@ -588,8 +616,10 @@ void ac_parse_operands(char *s_pos, char *args)
 
   if (*s_pos != '\0') {  /* have add $3,$2,$2[more] - expected add $3,$2,$2 */
     insn_error = "invalid instruction syntax";
-    return;
+    return KEEP_GOING;
   }
+
+  return KEEP_GOING;
 }
 
 
