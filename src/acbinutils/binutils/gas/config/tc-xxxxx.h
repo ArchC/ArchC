@@ -26,6 +26,9 @@ typedef struct fix_addend {
 #define TC_FIX_TYPE archc_fix_addend
 #define TC_INIT_FIX_DATA(fixP)
 
+extern char *___arch_name___`_canonicalize_symbol_name'(char *c);
+#define tc_canonicalize_symbol_name(x) ___arch_name___`_canonicalize_symbol_name(x)'
+
 extern int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c);
 #define md_parse_name(x, y, z) ___arch_name___`_parse_name(x, y, z)'
 
