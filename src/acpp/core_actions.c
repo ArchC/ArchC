@@ -3,6 +3,8 @@
 */
 
 #include "core_actions.h"
+#include <ctype.h>
+#include <string.h>
 
 static ac_dec_instr *instr_list_tail;
 static ac_sto_list *storage_list_tail;
@@ -656,3 +658,14 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
     
   return sum_size;
 }
+
+void str_upper(char* str)
+{
+  int i = 0;
+  int length = strlen(str);
+
+  for (i = 0; i < length; i++) {
+    str[i] = toupper(str[i]);
+  }
+}
+

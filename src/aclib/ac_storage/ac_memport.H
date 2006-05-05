@@ -86,9 +86,6 @@ public:
     if (!this->ac_mt_endian) {
       uint32_t oset_addr = address % sizeof(ac_word);
       storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
-#ifdef AC_STATS
-      ac_sim_stats.add_access(name);
-#endif      
       aux_word = byte_swap(aux_word);
       return (uint8_t) (((uint8_t*)(&aux_word))[address % sizeof(ac_word)]);
     }
@@ -106,9 +103,6 @@ public:
     if (!this->ac_mt_endian) {
       uint32_t oset_addr = address % sizeof(ac_word);
       storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
-#ifdef AC_STATS
-      ac_sim_stats.add_access(name);
-#endif
       return (ac_Hword) (((ac_Hword*)(&aux_word))[oset_addr == 0]);
     }
     else {

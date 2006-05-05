@@ -182,7 +182,9 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name);  //!< Creates th
 void CreateProcessorHeader(void);                 //!< Creates the header file for the processor module.
 void CreateParmHeader(void);                      //!< Creates the header file for ArchC common parameters.
 void CreateRegsHeader(void);                      //!< Creates the header file for ArchC formatted registers.
-void CreateStatsHeader(void);                     //!< Creates the header file for ArchC statistics collection class.    
+void CreateStatsHeaderTmpl(void);                     //!< Creates the header file for ArchC statistics collection class.    
+//!Create the implementation file for ArchC statistics collection class.
+void CreateStatsImplTmpl();
 void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls. 
 void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
 void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.

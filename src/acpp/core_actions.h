@@ -72,6 +72,7 @@ extern int add_storage( char* name, unsigned size, ac_sto_types type, char *type
 extern int add_dec_list( ac_dec_instr *pinstr, char* name, int value, char *error_msg);
 extern ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr);
 extern void add_parms(char *name, int value);
+extern void str_upper(char* str);
    
 /*@}*/
 

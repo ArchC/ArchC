@@ -81,6 +81,7 @@ static int parse_error = 0;            //!< Indicates parse error occurred.
 
 /* global */
 char *project_name;                   //!< Name of the ArchC project being processed.
+char *upper_project_name;             //!< Name of the ArchC project being processed, converted to uppercase.
 char *isa_filename;                   //!< Name for the isa class file.
 int wordsize;                         //!< Size of the word type in bits for the current project.
 int fetchsize;                        //!< Size of the fetch word type in bits for the current project.
@@ -651,7 +652,12 @@ archdec: AC_ARCH LPAREN ID RPAREN LBRACE
 
       /* Middle rule action to start emiting ARCH module declaration. */
         project_name = malloc(strlen($3)+1);
+        upper_project_name = malloc(strlen($3)+1);
+
         strcpy(project_name,$3);
+        strcpy(upper_project_name,$3);
+   
+        str_upper(upper_project_name);
 
         descrp = ARCH_D;
 

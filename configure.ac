@@ -102,6 +102,7 @@ AC_CONFIG_FILES(
   src/aclib/ac_decoder/Makefile 
   src/aclib/ac_gdb/Makefile 
   src/aclib/ac_storage/Makefile 
+  src/aclib/ac_stats/Makefile
   src/aclib/ac_syscall/Makefile 
   src/aclib/ac_tlm/Makefile 
   src/aclib/ac_utils/Makefile 

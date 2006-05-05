@@ -417,1489 +417,1435 @@ int main(int argc, char** argv) {
     //  CreateCoverifHeader();
 
     //Creating Simulation Statistics class header file.
-    if( ACStatsFlag )
-      CreateStatsHeader();
-
-    //Creating model syscall header file.
-    if( ACABIFlag )
-      CreateArchSyscallHeader();
-
-    /* Create the template for the .cpp instruction and format behavior file */
-    CreateImplTmpl();
-
-    /* Creating Parameters Header File */
-    CreateParmHeader();
-
-    /* Create the template for the main.cpp  file */
-    CreateMainTmpl();
-
-    /* Create the Makefile */
-    CreateMakefile();
-                
-    /* Create dummy functions to use if real ones are undefined */
-                
-    //Issuing final messages to the user.
-    AC_MSG("%s model files generated.\n", project_name);
-  }
-
-  return 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////
-// Create functions ...                                                           //
-// These Functions are used to create the behavioral simulato files               //
-// All of them use structures built by the parser.                                //
-////////////////////////////////////////////////////////////////////////////////////
-
-/*!Create ArchC Resources Header File */
-void CreateArchHeader() {
-
-  extern ac_pipe_list *pipe_list;
-  extern ac_sto_list *storage_list;
-  extern ac_stg_list *stage_list;
-  extern char* project_name;
-
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
-
-  ac_sto_list *pstorage;
-  ac_stg_list *pstage;
-  char Globals[5000];
-  char *Globals_p = Globals;
-  ac_pipe_list *ppipe;
-
-  FILE *output;
-  char filename[256];
-
-  sprintf(filename, "%s_arch.H", project_name);
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Resources header file.");
-  fprintf( output, "#ifndef  _%s_ARCH_H\n", project_name);
-  fprintf( output, "#define  _%s_ARCH_H\n\n", project_name);
-
-  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
-  fprintf( output, "#include  \"ac_arch_dec_if.H\"\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "#include  \"ac_memport.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
-
-  if (HaveTLMPorts)
-    fprintf(output, "#include  \"ac_tlm_port.H\"\n");
-
-  if (HaveTLMIntrPorts)
-    fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
-
-  if( ACStatsFlag )
-    fprintf( output, "#include  \"ac_stats.H\"\n");
-
-  if( HaveFormattedRegs )
-    fprintf( output, "#include  \"ac_fmt_regs.H\"\n");
-  fprintf( output, " \n");
-
-  if (ACGDBIntegrationFlag) {
-    fprintf(output, "// AC_GDB template class forward declaration\n");
-    fprintf(output, "template <typename ac_word> class AC_GDB;\n\n");
-  }
-
-  //Declaring Architecture Resources class.
-  COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.\n");
-  fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
-  fprintf( output, "public:\n");
-  fprintf( output, " \n");
-
-  if( ACStatsFlag ){
-    COMMENT(INDENT[1],"Statistics Object.");
-    fprintf( output, "%sac_stats ac_sim_stats;\n", INDENT[1]);
-    /* Globals_p += sprintf( Globals_p, "extern ac_stats &ac_sim_stats;\n"); */
-  }
-
-  /* Declaring storage devices */
-  COMMENT(INDENT[1],"Storage Devices.");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-    switch( pstorage->type ){
-
-    case REG:
-
-      //Formatted registers have a special class.
-      if( pstorage->format != NULL ){
-        fprintf( output, "%sac_%s %s;\n", INDENT[1], pstorage->name, pstorage->name);
-      }
-      else{
-        switch( (unsigned)(pstorage->width) ){
-          case 0:
-            fprintf( output, "%sac_reg<%s_parms::ac_word> %s;\n", INDENT[1], project_name, pstorage->name);
-            break;
-          case 1:
-            fprintf( output, "%sac_reg<bool> %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 8:
-            fprintf( output, "%sac_reg<unsigned char> %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 16:
-            fprintf( output, "%sac_reg<unsigned short> %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 32:
-            fprintf( output, "%sac_reg<unsigned long> %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 64:
-            fprintf( output, "%sac_reg<unsigned long long> %s;\n", INDENT[1], pstorage->name);
-            break;
-          default:
-            AC_ERROR("Register width not supported: %d\n", pstorage->width);
-            break;
-        }
-      }
-      break;
-
-    case REGBANK:
-      //Emiting register bank. Checking is a register width was declared.
-      switch( (unsigned)(pstorage->width) ){
-      case 0:
-        fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword> %s;\n", INDENT[1], pstorage->size, project_name, project_name, pstorage->name);
-        break;
-      case 8:
-        fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char> %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      case 16:
-        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      case 32:
-        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      case 64:
-        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      default:
-        AC_ERROR("Register width not supported: %d\n", pstorage->width);
-        break;
-      }
-
-      break;
-
-    case CACHE:
-    case ICACHE:
-    case DCACHE:
-
-      if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      }
-      else{
-        //It is an ac_cache object.
-        fprintf( output, "%sac_cache %s;\n", INDENT[1], pstorage->name);
-      }
-
-      break;
-
-    case MEM:
-
-      if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      }
-      else{
-        //It is an ac_mem object.
-        fprintf( output, "%sac_mem %s;\n", INDENT[1], pstorage->name);
-      }
-
-      break;
-
-    case TLM_PORT:
-      fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[1], pstorage->name);
-      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      break;
-
-    default:
-      fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      break;
-    }
-  }
-
-  fprintf( output, " \n");
-  fprintf( output, "\n");
-
-  //ac_resources constructor declaration
-  COMMENT(INDENT[1],"Constructor.");
-  fprintf( output, "%sexplicit %s_arch();\n", INDENT[1], project_name);
-      
-  fprintf( output, "\n");
-
-  //We have different methods for pipelined and non-pipelined archs
-  if(stage_list){
-    COMMENT(INDENT[1],"Stall method.");
-    fprintf( output, "%svoid ac_stall( char *stage ){\n", INDENT[1]);
-                
-    for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
-      if( pstage->next ){
-        if( pstage->id ==1 )
-          fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
-        else
-          fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
-                                
-        fprintf( output, "%s%s_stall = 1;\n", INDENT[3], pstage->name);
-      }
-    fprintf( output, "%s};\n", INDENT[1]);
-  }
-  else  if(pipe_list){
-    COMMENT(INDENT[1],"Stall method.");
-    fprintf( output, "%svoid ac_stall( char *stage ){\n", INDENT[1]);
-    for( ppipe = pipe_list; ppipe!=NULL; ppipe= ppipe->next ){
-			
-      for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
-        if( pstage->next ){
-          if( pstage->id ==1 )
-            fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
-          else
-            fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
-          fprintf( output, "%s%s_%s_stall = 1;\n", INDENT[3], ppipe->name, pstage->name);
-        }
-    }
-    fprintf( output, "%s};\n", INDENT[1]);
-  }
-
-  if(ACVerifyFlag){
-    COMMENT(INDENT[1],"Set co-verification msg queue.");
-    fprintf( output, "%svoid set_queue(char *exec_name);\n", INDENT[1]);
-  }
-
-  COMMENT(INDENT[1],"Module initialization method.");
-  fprintf( output, "%svirtual void init(int ac, char* av[]) = 0;\n\n", INDENT[1]);
-
-  COMMENT(INDENT[1],"Module finalization method.");
-  fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
-
-  if (ACGDBIntegrationFlag) {
-    COMMENT(INDENT[1], "GDB stub access virtual method declaration.");
-    fprintf(output, "%svirtual AC_GDB<%s_parms::ac_word>* get_gdbstub() = 0;\n\n", INDENT[1], project_name);
-  }
-  
-  COMMENT(INDENT[1],"Virtual destructor declaration.");
-  fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
-
-
-  fprintf( output, "};\n\n"); //End of ac_resources class
-
-  fprintf( output, "#endif  //_%s_ARCH_H\n", project_name);
-  fclose( output); 
-
-}
-
-/*!Create ArchC Resources Reference Header File */
-void CreateArchRefHeader() {
-
-  extern ac_pipe_list *pipe_list;
-  extern ac_sto_list *storage_list;
-  extern ac_stg_list *stage_list;
-  extern char* project_name;
-
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts;
-
-  ac_sto_list *pstorage;
-  ac_stg_list *pstage;
-  char Globals[5000];
-  char *Globals_p = Globals;
-  ac_pipe_list *ppipe;
-
-  FILE *output;
-  char filename[256];
-
-  sprintf(filename, "%s_arch_ref.H", project_name);
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Resources header file.");
-  fprintf( output, "#ifndef  _%s_ARCH_REF_H\n", project_name);
-  fprintf( output, "#define  _%s_ARCH_REF_H\n\n", project_name);
-
-  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
-  fprintf( output, "#include  \"ac_arch_ref.H\"\n");
-  fprintf( output, "#include  \"ac_memport.H\"\n");
-  fprintf( output, "#include  \"ac_reg.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
-
-  if (HaveTLMIntrPorts)
-    fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
-
-  fprintf(output, "\n");
-  
-  COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
-  fprintf(output, "class %s_arch;\n\n", project_name);
-
-  //Declaring Architecture Resource references class.
-  COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.");
-  fprintf( output, "class %s_arch_ref : public ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
-  fprintf( output, "public:\n");
-  fprintf( output, " \n");
-
-  /* Declaring storage devices */
-  COMMENT(INDENT[1],"Storage Devices.");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-    switch( pstorage->type ){
-
-    case REG:
-
-      //Formatted registers have a special class.
-      if( pstorage->format != NULL ){
-        fprintf( output, "%sac_%s& %s;\n", INDENT[1], pstorage->name, pstorage->name);
-      }
-      else{
-        switch( (unsigned)(pstorage->width) ){
-          case 0:
-            fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n", INDENT[1], project_name, pstorage->name);
-            break;
-          case 1:
-            fprintf( output, "%sac_reg<bool>& %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 8:
-            fprintf( output, "%sac_reg<unsigned char>& %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 16:
-            fprintf( output, "%sac_reg<unsigned short>& %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 32:
-            fprintf( output, "%sac_reg<unsigned long>& %s;\n", INDENT[1], pstorage->name);
-            break;
-          case 64:
-            fprintf( output, "%sac_reg<unsigned long long>& %s;\n", INDENT[1], pstorage->name);
-            break;
-          default:
-            AC_ERROR("Register width not supported: %d\n", pstorage->width);
-            break;
-        }
-      }
-      break;
-
-    case REGBANK:
-      //Emiting register bank. Checking is a register width was declared.
-      switch( (unsigned)(pstorage->width) ){
-      case 0:
-        fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n", INDENT[1], pstorage->size, project_name, project_name, pstorage->name);
-        break;
-      case 8:
-        fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      case 16:
-        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      case 32:
-        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      case 64:
-        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
-        break;
-      default:
-        AC_ERROR("Register width not supported: %d\n", pstorage->width);
-        break;
-      }
-
-      break;
-
-    case CACHE:
-    case ICACHE:
-    case DCACHE:
-
-      if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      }
-      else{
-        //It is an ac_cache object.
-        fprintf( output, "%sac_cache& %s;\n", INDENT[1], pstorage->name);
-      }
-
-      break;
-
-    case MEM:
-
-      if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      }
-      else{
-        //It is an ac_mem object.
-        fprintf( output, "%sac_mem& %s;\n", INDENT[1], pstorage->name);
-      }
-
-      break;
-
-    default:
-      fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-      break;
-    }
-  }
-
-  fprintf(output, "\n");
-
-  //ac_resources constructor declaration
-  COMMENT(INDENT[1],"Constructor.");
-  fprintf(output, "%s %s_arch_ref(%s_arch& arch);\n", INDENT[1], project_name, project_name);
-      
-  fprintf( output, "\n");
-
-  fprintf( output, "};\n\n"); //End of _arch_ref class
-
-  fprintf( output, "#endif  //_%s_ARCH_REF_H\n", project_name);
-  fclose( output); 
-
-}
-
-
-/*!Create ArchC Resources Reference Implementation File */
-void CreateArchRefImpl() {
-
-  extern ac_pipe_list *pipe_list;
-  extern ac_sto_list *storage_list;
-  extern ac_stg_list *stage_list;
-  extern char* project_name;
-
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, reg_width;
-
-  ac_sto_list *pstorage;
-  ac_stg_list *pstage;
-  char Globals[5000];
-  char *Globals_p = Globals;
-  ac_pipe_list *ppipe;
-
-  FILE *output;
-  char filename[256];
-
-  sprintf(filename, "%s_arch_ref.cpp", project_name);
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Resources implementation file.");
-
-  fprintf( output, "#include  \"%s_arch.H\"\n", project_name);
-  fprintf( output, "#include  \"%s_arch_ref.H\"\n\n", project_name);
-
-  //Declaring Architecture Resource references class.
-  COMMENT(INDENT[0],"/Default constructor.");
-  fprintf(output,
-          "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
-          project_name, project_name, project_name, project_name, project_name);
-
-  /* Declaring storage devices */
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name,
-            pstorage->name);
-    if (pstorage->next != NULL) {
-      fprintf(output, ", ");
-    }
-  }
-  fprintf(output, " {}\n\n");
-  fclose( output); 
-
-}
-
-
-//!Creates Decoder Header File
-void CreateParmHeader() {
-
-  extern ac_stg_list *stage_list;
-  extern ac_pipe_list *pipe_list;
-  extern ac_dec_format *format_ins_list;
-  extern int instr_num;
-  extern int declist_num;
-  extern int format_num, largest_format_size;
-  extern int wordsize, fetchsize, HaveMemHier, HaveCycleRange;
-  extern ac_sto_list* load_device;
-
-  extern ac_decoder_full *decoder;
-  extern char* project_name;
-  ac_stg_list *pstage;
-  ac_pipe_list *ppipe;
-
-  char filename[256];
-
-  
-  //! File containing decoding structures 
-  FILE *output;
-
-  sprintf(filename, "%s_parms.H", project_name);
-  if ( !(output = fopen(filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Parameters header file.");
-  fprintf( output, "#ifndef  _%s_PARMS_H\n", project_name);
-  fprintf( output, "#define  _%s_PARMS_H\n\n", project_name);
-
-  /* options defines */
-  if( ACVerboseFlag || ACVerifyFlag )
-    fprintf( output, "#define  AC_UPDATE_LOG \t //!< Update log generation turned on.\n");
-
-  if( ACVerboseFlag )
-    fprintf( output, "#define  AC_VERBOSE \t //!< Indicates Verbose mode. Where update logs are dumped on screen.\n");
-
-  if( ACVerifyFlag )
-    fprintf( output, "#define  AC_VERIFY \t //!< Indicates that co-verification is turned on.\n");
-      
-  if( ACStatsFlag )
-    fprintf( output, "#define  AC_STATS \t //!< Indicates that statistics collection is turned on.\n");
-      
-
-  if( ACDebugFlag )
-    fprintf( output, "#define  AC_DEBUG \t //!< Indicates that debug option is turned on.\n\n");
-
-  if( ACDelayFlag )
-    fprintf( output, "#define  AC_DELAY \t //!< Indicates that delay option is turned on.\n\n");
-
-  if( HaveMemHier )
-    fprintf( output, "#define  AC_MEM_HIERARCHY \t //!< Indicates that a memory hierarchy was declared.\n\n");
-
-  if( HaveCycleRange )
-    fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
-
-  /* parms namespace definition */
-  fprintf(output, "namespace %s_parms {\n\n", project_name);
-
-  fprintf( output, "\nstatic const unsigned int AC_DEC_FIELD_NUMBER = %d; \t //!< Number of Fields used by decoder.\n", decoder->nFields);
-  fprintf( output, "static const unsigned int AC_DEC_INSTR_NUMBER = %d; \t //!< Number of Instructions declared.\n", instr_num);
-  fprintf( output, "static const unsigned int AC_DEC_FORMAT_NUMBER = %d; \t //!< Number of Formats declared.\n", format_num);
-  fprintf( output, "static const unsigned int AC_DEC_LIST_NUMBER = %d; \t //!< Number of decodification lists used by decoder.\n", declist_num);
-  fprintf( output, "static const unsigned int AC_MAX_BUFFER = %d; \t //!< This is the size needed by decoder buffer. It is equal to the biggest instruction size.\n", largest_format_size/8);
-  fprintf( output, "static const unsigned int AC_WORDSIZE = %d; \t //!< Architecture wordsize in bits.\n", wordsize);
-  fprintf( output, "static const unsigned int AC_FETCHSIZE = %d; \t //!< Architecture fetchsize in bits.\n", fetchsize);
-  fprintf( output, "static const unsigned int AC_MATCH_ENDIAN = %d; \t //!< If the simulated arch match the endian with host.\n", ac_match_endian);
-  fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n", ac_tgt_endian);
-  fprintf( output, "static const unsigned int AC_RAMSIZE = %u; \t //!< Architecture RAM size in bytes (storage %s).\n", load_device->size, load_device->name);
-  fprintf( output, "static const unsigned int AC_RAM_END = %u; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
-
-  if (ACGDBIntegrationFlag)
-  fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
-
-  fprintf( output, "\n\n");
-  COMMENT(INDENT[0],"Word type definitions.");
-    
-  //Emiting ArchC word types.
-  switch( wordsize ){
-  case 8:
-    fprintf( output, "typedef  unsigned char ac_word; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  unsigned char ac_Uword; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  char ac_Sword; \t //!< Signed word.\n");
-    fprintf( output, "typedef  unsigned char ac_Hword; \t //!< Signed half word.\n");
-    fprintf( output, "typedef  unsigned char ac_UHword; \t //!< Unsigned half word.\n");
-    fprintf( output, "typedef  char ac_SHword; \t //!< Signed half word.\n");
-    fprintf( output, "typedef  unsigned short ac_Dword; \t //!< Signed double word.\n");
-    fprintf( output, "typedef  unsigned short ac_UDword; \t //!< Unsigned double word.\n");
-    fprintf( output, "typedef  short ac_SDword; \t //!< Signed double word.\n");
-    break;
-  case 16:
-    fprintf( output, "typedef  unsigned short int ac_word; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  unsigned short int ac_Uword; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  short int ac_Sword; \t //!< Signed word.\n");
-    fprintf( output, "typedef  unsigned char ac_Hword; \t //!< Signed half word.\n");
-    fprintf( output, "typedef  unsigned char ac_UHword; \t //!< Unsigned half word.\n");
-    fprintf( output, "typedef  char ac_SHword; \t //!< Signed half word.\n");
-    fprintf( output, "typedef  unsigned int ac_Dword; \t //!< Signed double word.\n");
-    fprintf( output, "typedef  unsigned int ac_UDword; \t //!< Unsigned double word.\n");
-    fprintf( output, "typedef  int ac_SDword; \t //!< Signed double word.\n");
-    break;
-  case 32:
-    fprintf( output, "typedef  unsigned int ac_word; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  unsigned int ac_Uword; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  int ac_Sword; \t //!< Signed word.\n");
-    fprintf( output, "typedef  short int ac_SHword; \t //!< Signed half word.\n");
-    fprintf( output, "typedef  unsigned short int  ac_UHword; \t //!< Unsigned half word.\n");
-    fprintf( output, "typedef  unsigned short int  ac_Hword; \t //!< Unsigned half word.\n");
-    fprintf( output, "typedef  unsigned long long ac_Dword; \t //!< Signed double word.\n");
-    fprintf( output, "typedef  unsigned long long ac_UDword; \t //!< Unsigned double word.\n");
-    fprintf( output, "typedef  long long ac_SDword; \t //!< Signed double word.\n");
-    break;
-  case 64:
-    fprintf( output, "typedef  unsigned long long ac_word; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  unsigned long long ac_Uword; \t //!< Unsigned word.\n");
-    fprintf( output, "typedef  long long ac_Sword; \t //!< Signed word.\n");
-    fprintf( output, "typedef  int ac_SHword; \t //!< Signed half word.\n");
-    fprintf( output, "typedef  unsigned int  ac_UHword; \t //!< Unsigned half word.\n");
-    fprintf( output, "typedef  unsigned int  ac_UHword; \t //!< Unsigned half word.\n");
-    break;
-  default:
-    AC_ERROR("Wordsize not supported: %d\n", wordsize);
-    break;
-  }
-      
-  fprintf( output, "typedef  char ac_byte; \t //!< Signed byte word.\n");
-  fprintf( output, "typedef  unsigned char ac_Ubyte; \t //!< Unsigned byte word.\n");
-
-  fprintf( output, "\n\n");
-  COMMENT(INDENT[0],"Fetch type definition.");
-
-  switch( fetchsize ){
-  case 8:
-    fprintf( output, "typedef  unsigned char ac_fetch; \t //!< Unsigned word.\n");
-    break;
-  case 16:
-    fprintf( output, "typedef  unsigned short int ac_fetch; \t //!< Unsigned word.\n");
-    break;
-  case 32:
-    fprintf( output, "typedef  unsigned int ac_fetch; \t //!< Unsigned word.\n");
-    break;
-  case 64:
-    fprintf( output, "typedef  unsigned long long ac_fetch; \t //!< Unsigned word.\n");
-    break;
-  default:
-    AC_ERROR("Fetchsize not supported: %d\n", fetchsize);
-    break;
-  }
-
-
-  fprintf( output, "\n\n");
-
-  //This enum type is used for case identification inside the ac_behavior methods
-  fprintf( output, "enum ac_stage_list {");
-
-  if( stage_list ){   //Enum type for pipes declared through ac_stage keyword
-    fprintf( output, "%s=1,", stage_list->name);
-    pstage = stage_list->next;
-    for( pstage = stage_list->next; pstage && pstage->next != NULL; pstage=pstage->next){
-      fprintf( output, "%s,", pstage->name);
-    }
-    fprintf( output, "%s", pstage->name);
-  }
-  else if(pipe_list){  //Enum type for pipes declared through ac_pipe keyword
-
-    for(ppipe = pipe_list; ppipe!= NULL; ppipe=ppipe->next){
-
-      for(pstage=ppipe->stages; pstage && pstage->next!= NULL; pstage=pstage->next){
-
-        //When we have just one pipe use only the stage name
-        if( ppipe->next )
-          fprintf( output, "%s_%s=%d,", ppipe->name, pstage->name, pstage->id);
-        else
-          fprintf( output, "%s=%d,", pstage->name, pstage->id);
-
-      }
-      if( ppipe->next )
-        fprintf( output, "%s_%s=%d", ppipe->name, pstage->name, pstage->id);  //The last doesn't need a comma
-      else
-        fprintf( output, "%s=%d", pstage->name, pstage->id);
-    }
-  }
-  else{
-    fprintf( output, "ST0");
-  }
-
-  //Closing enum declaration
-  fprintf( output, "};\n\n");
-    
-  /* closing namespace declaration */
-
-  fprintf( output, "}\n\n");
-    
-  //Create a compiler error if delay assignment is used without the -dy option
-  COMMENT(INDENT[0],"Create a compiler error if delay assignment is used without the -dy option");
-  fprintf( output, "#ifndef AC_DELAY\n");
-  fprintf( output, "extern %s_parms::ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n", project_name);
-  fprintf( output, "#define delay(a,b) ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___\n");
-  fprintf( output, "#endif\n");
-
-
-  fprintf( output, "\n\n");
-  fprintf( output, "#endif  //_%s_PARMS_H\n", project_name);
-
-  fclose(output);
-}
-
-
-//!Creates the ISA Header File.
-void CreateISAHeader() {
-
-  extern ac_dec_format *format_ins_list;
-  extern char *project_name;
-  extern ac_dec_instr *instr_list;
-  extern int HaveMultiCycleIns;
-  extern int wordsize;
-  extern ac_dec_field *common_instr_field_list;
-  ac_dec_format *pformat;
-  ac_dec_instr *pinstr;
-  ac_dec_field *pfield, *pf;
-
-  char filename[256];
-  char description[] = "Instruction Set Architecture header file.";
- 
-  // File containing ISA declaration
-  FILE  *output;
-
-  sprintf( filename, "%s_isa.H", project_name);
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, description);
-  fprintf( output, "#ifndef _%s_ISA_H\n", project_name);
-  fprintf( output, "#define _%s_ISA_H\n\n", project_name);
-  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
-  fprintf( output, "#include \"ac_instr.H\"\n");
-  fprintf( output, "#include \"ac_decoder_rt.H\"\n");
-  fprintf( output, "#include \"ac_instr_info.H\"\n");
-  fprintf( output, "#include \"%s_arch.H\"\n", project_name);
-  fprintf( output, "#include \"%s_arch_ref.H\"\n", project_name);
-  fprintf( output, "\n");
-
-  fprintf( output, "class %s_isa: public %s_arch_ref {\n", project_name,
-           project_name);
-
-  fprintf(output, "private:\n");
-  fprintf(output, "typedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", project_name);
-
-  fprintf(output, "public:\n");
-
-  fprintf( output, "\n");
-  fprintf( output, "%sstatic ac_dec_field fields[%s_parms::AC_DEC_FIELD_NUMBER];\n", INDENT[1], project_name);
-  fprintf( output, "%sstatic ac_dec_format formats[%s_parms::AC_DEC_FORMAT_NUMBER];\n", INDENT[1], project_name);
-  fprintf( output, "%sstatic ac_dec_list dec_list[%s_parms::AC_DEC_LIST_NUMBER];\n", INDENT[1], project_name);
-  fprintf( output, "%sstatic ac_dec_instr instructions[%s_parms::AC_DEC_INSTR_NUMBER];\n", INDENT[1], project_name);
-  fprintf( output, "%sstatic const ac_instr_info instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1], project_name, project_name);
-
-  fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
-
-  /* current instruction ID */
-  fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
-  
-  //Emiting Constructor.
-  COMMENT(INDENT[1], "Constructor.");
-  fprintf( output,"%s%s_isa(%s_arch& ref) : %s_arch_ref(ref) {\n", INDENT[1],
-           project_name, project_name, project_name);
-
-  COMMENT(INDENT[2], "Building Decoder.");
-  fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n", INDENT[2], project_name, project_name );
-
-  /* Closing constructor declaration. */
-  fprintf( output,"%s}\n\n", INDENT[1] );
-
-  /* getter methods for current instruction */
-  fprintf(output, "%sinline char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
-  fprintf(output, "%sinline char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
-  fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
-  fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
-  fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
-  fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", INDENT[1]);
-
-  /* Instruction Behavior Method declarations */
-  /* instruction */
-  fprintf(output, "%svoid _behavior_instruction(", INDENT[1]);
-  /* common_instr_field_list has the list of fields for the generic instruction. */
-  for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-    if( pfield->sign )
-      fprintf(output, "int %s", pfield->name);
-    else
-      fprintf(output, "unsigned %s", pfield->name);
-    if (pfield->next != NULL)
-      fprintf(output, ", ");
-  }
-  fprintf(output, ");\n\n");
-
-  /* begin & end */
-  fprintf(output, "%svoid _behavior_begin();\n", INDENT[1]);
-  fprintf(output, "%svoid _behavior_end();\n\n", INDENT[1]);
-
-  /* types/formats */
-  for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "%svoid _behavior_%s_%s(",
-            INDENT[1], project_name, pformat->name);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
-      if (pfield->next != NULL)
-        fprintf(output, ", ");
-    }
-    fprintf(output, ");\n");
-  }
-  fprintf(output, "\n");
-
-  /* instructions */
-  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    for (pformat = format_ins_list;
-         (pformat != NULL) && strcmp(pinstr->format, pformat->name);
-         pformat = pformat->next);
-    fprintf(output, "%svoid behavior_%s(",
-            INDENT[1], pinstr->name);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
-      if (pfield->next != NULL)
-        fprintf(output, ", ");
-    }
-    fprintf(output, ");\n");
-  }
-  fprintf(output, "\n");
-
-  /* Closing class declaration. */
-  fprintf( output,"};\n\n" );
-
-  /* END OF FILE */
-  fprintf( output, "\n\n#endif //_%s_ISA_H\n\n", project_name);
-  fclose( output); 
-
-  /* opens behavior macros file */
-  sprintf( filename, "%s_bhv_macros.H", project_name);
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  fprintf( output, "#ifndef _%s_BHV_MACROS_H\n", project_name);
-  fprintf( output, "#define _%s_BHV_MACROS_H\n\n", project_name);
-  
-  /* ac_memory TYPEDEF */
-  fprintf(output, "typedef ac_memport<%s_parms::ac_word, %s_parms::ac_Hword> ac_memory;\n\n", project_name, project_name);
-
-  /* ac_behavior main macro */
-  fprintf( output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr ()\n\n");
-
-  /* ac_behavior 2nd level macros - generic instruction */
-  fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction(", project_name);
-  /* common_instr_field_list has the list of fields for the generic instruction. */
-  for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-    if( pfield->sign )
-      fprintf(output, "int %s", pfield->name);
-    else
-      fprintf(output, "unsigned %s", pfield->name);
-    if (pfield->next != NULL)
-      fprintf(output, ", ");
-  }
-  fprintf(output, ")\n\n");
-
-  /* ac_behavior 2nd level macros - pseudo-instructions begin, end */
-  fprintf(output, "#define AC_BEHAVIOR_begin() %s_isa::_behavior_begin()\n", project_name);
-  fprintf(output, "#define AC_BEHAVIOR_end() %s_isa::_behavior_end()\n", project_name);
-
-  fprintf(output, "\n");
-
-  /* ac_behavior 2nd level macros - instruction types */
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::_behavior_%s_%s(", pformat->name, project_name, project_name, pformat->name);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
-      if (pfield->next != NULL)
-        fprintf(output, ", ");
-    }
-    fprintf(output, ")\n");
-  }
-  fprintf(output, "\n");
-
-  /* ac_behavior 2nd level macros - instructions */
-  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::behavior_%s(", pinstr->name, project_name, pinstr->name);
-    for (pformat = format_ins_list;
-         (pformat != NULL) && strcmp(pinstr->format, pformat->name);
-         pformat = pformat->next);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
-      if (pfield->next != NULL)
-        fprintf(output, ", ");
-    }
-    fprintf(output, ")\n");
-  }
-
-  /* END OF FILE */
-  fprintf( output, "\n\n#endif //_%s_BHV_MACROS_H\n\n", project_name);
-  fclose( output); 
-
-}
-
-//!Creates Stage Module Header File  for Single Pipelined Architectures.
-void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
-
-  extern char *project_name;
-  extern int stage_num;
-  ac_stg_list *pstage;
-
-  char* stage_filename;
-  FILE* output;
-
-  for( pstage = stage_list; pstage != NULL; pstage=pstage->next){      
-
-
-    //IF a ac_pipe declaration was used, stage module names will be PIPENAME_STAGENAME,
-    //otherwise they will be just STAGENAME.
-    //This makes possible to define multiple pipelines containg stages with the same name.
-    if( pipe_name ){
-      stage_filename = (char*) malloc(strlen(pstage->name)+strlen(pipe_name)+strlen(".H")+2);
-      sprintf( stage_filename, "%s_%s.H", pipe_name, pstage->name);
-    }
-    else{
-      stage_filename = (char*) malloc(strlen(pstage->name)+strlen(".H")+1);
-      sprintf( stage_filename, "%s.H", pstage->name);
+    if (ACStatsFlag) {
+      CreateStatsHeaderTmpl();
+      CreateStatsImplTmpl();
     }
 
-    if ( !(output = fopen( stage_filename, "w"))){
+      //Creating model syscall header file.
+      if( ACABIFlag )
+	CreateArchSyscallHeader();
+
+      /* Create the template for the .cpp instruction and format behavior file */
+      CreateImplTmpl();
+
+      /* Creating Parameters Header File */
+      CreateParmHeader();
+
+      /* Create the template for the main.cpp  file */
+      CreateMainTmpl();
+
+      /* Create the Makefile */
+      CreateMakefile();
+		  
+      /* Create dummy functions to use if real ones are undefined */
+		  
+      //Issuing final messages to the user.
+      AC_MSG("%s model files generated.\n", project_name);
+    }
+
+    return 0;
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////////////////
+  // Create functions ...                                                           //
+  // These Functions are used to create the behavioral simulato files               //
+  // All of them use structures built by the parser.                                //
+  ////////////////////////////////////////////////////////////////////////////////////
+
+  /*!Create ArchC Resources Header File */
+  void CreateArchHeader() {
+
+    extern ac_pipe_list *pipe_list;
+    extern ac_sto_list *storage_list;
+    extern ac_stg_list *stage_list;
+    extern char* project_name;
+    extern char* upper_project_name;
+
+    extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+
+    ac_sto_list *pstorage;
+    ac_stg_list *pstage;
+    char Globals[5000];
+    char *Globals_p = Globals;
+    ac_pipe_list *ppipe;
+
+    FILE *output;
+    char filename[256];
+
+    sprintf(filename, "%s_arch.H", project_name);
+
+    if ( !(output = fopen( filename, "w"))){
       perror("ArchC could not open output file");
       exit(1);
     }
 
-    print_comment( output, "Stage Module Header File.");
-    if( pipe_name ){
-      fprintf( output, "#ifndef  _%s_%s_STAGE_H\n", pipe_name, pstage->name);
-      fprintf( output, "#define  _%s_%s_STAGE_H\n\n", pipe_name, pstage->name);
-    }
-    else{
-      fprintf( output, "#ifndef  _%s_STAGE_H\n", pstage->name);
-      fprintf( output, "#define  _%s_STAGE_H\n\n", pstage->name);
+    print_comment( output, "ArchC Resources header file.");
+    fprintf( output, "#ifndef  %s_ARCH_H\n", upper_project_name);
+    fprintf( output, "#define  %s_ARCH_H\n\n", upper_project_name);
+
+    fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
+    fprintf( output, "#include  \"ac_arch_dec_if.H\"\n");
+    fprintf( output, "#include  \"ac_storage.H\"\n");
+    fprintf( output, "#include  \"ac_memport.H\"\n");
+    fprintf( output, "#include  \"ac_regbank.H\"\n");
+
+    if (HaveTLMPorts)
+      fprintf(output, "#include  \"ac_tlm_port.H\"\n");
+
+    if (HaveTLMIntrPorts)
+      fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
+
+    if( HaveFormattedRegs )
+      fprintf( output, "#include  \"ac_fmt_regs.H\"\n");
+    fprintf( output, " \n");
+
+    if (ACGDBIntegrationFlag) {
+      fprintf(output, "// AC_GDB template class forward declaration\n");
+      fprintf(output, "template <typename ac_word> class AC_GDB;\n\n");
     }
 
-    fprintf( output, "#include \"archc.H\"\n");
-    fprintf( output, "#include \"%s_isa.H\"\n\n", project_name);
-
-    if( pstage->id == 1 && ACDecCacheFlag )
-      fprintf( output, "extern unsigned dec_cache_size;\n\n");
- 
-    //Declaring stage namespace.
-    if( pipe_name ){
-      fprintf( output, "namespace AC_%s_%s{\n\n", pipe_name, pstage->name); 
-      fprintf( output, "class %s_%s: public ac_stage {\n", pipe_name, pstage->name);
-    }
-    else{
-      fprintf( output, "namespace AC_%s{\n", pstage->name); 
-      fprintf( output, "class %s: public ac_stage {\n", pstage->name);
-    }
-    //Declaring stage module. 
-    //It already includes the behavior method.
+    //Declaring Architecture Resources class.
+    COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.\n");
+    fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
     fprintf( output, "public:\n");
+    fprintf( output, " \n");
 
-    if( pstage->id != 1 )
-      fprintf( output, "%ssc_in<ac_instr> regin;\n", INDENT[1]);
-    fprintf( output, "%ssc_inout<unsigned> bhv_pc;\n", INDENT[1]);
+    /* Declaring storage devices */
+    COMMENT(INDENT[1],"Storage Devices.");
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
 
-    if( pstage->id != stage_num ){
-      fprintf( output, "%ssc_out<ac_instr> regout;\n", INDENT[1]);
-      fprintf( output, "%ssc_out<bool> bhv_start;\n", INDENT[1]);
+      switch( pstorage->type ){
+
+      case REG:
+
+	//Formatted registers have a special class.
+	if( pstorage->format != NULL ){
+	  fprintf( output, "%sac_%s %s;\n", INDENT[1], pstorage->name, pstorage->name);
+	}
+	else{
+	  switch( (unsigned)(pstorage->width) ){
+	    case 0:
+	      fprintf( output, "%sac_reg<%s_parms::ac_word> %s;\n", INDENT[1], project_name, pstorage->name);
+	      break;
+	    case 1:
+	      fprintf( output, "%sac_reg<bool> %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 8:
+	      fprintf( output, "%sac_reg<unsigned char> %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 16:
+	      fprintf( output, "%sac_reg<unsigned short> %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 32:
+	      fprintf( output, "%sac_reg<unsigned long> %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 64:
+	      fprintf( output, "%sac_reg<unsigned long long> %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    default:
+	      AC_ERROR("Register width not supported: %d\n", pstorage->width);
+	      break;
+	  }
+	}
+	break;
+
+      case REGBANK:
+	//Emiting register bank. Checking is a register width was declared.
+	switch( (unsigned)(pstorage->width) ){
+	case 0:
+	  fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword> %s;\n", INDENT[1], pstorage->size, project_name, project_name, pstorage->name);
+	  break;
+	case 8:
+	  fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char> %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	case 16:
+	  fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	case 32:
+	  fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	case 64:
+	  fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long> %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	default:
+	  AC_ERROR("Register width not supported: %d\n", pstorage->width);
+	  break;
+	}
+
+	break;
+
+      case CACHE:
+      case ICACHE:
+      case DCACHE:
+
+	if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
+	  fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
+	  fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	}
+	else{
+	  //It is an ac_cache object.
+	  fprintf( output, "%sac_cache %s;\n", INDENT[1], pstorage->name);
+	}
+
+	break;
+
+      case MEM:
+
+	if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
+	  fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
+	  fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	}
+	else{
+	  //It is an ac_mem object.
+	  fprintf( output, "%sac_mem %s;\n", INDENT[1], pstorage->name);
+	}
+
+	break;
+
+      case TLM_PORT:
+	fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[1], pstorage->name);
+	fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	break;
+
+      default:
+	fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
+	fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	break;
+      }
     }
 
-    fprintf( output, "%ssc_out<bool> bhv_done;\n", INDENT[1]);
-    fprintf( output, "%s%s_isa  ISA;\n", INDENT[1], project_name );
+    fprintf( output, " \n");
+    fprintf( output, "\n");
+
+    //ac_resources constructor declaration
+    COMMENT(INDENT[1],"Constructor.");
+    fprintf( output, "%sexplicit %s_arch();\n", INDENT[1], project_name);
+	
+    fprintf( output, "\n");
+
+    //We have different methods for pipelined and non-pipelined archs
+    if(stage_list){
+      COMMENT(INDENT[1],"Stall method.");
+      fprintf( output, "%svoid ac_stall( char *stage ){\n", INDENT[1]);
+		  
+      for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
+	if( pstage->next ){
+	  if( pstage->id ==1 )
+	    fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
+	  else
+	    fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
+				  
+	  fprintf( output, "%s%s_stall = 1;\n", INDENT[3], pstage->name);
+	}
+      fprintf( output, "%s};\n", INDENT[1]);
+    }
+    else  if(pipe_list){
+      COMMENT(INDENT[1],"Stall method.");
+      fprintf( output, "%svoid ac_stall( char *stage ){\n", INDENT[1]);
+      for( ppipe = pipe_list; ppipe!=NULL; ppipe= ppipe->next ){
+			  
+	for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
+	  if( pstage->next ){
+	    if( pstage->id ==1 )
+	      fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
+	    else
+	      fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
+	    fprintf( output, "%s%s_%s_stall = 1;\n", INDENT[3], ppipe->name, pstage->name);
+	  }
+      }
+      fprintf( output, "%s};\n", INDENT[1]);
+    }
+
+    if(ACVerifyFlag){
+      COMMENT(INDENT[1],"Set co-verification msg queue.");
+      fprintf( output, "%svoid set_queue(char *exec_name);\n", INDENT[1]);
+    }
+
+    COMMENT(INDENT[1],"Module initialization method.");
+    fprintf( output, "%svirtual void init(int ac, char* av[]) = 0;\n\n", INDENT[1]);
+
+    COMMENT(INDENT[1],"Module finalization method.");
+    fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
+
+    if (ACGDBIntegrationFlag) {
+      COMMENT(INDENT[1], "GDB stub access virtual method declaration.");
+      fprintf(output, "%svirtual AC_GDB<%s_parms::ac_word>* get_gdbstub() = 0;\n\n", INDENT[1], project_name);
+    }
+    
+    COMMENT(INDENT[1],"Virtual destructor declaration.");
+    fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
+
+
+    fprintf( output, "};\n\n"); //End of ac_resources class
+
+    fprintf( output, "#endif  //_%s_ARCH_H\n", upper_project_name);
+    fclose( output); 
+
+  }
+
+  /*!Create ArchC Resources Reference Header File */
+  void CreateArchRefHeader() {
+
+    extern ac_pipe_list *pipe_list;
+    extern ac_sto_list *storage_list;
+    extern ac_stg_list *stage_list;
+    extern char* project_name;
+    extern char* upper_project_name;
+
+    extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts;
+
+    ac_sto_list *pstorage;
+    ac_stg_list *pstage;
+    char Globals[5000];
+    char *Globals_p = Globals;
+    ac_pipe_list *ppipe;
+
+    FILE *output;
+    char filename[256];
+
+    sprintf(filename, "%s_arch_ref.H", project_name);
+
+    if ( !(output = fopen( filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+
+    print_comment( output, "ArchC Resources header file.");
+    fprintf( output, "#ifndef  _%s_ARCH_REF_H\n", upper_project_name);
+    fprintf( output, "#define  _%s_ARCH_REF_H\n\n", upper_project_name);
+
+    fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
+    fprintf( output, "#include  \"ac_arch_ref.H\"\n");
+    fprintf( output, "#include  \"ac_memport.H\"\n");
+    fprintf( output, "#include  \"ac_reg.H\"\n");
+    fprintf( output, "#include  \"ac_regbank.H\"\n");
+
+    if (HaveTLMIntrPorts)
+      fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
+
+    fprintf(output, "\n");
+    
+    COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
+    fprintf(output, "class %s_arch;\n\n", project_name);
+
+    //Declaring Architecture Resource references class.
+    COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.");
+    fprintf( output, "class %s_arch_ref : public ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
+    fprintf( output, "public:\n");
+    fprintf( output, " \n");
+
+    /* Declaring storage devices */
+    COMMENT(INDENT[1],"Storage Devices.");
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+
+      switch( pstorage->type ){
+
+      case REG:
+
+	//Formatted registers have a special class.
+	if( pstorage->format != NULL ){
+	  fprintf( output, "%sac_%s& %s;\n", INDENT[1], pstorage->name, pstorage->name);
+	}
+	else{
+	  switch( (unsigned)(pstorage->width) ){
+	    case 0:
+	      fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n", INDENT[1], project_name, pstorage->name);
+	      break;
+	    case 1:
+	      fprintf( output, "%sac_reg<bool>& %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 8:
+	      fprintf( output, "%sac_reg<unsigned char>& %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 16:
+	      fprintf( output, "%sac_reg<unsigned short>& %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 32:
+	      fprintf( output, "%sac_reg<unsigned long>& %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    case 64:
+	      fprintf( output, "%sac_reg<unsigned long long>& %s;\n", INDENT[1], pstorage->name);
+	      break;
+	    default:
+	      AC_ERROR("Register width not supported: %d\n", pstorage->width);
+	      break;
+	  }
+	}
+	break;
+
+      case REGBANK:
+	//Emiting register bank. Checking is a register width was declared.
+	switch( (unsigned)(pstorage->width) ){
+	case 0:
+	  fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n", INDENT[1], pstorage->size, project_name, project_name, pstorage->name);
+	  break;
+	case 8:
+	  fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	case 16:
+	  fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	case 32:
+	  fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	case 64:
+	  fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n", INDENT[1], pstorage->size, pstorage->name);
+	  break;
+	default:
+	  AC_ERROR("Register width not supported: %d\n", pstorage->width);
+	  break;
+	}
+
+	break;
+
+      case CACHE:
+      case ICACHE:
+      case DCACHE:
+
+	if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
+	  fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	}
+	else{
+	  //It is an ac_cache object.
+	  fprintf( output, "%sac_cache& %s;\n", INDENT[1], pstorage->name);
+	}
+
+	break;
+
+      case MEM:
+
+	if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
+	  fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	}
+	else{
+	  //It is an ac_mem object.
+	  fprintf( output, "%sac_mem& %s;\n", INDENT[1], pstorage->name);
+	}
+
+	break;
+
+      default:
+	fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+	break;
+      }
+    }
+
+    fprintf(output, "\n");
+
+    //ac_resources constructor declaration
+    COMMENT(INDENT[1],"Constructor.");
+    fprintf(output, "%s %s_arch_ref(%s_arch& arch);\n", INDENT[1], project_name, project_name);
+	
+    fprintf( output, "\n");
+
+    fprintf( output, "};\n\n"); //End of _arch_ref class
+
+    fprintf( output, "#endif  //_%s_ARCH_REF_H\n", upper_project_name);
+    fclose( output); 
+
+  }
+
+
+  /*!Create ArchC Resources Reference Implementation File */
+  void CreateArchRefImpl() {
+
+    extern ac_pipe_list *pipe_list;
+    extern ac_sto_list *storage_list;
+    extern ac_stg_list *stage_list;
+    extern char* project_name;
+
+    extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, reg_width;
+
+    ac_sto_list *pstorage;
+    ac_stg_list *pstage;
+    char Globals[5000];
+    char *Globals_p = Globals;
+    ac_pipe_list *ppipe;
+
+    FILE *output;
+    char filename[256];
+
+    sprintf(filename, "%s_arch_ref.cpp", project_name);
+
+    if ( !(output = fopen( filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+
+    print_comment( output, "ArchC Resources implementation file.");
+
+    fprintf( output, "#include  \"%s_arch.H\"\n", project_name);
+    fprintf( output, "#include  \"%s_arch_ref.H\"\n\n", project_name);
+
+    //Declaring Architecture Resource references class.
+    COMMENT(INDENT[0],"/Default constructor.");
+    fprintf(output,
+	    "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
+	    project_name, project_name, project_name, project_name, project_name);
+
+    /* Declaring storage devices */
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+      fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name,
+	      pstorage->name);
+      if (pstorage->next != NULL) {
+	fprintf(output, ", ");
+      }
+    }
+    fprintf(output, " {}\n\n");
+    fclose( output); 
+
+  }
+
+
+  //!Creates Decoder Header File
+  void CreateParmHeader() {
+
+    extern ac_stg_list *stage_list;
+    extern ac_pipe_list *pipe_list;
+    extern ac_dec_format *format_ins_list;
+    extern int instr_num;
+    extern int declist_num;
+    extern int format_num, largest_format_size;
+    extern int wordsize, fetchsize, HaveMemHier, HaveCycleRange;
+    extern ac_sto_list* load_device;
+
+    extern ac_decoder_full *decoder;
+    extern char* project_name;
+    extern char* upper_project_name;
+    ac_stg_list *pstage;
+    ac_pipe_list *ppipe;
+
+    char filename[256];
+
+    
+    //! File containing decoding structures 
+    FILE *output;
+
+    sprintf(filename, "%s_parms.H", project_name);
+    if ( !(output = fopen(filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+
+    print_comment( output, "ArchC Parameters header file.");
+    fprintf( output, "#ifndef  _%s_PARMS_H\n", upper_project_name);
+    fprintf( output, "#define  _%s_PARMS_H\n\n", upper_project_name);
+
+    /* options defines */
+    if( ACVerboseFlag || ACVerifyFlag )
+      fprintf( output, "#define  AC_UPDATE_LOG \t //!< Update log generation turned on.\n");
+
+    if( ACVerboseFlag )
+      fprintf( output, "#define  AC_VERBOSE \t //!< Indicates Verbose mode. Where update logs are dumped on screen.\n");
+
+    if( ACVerifyFlag )
+      fprintf( output, "#define  AC_VERIFY \t //!< Indicates that co-verification is turned on.\n");
+	
+    if( ACDebugFlag )
+      fprintf( output, "#define  AC_DEBUG \t //!< Indicates that debug option is turned on.\n\n");
+
+    if( ACDelayFlag )
+      fprintf( output, "#define  AC_DELAY \t //!< Indicates that delay option is turned on.\n\n");
+    
+    if( ACStatsFlag )
+      fprintf( output, "#define  AC_STATS \t //!< Indicates that statistics collection is turned on.\n");
+
+    if( HaveMemHier )
+      fprintf( output, "#define  AC_MEM_HIERARCHY \t //!< Indicates that a memory hierarchy was declared.\n\n");
+
+    if( HaveCycleRange )
+      fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
+
+    /* parms namespace definition */
+    fprintf(output, "namespace %s_parms {\n\n", project_name);
+
+    fprintf( output, "\nstatic const unsigned int AC_DEC_FIELD_NUMBER = %d; \t //!< Number of Fields used by decoder.\n", decoder->nFields);
+    fprintf( output, "static const unsigned int AC_DEC_INSTR_NUMBER = %d; \t //!< Number of Instructions declared.\n", instr_num);
+    fprintf( output, "static const unsigned int AC_DEC_FORMAT_NUMBER = %d; \t //!< Number of Formats declared.\n", format_num);
+    fprintf( output, "static const unsigned int AC_DEC_LIST_NUMBER = %d; \t //!< Number of decodification lists used by decoder.\n", declist_num);
+    fprintf( output, "static const unsigned int AC_MAX_BUFFER = %d; \t //!< This is the size needed by decoder buffer. It is equal to the biggest instruction size.\n", largest_format_size/8);
+    fprintf( output, "static const unsigned int AC_WORDSIZE = %d; \t //!< Architecture wordsize in bits.\n", wordsize);
+    fprintf( output, "static const unsigned int AC_FETCHSIZE = %d; \t //!< Architecture fetchsize in bits.\n", fetchsize);
+    fprintf( output, "static const unsigned int AC_MATCH_ENDIAN = %d; \t //!< If the simulated arch match the endian with host.\n", ac_match_endian);
+    fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n", ac_tgt_endian);
+    fprintf( output, "static const unsigned int AC_RAMSIZE = %u; \t //!< Architecture RAM size in bytes (storage %s).\n", load_device->size, load_device->name);
+    fprintf( output, "static const unsigned int AC_RAM_END = %u; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
+
+    if (ACGDBIntegrationFlag)
+    fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
+
+    fprintf( output, "\n\n");
+    COMMENT(INDENT[0],"Word type definitions.");
+      
+    //Emiting ArchC word types.
+    switch( wordsize ){
+    case 8:
+      fprintf( output, "typedef  unsigned char ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned char ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  char ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  unsigned char ac_Hword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned char ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  char ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned short ac_Dword; \t //!< Signed double word.\n");
+      fprintf( output, "typedef  unsigned short ac_UDword; \t //!< Unsigned double word.\n");
+      fprintf( output, "typedef  short ac_SDword; \t //!< Signed double word.\n");
+      break;
+    case 16:
+      fprintf( output, "typedef  unsigned short int ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned short int ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  short int ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  unsigned char ac_Hword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned char ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  char ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned int ac_Dword; \t //!< Signed double word.\n");
+      fprintf( output, "typedef  unsigned int ac_UDword; \t //!< Unsigned double word.\n");
+      fprintf( output, "typedef  int ac_SDword; \t //!< Signed double word.\n");
+      break;
+    case 32:
+      fprintf( output, "typedef  unsigned int ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned int ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  int ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  short int ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned short int  ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  unsigned short int  ac_Hword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  unsigned long long ac_Dword; \t //!< Signed double word.\n");
+      fprintf( output, "typedef  unsigned long long ac_UDword; \t //!< Unsigned double word.\n");
+      fprintf( output, "typedef  long long ac_SDword; \t //!< Signed double word.\n");
+      break;
+    case 64:
+      fprintf( output, "typedef  unsigned long long ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned long long ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  long long ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  int ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned int  ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  unsigned int  ac_UHword; \t //!< Unsigned half word.\n");
+      break;
+    default:
+      AC_ERROR("Wordsize not supported: %d\n", wordsize);
+      break;
+    }
+	
+    fprintf( output, "typedef  char ac_byte; \t //!< Signed byte word.\n");
+    fprintf( output, "typedef  unsigned char ac_Ubyte; \t //!< Unsigned byte word.\n");
+
+    fprintf( output, "\n\n");
+    COMMENT(INDENT[0],"Fetch type definition.");
+
+    switch( fetchsize ){
+    case 8:
+      fprintf( output, "typedef  unsigned char ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    case 16:
+      fprintf( output, "typedef  unsigned short int ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    case 32:
+      fprintf( output, "typedef  unsigned int ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    case 64:
+      fprintf( output, "typedef  unsigned long long ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    default:
+      AC_ERROR("Fetchsize not supported: %d\n", fetchsize);
+      break;
+    }
+
+
+    fprintf( output, "\n\n");
+
+    //This enum type is used for case identification inside the ac_behavior methods
+    fprintf( output, "enum ac_stage_list {");
+
+    if( stage_list ){   //Enum type for pipes declared through ac_stage keyword
+      fprintf( output, "%s=1,", stage_list->name);
+      pstage = stage_list->next;
+      for( pstage = stage_list->next; pstage && pstage->next != NULL; pstage=pstage->next){
+	fprintf( output, "%s,", pstage->name);
+      }
+      fprintf( output, "%s", pstage->name);
+    }
+    else if(pipe_list){  //Enum type for pipes declared through ac_pipe keyword
+
+      for(ppipe = pipe_list; ppipe!= NULL; ppipe=ppipe->next){
+
+	for(pstage=ppipe->stages; pstage && pstage->next!= NULL; pstage=pstage->next){
+
+	  //When we have just one pipe use only the stage name
+	  if( ppipe->next )
+	    fprintf( output, "%s_%s=%d,", ppipe->name, pstage->name, pstage->id);
+	  else
+	    fprintf( output, "%s=%d,", pstage->name, pstage->id);
+
+	}
+	if( ppipe->next )
+	  fprintf( output, "%s_%s=%d", ppipe->name, pstage->name, pstage->id);  //The last doesn't need a comma
+	else
+	  fprintf( output, "%s=%d", pstage->name, pstage->id);
+      }
+    }
+    else{
+      fprintf( output, "ST0");
+    }
+
+    //Closing enum declaration
+    fprintf( output, "};\n\n");
+      
+    /* closing namespace declaration */
+
+    fprintf( output, "}\n\n");
+      
+    //Create a compiler error if delay assignment is used without the -dy option
+    COMMENT(INDENT[0],"Create a compiler error if delay assignment is used without the -dy option");
+    fprintf( output, "#ifndef AC_DELAY\n");
+    fprintf( output, "extern %s_parms::ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n", project_name);
+    fprintf( output, "#define delay(a,b) ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___\n");
+    fprintf( output, "#endif\n");
+
+
+    fprintf( output, "\n\n");
+    fprintf( output, "#endif  //_%s_PARMS_H\n", upper_project_name);
+
+    fclose(output);
+  }
+
+
+  //!Creates the ISA Header File.
+  void CreateISAHeader() {
+
+    extern ac_dec_format *format_ins_list;
+    extern char *project_name;
+    extern char *upper_project_name;
+    extern ac_dec_instr *instr_list;
+    extern int HaveMultiCycleIns;
+    extern int wordsize;
+    extern ac_dec_field *common_instr_field_list;
+    ac_dec_format *pformat;
+    ac_dec_instr *pinstr;
+    ac_dec_field *pfield, *pf;
+
+    char filename[256];
+    char description[] = "Instruction Set Architecture header file.";
+   
+    // File containing ISA declaration
+    FILE  *output;
+
+    sprintf( filename, "%s_isa.H", project_name);
+
+    if ( !(output = fopen( filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+
+    print_comment( output, description);
+    fprintf( output, "#ifndef _%s_ISA_H\n", upper_project_name);
+    fprintf( output, "#define _%s_ISA_H\n\n", upper_project_name);
+    fprintf( output, "#include \"%s_parms.H\"\n", project_name);
+    fprintf( output, "#include \"ac_instr.H\"\n");
+    fprintf( output, "#include \"ac_decoder_rt.H\"\n");
+    fprintf( output, "#include \"ac_instr_info.H\"\n");
+    fprintf( output, "#include \"%s_arch.H\"\n", project_name);
+    fprintf( output, "#include \"%s_arch_ref.H\"\n", project_name);
+    if (ACStatsFlag)
+      fprintf(output, "#include \"%s_stats.H\"\n", project_name);
+    fprintf( output, "\n");
+
+    fprintf( output, "class %s_isa: public %s_arch_ref", project_name,
+	     project_name);
+    if (ACStatsFlag)
+      fprintf(output, ", public %s_all_stats", project_name);
+    fprintf(output, " {\n");
+
+    fprintf(output, "private:\n");
+    fprintf(output, "typedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", project_name);
+
+    fprintf(output, "public:\n");
+
+    fprintf( output, "\n");
+    fprintf( output, "%sstatic ac_dec_field fields[%s_parms::AC_DEC_FIELD_NUMBER];\n", INDENT[1], project_name);
+    fprintf( output, "%sstatic ac_dec_format formats[%s_parms::AC_DEC_FORMAT_NUMBER];\n", INDENT[1], project_name);
+    fprintf( output, "%sstatic ac_dec_list dec_list[%s_parms::AC_DEC_LIST_NUMBER];\n", INDENT[1], project_name);
+    fprintf( output, "%sstatic ac_dec_instr instructions[%s_parms::AC_DEC_INSTR_NUMBER];\n", INDENT[1], project_name);
+    fprintf( output, "%sstatic const ac_instr_info instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1], project_name, project_name);
+
+    fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
+
+    /* current instruction ID */
+    fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
+    
+    //Emiting Constructor.
+    COMMENT(INDENT[1], "Constructor.");
+    fprintf( output,"%s%s_isa(%s_arch& ref) : %s_arch_ref(ref) {\n", INDENT[1],
+	     project_name, project_name, project_name);
+
+    COMMENT(INDENT[2], "Building Decoder.");
+    fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n", INDENT[2], project_name, project_name );
+
+    /* Closing constructor declaration. */
+    fprintf( output,"%s}\n\n", INDENT[1] );
+
+    /* getter methods for current instruction */
+    fprintf(output, "%sinline char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
+    fprintf(output, "%sinline char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
+    fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
+    fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
+    fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
+    fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", INDENT[1]);
+
+    /* Instruction Behavior Method declarations */
+    /* instruction */
+    fprintf(output, "%svoid _behavior_instruction(", INDENT[1]);
+    /* common_instr_field_list has the list of fields for the generic instruction. */
+    for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
+      if( pfield->sign )
+	fprintf(output, "int %s", pfield->name);
+      else
+	fprintf(output, "unsigned %s", pfield->name);
+      if (pfield->next != NULL)
+	fprintf(output, ", ");
+    }
+    fprintf(output, ");\n\n");
+
+    /* begin & end */
+    fprintf(output, "%svoid _behavior_begin();\n", INDENT[1]);
+    fprintf(output, "%svoid _behavior_end();\n\n", INDENT[1]);
+
+    /* types/formats */
+    for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
+      fprintf(output, "%svoid _behavior_%s_%s(",
+	      INDENT[1], project_name, pformat->name);
+      for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+	if (pfield -> sign)
+	  fprintf(output, "int %s", pfield->name);
+	else
+	  fprintf(output, "unsigned int %s", pfield->name);
+	if (pfield->next != NULL)
+	  fprintf(output, ", ");
+      }
+      fprintf(output, ");\n");
+    }
+    fprintf(output, "\n");
+
+    /* instructions */
+    for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+      for (pformat = format_ins_list;
+	   (pformat != NULL) && strcmp(pinstr->format, pformat->name);
+	   pformat = pformat->next);
+      fprintf(output, "%svoid behavior_%s(",
+	      INDENT[1], pinstr->name);
+      for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+	if (pfield -> sign)
+	  fprintf(output, "int %s", pfield->name);
+	else
+	  fprintf(output, "unsigned int %s", pfield->name);
+	if (pfield->next != NULL)
+	  fprintf(output, ", ");
+      }
+      fprintf(output, ");\n");
+    }
+    fprintf(output, "\n");
+
+    /* Closing class declaration. */
+    fprintf( output,"};\n\n" );
+
+    /* END OF FILE */
+    fprintf( output, "\n\n#endif //_%s_ISA_H\n\n", upper_project_name);
+    fclose( output); 
+
+    /* opens behavior macros file */
+    sprintf( filename, "%s_bhv_macros.H", project_name);
+    if ( !(output = fopen( filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+
+    fprintf( output, "#ifndef _%s_BHV_MACROS_H\n", upper_project_name);
+    fprintf( output, "#define _%s_BHV_MACROS_H\n\n", upper_project_name);
+    
+    /* ac_memory TYPEDEF */
+    fprintf(output, "typedef ac_memport<%s_parms::ac_word, %s_parms::ac_Hword> ac_memory;\n\n", project_name, project_name);
+
+    /* ac_behavior main macro */
+    fprintf( output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr ()\n\n");
+
+    /* ac_behavior 2nd level macros - generic instruction */
+    fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction(", project_name);
+    /* common_instr_field_list has the list of fields for the generic instruction. */
+    for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
+      if( pfield->sign )
+	fprintf(output, "int %s", pfield->name);
+      else
+	fprintf(output, "unsigned %s", pfield->name);
+      if (pfield->next != NULL)
+	fprintf(output, ", ");
+    }
+    fprintf(output, ")\n\n");
+
+    /* ac_behavior 2nd level macros - pseudo-instructions begin, end */
+    fprintf(output, "#define AC_BEHAVIOR_begin() %s_isa::_behavior_begin()\n", project_name);
+    fprintf(output, "#define AC_BEHAVIOR_end() %s_isa::_behavior_end()\n", project_name);
+
+    fprintf(output, "\n");
+
+    /* ac_behavior 2nd level macros - instruction types */
+    for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
+      fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::_behavior_%s_%s(", pformat->name, project_name, project_name, pformat->name);
+      for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+	if (pfield -> sign)
+	  fprintf(output, "int %s", pfield->name);
+	else
+	  fprintf(output, "unsigned int %s", pfield->name);
+	if (pfield->next != NULL)
+	  fprintf(output, ", ");
+      }
+      fprintf(output, ")\n");
+    }
+    fprintf(output, "\n");
+
+    /* ac_behavior 2nd level macros - instructions */
+    for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+      fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::behavior_%s(", pinstr->name, project_name, pinstr->name);
+      for (pformat = format_ins_list;
+	   (pformat != NULL) && strcmp(pinstr->format, pformat->name);
+	   pformat = pformat->next);
+      for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+	if (pfield -> sign)
+	  fprintf(output, "int %s", pfield->name);
+	else
+	  fprintf(output, "unsigned int %s", pfield->name);
+	if (pfield->next != NULL)
+	  fprintf(output, ", ");
+      }
+      fprintf(output, ")\n");
+    }
+
+    /* END OF FILE */
+    fprintf( output, "\n\n#endif //_%s_BHV_MACROS_H\n\n", upper_project_name);
+    fclose( output); 
+
+  }
+
+  //!Creates Stage Module Header File  for Single Pipelined Architectures.
+  void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
+
+    extern char *project_name;
+    extern int stage_num;
+    ac_stg_list *pstage;
+
+    char* stage_filename;
+    FILE* output;
+
+    for( pstage = stage_list; pstage != NULL; pstage=pstage->next){      
+
+
+      //IF a ac_pipe declaration was used, stage module names will be PIPENAME_STAGENAME,
+      //otherwise they will be just STAGENAME.
+      //This makes possible to define multiple pipelines containg stages with the same name.
+      if( pipe_name ){
+	stage_filename = (char*) malloc(strlen(pstage->name)+strlen(pipe_name)+strlen(".H")+2);
+	sprintf( stage_filename, "%s_%s.H", pipe_name, pstage->name);
+      }
+      else{
+	stage_filename = (char*) malloc(strlen(pstage->name)+strlen(".H")+1);
+	sprintf( stage_filename, "%s.H", pstage->name);
+      }
+
+      if ( !(output = fopen( stage_filename, "w"))){
+	perror("ArchC could not open output file");
+	exit(1);
+      }
+
+      print_comment( output, "Stage Module Header File.");
+      if( pipe_name ){
+	fprintf( output, "#ifndef  _%s_%s_STAGE_H\n", pipe_name, pstage->name);
+	fprintf( output, "#define  _%s_%s_STAGE_H\n\n", pipe_name, pstage->name);
+      }
+      else{
+	fprintf( output, "#ifndef  _%s_STAGE_H\n", pstage->name);
+	fprintf( output, "#define  _%s_STAGE_H\n\n", pstage->name);
+      }
+
+      fprintf( output, "#include \"archc.H\"\n");
+      fprintf( output, "#include \"%s_isa.H\"\n\n", project_name);
+
+      if( pstage->id == 1 && ACDecCacheFlag )
+	fprintf( output, "extern unsigned dec_cache_size;\n\n");
+   
+      //Declaring stage namespace.
+      if( pipe_name ){
+	fprintf( output, "namespace AC_%s_%s{\n\n", pipe_name, pstage->name); 
+	fprintf( output, "class %s_%s: public ac_stage {\n", pipe_name, pstage->name);
+      }
+      else{
+	fprintf( output, "namespace AC_%s{\n", pstage->name); 
+	fprintf( output, "class %s: public ac_stage {\n", pstage->name);
+      }
+      //Declaring stage module. 
+      //It already includes the behavior method.
+      fprintf( output, "public:\n");
+
+      if( pstage->id != 1 )
+	fprintf( output, "%ssc_in<ac_instr> regin;\n", INDENT[1]);
+      fprintf( output, "%ssc_inout<unsigned> bhv_pc;\n", INDENT[1]);
+
+      if( pstage->id != stage_num ){
+	fprintf( output, "%ssc_out<ac_instr> regout;\n", INDENT[1]);
+	fprintf( output, "%ssc_out<bool> bhv_start;\n", INDENT[1]);
+      }
+
+      fprintf( output, "%ssc_out<bool> bhv_done;\n", INDENT[1]);
+      fprintf( output, "%s%s_isa  ISA;\n", INDENT[1], project_name );
 
 
 
-    fprintf( output, "%sbool start_up;\n", INDENT[1]);
+      fprintf( output, "%sbool start_up;\n", INDENT[1]);
+      fprintf( output, "%sunsigned id;\n\n", INDENT[1]);
+      fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
+
+      if(pstage->id==1 && ACDecCacheFlag){
+	fprintf( output, "%scache_item* DEC_CACHE;\n\n", INDENT[1]);
+      }
+		  
+      if( pipe_name ){
+	fprintf( output, "%sSC_HAS_PROCESS( %s_%s );\n\n", INDENT[1], pipe_name, pstage->name);
+	fprintf( output, "%s%s_%s( sc_module_name name_ ): ac_stage(name_){\n\n", INDENT[1], pipe_name, pstage->name);
+      }
+      else{
+	fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], pstage->name);
+	fprintf( output, "%s%s( sc_module_name name_ ): ac_stage(name_){\n\n", INDENT[1], pstage->name);
+      }
+
+      //Declaring Constructor.
+      fprintf( output, "%sSC_METHOD( behavior );\n", INDENT[2]);
+      if( pstage->id != stage_num)
+	fprintf( output, "%ssensitive_pos << bhv_start;\n", INDENT[2]);
+      else
+	fprintf( output, "%ssensitive << bhv_pc;\n", INDENT[2]);
+
+      //We need this in order to not fetch the first instruction
+      //during initialization.
+      if( pstage->id == 1){
+	fprintf( output, "%sdont_initialize();\n\n", INDENT[2]);
+	fprintf( output, "%sstart_up=1;\n", INDENT[2]);
+      }
+      fprintf( output, "%sid = %d;\n\n", INDENT[2], pstage->id);
+
+      //end of constructor
+      fprintf( output, "%s}\n", INDENT[1]); 
+
+      if(pstage->id==1 && ACDecCacheFlag){
+	fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);  //end constructor
+	fprintf( output, "%sDEC_CACHE = (cache_item*)calloc(sizeof(cache_item),dec_cache_size);\n", INDENT[2]);  //end constructor
+	fprintf( output, "%s}\n", INDENT[1]);  //end init_dec_cache
+      }
+
+		  
+      fprintf( output, "};\n");
+
+      //End of namespace
+      fprintf( output, "}\n"); 
+
+      fprintf( output, "#endif \n");
+      fclose(output);
+      free(stage_filename);
+    }
+  }
+
+  //!Creates Processor Module Header File
+  void CreateProcessorHeader() {
+
+    extern ac_stg_list *stage_list;
+    extern ac_pipe_list *pipe_list;
+    extern char *project_name;
+    extern char *upper_project_name;
+    extern int stage_num;
+    extern int HaveMultiCycleIns;
+    extern int HaveTLMIntrPorts;
+    extern ac_sto_list *tlm_intr_port_list;
+    ac_stg_list *pstage;
+    ac_pipe_list *ppipe;
+    ac_sto_list *pport;
+    int i;
+    char filename[256];
+    char description[] = "Architecture Module header file.";
+    
+    // File containing ISA declaration
+    FILE  *output;
+    
+    sprintf( filename, "%s.H", project_name);
+
+    if ( !(output = fopen( filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+    
+    print_comment( output, description);
+    
+    
+    fprintf( output, "#ifndef  _%s_H\n", upper_project_name);
+    fprintf( output, "#define  _%s_H\n\n", upper_project_name);
+    
+    fprintf( output, "#include \"systemc.h\"\n");
+    fprintf( output, "#include \"ac_module.H\"\n");
+    fprintf( output, "#include \"ac_utils.H\"\n");
+    fprintf( output, "#include \"%s_parms.H\"\n", project_name);
+    fprintf( output, "#include \"%s_arch.H\"\n", project_name);
+    fprintf( output, "#include \"%s_isa.H\"\n", project_name);
+
+    if (ACABIFlag)
+      fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
+
+    if (HaveTLMIntrPorts) {
+      fprintf(output, "#include \"ac_tlm_intr_port.H\"\n");
+      fprintf(output, "#include \"%s_intr_handlers.H\"\n", project_name);
+    }
+
+    if(ACGDBIntegrationFlag) {
+      fprintf( output, "#include \"ac_gdb_interface.H\"\n");
+      fprintf( output, "#include \"ac_gdb.H\"\n");
+    }
+    
+    fprintf(output, "\n\n");
+
+    fprintf(output, "class %s: public ac_module, public %s_arch", project_name, project_name);
+
+    if (ACGDBIntegrationFlag)
+      fprintf(output, ", public AC_GDB_Interface<%s_parms::ac_word>", project_name);
+
+    fprintf(output, " {\n");
+
+    fprintf(output, "private:\n");
+    fprintf(output, "%stypedef cache_item<%s_parms::AC_DEC_FIELD_NUMBER> cache_item_t;\n", INDENT[1], project_name);
+    fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", INDENT[1], project_name);
+
+    fprintf( output, "public:\n\n");
+
+    fprintf( output, "%sunsigned bhv_pc;\n", INDENT[1]);
+    
+    if( HaveMultiCycleIns)
+      fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
+    
+    fprintf( output, " \n");
+
+    if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+      fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
+
+    fprintf( output, "\n");
+    
+    fprintf(output, "%sbool has_delayed_load;\n", INDENT[1]);
+    fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
+
+    fprintf( output, "%s%s_isa ISA;\n", INDENT[1], project_name );
+    if (ACABIFlag)
+      fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
+
+    if (HaveTLMIntrPorts) {
+      for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
+	fprintf(output, "%s%s_%s_handler %s_hnd;\n", INDENT[1], project_name, pport->name, pport->name);
+	fprintf(output, "%sac_tlm_intr_port %s;\n\n", INDENT[1], pport->name);
+      }
+    }
+
+    if(ACDecCacheFlag){
+      fprintf( output, "%scache_item_t* DEC_CACHE;\n\n", INDENT[1]);
+    }
+
     fprintf( output, "%sunsigned id;\n\n", INDENT[1]);
+    fprintf( output, "%sbool start_up;\n", INDENT[1]);
+    fprintf( output, "%sunsigned* instr_dec;\n", INDENT[1]);
+    fprintf( output, "%sac_instr_t* instr_vec;\n\n", INDENT[1]);
+
+    if (ACGDBIntegrationFlag)
+      fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n\n", INDENT[1], project_name);
+
+    COMMENT(INDENT[1], "Behavior execution method.");
     fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
 
-    if(pstage->id==1 && ACDecCacheFlag){
-      fprintf( output, "%scache_item* DEC_CACHE;\n\n", INDENT[1]);
-    }
-		
-    if( pipe_name ){
-      fprintf( output, "%sSC_HAS_PROCESS( %s_%s );\n\n", INDENT[1], pipe_name, pstage->name);
-      fprintf( output, "%s%s_%s( sc_module_name name_ ): ac_stage(name_){\n\n", INDENT[1], pipe_name, pstage->name);
-    }
-    else{
-      fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], pstage->name);
-      fprintf( output, "%s%s( sc_module_name name_ ): ac_stage(name_){\n\n", INDENT[1], pstage->name);
+    if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+      COMMENT(INDENT[1], "Verification method.");
+      fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
+      fprintf( output, " \n");
     }
 
-    //Declaring Constructor.
-    fprintf( output, "%sSC_METHOD( behavior );\n", INDENT[2]);
-    if( pstage->id != stage_num)
-      fprintf( output, "%ssensitive_pos << bhv_start;\n", INDENT[2]);
-    else
-      fprintf( output, "%ssensitive << bhv_pc;\n", INDENT[2]);
+    fprintf( output, " \n");
 
-    //We need this in order to not fetch the first instruction
-    //during initialization.
-    if( pstage->id == 1){
-      fprintf( output, "%sdont_initialize();\n\n", INDENT[2]);
-      fprintf( output, "%sstart_up=1;\n", INDENT[2]);
+    fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], project_name);
+
+    //!Declaring ARCH Constructor.
+    COMMENT(INDENT[1], "Constructor.");
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", INDENT[1], project_name, project_name);
+    if (ACABIFlag)
+      fprintf(output, ", syscall(*this)");
+
+    if (HaveTLMIntrPorts) {
+      for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
+	fprintf(output, ", %s_hnd(*this)", pport->name);
+	fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
+      }
     }
-    fprintf( output, "%sid = %d;\n\n", INDENT[2], pstage->id);
 
-    //end of constructor
-    fprintf( output, "%s}\n", INDENT[1]); 
+    fprintf(output, " {\n\n");
 
-    if(pstage->id==1 && ACDecCacheFlag){
+    fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
+
+    if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+      fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
+      fprintf( output, "%ssensitive<< done;\n", INDENT[2]);  
+      fprintf( output, " \n");
+    }
+
+    fprintf( output,"%sbhv_pc = 0; \n", INDENT[2]);
+    fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
+
+    fprintf( output, "%sstart_up=1;\n", INDENT[2]);
+    fprintf( output, "%sid = %d;\n\n", INDENT[2], 1);
+
+    if (ACGDBIntegrationFlag)
+      fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", INDENT[2], project_name, project_name);
+
+    fprintf( output, "%s}\n", INDENT[1]);  //end constructor
+
+    if(ACDecCacheFlag){
       fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);  //end constructor
-      fprintf( output, "%sDEC_CACHE = (cache_item*)calloc(sizeof(cache_item),dec_cache_size);\n", INDENT[2]);  //end constructor
+      fprintf( output, "%sDEC_CACHE = (cache_item_t*) calloc(sizeof(cache_item_t),dec_cache_size);\n", INDENT[2]);  //end constructor
       fprintf( output, "%s}\n", INDENT[1]);  //end init_dec_cache
     }
 
-                
-    fprintf( output, "};\n");
+    if(ACGDBIntegrationFlag) {
+      fprintf( output, "%s/***********\n", INDENT[1]);
+      fprintf( output, "%s * GDB Support - user supplied methods\n", INDENT[1]);
+      fprintf( output, "%s * For further information, look at ~/src/aclib/ac_gdb/ac_gdb_interface.H\n", INDENT[1]);
+      fprintf( output, "%s ***********/\n\n", INDENT[1]);
 
-    //End of namespace
-    fprintf( output, "}\n"); 
-
-    fprintf( output, "#endif \n");
-    fclose(output);
-    free(stage_filename);
-  }
-}
-
-//!Creates Processor Module Header File
-void CreateProcessorHeader() {
-
-  extern ac_stg_list *stage_list;
-  extern ac_pipe_list *pipe_list;
-  extern char *project_name;
-  extern int stage_num;
-  extern int HaveMultiCycleIns;
-  extern int HaveTLMIntrPorts;
-  extern ac_sto_list *tlm_intr_port_list;
-  ac_stg_list *pstage;
-  ac_pipe_list *ppipe;
-  ac_sto_list *pport;
-  int i;
-  char filename[256];
-  char description[] = "Architecture Module header file.";
-  
-  // File containing ISA declaration
-  FILE  *output;
-  
-  sprintf( filename, "%s.H", project_name);
-
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-  
-  print_comment( output, description);
-  
-  
-  fprintf( output, "#ifndef  _%s_H\n", project_name);
-  fprintf( output, "#define  _%s_H\n\n", project_name);
-  
-  fprintf( output, "#include \"systemc.h\"\n");
-  fprintf( output, "#include \"ac_module.H\"\n");
-  fprintf( output, "#include \"ac_utils.H\"\n");
-  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
-  fprintf( output, "#include \"%s_arch.H\"\n", project_name);
-  fprintf( output, "#include \"%s_isa.H\"\n", project_name);
-
-  if (ACABIFlag)
-    fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
-
-  if (HaveTLMIntrPorts) {
-    fprintf(output, "#include \"ac_tlm_intr_port.H\"\n");
-    fprintf(output, "#include \"%s_intr_handlers.H\"\n", project_name);
-  }
-
-  if(ACGDBIntegrationFlag) {
-    fprintf( output, "#include \"ac_gdb_interface.H\"\n");
-    fprintf( output, "#include \"ac_gdb.H\"\n");
-  }
-  
-  fprintf(output, "\n\n");
-
-  fprintf(output, "class %s: public ac_module, public %s_arch", project_name, project_name);
-
-  if (ACGDBIntegrationFlag)
-    fprintf(output, ", public AC_GDB_Interface<%s_parms::ac_word>", project_name);
-
-  fprintf(output, " {\n");
-
-  fprintf(output, "private:\n");
-  fprintf(output, "%stypedef cache_item<%s_parms::AC_DEC_FIELD_NUMBER> cache_item_t;\n", INDENT[1], project_name);
-  fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", INDENT[1], project_name);
-
-  fprintf( output, "public:\n\n");
-
-  fprintf( output, "%sunsigned bhv_pc;\n", INDENT[1]);
-  
-  if( HaveMultiCycleIns)
-    fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
-  
-  fprintf( output, " \n");
-
-  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
-    fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
-
-  fprintf( output, "\n");
-  
-  fprintf(output, "%sbool has_delayed_load;\n", INDENT[1]);
-  fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
-
-  fprintf( output, "%s%s_isa ISA;\n", INDENT[1], project_name );
-  if (ACABIFlag)
-    fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
-
-  if (HaveTLMIntrPorts) {
-    for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-      fprintf(output, "%s%s_%s_handler %s_hnd;\n", INDENT[1], project_name, pport->name, pport->name);
-      fprintf(output, "%sac_tlm_intr_port %s;\n\n", INDENT[1], pport->name);
-    }
-  }
-
-  if(ACDecCacheFlag){
-    fprintf( output, "%scache_item_t* DEC_CACHE;\n\n", INDENT[1]);
-  }
-
-  fprintf( output, "%sunsigned id;\n\n", INDENT[1]);
-  fprintf( output, "%sbool start_up;\n", INDENT[1]);
-  fprintf( output, "%sunsigned* instr_dec;\n", INDENT[1]);
-  fprintf( output, "%sac_instr_t* instr_vec;\n\n", INDENT[1]);
-
-  if (ACGDBIntegrationFlag)
-    fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n\n", INDENT[1], project_name);
-
-  COMMENT(INDENT[1], "Behavior execution method.");
-  fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
-
-  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
-    COMMENT(INDENT[1], "Verification method.");
-    fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
-    fprintf( output, " \n");
-  }
-
-  fprintf( output, " \n");
-
-  fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], project_name);
-
-  //!Declaring ARCH Constructor.
-  COMMENT(INDENT[1], "Constructor.");
-  fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", INDENT[1], project_name, project_name);
-  if (ACABIFlag)
-    fprintf(output, ", syscall(*this)");
-
-  if (HaveTLMIntrPorts) {
-    for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-      fprintf(output, ", %s_hnd(*this)", pport->name);
-      fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
-    }
-  }
-
-  fprintf(output, " {\n\n");
-
-  fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
-
-  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
-    fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
-    fprintf( output, "%ssensitive<< done;\n", INDENT[2]);  
-    fprintf( output, " \n");
-  }
-
-  fprintf( output,"%sbhv_pc = 0; \n", INDENT[2]);
-  fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
-
-  fprintf( output, "%sstart_up=1;\n", INDENT[2]);
-  fprintf( output, "%sid = %d;\n\n", INDENT[2], 1);
-
-  if (ACGDBIntegrationFlag)
-    fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", INDENT[2], project_name, project_name);
-
-  fprintf( output, "%s}\n", INDENT[1]);  //end constructor
-
-  if(ACDecCacheFlag){
-    fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);  //end constructor
-    fprintf( output, "%sDEC_CACHE = (cache_item_t*) calloc(sizeof(cache_item_t),dec_cache_size);\n", INDENT[2]);  //end constructor
-    fprintf( output, "%s}\n", INDENT[1]);  //end init_dec_cache
-  }
-
-  if(ACGDBIntegrationFlag) {
-    fprintf( output, "%s/***********\n", INDENT[1]);
-    fprintf( output, "%s * GDB Support - user supplied methods\n", INDENT[1]);
-    fprintf( output, "%s * For further information, look at ~/src/aclib/ac_gdb/ac_gdb_interface.H\n", INDENT[1]);
-    fprintf( output, "%s ***********/\n\n", INDENT[1]);
-
-    fprintf( output, "%s/* Processor Feature Support */\n", INDENT[1]);
-    fprintf( output, "%sbool get_ac_tgt_endian();\n\n", INDENT[1]);
-    fprintf( output, "%svoid ac_stop();\n\n", INDENT[1]);
-    
-    fprintf( output, "%s/* Register access */\n", INDENT[1]);
-    fprintf( output, "%sint nRegs(void);\n", INDENT[1]);
-    fprintf( output, "%s%s_parms::ac_word reg_read(int reg);\n", INDENT[1], project_name);
-    fprintf( output, "%svoid reg_write( int reg, %s_parms::ac_word value );\n", INDENT[1], project_name);
-    fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
-    
-    fprintf( output, "%s/* Memory access */\n", INDENT[1]);
-    fprintf( output, "%sunsigned char mem_read( unsigned int address );\n", INDENT[1]);
-    fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", INDENT[1]);
-    
-    fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
-    fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1]);
-  }
-  
-    fprintf( output, "\n%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
-    fprintf( output, "%svoid init();\n\n", INDENT[1]);
-    fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
-    fprintf( output, "%svoid delayed_load(char* program);\n\n", INDENT[1]);
-    fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
-
-    fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
-
-  //!Closing class declaration.
-  fprintf( output,"%s};\n", INDENT[0] );
-  fprintf( output, "#endif  //_%s_H\n\n", project_name);
-
-  fclose( output); 
-}
-
-//!Creates Formatted Registers Header File
-void CreateRegsHeader() {
-  extern ac_dec_format *format_reg_list;
-  extern ac_sto_list *storage_list;
-
-  ac_sto_list *pstorage;
-  ac_dec_format *pformat;
-  ac_dec_field *pfield;
-
-  int flag = 1;
-  FILE *output;
-  char filename[] = "ac_fmt_regs.H";
-
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-
-    if(( pstorage->type == REG ) && (pstorage->format != NULL )){
-
-      if(flag){  //Print this just once.
-        if ( !(output = fopen( filename, "w"))){
-          perror("ArchC could not open output file");
-          exit(1);
-        }
-
-
-        print_comment( output, "ArchC Formatted Registers header file.");
-        fprintf( output, "#ifndef  _AC_FMT_REGS_H\n");
-        fprintf( output, "#define  _AC_FMT_REGS_H\n\n");
-        
-        fprintf( output, "#include  \"ac_storage.H\"\n");
-        fprintf( output, "#include  \"ac_parms.H\"\n");
-        fprintf( output, "\n\n");
-
-        COMMENT(INDENT[0],"ArchC classes for formatted registers.\n");
-        flag = 0;
-      }
-
-      for( pformat = format_reg_list; pformat!= NULL; pformat=pformat->next){
-        if(!(strcmp(pformat->name, pstorage->format))){
-          break;
-        }
-      }
-      //Declaring formatted register class.
-      fprintf( output, "class ac_%s {\n", pstorage->name);
-      fprintf( output, "%schar* name;\n", INDENT[1]);
-      fprintf( output, "public:\n");
+      fprintf( output, "%s/* Processor Feature Support */\n", INDENT[1]);
+      fprintf( output, "%sbool get_ac_tgt_endian();\n\n", INDENT[1]);
+      fprintf( output, "%svoid ac_stop();\n\n", INDENT[1]);
       
-      //TO DO: Registers with parameterized size. The templated class ac_reg is still not
-      //       working with sc_unit<x> types.
-      for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
-        fprintf( output,"%sac_reg<unsigned> %s;\n",INDENT[1],pfield->name );
+      fprintf( output, "%s/* Register access */\n", INDENT[1]);
+      fprintf( output, "%sint nRegs(void);\n", INDENT[1]);
+      fprintf( output, "%s%s_parms::ac_word reg_read(int reg);\n", INDENT[1], project_name);
+      fprintf( output, "%svoid reg_write( int reg, %s_parms::ac_word value );\n", INDENT[1], project_name);
+      fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
+      
+      fprintf( output, "%s/* Memory access */\n", INDENT[1]);
+      fprintf( output, "%sunsigned char mem_read( unsigned int address );\n", INDENT[1]);
+      fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", INDENT[1]);
+      
+      fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
+      fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1]);
+    }
+    
+      fprintf( output, "\n%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
+      fprintf( output, "%svoid init();\n\n", INDENT[1]);
+      fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
+      fprintf( output, "%svoid delayed_load(char* program);\n\n", INDENT[1]);
+      fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
 
-      fprintf( output, "\n\n");
-   
-      //Declaring class constructor.
-      fprintf( output, "%sac_%s(char* n): \n", INDENT[1], pstorage->name);
-      for( pfield = pformat->fields; pfield->next != NULL; pfield = pfield->next)
-        //Initializing field names with reg name. This is to enable Formatted Reg stats.
-        //Need to be changed if we adopt statistics collection for each field individually.
-        fprintf( output,"%s%s(\"%s\",%d),\n",INDENT[2],pfield->name,pstorage->name, 0 );
-      //Last field.
-      fprintf( output,"%s%s(\"%s\",%d){name = n;}\n\n",INDENT[2],pfield->name,pstorage->name, 0 );
+      fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
 
-      fprintf( output,"%svoid change_dump(ostream& output){}\n\n",INDENT[1] );
-      fprintf( output,"%svoid reset_log(){}\n\n",INDENT[1] );
-      fprintf( output,"%svoid behavior(ac_stage_list stage = (ac_stage_list)0, int cycle = 0);\n\n",INDENT[1] );
-      fprintf( output, "};\n\n");      
+    //!Closing class declaration.
+    fprintf( output,"%s};\n", INDENT[0] );
+    fprintf( output, "#endif  //_%s_H\n\n", upper_project_name);
 
+    fclose( output); 
+  }
+
+  //!Creates Formatted Registers Header File
+  void CreateRegsHeader() {
+    extern ac_dec_format *format_reg_list;
+    extern ac_sto_list *storage_list;
+
+    ac_sto_list *pstorage;
+    ac_dec_format *pformat;
+    ac_dec_field *pfield;
+
+    int flag = 1;
+    FILE *output;
+    char filename[] = "ac_fmt_regs.H";
+
+
+    for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
+
+      if(( pstorage->type == REG ) && (pstorage->format != NULL )){
+
+	if(flag){  //Print this just once.
+	  if ( !(output = fopen( filename, "w"))){
+	    perror("ArchC could not open output file");
+	    exit(1);
+	  }
+
+
+	  print_comment( output, "ArchC Formatted Registers header file.");
+	  fprintf( output, "#ifndef  _AC_FMT_REGS_H\n");
+	  fprintf( output, "#define  _AC_FMT_REGS_H\n\n");
+	  
+	  fprintf( output, "#include  \"ac_storage.H\"\n");
+	  fprintf( output, "#include  \"ac_parms.H\"\n");
+	  fprintf( output, "\n\n");
+
+	  COMMENT(INDENT[0],"ArchC classes for formatted registers.\n");
+	  flag = 0;
+	}
+
+	for( pformat = format_reg_list; pformat!= NULL; pformat=pformat->next){
+	  if(!(strcmp(pformat->name, pstorage->format))){
+	    break;
+	  }
+	}
+	//Declaring formatted register class.
+	fprintf( output, "class ac_%s {\n", pstorage->name);
+	fprintf( output, "%schar* name;\n", INDENT[1]);
+	fprintf( output, "public:\n");
+	
+	//TO DO: Registers with parameterized size. The templated class ac_reg is still not
+	//       working with sc_unit<x> types.
+	for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
+	  fprintf( output,"%sac_reg<unsigned> %s;\n",INDENT[1],pfield->name );
+
+	fprintf( output, "\n\n");
+     
+	//Declaring class constructor.
+	fprintf( output, "%sac_%s(char* n): \n", INDENT[1], pstorage->name);
+	for( pfield = pformat->fields; pfield->next != NULL; pfield = pfield->next)
+	  //Initializing field names with reg name. This is to enable Formatted Reg stats.
+	  //Need to be changed if we adopt statistics collection for each field individually.
+	  fprintf( output,"%s%s(\"%s\",%d),\n",INDENT[2],pfield->name,pstorage->name, 0 );
+	//Last field.
+	fprintf( output,"%s%s(\"%s\",%d){name = n;}\n\n",INDENT[2],pfield->name,pstorage->name, 0 );
+
+	fprintf( output,"%svoid change_dump(ostream& output){}\n\n",INDENT[1] );
+	fprintf( output,"%svoid reset_log(){}\n\n",INDENT[1] );
+	fprintf( output,"%svoid behavior(ac_stage_list stage = (ac_stage_list)0, int cycle = 0);\n\n",INDENT[1] );
+	fprintf( output, "};\n\n");      
+
+      }
+    }
+
+    if(!flag){ //We had at last one formatted reg declared.
+      fprintf( output, "#endif //_AC_FMT_REGS_H\n");
+      fclose(output);
     }
   }
-
-  if(!flag){ //We had at last one formatted reg declared.
-    fprintf( output, "#endif //_AC_FMT_REGS_H\n");
-    fclose(output);
-  }
-}
 
 
 //!Create the header file for ArchC statistics collection class.
-void CreateStatsHeader(void){
- 
+void CreateStatsHeaderTmpl(void){
+
   extern ac_sto_list *storage_list;
   extern char *project_name;
-  ac_sto_list *pstorage;
+  extern char *upper_project_name;
+  extern ac_dec_instr *instr_list;
+
+  ac_dec_instr *pinstr;
+
+  char filename[256];
 
   FILE *output;
-  char filename[] = "ac_stats.H";
 
+  sprintf(filename, "%s_stats.H.tmpl", project_name);
 
-  
   if ( !(output = fopen( filename, "w"))){
     perror("ArchC could not open output file");
     exit(1);
   }
 
+  print_comment(output, "ArchC Processor statistics data header file.");
 
-  print_comment( output, "ArchC Statistics Collection Class header file.");
+  fprintf( output, "#ifndef  %s_STATS_H\n", upper_project_name); 
+  fprintf( output, "#define  %s_STATS_H\n\n", upper_project_name);
 
-  fprintf( output, "#ifndef  _AC_STATS_H\n");
-  fprintf( output, "#define  _AC_STATS_H\n\n");
-        
   fprintf( output, "#include  <fstream>\n");
-  fprintf( output, "#include  \"archc.H\"\n");
-  fprintf( output, "#include  \"ac_parms.H\"\n");
-  fprintf( output, "#include  \"ac_sto_stats.H\"\n");
-  fprintf( output, "\n\n");
-
-  pstorage = storage_list;
-
-  if( pstorage ){
-
-    //Defining initialization macro
-    fprintf( output, "#define   INIT_STO_STATS  ");
-
-    fprintf( output, "%s( \"%s\")",pstorage->name, pstorage->name);
-    
-    for( pstorage = pstorage->next; pstorage != NULL; pstorage = pstorage->next ){
-      fprintf( output, ",%s( \"%s\")",pstorage->name, pstorage->name);
-    }
-    fprintf( output, ", ac_pc( \"ac_pc\")");
-  }
+  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
+  fprintf( output, "#include  \"ac_stats.H\"\n");
   fprintf( output, "\n");
 
-  COMMENT(INDENT[0],"ArchC class for Simulation Statistics.");
-  fprintf( output, "class ac_stats {\n\n");
-  
-  fprintf( output, "%sac_sto_stats* head;\n", INDENT[1]);
-  fprintf( output, "\n");
-  fprintf( output, "public:\n\n");
+  // Declaring processor stats
+  fprintf(output, "AC_SET_STATS(%s, INSTRUCTIONS, SYSCALLS);\n", project_name);
 
-  COMMENT(INDENT[1],"Output File.");
-  fprintf( output, "%sofstream output;\n", INDENT[1]);
+  // Declaring instruction stats
+  fprintf(output, "AC_SET_INSTR_STATS(%s, COUNT);\n\n", project_name);
 
-  COMMENT(INDENT[1],"Keeps the total simulation time.");
-  fprintf( output, "%sdouble time;\n", INDENT[1]);
-  fprintf( output, "\n");
+  // Declaring proc_all_stats struct
+  fprintf(output, "struct %s_all_stats {\n", project_name);
 
-  COMMENT(INDENT[1],"This table tells  how many times an instruction was executed during simulation.");
-  fprintf( output, "%sstruct {\n", INDENT[1]);
-  fprintf( output, "%schar *name;\n", INDENT[2]);
-  fprintf( output, "%sint count;\n", INDENT[2]);
-  fprintf( output, "%s} instr_table[AC_DEC_INSTR_NUMBER+1];\n", INDENT[1]);
-  fprintf( output, "\n");
+  // Declaring processor stats collector object
+  fprintf(output, "%s%s_stats stats;\n\n", INDENT[1], project_name);
 
-  COMMENT(INDENT[1],"This keeps the total number of instructions executed so far.");
-  fprintf( output, "%sint instr_executed;\n", INDENT[1]);
-  fprintf( output, "%sint syscall_executed;\n", INDENT[1]);
-  fprintf( output, "\n");
-
-  COMMENT(INDENT[1],"This keeps the cycle count estimates.");
-  fprintf( output, "%sunsigned long long ac_min_cycle_count;\n", INDENT[1]);
-  fprintf( output, "%sunsigned long long ac_max_cycle_count;\n", INDENT[1]);
-
-  COMMENT(INDENT[1],"Storage Device statistics objects.");
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "%sac_sto_stats %s;\n", INDENT[1], pstorage->name);
-  }
-  fprintf( output, "%sac_sto_stats ac_pc;\n", INDENT[1]);
-  fprintf( output, "\n");
-
-  //Printing class constructor.
-  COMMENT(INDENT[1],"Constructor");
-  fprintf( output, "%sac_stats( );\n\n", INDENT[1]);
-  fprintf( output, "\n");
-
-  //Printing print method.
-  COMMENT(INDENT[1],"Print Simulation Statistics Report");
-  fprintf( output, "%svoid print(  );\n\n", INDENT[1]);
-  fprintf( output, "\n");
-
-  //Printing add_access method.
-  COMMENT(INDENT[1],"Increase access number for a given device.");
-  fprintf( output, "%svoid add_access( char *name ){\n\n", INDENT[1]);
-
-  fprintf( output, "\n");
-
-  fprintf( output, "%s", INDENT[2]);
-  fprintf( output, "if( !strcmp( name, \"ac_pc\") )\n");
-  fprintf( output, "%sac_pc.inc_accesses();\n", INDENT[3]);
-  fprintf( output, "%selse ", INDENT[2]);
-  
-
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "if( !strcmp( name, \"%s\") )\n", pstorage->name);
-    fprintf( output, "%s%s.inc_accesses();\n", INDENT[3], pstorage->name);
-    fprintf( output, "%selse ", INDENT[2]);
-  }
-  fprintf( output, "\n%sAC_ERROR(\"Unknown storage device used for statistics collection.\" << name);\n", INDENT[3]);
-
-  fprintf( output, "%s}\n", INDENT[1]);
-  fprintf( output, "\n");
-
-  //Printing add_miss method.
-  COMMENT(INDENT[1],"Increase access number for a given device.");
-  fprintf( output, "%svoid add_miss( char *name ){\n\n", INDENT[1]);
-
-  fprintf( output, "\n");
-
-  fprintf( output, "%s", INDENT[2]);
-  fprintf( output, "if( !strcmp( name, \"ac_pc\") )\n");
-  fprintf( output, "%sac_pc.inc_misses();\n", INDENT[3]);
-  fprintf( output, "%selse ", INDENT[2]);
-  
-  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-    fprintf( output, "if( !strcmp( name, \"%s\") )\n", pstorage->name);
-    fprintf( output, "%s%s.inc_misses();\n", INDENT[3], pstorage->name);
-    fprintf( output, "%selse ", INDENT[2]);
-  }
-  fprintf( output, "\n");
-  fprintf( output, "%sAC_ERROR(\"Unknown storage device used for statistics collection.\" << name);\n", INDENT[3]);
-
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  fprintf( output, "\n\n");
-
-
-  //Printing stat_init method.
-  COMMENT(INDENT[1],"Initialize lists and members.");
-  fprintf( output, "%svoid init_stat( ){\n\n", INDENT[1]);
-  
-  if(storage_list){
-    
-    fprintf( output, "%shead = &%s; \n", INDENT[2], storage_list->name);
-    
-    for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
-      if(pstorage->next)
-        fprintf( output, "%s%s.next = &%s;\n", INDENT[2], pstorage->name, pstorage->next->name);
-      else{
-        fprintf( output, "%s%s.next = &ac_pc;\n", INDENT[2], pstorage->name);   
-        fprintf( output, "%sac_pc.next = NULL;\n", INDENT[2]);  
-      }
-    }  
-  }
-  else{
-
-    fprintf( output, "%shead = NULL; \n", INDENT[2]);
+  // Declaring instruction stats collector objects
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    fprintf(output, "%s%s_instr_stats %s_istats;\n",
+	INDENT[1], project_name, pinstr->name);
   }
 
-  //Openning input file.
-  fprintf( output, "%soutput.open( \"%s.stats\");\n", INDENT[2], project_name);
+  fprintf(output, "\n");
 
-  fprintf( output, "%s}\n", INDENT[1]);
-    
+  // Declaring instruction stats collector object array
+  fprintf(output,
+      "%s%s_instr_stats* instr_stats[%s_parms::AC_DEC_INSTR_NUMBER];\n\n",
+      INDENT[1], project_name, project_name);
 
-  //End of Class.
-  fprintf( output, "};\n");
+  // Defining constructor
+  fprintf(output, "%s%s_all_stats();\n", INDENT[1], project_name);
+
+  // Closing proc_stats struct
+  fprintf(output, "}; // struct %s_stats\n", project_name);
 
   //END OF FILE!
-  fprintf( output, "#endif //_AC_STATS_H\n");
+  fprintf(output, "#endif // %s_STATS_H\n", upper_project_name);
   fclose(output);
+}
 
+//!Create the implementation file for ArchC statistics collection class.
+void CreateStatsImplTmpl()
+{
+  extern char *project_name;
+  extern ac_dec_instr *instr_list;
+
+  ac_dec_instr *pinstr;
+
+  char filename[256];
+
+  FILE *output;
+
+  sprintf(filename, "%s_stats.cpp.tmpl", project_name);
+
+  if ( !(output = fopen( filename, "w"))){
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment(output, "ArchC Processor statistics data implementation file.");
+
+  fprintf(output, "#include \"%s_stats.H\"\n", project_name);
+  fprintf(output, "\n");
+
+  // Defining processor stat list
+  fprintf(output, "AC_CONF_STAT_LIST(%s, INSTRUCTIONS, SYSCALLS);\n",
+      project_name);
+
+  // Defining instruction stat list
+  fprintf(output, "AC_CONF_INSTR_STAT_LIST(%s, COUNT);\n\n", project_name);
+
+  // Defining constructor
+  fprintf(output, "%s_all_stats::%s_all_stats() :\n", project_name,
+      project_name);
+  fprintf(output, "%sstats(\"%s\")\n", INDENT[1], project_name);
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    fprintf(output, "%s, %s_istats(\"%s\", stats)\n",
+	INDENT[1], pinstr->name, pinstr->name);
+  }
+  fprintf(output, "{\n");
+
+  COMMENT(INDENT[2], "Configuring stats collectors for each instruction");
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    fprintf(output, "%sinstr_stats[%d] = &%s_istats;\n",
+	INDENT[2], pinstr->id, pinstr->name);
+  }
+
+  fprintf(output, "}\n");
+
+  //END OF FILE!
+  fclose(output);
 }
 
 /////////////////////////// Create Implementation Functions ////////////////////////////
@@ -2588,7 +2534,9 @@ void CreateMainTmpl() {
   fprintf( output, "const char *archc_options=\"%s\";\n", ACOptions);
   fprintf( output, "\n");
 
+  fprintf( output, "#include  <iostream>\n");
   fprintf( output, "#include  <systemc.h>\n");
+  fprintf( output, "#include  \"ac_stats_base.H\"\n");
   fprintf( output, "#include  \"%s.H\"\n\n", project_name);
 
   fprintf( output, "\n\n");
@@ -2611,8 +2559,7 @@ void CreateMainTmpl() {
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf( output, "#ifdef AC_STATS\n");
-  fprintf( output, "%s%s_proc1.ac_sim_stats.time = sc_simulation_time();\n", INDENT[1], project_name);
-  fprintf( output, "%s%s_proc1.ac_sim_stats.print();\n", INDENT[1], project_name);
+  fprintf( output, "%sac_stats_base::print_all_stats(std::cerr);\n", INDENT[1], project_name);
   fprintf( output, "#endif \n\n");
 
   fprintf( output, "#ifdef AC_DEBUG\n");
@@ -3032,6 +2979,7 @@ void CreateIntrHeader() {
 
   extern ac_sto_list *tlm_intr_port_list;
   extern char *project_name;
+  extern char *upper_project_name;
 
   ac_sto_list *pport;
 
@@ -3049,8 +2997,8 @@ void CreateIntrHeader() {
   }
 
   print_comment(output, description);
-  fprintf(output, "#ifndef _%s_INTR_HANDLERS_H\n", project_name);
-  fprintf(output, "#define _%s_INTR_HANDLERS_H\n\n", project_name);
+  fprintf(output, "#ifndef _%s_INTR_HANDLERS_H\n", upper_project_name);
+  fprintf(output, "#define _%s_INTR_HANDLERS_H\n\n", upper_project_name);
   fprintf(output, "#include \"ac_intr_handler.H\"\n");
   fprintf(output, "#include \"%s_parms.H\"\n", project_name);
   fprintf(output, "#include \"%s_arch.H\"\n", project_name);
@@ -3070,7 +3018,7 @@ void CreateIntrHeader() {
     fprintf(output, "};\n\n\n");
   }
 
-  fprintf(output, "#endif // _%s_INTR_HANDLERS_H\n", project_name);
+  fprintf(output, "#endif // _%s_INTR_HANDLERS_H\n", upper_project_name);
 
   //END OF FILE
   fclose(output);
@@ -3080,6 +3028,7 @@ void CreateIntrHeader() {
 ///Creates the header file with ac_behavior macros for interrupt handlers.
 void CreateIntrMacrosHeader() {
   extern char *project_name;
+  extern char *upper_project_name;
 
   char filename[256];
   char description[] = "Interrupt Handlers ac_behavior macros header file.";
@@ -3095,14 +3044,14 @@ void CreateIntrMacrosHeader() {
   }
 
   print_comment(output, description);
-  fprintf(output, "#ifndef _%s_IH_BHV_MACROS_H\n", project_name);
-  fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", project_name);
+  fprintf(output, "#ifndef _%s_IH_BHV_MACROS_H\n", upper_project_name);
+  fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", upper_project_name);
 
   /* ac_behavior main macro */
   fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
           project_name);
 
-  fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", project_name);
+  fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", upper_project_name);
 
   //END OF FILE
   fclose(output);
@@ -3227,7 +3176,7 @@ void CreateMakefile(){
     fprintf( output, "ac_fmt_regs.H ");
 
   if(ACStatsFlag)
-    fprintf( output, "ac_stats.H ");
+    fprintf( output, "%s_stats.H ", project_name);
 
   //Checking if we have a pipelined architecture or not.
   if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
@@ -3266,9 +3215,6 @@ void CreateMakefile(){
   if( HaveMemHier )
     fprintf( output, "ac_cache.cpp ac_mem.cpp ac_cache_if.cpp ");
 
-  if(ACStatsFlag)
-    fprintf( output, "ac_stats.cpp ");
-
   fprintf( output, "\n\n");
 
   //Declaring ACLIBFILES variable
@@ -3287,14 +3233,16 @@ void CreateMakefile(){
   COMMENT_MAKE("These are the headers files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/include directory");
   fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
-  if(ACABIFlag)
+  if (ACABIFlag)
     fprintf(output, "ac_syscall.H ");
-  if(HaveTLMPorts)
+  if (HaveTLMPorts)
     fprintf(output, "ac_tlm_port.H ");
-  if(HaveTLMIntrPorts)
+  if (HaveTLMIntrPorts)
     fprintf(output, "ac_tlm_intr_port.H ");
   if (HaveTLMPorts || HaveTLMIntrPorts)
     fprintf(output, "ac_tlm_protocol.H ");
+  if (ACStatsFlag)
+    fprintf(output, "ac_stats.H ac_stats_base.H ");
   fprintf(output, "\n\n");
 
   //Declaring SRCS variable
@@ -3302,11 +3250,14 @@ void CreateMakefile(){
   fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) $(MODULE)_isa.cpp %s",
            (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":"");
 
-  if(ACABIFlag)
+  if (ACABIFlag)
     fprintf( output, " $(MODULE)_syscall.cpp");
 
-  if(HaveTLMIntrPorts)
+  if (HaveTLMIntrPorts)
     fprintf( output, " $(MODULE)_intr_handlers.cpp");
+
+  if (ACStatsFlag)
+    fprintf( output, " $(MODULE)_stats.cpp");
 
   fprintf( output, "\n\n");
 
@@ -3320,15 +3271,25 @@ void CreateMakefile(){
   //Declaring dependencie rules
   fprintf( output, ".SUFFIXES: .cc .cpp .o .x\n\n");
 
-  fprintf( output, "all: $(addprefix %s/, $(ACFILESHEAD)) $(ACFILES) $(EXE)\n\n", INCLUDEDIR);
+  fprintf( output, "all: $(addprefix %s/, $(ACFILESHEAD)) $(ACHEAD) $(ACFILES) $(EXE)\n\n", INCLUDEDIR);
 
   fprintf( output, "$(EXE): $(OBJS) %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n");
 
   COMMENT_MAKE("Copy from template if main.cpp not exist");
-  fprintf( output, "main.cpp:\n");
-  fprintf( output, "\tcp main.cpp.tmpl main.cpp\n\n");
+  fprintf(output, "main.cpp:\n");
+  fprintf(output, "\tcp main.cpp.tmpl main.cpp\n\n");
+
+  if (ACStatsFlag) {
+    COMMENT_MAKE("Copy from template if %s_stats.H not exist", project_name);
+    fprintf(output, "%s_stats.H:\n", project_name);
+    fprintf(output, "\tcp %s_stats.H.tmpl %s_stats.H\n\n", project_name, project_name);
+
+    COMMENT_MAKE("Copy from template if %s_stats.cpp not exist", project_name);
+    fprintf(output, "%s_stats.cpp:\n", project_name);
+    fprintf(output, "\tcp %s_stats.cpp.tmpl %s_stats.cpp\n\n", project_name, project_name);
+  }
 
   if (HaveTLMIntrPorts) {
     COMMENT_MAKE("Copy from template if %s_intr_handlers.cpp not exist", project_name);
@@ -4007,14 +3968,14 @@ void EmitInstrExec( FILE *output, int base_indent){
 
   if( ACStatsFlag ){
     fprintf( output, "%sif((!ac_annul_sig) && (!ac_wait_sig)) {\n", INDENT[base_indent]);
-    fprintf( output, "%sac_sim_stats.instr_executed++;\n", INDENT[base_indent+1]);
-    fprintf( output, "%sac_sim_stats.instr_table[ins_id].count++;\n", INDENT[base_indent+1]);
+    fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", INDENT[base_indent+1], project_name);
+    fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", INDENT[base_indent+1], project_name);
 
     //If cycle range for instructions were declared, include them on the statistics.
-    if( HaveCycleRange ){
+/*    if( HaveCycleRange ){
       fprintf( output, "%sac_sim_stats.ac_min_cycle_count += instr->get_min_latency();\n", INDENT[base_indent+1]);
       fprintf( output, "%sac_sim_stats.ac_max_cycle_count += instr->get_max_latency();\n", INDENT[base_indent+1]);
-    }
+    }*/
 
     fprintf( output, "%s}\n", INDENT[base_indent]);
   }
@@ -4254,12 +4215,14 @@ void EmitPipeABIDefine( FILE *output){
   \brief Used by CreateStgImpl function      */
 /***************************************/
 void EmitABIDefine( FILE *output){
+  extern char* project_name;
 
   fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[0]);
   fprintf( output, "%scase LOCATION: \\\n", INDENT[2]);
 
   if( ACStatsFlag ){
-    fprintf( output, "%sac_sim_stats.syscall_executed++; \\\n", INDENT[4]);
+    fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", INDENT[4],
+	project_name);
   }
 
   if( ACDebugFlag ){
