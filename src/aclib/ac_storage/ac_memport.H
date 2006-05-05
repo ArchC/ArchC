@@ -195,7 +195,22 @@ public:
 
 #endif
 
-  // Essas coisas ficam aqui mesmo?
+  /** 
+   * Locks the device.
+   * 
+   */
+  inline void lock() {
+    storage->lock();
+  } 
+
+  /** 
+   * Unlocks the device.
+   * 
+   */
+  inline void unlock() {
+    storage->unlock();
+  }
+
 #ifdef AC_UPDATE_LOG
   //! Reset log lists.
   void reset_log() { changes.clear(); }

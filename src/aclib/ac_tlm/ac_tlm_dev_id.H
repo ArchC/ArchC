@@ -1,54 +1,50 @@
 /**
- * @file      ac_tlm_protocol.H
- * @author    Thiago Massariolli Sigrist
- * 
+ * @file      ac_tlm_dev_id.H
+ * @author    Thiago Massariolli Sigrist   
+ *
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
- * 
- * @version   2.0beta2
- * @date      Tue, 13 Dec 2005 20:09:49 -0200
- * 
- * @brief     Defines the ArchC TLM packet structure.
- * 
+ *
+ * @version   2.0alpha1
+ * @date      Fri, 05 May 2006 18:45:05 -0300
+ *
+ * @brief     Declares a class that uniquely identifies a device.
+ *
  * @attention Copyright (C) 2002-2005 --- The ArchC Team
- * 
+ *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
  *   License as published by the Free Software Foundation; either
  *   version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  *   This library is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *   Lesser General Public License for more details.
- * 
- * 
+ *
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef _AC_TLM_PROTOCOL_H_
-#define _AC_TLM_PROTOCOL_H_
+#ifndef _AC_TLM_DEV_ID_H_
+#define _AC_TLM_DEV_ID_H_
 
 //////////////////////////////////////////////////////////////////////////////
 
 // Standard includes
-#include <stdint.h>
 
 // SystemC includes
-#include <systemc.h>
-#include <tlm.h>
 
 // ArchC includes
 
 //////////////////////////////////////////////////////////////////////////////
 
 // using statements
-using tlm::tlm_transport_if;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -56,35 +52,21 @@ using tlm::tlm_transport_if;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/// ArchC TLM request type.
-enum ac_tlm_req_type {
-  READ, WRITE, LOCK, UNLOCK, REQUEST_COUNT
-};
+/// Class that uniquely identifies a port or another type of ArchC TLM device
+/// complying to the ArchC TLM protocol.
+class ac_tlm_dev_id {
+  private:
+    /// Has the ID of the next instance of a device.
+    static int counter_;
+  public:
+    /// ID of the device instance.
+    const int dev_id_;
 
-/// ArchC TLM response status.
-enum ac_tlm_rsp_status {
-  ERROR, SUCCESS
+    /// Default constructor.
+    ac_tlm_dev_id();
 };
-
-/// ArchC TLM request packet.
-struct ac_tlm_req {
-  ac_tlm_req_type type;
-  int dev_id;
-  uint32_t addr;
-  uint32_t data;
-};
-
-/// ArchC TLM response packet.
-struct ac_tlm_rsp {
-  ac_tlm_rsp_status status;
-  ac_tlm_req_type req_type;
-  uint32_t data;
-};
-
-/// ArchC TLM transport interface type.
-typedef tlm_transport_if<ac_tlm_req, ac_tlm_rsp> ac_tlm_transport_if;
 
 //////////////////////////////////////////////////////////////////////////////
 
-#endif // _AC_TLM_PROTOCOL_H_
+#endif // _AC_TLM_DEV_ID_H_
 

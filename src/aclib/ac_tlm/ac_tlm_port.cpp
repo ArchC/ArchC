@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  * 
- * @version   2.0alpha1
+ * @version   2.0beta2
  * @date      Tue, 13 Dec 2005 20:09:00 -0200
  * 
  * @brief     ArchC TLM initiator port class implementation.
@@ -320,6 +320,30 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
 
 uint32_t ac_tlm_port::get_size() const {
   return size;
+}
+
+/** 
+ * Locks the device.
+ * 
+ */
+void ac_tlm_port::lock()
+{
+  ac_tlm_req req;
+  req.type = LOCK;
+  req.dev_id = dev_id_;
+  (*this)->transport(req);
+}
+
+/** 
+ * Unlocks the device.
+ * 
+ */
+void ac_tlm_port::unlock()
+{
+  ac_tlm_req req;
+  req.type = UNLOCK;
+  req.dev_id = dev_id_;
+  (*this)->transport(req);
 }
 
 //////////////////////////////////////////////////////////////////////////////

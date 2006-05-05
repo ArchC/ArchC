@@ -67,6 +67,18 @@ public:
   void write(ac_ptr buf, uint32_t address,
 		    int wordsize, int n_words);
 
+  /** 
+   * Locks the device.
+   * 
+   */
+   void lock(); 
+
+  /** 
+   * Unlocks the device.
+   * 
+   */
+   void unlock();
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

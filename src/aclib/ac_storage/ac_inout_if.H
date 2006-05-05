@@ -92,13 +92,13 @@ public:
    * Locks the device.
    * 
    */
-//   virtual void lock() = 0;
+   virtual void lock() = 0;
 
   /** 
    * Unlocks the device.
    * 
    */
-//   virtual void unlock() = 0;
+   virtual void unlock() = 0;
 
 };
 

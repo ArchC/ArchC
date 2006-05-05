@@ -45,6 +45,7 @@
 // ArchC includes
 #include "ac_inout_if.H"
 #include "ac_tlm_protocol.H"
+#include "ac_tlm_dev_id.H"
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +60,8 @@ using std::string;
 
 /// ArchC TLM initiator port class.
 class ac_tlm_port : public sc_port<ac_tlm_transport_if>,
-		    public ac_inout_if {
+		    public ac_inout_if,
+		    public ac_tlm_dev_id {
 public:
   string name;
   uint32_t size;
@@ -126,6 +128,18 @@ public:
 		     int wordsize, int n_words);
 
   virtual uint32_t get_size() const;
+
+  /** 
+   * Locks the device.
+   * 
+   */
+   virtual void lock();
+
+  /** 
+   * Unlocks the device.
+   * 
+   */
+   virtual void unlock();
 
 };
 

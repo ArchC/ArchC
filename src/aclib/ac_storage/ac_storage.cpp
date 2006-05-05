@@ -129,4 +129,18 @@ void ac_storage::write(ac_ptr buf, uint32_t address,
   }
 }
 
+/** 
+ * Locks the device.
+ * 
+ */
+void ac_storage::lock()
+{} // empty == there's no point locking the internal storage
+
+/** 
+ * Unlocks the device.
+ * 
+ */
+void ac_storage::unlock()
+{} // empty == there's no point locking the internal storage
+
 //////////////////////////////////////////////////////////////////////////////
