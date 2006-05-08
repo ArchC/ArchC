@@ -1625,7 +1625,6 @@ int main(int argc, char** argv) {
       fprintf( output, "%sint nRegs(void);\n", INDENT[1]);
       fprintf( output, "%s%s_parms::ac_word reg_read(int reg);\n", INDENT[1], project_name);
       fprintf( output, "%svoid reg_write( int reg, %s_parms::ac_word value );\n", INDENT[1], project_name);
-      fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
       
       fprintf( output, "%s/* Memory access */\n", INDENT[1]);
       fprintf( output, "%sunsigned char mem_read( unsigned int address );\n", INDENT[1]);
@@ -1634,14 +1633,21 @@ int main(int argc, char** argv) {
       fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
       fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1]);
     }
-    
-      fprintf( output, "\n%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
-      fprintf( output, "%svoid init();\n\n", INDENT[1]);
-      fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
-      fprintf( output, "%svoid delayed_load(char* program);\n\n", INDENT[1]);
-      fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
 
-      fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
+
+    fprintf( output, "\n%sunsigned get_ac_pc();\n\n", INDENT[1]);
+    fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
+
+    fprintf( output, "%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
+    fprintf( output, "%svoid init();\n\n", INDENT[1]);
+    fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
+    fprintf( output, "%svoid delayed_load(char* program);\n\n", INDENT[1]);
+    fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
+
+    if (ACGDBIntegrationFlag)
+      fprintf(output, "%svoid enable_gdb(int port = 5000);\n\n", INDENT[1]);
+
+    fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
 
     //!Closing class declaration.
     fprintf( output,"%s};\n", INDENT[0] );
@@ -2329,11 +2335,27 @@ void CreateProcessorImpl() {
     fprintf(output, "void %s::ac_stop() {\n", project_name);
     fprintf(output, "%sstop();\n", INDENT[1]);
     fprintf(output, "}\n\n");
+  }
 
-    /* set_ac_pc() */
-    fprintf(output, "// Assigns value to ac_pc\n");
-    fprintf(output, "void %s::set_ac_pc(unsigned int value) {\n", project_name);
-    fprintf(output, "%sac_pc = value;\n", INDENT[1]);
+  /* get_ac_pc() */
+  fprintf(output, "// Returns ac_pc value\n");
+  fprintf(output, "unsigned %s::get_ac_pc() {\n", project_name);
+  fprintf(output, "%sreturn ac_pc;\n", INDENT[1]);
+  fprintf(output, "}\n\n");
+
+  /* set_ac_pc() */
+  fprintf(output, "// Assigns value to ac_pc\n");
+  fprintf(output, "void %s::set_ac_pc(unsigned int value) {\n", project_name);
+  fprintf(output, "%sac_pc = value;\n", INDENT[1]);
+  fprintf(output, "}\n\n");
+
+  /* GDB enable method */
+  if (ACGDBIntegrationFlag) {
+    fprintf(output, "// Enables GDB\n");
+    fprintf(output, "void %s::enable_gdb(int port) {\n", project_name);
+    fprintf(output, "%sgdbstub->set_port(port);\n", INDENT[1]);
+    fprintf(output, "%sgdbstub->enable();\n", INDENT[1]);
+    fprintf(output, "%sgdbstub->connect();\n", INDENT[1]);
     fprintf(output, "}\n\n");
   }
 

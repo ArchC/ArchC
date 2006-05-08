@@ -72,7 +72,7 @@ void ac_init_opt( int ac, char* av[]){
       cerr << "  --version               Display ArchC version and options used when built\n";
       cerr << "  --load=<prog_path>      Load target application\n";
 #ifdef USE_GDB
-//       cerr << "  --gdb[=<port>]          Enable GDB support\n";
+//      cerr << "  --gdb[=<port>]          Enable GDB support\n";
 #endif /* USE_GDB */
       exit(1);
     }
