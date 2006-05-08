@@ -288,19 +288,26 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
        
     }     
     else if (*lit == '\\') {
-       *s = *lit;
-       s++;
-       lit++;
-       if (*lit == '\\') {
-         *s = *lit;
-         s++;
-         lit++;
-       }
+      *s = *lit;
+      s++;
+      lit++;
+      if (*lit == '\\') {
+        *s = *lit;
+        s++;
+        lit++;
+             
+        if (*lit == '%') {
+          *s = *lit;
+          s++;
+          lit++;
+        }
+      }
     }
-
-    *s = *lit;
-    s++;
-    lit++;
+    else {
+      *s = *lit;
+      s++;
+      lit++;
+    }
   }
   *s = '\0';  
 }

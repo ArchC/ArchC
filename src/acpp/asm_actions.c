@@ -1431,6 +1431,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   newfield->size = pfield->size;
   newfield->first_bit = pfield->first_bit;
   newfield->id = f_id;
+  newfield->reloc_id = 0;
   newfield->next = NULL;
 
   unsigned counter = num_args_found - (mnemonic_marker ? 2: 1);
@@ -1705,7 +1706,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       newfield->first_bit = 0;
       newfield->id = 0;
       newfield->reloc_id = 0;
-      newfield->next = 0;
+      newfield->next = NULL;
 
       opP->fields = newfield;      
       
