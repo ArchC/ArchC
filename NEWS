@@ -1,6 +1,26 @@
 -*- text -*-
 
-Changes in version 2.0beta1
+Changes in version 2.0beta2:
+----------------------------
+
+* Preliminary statistics collection support (counts total number of
+instructions and syscalls, and for each instruction in the ISA, the number
+of times it was executed)
+
+* Preliminary TLM protocol support for bus/device locking/unlocking
+
+* GDB support now done via proc.enable_gdb() (a port number may be passed as
+an argument, otherwise it will work on port 5000)
+
+* ac_pc value modification methods on the processor module, means you can
+modify ac_pc via proc.set_ac_pc(val) or get the value of ac_pc by calling
+proc.get_ac_pc()
+
+* Several bugfixes
+
+
+Changes in version 2.0beta1:
+----------------------------
 
 * Binary utilities generation is carried out by acbingen.sh
 script (assembler and linker generation)

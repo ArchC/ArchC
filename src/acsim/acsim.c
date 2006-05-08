@@ -1787,7 +1787,7 @@ void CreateStatsHeaderTmpl(void){
 
   // Declaring instruction stats collector object array
   fprintf(output,
-      "%s%s_instr_stats* instr_stats[%s_parms::AC_DEC_INSTR_NUMBER];\n\n",
+      "%s%s_instr_stats* instr_stats[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n",
       INDENT[1], project_name, project_name);
 
   // Defining constructor
