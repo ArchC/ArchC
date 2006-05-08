@@ -7,7 +7,7 @@ INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib/ac
 noinst_LTLIBRARIES = libaccore.la
 
 ## ArchC library includes
-pkginclude_HEADERS = ac_arch_dec_if.H ac_arch_ref.H ac_instr_info.H ac_arch.H ac_instr.H ac_sighandlers.H ac_module.H
+pkginclude_HEADERS = ac_arch_dec_if.H ac_arch_ref.H ac_instr_info.H ac_arch.H ac_instr.H ac_sighandlers.H ac_module.H ac_stage.H ac_ticker_interface.H
 
 ## Adding code to the ArchC library
-libaccore_la_SOURCES = ac_module.cpp
+libaccore_la_SOURCES = ac_module.cpp ac_ticker_interface.cpp

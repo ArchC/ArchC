@@ -107,6 +107,7 @@ AC_CONFIG_FILES(
   src/aclib/ac_tlm/Makefile 
   src/aclib/ac_utils/Makefile 
   src/acsim/Makefile 
+  src/actsim/Makefile
   src/accsim/Makefile 
   src/acbinutils/Makefile 
   src/acbinutils/binutils/gas/config/tc-xxxxx.c 

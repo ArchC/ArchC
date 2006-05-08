@@ -62,6 +62,7 @@ public:
 #include "ac_utils.H"
 #include "ac_arch.H"
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,9 +77,13 @@ public:
 #include <time.h>
 
 #undef AC_RUN_ERROR
+#if 0 /// Changed to iostream-type. --Marilia
 #define AC_RUN_ERROR( str, args...) \
-  fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, (int) ref.ac_pc, ref.ac_instr_counter , ##args)
-
+  fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, (int) ref.get_ac_pc(), ref.ac_instr_counter , ##args)
+#else
+#define AC_RUN_ERROR \
+  std::cerr << "ArchC Runtime error (ac_pc=" << std::hex << ref.get_ac_pc() << std::dec << "; ac_instr_counter=" << ref.ac_instr_counter << "): "
+#endif
 
 #ifdef DEBUG
 #  define DEBUG_SYSCALL(name) AC_RUN_MSG("@@@@@ syscall: " name " @@@@@\n")
@@ -103,7 +108,11 @@ void ac_syscall<ac_word, ac_Hword>::open()
   int mode = get_int(2);
   int ret = ::open((char*)pathname, flags, mode);
   if (ret == -1) {
+#if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call open (file '%s'): %s\n", pathname, strerror(errno));
+#else
+    AC_RUN_ERROR << "System Call open (file '" << pathname << "'): " << strerror(errno) << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
   set_int(0, ret);
@@ -119,7 +128,11 @@ void ac_syscall<ac_word, ac_Hword>::creat()
   int mode = get_int(1);
   int ret = ::creat((char*)pathname, mode);
   if (ret == -1) {
-    AC_RUN_ERROR("System Call creat (file '%s'): %s\n", pathname,strerror(errno));
+#if 0 /// Changed to iostream-type. --Marilia
+    AC_RUN_ERROR("System Call creat (file '%s'): %s\n", pathname, strerror(errno));
+#else
+    AC_RUN_ERROR << "System Call creat (file '" << pathname << "'): " << strerror(errno) << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
   set_int(0, ret);
@@ -133,7 +146,11 @@ void ac_syscall<ac_word, ac_Hword>::close()
   int fd = get_int(0);
   int ret = ::close(fd);
   if (ret == -1) {
+#if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call close (fd %d): %s\n", fd, strerror(errno));
+#else
+    AC_RUN_ERROR << "System Call close (fd " << fd << "): " << strerror(errno) << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
   set_int(0, ret);
@@ -152,7 +169,11 @@ void ac_syscall<ac_word, ac_Hword>::read()
   unsigned char *buf = (unsigned char*) malloc(count);
   int ret = ::read(fd, buf, count);
   if (ret == -1) {
+#if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call read (fd %d): %s\n", fd, strerror(errno));
+#else
+    AC_RUN_ERROR << "System Call read (fd " << fd << "): " << strerror(errno) << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
   set_buffer(1, buf, ret);
@@ -174,7 +195,11 @@ void ac_syscall<ac_word, ac_Hword>::write()
   get_buffer(1, buf, count);
   int ret = ::write(fd, buf, count);
   if (ret == -1) {
+#if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call write (fd %d): %s\n", fd, strerror(errno));
+#else
+    AC_RUN_ERROR << "System Call write (fd " << fd << "): " << strerror(errno) << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
   set_int(0, ret);
@@ -248,7 +273,11 @@ void ac_syscall<ac_word, ac_Hword>::fstat()
   struct stat buf;
   int ret = ::fstat(fd, &buf);
   if (ret == -1) {
+#if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call fstat (fd %d): %s\n", fd, strerror(errno));
+#else
+    AC_RUN_ERROR << "System Call fstat (fd " << fd << "): " << strerror(errno) << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
   set_int(0, ret);
@@ -371,11 +400,19 @@ void ac_syscall<ac_word, ac_Hword>::ac_syscall_wrapper()
 
 
   default:
+#if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call code %d not implemented yet.\n", syscall_code);
+#else
+    AC_RUN_ERROR << "System Call code " << syscall_code << " not implemented yet." << std::endl;
+#endif
     exit(EXIT_FAILURE);
   }
     
+#if 0 /// Changed to iostream-type. --Marilia
   //if (ret == -1)   AC_RUN_ERROR("System call %d returned -1.\n", syscall_code);
+#else
+  //if (ret == -1)   AC_RUN_ERROR << "System call " << syscall_code << " returned -1." << std::endl;
+#endif
   set_int(0, ret);
   return_from_syscall();
 }
@@ -390,7 +427,11 @@ void ac_syscall<ac_word, ac_Hword>::ac_syscall_geterrno()
 template <class ac_word, class ac_Hword>
 void ac_syscall<ac_word, ac_Hword>::ac_syscall_stat_mode()
 {
-  AC_RUN_ERROR("System Call ac_syscall_stat_mode not implemented yet.\n");
+#if 0 /// Changed to iostream-type. --Marilia
+    AC_RUN_ERROR("System Call ac_syscall_stat_mode not implemented yet.\n");
+#else
+    AC_RUN_ERROR << "System Call ac_syscall_stat_mode not implemented yet." << std::endl;
+#endif
   exit(EXIT_FAILURE);
 }
 

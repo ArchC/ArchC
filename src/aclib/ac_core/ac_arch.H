@@ -13,14 +13,14 @@
  ******************************************************/
  
 
-#ifndef  _AC_ARCH_H
-#define  _AC_ARCH_H
+#ifndef  _AC_ARCH_H_
+#define  _AC_ARCH_H_
 
 #include <sys/times.h>
 #include <stdio.h>
 
 #include  "ac_regbank.H"
-#include  "ac_reg.H"
+//#include  "ac_reg.H" /// No longer needed. --Marilia
 
 template <typename T, typename U> class ac_memport;
 
@@ -48,14 +48,14 @@ public:
   bool ac_annul_sig;
   bool ac_mt_endian;
   bool ac_tgt_endian;
-  ac_reg<unsigned> ac_pc;
+  //ac_reg<unsigned> ac_pc; /// This -can't- stay here. Moving down. --Marilia
   unsigned ac_start_addr;
   unsigned long long ac_instr_counter;
   unsigned long long ac_cycle_counter;
   double time_step;
   int argc;
   char **argv;
- 
+
   // Timing structures.
   struct tms ac_run_times;
   clock_t ac_run_start_time;
@@ -79,11 +79,13 @@ public:
     ac_annul_sig(0),
     ac_mt_endian(0),
     ac_tgt_endian(0),
+#if 0 /// No longer here. --Marilia
 #ifdef AC_DELAY
     ac_pc("ac_pc", 0, time_step),
 #else
     ac_pc("ac_pc", 0),
 #endif // AC_DELAY
+#endif
     ac_start_addr(0),
     ac_instr_counter(0),
     ac_cycle_counter(0),
@@ -130,9 +132,11 @@ public:
     ac_parallel_sig = 1;
   };
 
+#if 0 /// Not needed here. --Marilia.
   /// Flush method.
   void ac_flush( char *stage ){
   };
+#endif
 
   void InitStat() {
     ac_run_start_time = times(&ac_run_times);
@@ -143,13 +147,13 @@ public:
 
     //Print statistics
     fprintf(stderr, "ArchC: Simulation statistics\n");
-  
+
     ac_run_real = times(&ac_run_times) - ac_run_start_time;
     fprintf(stderr, "    Times: %ld.%02ld user, %ld.%02ld system, %ld.%02ld real\n",
-	    ac_run_times.tms_utime / 100, ac_run_times.tms_utime % 100,
-	    ac_run_times.tms_stime / 100, ac_run_times.tms_stime % 100,
-	    ac_run_real / 100, ac_run_real % 100
-	    );
+            ac_run_times.tms_utime / 100, ac_run_times.tms_utime % 100,
+            ac_run_times.tms_stime / 100, ac_run_times.tms_stime % 100,
+            ac_run_real / 100, ac_run_real % 100
+           );
 
     fprintf(stderr, "    Number of instructions executed: %llu\n", ac_instr_counter);
 
@@ -188,6 +192,8 @@ public:
     delete[] buffer;
   };
 
+ // Read access to ac_pc (placeholder).
+  virtual unsigned get_ac_pc() = 0;
 };
 
-#endif  //_AC_ARCH_H
+#endif  // _AC_ARCH_H_

@@ -5,7 +5,7 @@ EXTRA_DIST = main.dox
 
 
 if SYSTEMC_SUPPORT
-  SC_DEP_DIRS = aclib acsim accsim
+  SC_DEP_DIRS = aclib acsim actsim accsim
 else
   SC_DEP_DIRS =
 endif

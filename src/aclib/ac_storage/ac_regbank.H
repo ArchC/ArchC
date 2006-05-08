@@ -44,6 +44,7 @@
 
 #include <systemc.h>
 
+#include "ac_utils.H"
 #include "ac_log.H"
 #include "ac_utils.H"
 

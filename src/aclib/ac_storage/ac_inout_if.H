@@ -17,6 +17,7 @@
 
 // Standard includes
 #include <stdint.h>
+#include <string>
 
 // SystemC includes
 
@@ -85,6 +86,8 @@ public:
    */
   virtual void write(ac_ptr buf, uint32_t address,
 		     int wordsize, int n_words) = 0;
+
+  virtual std::string get_name() const = 0;
 
   virtual uint32_t get_size() const = 0;
 

@@ -222,7 +222,7 @@ public:
     if (changes.size()) {
       output << endl << endl;
       output << "**************** ArchC Change log *****************\n";
-      output << "* Device: "<< name << "\t\t" << "PC: " << hex << ac_pc << dec << endl;
+      output << "* Device: "<< name << "\t\t" << "PC: " << hex << ios_ac_pc << dec << endl;
       output << "***************************************************\n";
       output << "*        Address         Value          Time      *\n";
       output << "***************************************************\n";
@@ -286,7 +286,7 @@ public:
     if (ac_load_elf<ac_word>(file, Data, storage->get_size(), this->ac_heap_ptr, this->ac_start_addr, this->ac_mt_endian) == EXIT_SUCCESS) {
       //init decode cache and return
       if(!this->dec_cache_size)
-	this->dec_cache_size = this->ac_heap_ptr;
+        this->dec_cache_size = this->ac_heap_ptr;
       storage->write(Data, 0, 8, storage->get_size());
       delete[] Data;
       return;
@@ -300,27 +300,17 @@ public:
       exit(1);
     }
     else{
-      
+
       while( !input.eof() ){
 
-	line.clear();
-	getline(input, read);
-	line.str(read);
-                        
-	is_addr = 1;
+        line.clear();
+        getline(input, read);
+        line.str(read);
 
-	//Processing line
-	while(line >> word){
+        is_addr = 1;
 
-	  if( word == ".text:" ){
-	    is_text = 1;
-	    continue;
-	  }
-                                                
-	  if( word[0] == '.' ){
-	    is_text = 0;
-	    continue;
-	  }
+        //Processing line
+        while(line >> word){
 
 	  //Processing word
 	  if( is_addr ){
@@ -352,7 +342,7 @@ public:
   void load_array(const uint8_t* d, const uint32_t s) {
     unsigned char* Data;
     if (storage->get_size() < s) {
-      fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", "");
+      fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", storage->get_name().c_str());
       exit(EXIT_FAILURE);
     }
     storage->write(d, 0, 8, s);

@@ -4,19 +4,19 @@ typedef void (*sighandler_t)(int);
 void sigint_handler(int signal)
 {
   fprintf(stderr, "ArchC: INTERUPTED BY THE SIGNAL %d\n", signal);
-//   PrintStat();
+  ac_module::PrintAllStats();
   exit(EXIT_FAILURE);
 }
 void sigsegv_handler(int signal)
 {
   fprintf(stderr, "ArchC Error: Segmentation fault.\n");
-//   PrintStat();
+  ac_module::PrintAllStats();
   exit(EXIT_FAILURE);
 }
 void sigusr1_handler(int signal)
 {
   fprintf(stderr, "ArchC: Received signal %d. Printing statistics\n", signal);
-//   PrintStat();
+  ac_module::PrintAllStats();
   fprintf(stderr, "ArchC: -------------------- Continuing Simulation ------------------\n");
 }
 

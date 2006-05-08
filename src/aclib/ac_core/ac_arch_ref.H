@@ -16,13 +16,14 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Standard includes
+#include <iostream>
 
 // SystemC includes
 
 // ArchC includes
 #include "ac_log.H"
 #include "ac_arch.H"
-#include "ac_reg.H"
+//#include "ac_reg.H" /// Not here, see ac_arch.H for details. --Marilia
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -49,7 +50,7 @@ public:
   bool& ac_annul_sig;
   bool& ac_mt_endian;
   bool& ac_tgt_endian;
-  ac_reg<unsigned>& ac_pc;
+  //ac_reg<unsigned>& ac_pc; /// Not here. --Marilia
   unsigned& ac_start_addr;
   unsigned long long& ac_instr_counter;
   unsigned long long& ac_cycle_counter;
@@ -73,7 +74,7 @@ public:
     ac_annul_sig(arch.ac_annul_sig),
     ac_mt_endian(arch.ac_mt_endian),
     ac_tgt_endian(arch.ac_tgt_endian),
-    ac_pc(arch.ac_pc),
+    //ac_pc(arch.ac_pc), /// Not here. --Marilia
     ac_start_addr(arch.ac_start_addr),
     ac_instr_counter(arch.ac_instr_counter),
     ac_cycle_counter(arch.ac_cycle_counter),
@@ -92,7 +93,7 @@ public:
 #ifdef AC_DELAY
   /// Delayed Assignment.
   change_log<ac_word> delay(ac_word val, unsigned clocks) {
-    return change_log<ac_word>( 0, val, clocks + ac_cycle_counter );
+    return change_log<ac_word>(0, val, clocks + ac_cycle_counter);
   }
 #endif // AC_DELAY
 
@@ -117,14 +118,24 @@ public:
     ac_parallel_sig = 1;
   }
 
+#if 0 /// Not needed here. --Marilia
   /// Flush method.
   void ac_flush(char *stage) {
   }
+#endif
 
-  void stop(int status = 0) {
-    archref.stop(status);
+  /// Stop method.
+  void stop(int status = 0)
+  {
+   archref.stop(status);
+   return;
   }
 
+  /// Read access to ac_pc (placeholder).
+  virtual unsigned get_ac_pc()
+  {
+    return archref.get_ac_pc();
+  }
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -490,6 +490,7 @@ int main(int argc, char** argv) {
     fprintf( output, "#include  \"ac_storage.H\"\n");
     fprintf( output, "#include  \"ac_memport.H\"\n");
     fprintf( output, "#include  \"ac_regbank.H\"\n");
+    fprintf( output, "#include  \"ac_reg.H\"\n");
 
     if (HaveTLMPorts)
       fprintf(output, "#include  \"ac_tlm_port.H\"\n");
@@ -511,6 +512,10 @@ int main(int argc, char** argv) {
     fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
     fprintf( output, "public:\n");
     fprintf( output, " \n");
+
+    /* Declaring Program Counter */
+    COMMENT(INDENT[1], "Program Counter.");
+    fprintf(output, "%sac_reg<unsigned> ac_pc;\n\n", INDENT[1]);
 
     /* Declaring storage devices */
     COMMENT(INDENT[1],"Storage Devices.");
@@ -736,6 +741,10 @@ int main(int argc, char** argv) {
     fprintf( output, "public:\n");
     fprintf( output, " \n");
 
+    /* Declaring Program Counter */
+    COMMENT(INDENT[1], "Program Counter.");
+    fprintf(output, "%sac_reg<unsigned>& ac_pc;\n\n", INDENT[1]);
+
     /* Declaring storage devices */
     COMMENT(INDENT[1],"Storage Devices.");
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
@@ -884,6 +893,9 @@ int main(int argc, char** argv) {
     fprintf(output,
 	    "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
 	    project_name, project_name, project_name, project_name, project_name);
+
+    /* Declaring ac_pc reference */
+    fprintf(output, "%sac_pc(arch.ac_pc),\n", INDENT[1]);
 
     /* Declaring storage devices */
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
@@ -1638,6 +1650,8 @@ int main(int argc, char** argv) {
     fprintf( output, "\n%sunsigned get_ac_pc();\n\n", INDENT[1]);
     fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
 
+    fprintf( output, "%svirtual void PrintStat();\n\n", INDENT[1]);
+
     fprintf( output, "%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
     fprintf( output, "%svoid init();\n\n", INDENT[1]);
     fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
@@ -2349,6 +2363,12 @@ void CreateProcessorImpl() {
   fprintf(output, "%sac_pc = value;\n", INDENT[1]);
   fprintf(output, "}\n\n");
 
+  /* PrintStat() */
+  fprintf(output, "// Wrapper function to PrintStat().\n");
+  fprintf(output, "void %s::PrintStat() {\n", project_name);
+  fprintf(output, "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n", INDENT[1], project_name, project_name);
+  fprintf(output, "}\n\n");
+
   /* GDB enable method */
   if (ACGDBIntegrationFlag) {
     fprintf(output, "// Enables GDB\n");
@@ -2411,7 +2431,13 @@ void CreateArchImpl() {
   fprintf(output, "%s%s_arch::%s_arch() :\n", INDENT[0], project_name, project_name);
   fprintf(output, "%sac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword>(%s_parms::AC_MAX_BUFFER),\n", INDENT[1], project_name, project_name, project_name);
 
-  /* Mudar para construção */
+  /* Constructing ac_pc */
+  fprintf(output, "%sac_pc(\"ac_pc\", 0", INDENT[1]);
+  if (ACDelayFlag) {
+    fprintf(output, ", time_step");
+  }
+  fprintf(output, "),\n");
+  
   for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
 
     switch( pstorage->type ){

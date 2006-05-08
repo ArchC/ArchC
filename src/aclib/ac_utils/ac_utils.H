@@ -52,7 +52,11 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
- 
+
+// Forward declarations of ac_arch and ac_arch_ref.
+template<class ac_word, class ac_Hword> class ac_arch;
+template<class ac_word, class ac_Hword> class ac_arch_ref;
+
 using std::list;
 using std::setw;
 
@@ -77,7 +81,7 @@ void ac_init_app( int ac, char* av[]);
 #define AC_SAY( msg )      std::cerr<< "ArchC: " << msg  <<'\n'
 
 #define AC_RUN_ERROR( str, args...) \
-  fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, (int) ac_pc, ac_instr_counter , ##args)
+  fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, get_ac_pc(), ac_instr_counter , ##args)
 #define AC_RUN_MSG( str )  fprintf(stderr, str);
 
 #define ac_trace( f )      extern ofstream trace_file; extern bool ac_do_trace; ac_do_trace = 1; trace_file.open( f )
@@ -215,16 +219,16 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
       close(fd);
       exit(EXIT_FAILURE);
     }
-    
+
     string_table = (char *) malloc(convert_endian(4,shdr.sh_size, match_endian));
     lseek(fd, convert_endian(4,shdr.sh_offset, match_endian), SEEK_SET);
     read(fd, string_table, convert_endian(4,shdr.sh_size, match_endian));
 
-    // load .text, .data and .bss sections    
+    // load .text, .data and .bss sections
     for (i=0; i<convert_endian(2,ehdr.e_shnum, match_endian); i++) {
 
       lseek(fd, shoff + shsize*i, SEEK_SET);
-      
+
       if (read(fd, &shdr, sizeof(shdr)) != sizeof(shdr)) {
         AC_ERROR("reading ELF section header\n");
         close(fd);
@@ -235,7 +239,7 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
       if (!strcmp(string_table+convert_endian(4,shdr.sh_name, match_endian), ".text") ||
           !strcmp(string_table+convert_endian(4,shdr.sh_name, match_endian), ".data") ||
           !strcmp(string_table+convert_endian(4,shdr.sh_name, match_endian), ".bss")) {
-        
+
         //        printf("Section %s:\n", string_table+convert_endian(4,shdr.sh_name, match_endian));
 
         Elf32_Off  tshoff  = convert_endian(4,shdr.sh_offset, match_endian);
@@ -271,12 +275,12 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
 
           // printf("0x%08x %08x \n", tshaddr+j, *(ac_fetch *) (data_mem+tshaddr+j));
         }
-        //        printf("\n");        
+        //        printf("\n");
       }
 
     }
   }
-    
+
   //Close file
   close(fd);
 

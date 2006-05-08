@@ -16,6 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Standard includes
+#include <list>
 
 // SystemC includes
 #include <systemc.h>
@@ -29,15 +30,22 @@
 //////////////////////////////////////////////////////////////////////////////
 
 /// Abstract class for an ArchC processor/simulator module.
-class ac_module : public sc_module {
-private:
+class ac_module: public sc_module
+{
+ private:
   /// The next module ID.
   static unsigned next_mod_id;
 
   /// Number of currently running ac_modules.
   static unsigned running_mods;
 
-public:
+  /// List of all modules.
+  static std::list<ac_module*> mods_list;
+
+  /// Pointer to self in the list.
+  std::list<ac_module*>::iterator this_mod;
+
+ public:
   /// Module unique ID.
   const unsigned mod_id;
 
@@ -52,6 +60,15 @@ public:
 
   /// Named constructor.
   ac_module(sc_module_name nm);
+
+  /// Destructor.
+  virtual ~ac_module();
+
+  /// PrintStat placeholder.
+  virtual void PrintStat();
+
+  /// Callable PrintStat-like method.
+  static void PrintAllStats();
 
   /// Public method that registers module as a running module.
   void set_running();
