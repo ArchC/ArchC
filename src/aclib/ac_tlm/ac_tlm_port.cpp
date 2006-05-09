@@ -318,6 +318,10 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
   }
 }
 
+string ac_tlm_port::get_name() const {
+  return name;
+}
+
 uint32_t ac_tlm_port::get_size() const {
   return size;
 }

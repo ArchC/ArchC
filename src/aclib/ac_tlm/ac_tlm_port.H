@@ -127,6 +127,8 @@ public:
   virtual void write(ac_ptr buf, uint32_t address,
 		     int wordsize, int n_words);
 
+  virtual string get_name() const;
+
   virtual uint32_t get_size() const;
 
   /** 
