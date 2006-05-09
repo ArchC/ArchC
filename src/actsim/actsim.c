@@ -49,7 +49,7 @@ const char* main_filename = "main.cpp.tmpl";
 const char* make_filename = "Makefile.archc";
 const char* proc_module_header_description = "Processor module header file.";
 const char* proc_module_impl_description = "Processor module implementation file.";
-const unsigned long scratch_space_size = 5000; //!< Determines the size of a string used by acsim to create the "arch" headers
+const unsigned long scratch_space_size = 5000; //!< Determines the size of a string used by actsim to create the "arch" headers
 
 // Const strings; these might be replaced by variables in the future.
 const char* field_type = "int"; //!< A data type which can hold instruction fields
@@ -58,9 +58,9 @@ const char* ptr_type = "unsigned long"; //!< A data type which can hold pointers
 const char* pc_type = "unsigned long"; //!< The data type representing the value of ac_pc
 
 // Defining traces and dasm strings
-#define PRINT_TRACE "%strace_file << hex << decode_pc << dec << \"\\n\";\n"
+#define PRINT_TRACE "%strace_file << hex << ap.decode_pc << dec << \"\\n\";\n"
 //#define PRINT_DASM "%sdasmfile << hex << decode_pc << dec << \": \" << *instr << *format <<\"\t\t(\" << instr->get_name() << \",\" << format->get_name() << \")\" <<endl;\n"
-#define PRINT_DASM "%sdasmfile << hex << decode_pc << dec << \": \" << \"(\" << isa.instructions[1 + ins_id].name << \",\" << %s_isa::instructions[1 + ins_id].format << \")\" << endl;\n"
+#define PRINT_DASM "%sdasmfile << hex << ap.decode_pc << dec << \": \" << \"(\" << isa.instructions[1 + ins_id].name << \",\" << %s_isa::instructions[1 + ins_id].format << \")\" << endl;\n"
 
 // Command-line options flags
 int ACABIFlag = 0;                              //!< Indicates whether an ABI was provided or not
@@ -130,7 +130,7 @@ struct option_map option_map[] =
  {"--verify"        , "-v"          , "Enable co-verification mechanism." ,"o"},
  {"--verify-timed"  , "-vt"         , "Enable co-verification mechanism. Timed model." ,"o"},
 #endif
- {"--version"       , "-vrs"        , "Display ACSIM version.", 0},
+ {"--version"       , "-vrs"        , "Display ACTSIM version.", 0},
 #if 0 // I don't know whatever happened to the encoder tools. --Marilia
  {"--encoder"       , "-enc"        , "Use encoder tools with the simulator (beta version).", 0},
 #endif
@@ -250,7 +250,7 @@ int main(int argc, char** argv)
    if (!acppLoad(argv[0]))
    {
     AC_ERROR("Invalid input file: %s\n", argv[0]);
-    printf("   Try acsim --help for more information.\n");
+    printf("   Try actsim --help for more information.\n");
     return EXIT_FAILURE;
    }
    arch_filename = argv[0];
@@ -259,7 +259,7 @@ int main(int argc, char** argv)
  else
  {
   AC_ERROR("No input file provided.\n");
-  printf("   Try acsim --help for more information.\n");
+  printf("   Try actsim --help for more information.\n");
   return EXIT_FAILURE;
  }
  ++argv, --argc; // Skip over arch file name.
@@ -562,13 +562,6 @@ void CreateArchHeader(void)
  fprintf(output, "#ifndef _%s_ARCH_H_\n", caps_project_name);
  fprintf(output, "#define _%s_ARCH_H_\n\n", caps_project_name);
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
-#if 0 // Declare stages at arch level.
- if (pipe_list) // Stage includes.
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    fprintf(output, "#include \"%s_%s_%s.H\"\n", project_name, ppipe->name,
-            pstage->name);
-#endif
  fprintf(output, "#include \"ac_arch_dec_if.H\"\n");
  fprintf(output, "#include \"ac_storage.H\"\n");
  fprintf(output, "#include \"ac_memport.H\"\n");
@@ -598,9 +591,6 @@ void CreateArchHeader(void)
 #endif
  if (HaveFormattedRegs)
   fprintf(output, "#include \"%s_fmt_regs.H\"\n", project_name);
-#if 0 // Declare stages at arch level.
- fprintf(output, "#include \"%s_isa.H\"\n", project_name);
-#endif
  fprintf(output, "\n");
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
  if (ACGDBIntegrationFlag)
@@ -614,13 +604,6 @@ void CreateArchHeader(void)
  COMMENT(INDENT[0], "ArchC class for architecture-specific resources.\n");
  fprintf(output, "%sclass %s_arch: public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword>\n%s{\n",
          INDENT[0], project_name, project_name, project_name, INDENT[0]);
-#if 0 // Declare stages at arch level.
- fprintf(output, "%sprivate:\n", INDENT[1]);
- fprintf(output, "%stypedef cache_item<%s_parms::AC_DEC_FIELD_NUMBER> cache_item_t;\n",
-         INDENT[2], project_name);
- fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n\n",
-         INDENT[2], project_name);
-#endif
  fprintf(output, "%spublic:\n", INDENT[1]);
  // Disassembler file.
  if (ACDasmFlag)
@@ -766,109 +749,12 @@ void CreateArchHeader(void)
                            pstorage->name, pstorage->name, pstorage->size);
   }
  }
- // The IM pointer used to be declared here, but it's in ac_arch (which is library) now. --Marilia
- // The APP_MEM pointer used to be declared here, but it's in ac_arch (which is library) now. --Marilia
-#if 0 // Declare stages at arch level.
-if (pipe_list)
- {
-  // Declarations of stages and stage linking registers.
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage!= NULL; pstage = pstage->next)
-   {
-    fprintf(output, "%s%s_%s_%s::%s_%s_%s %s_%s;\n", INDENT[2], project_name,
-            ppipe->name, pstage->name, project_name, ppipe->name, pstage->name,
-            ppipe->name, pstage->name);
-    init_list_p += sprintf(init_list_p,", %s_%s(\"%s_%s\", *this, isa",
-                           ppipe->name, pstage->name, ppipe->name, pstage->name);
-    if (pstage->id == 1)
-    {
-     prev_stage_name = pstage->name;
-     init_list_p += sprintf(init_list_p, ", 0"); // No previous stage.
-     if (pstage->next)
-      init_list_p += sprintf(init_list_p, ", 0, &pr_%s_%s_%s_%s", ppipe->name,
-                             pstage->name, ppipe->name, pstage->next->name); // Only out register.
-     else
-      init_list_p += sprintf(init_list_p, ", 0, 0"); // No in/out registers.
-    }
-    else if (pstage->id != stage_num)
-    {
-     init_list_p += sprintf(init_list_p, ", &%s_%s, &pr_%s_%s_%s_%s, &pr_%s_%s_%s_%s",
-                            ppipe->name, prev_stage_name, ppipe->name,
-                            prev_stage_name, ppipe->name, pstage->name, ppipe->name,
-                            pstage->name, ppipe->name, pstage->next->name);
-     prev_stage_name = pstage->name;
-    }
-    else
-     init_list_p += sprintf(init_list_p, ", &%s_%s, &pr_%s_%s_%s_%s, 0",
-                            ppipe->name, prev_stage_name, ppipe->name,
-                            prev_stage_name, ppipe->name, pstage->name);
-    init_list_p += sprintf(init_list_p, ")\n");
-   }
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if ((pstage->id != stage_num) && (pstage->next != NULL))
-    {
-     fprintf(output, "%sac_sync_reg<ac_instr_t> pr_%s_%s_%s_%s;\n", INDENT[2],
-             ppipe->name, pstage->name, ppipe->name, pstage->next->name);
-     init_list_p += sprintf(init_list_p, ", pr_%s_%s_%s_%s(\"pr_%s_%s_%s_%s\")",
-                            ppipe->name, pstage->name, ppipe->name, pstage->next->name,
-                            ppipe->name, pstage->name, ppipe->name, pstage->next->name);
-    }
- }
-#endif
-#if 0 // Pipeline stages can keep track of their own flushes and stalls now. --Marilia
- COMMENT(INDENT[2], "Control variables.");
- if (pipe_list)
- {
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-    {
-     fprintf(output, "%sbool %s_%s_stall;\n", INDENT[2], ppipe->name,
-             pstage->name);
-     init_list_p += sprintf(init_list_p, ", %s_%s_stall(0)", ppipe->name,
-                            pstage->name);
-    }
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-    {
-     fprintf(output, "%sbool %s_%s_flush;\n", INDENT[2], ppipe->name,
-             pstage->name);
-     init_list_p += sprintf(init_list_p, ", %s_%s_flush(0)", ppipe->name,
-                            pstage->name);
-    }
-  }
- }
-#endif
  // The cycle control variable. Only available for multi-cycle archs.
  if (HaveMultiCycleIns)
  {
   fprintf(output, "%sunsigned ac_cycle;\n", INDENT[2]);
   init_list_p += sprintf(init_list_p, ", ac_cycle(1)");
  }
-#if 0 // Declare stages at arch level.
- fprintf(output, "%s%s_isa isa;\n", INDENT[2], project_name);
- init_list_p += sprintf(init_list_p, ", isa(*this)");
-#endif
-#if 0 // No more delegation of metas.
- COMMENT(INDENT[2], "Prototypes for delegation.");
- fprintf(output, "%svirtual const char* get_name() = 0;\n", INDENT[2]);
- fprintf(output, "%svirtual const unsigned get_size() = 0;\n", INDENT[2]);
- // The get_cycle meta. Only available for multi-cycle archs.
- if (HaveMultiCycleIns)
-  fprintf(output, "%svirtual const unsigned get_cycles() = 0;\n", INDENT[2]);
- fprintf(output, "%svirtual const unsigned get_min_latency() = 0;\n",
-         INDENT[2]);
- fprintf(output, "%svirtual const unsigned get_max_latency() = 0;\n",
-         INDENT[2]);
-#endif
-#if 0 // Not here. --Marilia
- COMMENT(INDENT[2], "Module initialization method.");
- fprintf(output, "%svirtual void init(int ac, char** av) = 0;\n", INDENT[2]);
- COMMENT(INDENT[2], "Module finalization method.");
- fprintf(output, "%svirtual void stop(int status = 0) = 0;\n", INDENT[2]);
-#endif
  fprintf(output, "\n");
   // Constructor.
  COMMENT(INDENT[2], "Constructor.");
@@ -972,107 +858,9 @@ if (pipe_list)
   fprintf(output, "%sreturn;\n%s}\n\n", INDENT[3], INDENT[2]); // End of set_queue.
  }
 #endif
-#if 0 // Stages know how to stall themselves now. --Marilia
- COMMENT(INDENT[2], "Stall method.");
- // We have different methods for pipelined and non-pipelined archs
- if (pipe_list)
- {
-  fprintf(output, "%svoid ac_stall(char* stage)\n%s{\n", INDENT[2], INDENT[2]);
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-    {
-     if (pstage->id == 1)
-     {
-      if (pipe_list->next)
-       fprintf(output, "%sif (!strcmp(\"%s_%s\", stage))\n", INDENT[3],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%sif (!strcmp(\"%s\", stage))\n", INDENT[3],
-               pstage->name);
-     }
-     else
-     {
-      if (pipe_list->next)
-       fprintf(output, "%selse if (!strcmp(\"%s_%s\", stage))\n", INDENT[3],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%selse if (!strcmp(\"%s\", stage))\n", INDENT[3],
-               pstage->name);
-     }
-     fprintf(output, "%s%s_%s_stall = 1;\n", INDENT[4], ppipe->name,
-             pstage->name);
-    }
-   }
-  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[3], INDENT[2]);
- }
-#endif
-#if 0 // Stages know how to flush themselves now. --Marilia
- COMMENT(INDENT[2], "Flush method.");
- if (pipe_list)
- {
-  fprintf(output, "%svoid ac_flush(char* stage)\n%s{\n", INDENT[2], INDENT[2]);
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-    {
-     if (pstage->id == 1)
-     {
-      if (pipe_list->next)
-       fprintf(output, "%sif (!strcmp(\"%s_%s\", stage))\n", INDENT[3],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%sif (!strcmp(\"%s\", stage))\n", INDENT[3],
-               pstage->name);
-     }
-     else
-     {
-      if (pipe_list->next)
-       fprintf(output, "%selse if (!strcmp(\"%s_%s\", stage))\n", INDENT[3],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%selse if (!strcmp(\"%s\", stage))\n", INDENT[3],
-               pstage->name);
-     }
-     fprintf(output, "%s%s_%s_flush = 1;\n", INDENT[4], ppipe->name,
-             pstage->name);
-    }
-   }
-  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[3], INDENT[2]);
- }
-#endif
-#if 0 // Synchronous registers know how to suspend themselves now. --Marilia
- // Suspend method.
- COMMENT(INDENT[2], "Disable the update phase of a user-visible register.");
- fprintf(output, "%svoid ac_suspend(char* reg)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sif (!strcmp(\"ac_pc\", reg))\n%sac_pc.en = false;\n",
-         INDENT[3], INDENT[4]);
- for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
-  if (pstorage->type == REG)
-  {
-   if (pstorage->format != NULL) // Formatted register.
-   {
-    for (pformat = format_reg_list; pformat != NULL; pformat = pformat->next)
-     if (!strcmp(pformat->name, pstorage->format))
-      break;
-    fprintf(output, "%selse if (!strcmp(\"%s\", reg))\n%s{\n",
-            INDENT[3], pstorage->name, INDENT[3]);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
-     fprintf(output, "%s%s.%s.en = false;\n", INDENT[4], pstorage->name,
-             pfield->name);
-    fprintf(output, "%s}\n", INDENT[3]);
-   }
-   else // Normal register.
-    fprintf(output, "%selse if (!strcmp(\"%s\", reg))\n%s%s.en = false;\n",
-            INDENT[3], pstorage->name, INDENT[4], pstorage->name);
-  }
- fprintf(output, "%sreturn;\n%s}\n", INDENT[3], INDENT[2]); // End of suspend method.
-#endif
  // Delegated ac_pc read access.
  COMMENT(INDENT[2], "Delegated read access to ac_pc.");
- fprintf(output, "%sunsigned long long get_ac_pc()\n%s{\n%sreturn static_cast<unsigned long long>(ac_pc.read());\n%s}\n",
+ fprintf(output, "%sunsigned get_ac_pc()\n%s{\n%sreturn static_cast<unsigned>(ac_pc.read());\n%s}\n",
          INDENT[2], INDENT[2], INDENT[3], INDENT[2]);
  fprintf(output, "%s};\n\n", INDENT[0]); // End of class.
  fprintf(output, "#endif // _%s_ARCH_H_\n", caps_project_name);
@@ -1134,14 +922,6 @@ void CreateArchRefHeader(void)
 #endif
  // Forward declarations.
  COMMENT(INDENT[0], "Forward class declarations, needed to compile.");
-#if 0 // Declare stages at arch level.
- if (pipe_list)
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    fprintf(output, "namespace %s_%s_%s\n{\n%sclass %s_%s_%s;\n}\n",
-            project_name, ppipe->name, pstage->name, INDENT[1], project_name,
-            ppipe->name, pstage->name);
-#endif
  fprintf(output, "class %s_arch;\n\n", project_name);
  // Declaring Architecture Resources class.
  COMMENT(INDENT[0], "ArchC class for architecture-specific resources references.");
@@ -1226,33 +1006,6 @@ void CreateArchRefHeader(void)
             INDENT[2], project_name, project_name, pstorage->name);
   }
  }
- // The IM pointer used to be declared here, but it's in ac_arch (which is library) now. --Marilia
- // The APP_MEM pointer used to be declared here, but it's in ac_arch (which is library) now. --Marilia
-#if 0 // Declare stages at arch level.
- if (pipe_list)
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    fprintf(output, "%s%s_%s_%s::%s_%s_%s& %s_%s;\n", INDENT[2],
-            project_name, ppipe->name, pstage->name, project_name, ppipe->name,
-            pstage->name, ppipe->name, pstage->name);
-#endif
-#if 0 // Stages can keep track of their own flushes and stalls now. --Marilia
- COMMENT(INDENT[1], "Control variables.");
- if (pipe_list)
- {
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-     fprintf(output, "%sbool& %s_%s_stall;\n", INDENT[2], ppipe->name,
-             pstage->name);
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-     fprintf(output, "%sbool& %s_%s_flush;\n", INDENT[2], ppipe->name,
-             pstage->name);
-  }
- }
-#endif
  // The cycle control variable. Only available for multi-cycle archs
  if (HaveMultiCycleIns)
   fprintf(output, "%sunsigned& ac_cycle;\n", INDENT[2]);
@@ -1261,50 +1014,14 @@ void CreateArchRefHeader(void)
  COMMENT(INDENT[2], "Default constructor.");
  fprintf(output, "%s%s_arch_ref(%s_arch& arch);\n", INDENT[2], project_name,
          project_name);
-#if 0 // No more delegation of metas.
- // User-visible get_name.
- COMMENT(INDENT[2], "User-visible get_name method.");
- fprintf(output, "%sconst char* get_name();\n", INDENT[2]);
- // User-visible get_size.
- COMMENT(INDENT[2], "User-visible get_size method.");
- fprintf(output, "%sconst unsigned get_size();\n", INDENT[2]);
- if (HaveMultiCycleIns)
- {
-  // User-visible get_cycles.
-  COMMENT(INDENT[2], "User-visible get_cycles method.");
-  fprintf(output, "%sconst unsigned get_cycles();\n", INDENT[2]);
- }
- // User-visible get_min_latency.
- COMMENT(INDENT[2], "User-visible get_min_latency method.");
- fprintf(output, "%sconst unsigned get_min_latency();\n", INDENT[2]);
- // User-visible get_max_latency.
- COMMENT(INDENT[2], "User-visible get_max_latency method.");
- fprintf(output, "%sconst unsigned get_max_latency();\n", INDENT[2]);
-#endif
 #if 0 // Co-verification is currently unmaintained. --Marilia
  if (ACVerifyFlag)
   // Set co-verification msg queue method.
   fprintf(output, "%svoid set_queue(char* exec_name);\n", INDENT[2]);
 #endif
-#if 0 //Stages know how to stall themselves now. --Marilia
- COMMENT(INDENT[2], "Stall method.");
- // We have different methods for pipelined and non-pipelined archs
- if (pipe_list)
-  fprintf(output, "%svoid ac_stall(char* stage);\n", INDENT[2]);
-#endif
-#if 0 // Stages know how to flush themselves now. --Marilia
- COMMENT(INDENT[2], "Flush method.");
- if (pipe_list)
-  fprintf(output, "%svoid ac_flush(char* stage);\n", INDENT[2]);
-#endif
-#if 0 // Synchronous registers know how to suspend themselves now. --Marilia
- // Suspend method.
- COMMENT(INDENT[2], "Disable the update phase of a user-visible register.");
- fprintf(output, "%svoid ac_suspend(char* reg);\n", INDENT[2]);
-#endif
  // Delegated ac_pc read access.
  COMMENT(INDENT[2], "Delegated read access to ac_pc.");
- fprintf(output, "%sunsigned long long get_ac_pc();\n", INDENT[2]);
+ fprintf(output, "%sunsigned get_ac_pc();\n", INDENT[2]);
  fprintf(output, "};\n\n"); // End of class.
  fprintf(output, "#endif // _%s_ARCH_REF_H_\n", caps_project_name);
  fclose(output); 
@@ -1476,27 +1193,13 @@ void CreateParmHeader(void)
  if (pipe_list) // Enum type for pipes declared through ac_pipe keyword.
  {
   fprintf(output, "%senum ac_stage_list {", INDENT[2]);
-#if 0 // No more differences between monopipes and multipipes. --Marilia
-  if (pipe_list->next)
-#endif
-   fprintf(output, "id_%s_%s = %d", pipe_list->name, pipe_list->stages->name,
-           pipe_list->stages->id);
-#if 0 // No more differences between monopipes and multipipes. --Marilia
-  else
-   fprintf(output, "%s = %d", pipe_list->stages->name, pipe_list->stages->id);
-#endif
+  fprintf(output, "id_%s_%s = %d", pipe_list->name, pipe_list->stages->name,
+          pipe_list->stages->id);
   pstage = pipe_list->stages->next;
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
   {
    for (; pstage != NULL; pstage = pstage->next)
-#if 0 // No more differences between monopipes and multipipes. --Marilia
-    if (pipe_list->next)
-#endif
-     fprintf(output, ", id_%s_%s = %d", ppipe->name, pstage->name, pstage->id);
-#if 0 // No more differences between monopipes and multipipes. --Marilia
-    else
-     fprintf(output, ", %s = %d", pstage->name, pstage->id);
-#endif
+    fprintf(output, ", id_%s_%s = %d", ppipe->name, pstage->name, pstage->id);
    pstage = ppipe->stages;
   }
  }
@@ -1804,14 +1507,12 @@ void CreateProcessorHeader(void)
  fprintf(output, "#include \"ac_utils.H\"\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
  fprintf(output, "#include \"%s_arch.H\"\n", project_name);
-#if 1 // Declare stages at processor level.
  if (pipe_list) // Stage includes.
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
    for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
     fprintf(output, "#include \"%s_%s_%s.H\"\n", project_name, ppipe->name,
             pstage->name);
  else
-#endif
  {
   fprintf(output, "#include \"ac_instr.H\"\n");
   fprintf(output, "#include \"%s_isa.H\"\n", project_name);
@@ -1853,7 +1554,6 @@ void CreateProcessorHeader(void)
  }
  fprintf(output, "%sbool has_delayed_load;\n", INDENT[2]);
  fprintf(output, "%schar* delayed_load_program;\n", INDENT[2]);
-#if 1 // Declare stages at processor level.
  fprintf(output, "%s%s_isa isa;\n", INDENT[2], project_name);
  //! Declaring stages modules.
  if (pipe_list)
@@ -1872,7 +1572,6 @@ void CreateProcessorHeader(void)
              INDENT[2], ppipe->name, pstage->name, ppipe->name, pstage->next->name);
    }
  }
-#endif
  COMMENT(INDENT[2], "Start simulation.");
  fprintf(output, "%svoid init(int ac, char** av);\n", INDENT[2]);
  fprintf(output, "%svoid init();\n", INDENT[2]);
@@ -1881,29 +1580,8 @@ void CreateProcessorHeader(void)
  fprintf(output, "%svoid delayed_load(char* program);\n", INDENT[2]);
  COMMENT(INDENT[2], "Stop simulation (may receive exit status).");
  fprintf(output, "%svoid stop(int status = 0);\n", INDENT[2]);
-#if 0
- COMMENT(INDENT[2], "set_active wrapper method.");
- fprintf(output, "%svoid set_active();\n", INDENT[2]);
- COMMENT(INDENT[2], "set_not_active wrapper method.");
- fprintf(output, "%svoid set_not_active();\n", INDENT[2]);
-#endif
  COMMENT(INDENT[2], "PrintStat wrapper method.");
  fprintf(output, "%svoid PrintStat();\n", INDENT[2]);
-#if 0 // No more delegation of metas.
- COMMENT(INDENT[2], "Delegated get_name method.");
- fprintf(output, "%sconst char* get_name();\n", INDENT[2]);
- COMMENT(INDENT[2], "Delegated get_size method.");
- fprintf(output, "%sconst unsigned get_size();\n", INDENT[2]);
- if (HaveMultiCycleIns)
- {
-  COMMENT(INDENT[2], "Delegated get_cycles method.");
-  fprintf(output, "%sconst unsigned get_cycles();\n", INDENT[2]);
- }
- COMMENT(INDENT[2], "Delegated get_min_latency method.");
- fprintf(output, "%sconst unsigned get_min_latency();\n", INDENT[2]);
- COMMENT(INDENT[2], "Delegated get_max_latency method.");
- fprintf(output, "%sconst unsigned get_max_latency();\n", INDENT[2]);
-#endif
  COMMENT(INDENT[2], "Verification method.");
  fprintf(output, "%svoid ac_verify();\n", INDENT[2]);
  COMMENT(INDENT[2], "Behavior method.");
@@ -1913,10 +1591,6 @@ void CreateProcessorHeader(void)
   COMMENT(INDENT[2], "Decoder cache initialization method.");
   fprintf(output, "%svoid init_dec_cache();\n", INDENT[2]);
  }
-#if 0 // The new stall/flush mechanism does not need this anymore. --Marilia
- COMMENT(INDENT[2], "Updating pipe regs for behavioral simulation.");
- fprintf(output, "%svoid ac_update_regs();\n", INDENT[2]);
-#endif
  fprintf(output, "\n%sSC_HAS_PROCESS(%s);\n\n", INDENT[2], project_name);
  COMMENT(INDENT[2], "Constructor.");
  fprintf(output, "%s%s(sc_module_name mname, double p): ac_module(mname), period(p), isa(*this",
@@ -1931,7 +1605,6 @@ void CreateProcessorHeader(void)
              ppipe->name, pstage->next->name);
    }
  fprintf(output, ")");
-#if 1 // Declare stages at processor level.
  if (pipe_list)
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
    for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
@@ -1962,8 +1635,6 @@ void CreateProcessorHeader(void)
              pstage->name);
     fprintf(output, ")");
    }
-#endif
-#if 1 // Declare stages at processor level.
  if (pipe_list)
  { // Pipeline list exists. Used for ac_pipe declarations.
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
@@ -1973,7 +1644,6 @@ void CreateProcessorHeader(void)
              ppipe->name, pstage->name, ppipe->name, pstage->next->name,
              ppipe->name, pstage->name, ppipe->name, pstage->next->name);
  }
-#endif
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
  else if (ACGDBIntegrationFlag)
   fprintf(output, ", ac_GDB_interface(*this)");
@@ -1992,52 +1662,12 @@ void CreateProcessorHeader(void)
  }
  else
   fprintf(output, "%sdont_initialize();\n", INDENT[3]);
-#if 0 // Declare stages at processor level, but dynamically allocated.
- // Stage allocation.
- if (pipe_list)
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage!= NULL; pstage = pstage->next)
-   {
-    fprintf(output,"%s%s_%s = new %s_%s_%s::%s_%s_%s(\"%s_%s\", *this, isa",
-            INDENT[3], ppipe->name, pstage->name, project_name, ppipe->name,
-            pstage->name, project_name, ppipe->name, pstage->name, ppipe->name,
-            pstage->name);
-    if (pstage->id == 1)
-    {
-     prev_stage_name = pstage->name;
-     fprintf(output, ", 0"); // No previous stage.
-     if (pstage->next)
-      fprintf(output, ", 0, &pr_%s_%s_%s_%s", ppipe->name, pstage->name,
-              ppipe->name, pstage->next->name); // Only out register.
-     else
-      fprintf(output, ", 0, 0"); // No in/out registers.
-    }
-    else if (pstage->id != stage_num)
-    {
-     fprintf(output, ", %s_%s, &pr_%s_%s_%s_%s, &pr_%s_%s_%s_%s",
-             ppipe->name, prev_stage_name, ppipe->name, prev_stage_name,
-             ppipe->name, pstage->name, ppipe->name, pstage->name, ppipe->name,
-             pstage->next->name);
-     prev_stage_name = pstage->name;
-    }
-    else
-     fprintf(output, ", %s_%s, &pr_%s_%s_%s_%s, 0", ppipe->name,
-             prev_stage_name, ppipe->name, prev_stage_name, ppipe->name,
-             pstage->name);
-    fprintf(output, ");\n");
-   }
-#endif
  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[3], INDENT[2]);
  COMMENT(INDENT[2], "Destructor.");
  fprintf(output, "%s~%s()\n%s{\n", INDENT[2], project_name, INDENT[2]);
  if (!pipe_list && ACDecCacheFlag)
   fprintf(output, "%sif (DEC_CACHE)\n%sfree(DEC_CACHE);\n", INDENT[3], INDENT[4]);
  fprintf(output, "%sreturn;\n%s}\n", INDENT[3], INDENT[2]);
-#if 0 // Duplicated for some reason. --Marilia
- if (!pipe_list && ACDecCacheFlag)
-  fprintf(output, "\n%svoid init_dec_cache()\n%s{\n%sDEC_CACHE = reinterpret_cast<cache_item_t*>(calloc(sizeof(cache_item_t), dec_cache_size));\n%sreturn;\n%s}\n",
-          INDENT[3], INDENT[3], INDENT[4], INDENT[4], INDENT[3]);
-#endif
  // Closing class declaration.
  fprintf(output, "%s};\n\n", INDENT[0]);
  fprintf(output, "#endif // _%s_H_\n", caps_project_name);
@@ -2149,12 +1779,8 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
 
  for (pstage = stage_list; pstage != NULL; pstage = pstage->next)
  {
-  // If a ac_pipe declaration was used, stage module names will be PIPENAME_STAGENAME,
-  // otherwise they will be just STAGENAME.
-  // This makes possible to define multiple pipelines containg stages with the same name.
-  //
-  // Disregard the above comments. Stage module names are always PIPENAME_STAGENAME.
-  // The pipe created by an ac_stage declaration is defined to be named "". --Marilia
+  // Stage module names are always PIPENAME_STAGENAME. The pipe created by an
+  // ac_stage declaration is defined to be named "". --Marilia
   if (pipe_name)
   {
    caps_stage_name = (char*) malloc(sizeof(char) * (2 + strlen(pstage->name) + strlen(pipe_name)));
@@ -2239,7 +1865,8 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   if (pstage->id == 1)
   {
    fprintf(output, "%sstart_up = 1;\n", INDENT[4]);
-   fprintf(output, "%sDEC_CACHE = 0;\n", INDENT[4]);
+   if (ACDecCacheFlag)
+    fprintf(output, "%sDEC_CACHE = 0;\n", INDENT[4]);
    if (ACDasmFlag)
     fprintf(output, "%sap.dasmfile.open(\"%s.dasm\");\n", INDENT[4],
             project_name);
@@ -3005,32 +2632,6 @@ void CreateArchRefImpl(void)
  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
   init_list_p += sprintf(init_list_p, ", %s(arch.%s)", pstorage->name,
                          pstorage->name);
-#if 0 // Declare stages at arch level.
- // Finding pipeline stages.
- if (pipe_list)
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    init_list_p += sprintf(init_list_p, ", %s_%s(arch.%s_%s)", ppipe->name,
-                           pstage->name, ppipe->name, pstage->name);
-#endif
-#if 0 // No longer there. --Marilia
- if (pipe_list)
- {
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-     init_list_p += sprintf(init_list_p, ", %s_%s_stall(arch.%s_%s_stall)",
-                            ppipe->name, pstage->name, ppipe->name,
-                            pstage->name);
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-     init_list_p += sprintf(init_list_p, ", %s_%s_flush(arch.%s_%s_flush)",
-                            ppipe->name, pstage->name, ppipe->name,
-                            pstage->name);
-  }
- }
-#endif
  // The cycle control variable. Only available for multi-cycle archs.
  if (HaveMultiCycleIns)
   init_list_p += sprintf(init_list_p, ", ac_cycle(arch.ac_cycle)");
@@ -3039,41 +2640,11 @@ void CreateArchRefImpl(void)
  COMMENT(INDENT[0], "Default constructor.");
  fprintf(output, "%s%s_arch_ref::%s_arch_ref(%s_arch& arch): ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch), p(arch)%s, ac_pc(arch.ac_pc)",
          INDENT[0], project_name, project_name, project_name, project_name, project_name, init_list);
+ if (ACDasmFlag)
+  fprintf(output, ", dasmfile(arch.dasmfile)");
  fprintf(output, "\n%s{\n", INDENT[0]);
  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
  // End of constructor.
-#if 0 // No more delegation of metas.
- // User-visible get_name.
- COMMENT(INDENT[0], "User-visible get_name method.");
- fprintf(output, "%sconst char* %s_arch_ref::get_name()\n%s{\n", INDENT[0],
-         project_name, INDENT[0]);
- fprintf(output, "%sreturn p.get_name();\n%s}\n\n", INDENT[1], INDENT[0]);
- // User-visible get_size.
- COMMENT(INDENT[0], "User-visible get_size method.");
- fprintf(output, "%sconst unsigned %s_arch_ref::get_size()\n%s{\n", INDENT[0],
-         project_name, INDENT[0]);
- fprintf(output, "%sreturn p.get_size();\n%s}\n\n", INDENT[1], INDENT[0]);
- if (HaveMultiCycleIns)
- {
-  // User-visible get_cycles.
-  COMMENT(INDENT[0], "User-visible get_cycles method.");
-  fprintf(output, "%sconst unsigned %s_arch_ref::get_cycles()\n%s{\n",
-          INDENT[0], project_name, INDENT[0]);
-  fprintf(output, "%sreturn p.get_cycles();\n%s}\n\n", INDENT[1], INDENT[0]);
- }
- // User-visible get_min_latency.
- COMMENT(INDENT[0], "User-visible get_min_latency method.");
- fprintf(output, "%sconst unsigned %s_arch_ref::get_min_latency()\n%s{\n",
-         INDENT[0], project_name, INDENT[0]);
- fprintf(output, "%sreturn p.get_min_latency();\n%s}\n\n", INDENT[1],
-         INDENT[0]);
- // User-visible get_max_latency.
- COMMENT(INDENT[0], "User-visible get_max_latency method.");
- fprintf(output, "%sconst unsigned %s_arch_ref::get_max_latency()\n%s{\n",
-         INDENT[0], project_name, INDENT[0]);
- fprintf(output, "%sreturn p.get_max_latency();\n%s}\n\n", INDENT[1],
-         INDENT[0]);
-#endif
 #if 0 // Co-verification is currently unmaintained. --Marilia
  if (ACVerifyFlag)
  {
@@ -3128,112 +2699,10 @@ void CreateArchRefImpl(void)
   fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]); // End of set_queue.
  }
 #endif
-#if 0 // No longer there. --Marilia
- COMMENT(INDENT[0], "Stall method.");
- // We have different methods for pipelined and non-pipelined archs
- if (pipe_list)
- {
-  fprintf(output, "%svoid %s_arch_ref::ac_stall(char* stage)\n%s{\n", INDENT[0],
-          project_name, INDENT[0]);
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-    {
-     if (pstage->id == 1)
-     {
-      if (pipe_list->next)
-       fprintf(output, "%sif (!strcmp(\"%s_%s\", stage))\n", INDENT[1],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%sif (!strcmp(\"%s\", stage))\n", INDENT[1],
-               pstage->name);
-     }
-     else
-     {
-      if (pipe_list->next)
-       fprintf(output, "%selse if (!strcmp(\"%s_%s\", stage))\n", INDENT[1],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%selse if (!strcmp(\"%s\", stage))\n", INDENT[1],
-               pstage->name);
-     }
-     fprintf(output, "%s%s_%s_stall = 1;\n", INDENT[2], ppipe->name,
-             pstage->name);
-    }
-   }
-  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
- }
- COMMENT(INDENT[0], "Flush method.");
- if (pipe_list)
- {
-  fprintf(output, "%svoid %s_arch_ref::ac_flush(char* stage)\n%s{\n", INDENT[0],
-          project_name, INDENT[0]);
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-  {
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    if (pstage->next)
-    {
-     if (pstage->id == 1)
-     {
-      if (pipe_list->next)
-       fprintf(output, "%sif (!strcmp(\"%s_%s\", stage))\n", INDENT[1],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%sif (!strcmp(\"%s\", stage))\n", INDENT[1],
-               pstage->name);
-     }
-     else
-     {
-      if (pipe_list->next)
-       fprintf(output, "%selse if (!strcmp(\"%s_%s\", stage))\n", INDENT[1],
-               ppipe->name, pstage->name);
-      else
-       fprintf(output, "%selse if (!strcmp(\"%s\", stage))\n", INDENT[1],
-               pstage->name);
-     }
-     fprintf(output, "%s%s_%s_flush = 1;\n", INDENT[2], ppipe->name,
-             pstage->name);
-    }
-   }
-  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
- }
- // Suspend method.
- COMMENT(INDENT[0], "Disable the update phase of a user-visible register.");
- fprintf(output, "%svoid %s_arch_ref::ac_suspend(char* reg)\n%s{\n", INDENT[0],
-         project_name, INDENT[0]);
- fprintf(output, "%sif (!strcmp(\"ac_pc\", reg))\n%sac_pc.en = false;\n",
-         INDENT[1], INDENT[2]);
- for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
-  if (pstorage->type == REG)
-  {
-   if (pstorage->format != NULL) // Formatted register.
-   {
-    for (pformat = format_reg_list; pformat != NULL; pformat = pformat->next)
-     if (!strcmp(pformat->name, pstorage->format))
-      break;
-    fprintf(output, "%selse if (!strcmp(\"%s\", reg))\n%s{\n",
-            INDENT[1], pstorage->name, INDENT[1]);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
-     fprintf(output, "%s%s.%s.en = false;\n", INDENT[2], pstorage->name,
-             pfield->name);
-    fprintf(output, "%s}\n", INDENT[1]);
-   }
-   else // Normal register.
-    fprintf(output, "%selse if (!strcmp(\"%s\", reg))\n%s%s.en = false;\n",
-            INDENT[1], pstorage->name, INDENT[2], pstorage->name);
-  }
- fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]); // End of suspend method.
-#endif
  // Delegated ac_pc read access.
  COMMENT(INDENT[2], "Delegated read access to ac_pc.");
- fprintf(output, "%sunsigned long long %s_arch_ref::get_ac_pc()\n%s{\n%sreturn static_cast<unsigned long long>(ac_pc.read());\n%s}\n",
+ fprintf(output, "%sunsigned %s_arch_ref::get_ac_pc()\n%s{\n%sreturn static_cast<unsigned>(ac_pc.read());\n%s}\n",
          INDENT[2], project_name, INDENT[2], INDENT[3], INDENT[2]); // End of get_ac_pc method.
-#if 0
- fprintf(output, "%sstd::ostream& %s_arch_ref::operator<<(std::ostream& os, std::ostream& (%s_arch_ref::*mfunc)(std::ostream&))\n%s{\n",
-         INDENT[0], project_name, project_name, INDENT[0]);
- fprintf(output, "%sreturn os << *mfunc;\n%s}\n\n", INDENT[1], INDENT[0]); // End of operator<<.
-#endif
  fclose(output);
  return;
 }
@@ -3257,12 +2726,8 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
 
  for (pstage = stage_list; pstage != NULL; pstage = pstage->next)
  {
-  // If a ac_pipe declaration was used, stage module names will be PIPENAME_STAGENAME,
-  // otherwise they will be just STAGENAME.
-  // This makes possible to define multiple pipelines containg stages with the same name.
-  //
-  // Disregard the above comments. Stage module names are always PIPENAME_STAGENAME.
-  // The pipe created by an ac_stage declaration is defined to be named "". --Marilia
+  // Stage module names are always PIPENAME_STAGENAME. The pipe created by an
+  // ac_stage declaration is defined to be named "". --Marilia
   if (pipe_name)
   {
    stage_name = (char*) malloc(sizeof(char) * (2 + strlen(pstage->name) + strlen(pipe_name)));
@@ -3296,6 +2761,8 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
   fprintf(output, "\n%sinline void %s_%s::%s_%s::behavior()\n%s{\n", INDENT[0],
           project_name, stage_name, project_name, stage_name, INDENT[0]);
   fprintf(output, "%sunsigned ins_id;\n", INDENT[1]);
+  if (pstage->id == 1)
+   fprintf(output, "%sunsigned* instr_dec;\n", INDENT[1]);
   fprintf(output, "%sac_instr_t* instr_vec;\n", INDENT[1]);
   if (pstage->id != 1)
   {
@@ -3546,20 +3013,6 @@ void CreateProcessorImpl(void)
  fprintf(output, "%sdelayed_load_program = new char[strlen(program)];\n", INDENT[1]);
  fprintf(output, "%sstrcpy(delayed_load_program, program);\n", INDENT[1]);
  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
-#if 0
- // set_active wrapper.
- COMMENT(INDENT[0], "set_active wrapper method.");
- fprintf(output, "%svoid %s::set_active()\n%s{\n", INDENT[0], project_name,
-         INDENT[0]);
- fprintf(output, "%sac_module::set_active();\n", INDENT[1]);
- fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
- // set_not_active wrapper.
- COMMENT(INDENT[0], "//! set_not_active wrapper method.");
- fprintf(output, "%svoid %s::set_not_active()\n%s{\n", INDENT[0], project_name,
-         INDENT[0]);
- fprintf(output, "%sac_module::set_not_active();\n", INDENT[1]);
- fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
-#endif
  // PrintStat wrapper.
  COMMENT(INDENT[0], "PrintStat wrapper method.");
  fprintf(output, "%svoid %s::PrintStat()\n%s{\n", INDENT[0], project_name,
@@ -3568,35 +3021,6 @@ void CreateProcessorImpl(void)
          "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n",
          INDENT[1], project_name, project_name);
  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[1], INDENT[0]);
-#if 0 // No more delegation of metas.
- // Delegated get_name.
- COMMENT(INDENT[0], "Delegated get_name method.");
- fprintf(output, "%sconst char* %s::get_name()\n%s{\n", INDENT[0], project_name,
-         INDENT[0]);
- fprintf(output, "%sreturn isa.instr_table[current_instruction_id].ac_instr_size;\n%s}\n\n",
-         INDENT[1], INDENT[0]);
- if (HaveMultiCycleIns)
- {
-  // Delegated get_cycles.
-  COMMENT(INDENT[0], "Delegated get_cycles method.");
-  fprintf(output, "%sconst unsigned %s::get_cycles()\n%s{\n", INDENT[0],
-          project_name, INDENT[0]);
-  fprintf(output, "%sreturn isa.instr_table[current_instruction_id].ac_instr_cycles;\n%s}\n\n",
-          INDENT[1], INDENT[0]);
- }
- // Delegated get_min_latency.
- COMMENT(INDENT[0], "Delegated get_min_latency method.");
- fprintf(output, "%sconst unsigned %s::get_min_latency()\n%s{\n", INDENT[0],
-         project_name, INDENT[0]);
- fprintf(output, "%sreturn isa.instr_table[current_instruction_id].ac_instr_min_latency;\n%s}\n\n",
-         INDENT[1], INDENT[0]);
- // Delegated get_max_latency.
- COMMENT(INDENT[0], "Delegated get_max_latency method.");
- fprintf(output, "%sconst unsigned %s::get_max_latency()\n%s{\n", INDENT[0],
-         project_name, INDENT[0]);
- fprintf(output, "%sreturn isa.instr_table[current_instruction_id].ac_instr_max_latency;\n%s}\n\n",
-         INDENT[1], INDENT[0]);
-#endif
  // Verification method.
  COMMENT(INDENT[0], "Verification method.");
  fprintf(output, "%svoid %s::ac_verify()\n%s{\n", INDENT[0], project_name, INDENT[0]);
@@ -3664,28 +3088,13 @@ void CreateProcessorImpl(void)
     {
      fprintf(output, "%sif (%s_%s.will_stall())\n%s{\n", INDENT[1],
              ppipe->name, pstage->name, INDENT[1]);
-     //fprintf(output, "%s%s_%s_stage->stall();\n", INDENT[2], ppipe->name,
-             //pstage->name, INDENT[1]);
      fprintf(output, "%sac_pc.suspend();\n", INDENT[2]);
      fprintf(output, "%sac_instr_counter--;\n", INDENT[2]);
-     //fprintf(output, "%s%s_%s_stall = 0;\n", INDENT[2], ppipe->name,
-             //pstage->name);
      fprintf(output, "%s}\n", INDENT[1]);
-     //fprintf(output, "%sif (%s_%s_flush)\n%s{\n", INDENT[1], ppipe->name,
-             //pstage->name, INDENT[1]);
-     //fprintf(output, "%s%s_%s_stage->flush();\n", INDENT[2], ppipe->name,
-             //pstage->name);
-     //fprintf(output, "%s%s_%s_flush = 0;\n", INDENT[2], ppipe->name,
-             //pstage->name);
-     //fprintf(output, "%s}\n", INDENT[1]);
     }
  }
  else
  {
-#if 0 // We have a scheduler of our own now, no need for this thing. --Marilia
-  fprintf(output, "%ssc_signal<bool>& bhv_done = done;\n", INDENT[1],
-          project_name);
-#endif
   fprintf(output, "%s%s_arch& ap = *this;\n", INDENT[1], project_name); // I'm shameless, I know. --Marilia
   if (ACDebugFlag)
   {
@@ -4451,7 +3860,7 @@ void EmitInstrExec(FILE* output, int base_indent)
  }
  fprintf(output, "%s}\n", INDENT[base_indent]);
  if (ACDasmFlag)
-  fprintf(output, PRINT_DASM, INDENT[base_indent]);
+  fprintf(output, PRINT_DASM, INDENT[base_indent], project_name);
  if (ACStatsFlag)
  {
   if (!pipe_list)
@@ -4519,7 +3928,6 @@ void EmitFetchInit(FILE* output, int base_indent)
   fprintf(output, "%sperror(\"msgsnd\");\n", INDENT[base_indent + 2]);
  }
 #endif
- //actsim-original//fprintf(output, "%sap->stop();\n", INDENT[base_indent + 1]);
  fprintf(output, "%sap.stop();\n", INDENT[base_indent + 1]);
  fprintf(output, "%sreturn;\n", INDENT[base_indent + 1]);
  fprintf(output, "%s}\n", INDENT[base_indent]);
@@ -4632,7 +4040,7 @@ void EmitMultiCycleProcessorBhv(FILE* output)
   fprintf(output, PRINT_TRACE, INDENT[base_indent + 1]);
  }
  if (ACDasmFlag)
-  fprintf(output, PRINT_DASM, INDENT[base_indent + 1]);
+  fprintf(output, PRINT_DASM, INDENT[base_indent + 1], project_name);
  if (ACStatsFlag)
  {
   fprintf(output, "%sisa.stats[%s_stat_ids::INSTRUCTIONS]++;\n",
@@ -4691,9 +4099,6 @@ void EmitMultiCycleProcessorBhv(FILE* output)
   // Closing switch.
   fprintf(output, "%s}\n", INDENT[2]);
  }
-#if 0 // We have our own scheduler now. --Marilia
- fprintf(output, "%sbhv_done.write(1);\n", INDENT[1]);
-#endif
  return;
 }
 
@@ -4991,14 +4396,6 @@ void ReadConfFile(void)
  char var[CONF_MAX_LINE];
  char value[CONF_MAX_LINE];
 
-#if 0 // "If 0" this or face the wrath!
- ARCHC_PATH = getenv("ARCHC_PATH");
- if (!ARCHC_PATH)
- {
-  AC_ERROR("You should set the ARCHC_PATH environment variable.\n");
-  exit(1);
- }
-#endif
  user_home = getenv("HOME");
  conf_filename_local = (char*) malloc(sizeof(char) * (strlen(user_home) + 19));
  strcpy(conf_filename_local, user_home);
@@ -5029,13 +4426,6 @@ void ReadConfFile(void)
    {
     sscanf(line, "%s", var);
     strcpy(value, (strchr(line, '=') + 1));
- #if 0
-    if (!strcmp(var, "ARCHC_PATH"))
-    {
-     ARCHC_PATH = (char*) malloc(sizeof(char) * (strlen(value)+1));
-     ARCHC_PATH = strcpy(ARCHC_PATH, value);
-    }
- #endif
     if (!strcmp(var, "SYSTEMC_PATH"))
     {
      SYSTEMC_PATH = (char*) malloc(sizeof(char) * (strlen(value) + 1));

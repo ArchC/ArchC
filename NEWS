@@ -18,6 +18,9 @@ proc.get_ac_pc()
 
 * Several bugfixes
 
+* Support for cycle-accurate models (multicycle and single pipeline) is back
+via actsim (see doc/actsim.txt for further details)
+
 
 Changes in version 2.0beta1:
 ----------------------------

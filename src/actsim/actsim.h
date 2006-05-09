@@ -126,7 +126,7 @@ enum _ac_cmd_options
  /*OPVerify,*/
  /*OPVerifyTimed,*/
  OPVersion,
- OPEncoder,
+ /*OPEncoder,*/
  OPGDBIntegration,
  ACNumberOfOptions
 };

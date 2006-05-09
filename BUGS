@@ -10,6 +10,15 @@ KNOWN BUGS IN ARCHC 2.0 BETA2
           produces garbage instead of the required errors (since acsim should
           not generate cycle-accurate simulators)
 
+ ** actsim:
+     - Instantiation of multiple processors does not work properly
+     - GDB integration (option -gdb) does not work (not yet supported for cycle-
+         accurate models)
+     - Options -g and -vb are the same as in acsim
+     - Programs with multiple simulator instances will compile, but not run
+         properly
+     - Memory hierarchy is not supported
+
  ** general:
       - accsim tool is not working
 
