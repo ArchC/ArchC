@@ -77,7 +77,7 @@ int ACVerifyTimedFlag = 0;                      //!< Indicates whether verificat
 int ACEncoderFlag = 0;                          //!< Indicates whether encoder tools will be included in the simulator
 int ACGDBIntegrationFlag = 0;                   //!< Indicates whether gdb support will be included in the simulator
 
-char* ACVersion = "2.0beta2";                  //!< Stores ArchC version number.
+char* ACVersion = ACVERSION;                   //!< Stores ArchC version number.
 char ACOptions[500];                            //!< Stores ArchC recognized command line options
 char* ACOptions_p = ACOptions;                  //!< Pointer used to append options in ACOptions
 char* arch_filename;                            //!< Stores ArchC arquitecture file

@@ -22,6 +22,9 @@ KNOWN BUGS IN ARCHC 2.0 BETA2
  ** general:
       - accsim tool is not working
 
+ ** sourceforge acknowledged bugs:
+      - 1473565 - problem while loading application files on a big-endian host
+
 
 KNOWN BUGS IN ARCHC 2.0 BETA1
 -----------------------------
