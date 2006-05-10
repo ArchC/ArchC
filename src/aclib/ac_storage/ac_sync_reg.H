@@ -37,8 +37,11 @@
 #ifndef _AC_SYNC_REG_H_
 #define _AC_SYNC_REG_H_
 
+// Standard includes.
+#include <string>
+// SystemC includes.
 #include <systemc.h>
-#include "ac_ticker_interface.H"
+// ArchC includes.
 #include "ac_log.H"
 
 ////////////////////////////////////////////////////
@@ -46,7 +49,7 @@
 ////////////////////////////////////////////////////
 
 template<class T> class ac_sync_reg:
- public ac_ticker_interface
+ public sc_prim_channel
 {
  protected:
   char* name; // register name
@@ -62,7 +65,7 @@ template<class T> class ac_sync_reg:
 #endif
 
   //! Clock process.
-  void tick()
+  void update()
   {
    if (en)
    {
@@ -142,6 +145,7 @@ template<class T> class ac_sync_reg:
    if (Data != NewData)
     delete NewData;
    NewData = new T(datum);
+   request_update();
    return;
   }
 
@@ -166,11 +170,12 @@ template<class T> class ac_sync_reg:
   inline void suspend()
   {
    en = false;
+   request_update(); // This looks weird, but en must go up by the end of the cycle.
    return;
   }
 
   ac_sync_reg(const char* mname, T value = 0):
-   ac_ticker_interface()
+   sc_prim_channel(mname)
   {
    Data = NewData = new T(value);
    en = true;
@@ -181,7 +186,7 @@ template<class T> class ac_sync_reg:
   }
 
   ac_sync_reg(T value = 0):
-   ac_ticker_interface()
+   sc_prim_channel(sc_gen_unique_name("ac_sync_reg_anonymous"))
   {
    Data = NewData = new T(value);
    en = true;
@@ -192,7 +197,7 @@ template<class T> class ac_sync_reg:
   }
 
   ac_sync_reg(const ac_sync_reg<T>& src):
-   ac_ticker_interface()
+   sc_prim_channel(std::string(std::string(src.name) + std::string("_copy")).c_str())
   {
    Data = NewData = new T(src.read());
    en = src.en;

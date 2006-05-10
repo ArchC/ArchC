@@ -9,13 +9,17 @@
 #ifndef _AC_STAGE_H_
 #define _AC_STAGE_H_
 
+// Standard includes.
 #include <string.h>
+// SystemC includes.
+#include <systemc.h>
+// ArchC includes.
 #include "ac_sync_reg.H"
 #include "ac_instr.H"
 
 //! ArchC base class for pipeline stages.
 
-template<class ac_instr> class ac_stage: public ac_ticker_interface
+template<class ac_instr> class ac_stage: public sc_prim_channel
 {
  private:
   /// Flush control variable.
@@ -29,7 +33,7 @@ template<class ac_instr> class ac_stage: public ac_ticker_interface
   ac_sync_reg<ac_instr>* regin;
   ac_sync_reg<ac_instr>* regout;
 
-  virtual void tick()
+  virtual void update()
   {
    fctrl_next = false; // Flushing already took place (or will before anyone can ask).
    sctrl_now = sctrl_next; // Stall state copied from future stall state.
@@ -47,6 +51,7 @@ template<class ac_instr> class ac_stage: public ac_ticker_interface
    fctrl_next = true;
    if (regout)
     regout->write(*nop);
+   request_update();
    return;
   }
 
@@ -69,6 +74,7 @@ template<class ac_instr> class ac_stage: public ac_ticker_interface
     p->regin->suspend();
     p = p->prev;
    }
+   request_update();
    return;
   }
 
@@ -89,6 +95,7 @@ template<class ac_instr> class ac_stage: public ac_ticker_interface
 
   ac_stage(const char* _name, ac_stage<ac_instr>* p, ac_sync_reg<ac_instr>* ri,
            ac_sync_reg<ac_instr>* ro):
+   sc_prim_channel(_name),
    fctrl_next(false),
    sctrl_next(false),
    sctrl_now(false),

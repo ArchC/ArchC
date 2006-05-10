@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  ArchC simulator generator generates simulators for the described arquitecture
+/*  ArchC simulator generator generates simulators for the described architecture
     Copyright (C) 2002-2004  The ArchC Team
 
     This program is free software; you can redistribute it and/or modify
@@ -16,8 +16,8 @@
 
 /********************************************************/
 /* actsim.h: The ArchC timed simulator generator.       */
-/* Author: Sandro Rigo                                  */
-/* Date: 16-07-2002                                     */
+/* Author: Sandro Rigo, Marilia Felippe Chiozo          */
+/* Date: 16-07-2002, 30-01-2006                         */
 /*                                                      */
 /* The ArchC Team                                       */
 /* Computer Systems Laboratory (LSC)                    */
@@ -39,11 +39,6 @@
 #define _ACTSIM_H_
 
 #define _NEMDEFS_SINGLEINDENT_
-#define _1515DEFS_EXM_BART_
-#define _1515DEFS_NEW_DECODER_
-#ifdef _1515DEFS_OLD_DECODER_
-#undef _1515DEFS_OLD_DECODER_
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -206,33 +201,30 @@ void print_comment(FILE* output, const char* description);
 
 void CreateArchHeader(void);                      //!< Creates the header file for <project>_arch class.
 void CreateArchRefHeader(void);                   //!< Creates the header file for <project>_arch_ref class.
+void CreateParmHeader(void);                      //!< Creates the header file for ArchC common parameters.
 void CreateISAHeader(void);                       //!< Creates the header file for the ISA class.
 void CreateProcessorHeader(void);                 //!< Creates the header file for the processor class.
 void CreateStagesRefHeader(void);                 //!< Creates the header file for the stages references class.
 void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name);  //!< Creates the header files for pipeline stages.
-void CreateInstructionHeader(void);               //!< Creates the header file for generic instruction behaviors.
-void CreateFormatsHeaders(void);                  //!< Creates the header files for instruction formats.
-void CreateParmHeader(void);                      //!< Creates the header file for ArchC common parameters.
 void CreateRegsHeader(void);                      //!< Creates the header file for ArchC formatted registers.
 void CreateCoverifHeader(void);                   //!< Creates the header file for ArchC co-verification class.
 void CreateStatsHeaderTmpl(void);                 //!< Creates the header file for ArchC statistics collection class.
-void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls. 
 void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
 void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.
+void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls. 
 void CreateMakefile(void);                        //!< Creates a Makefile for the ArchC model.
-void CreateDummy(int, char*);                     //!< Creates dummy function to use if real one is undefined
 
 void CreateArchRefImpl(void);                    //!< Creates the .cpp file for <project>_arch_ref class.
 void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name); //!< Creates the .cpp file for pipeline stages.
-void CreateStatsImplTmpl(void);                   //!< Creates the implementation file for ArchC statistics collection class.
-void CreateRegsImpl(void);                        //!< Creates the .cpp template file for formatted registers.
+void CreateProcessorImpl(void);                   //!< Creates the .cpp file for processor module class.
+void CreateMainTmpl(void);                        //!< Creates the .cpp template file for the main function.
 void CreateImplTmpl(void);                        //!< Creates the .cpp template file for behavior description.
 void CreateArchGDBImplTmpl(void);                 //!< Creates the .cpp template file for GDB integration.
 void CreateISAInitImpl(void);                     //!< Creates the .cpp ISA initialization file.
 void CreateArchABIImplTmpl(void);                 //!< Creates the .cpp template file for ABI implementation.
-void CreateMainTmpl(void);                        //!< Creates the .cpp template file for the main function.
+void CreateStatsImplTmpl(void);                   //!< Creates the implementation file for ArchC statistics collection class.
+void CreateRegsImpl(void);                        //!< Creates the .cpp template file for formatted registers.
 void CreateIntrTmpl(void);                        //!< Creates the .cpp template file for interrupt handlers.
-void CreateProcessorImpl(void);                   //!< Creates the .cpp file for processor module class.
 //@}
 
 /** @defgroup emitfunc Emit Functions
@@ -241,16 +233,13 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
  * @{
 */
 void EmitDecStruct(FILE* output);                 //!< Emits decoder structure initialization.
-void EmitMultiCycleProcessorBhv(FILE* output);    //!< Emits processor behavior for a multicycle processor.
-void EmitProcessorBhv(FILE* output);              //!< Emits processor behavior for a single-cycle processor.
-void EmitProcessorBhv_ABI(FILE* output);          //!< Emits processor behavior for a single-cycle processor with ABI provided.
-void EmitABIAddrList(FILE* output, int base_indent);          //!< Emits the calls for macros containing the list o address used for system calls
-// ATTENTION -- SIGNATURE CHANGED
-void EmitABIDefine(FILE* output, int base_indent);            //!< Emits the define that implements the ABI control for non-pipelined architectures
-void EmitPipeABIDefine(FILE* output);             //!< Emits the define that implements the ABI control for pipelined architectures
-void EmitInstrExec(FILE* output, int base_indent); //!< Emits code for executing an instruction behavior
 void EmitDecodification(FILE* output, int base_indent);       //!< Emits for instruction decodification
+void EmitInstrExec(FILE* output, int base_indent);            //!< Emits code for executing an instruction behavior
 void EmitFetchInit(FILE* output, int base_indent);            //!< Emits code used for initializing fetchs
+void EmitMultiCycleProcessorBhv(FILE* output);    //!< Emits processor behavior for a multicycle processor.
+void EmitPipeABIDefine(FILE* output);             //!< Emits the define that implements the ABI control for pipelined architectures
+void EmitABIDefine(FILE* output, int base_indent);            //!< Emits the define that implements the ABI control for non-pipelined architectures
+void EmitABIAddrList(FILE* output, int base_indent);          //!< Emits the calls for macros containing the list o address used for system calls
 void EmitCacheDeclaration(FILE* output, ac_sto_list* pstorage, int base_indent);       //!< Emits code for ac_cache object declaration
 void EmitCacheInitialization(char* output, ac_sto_list* pstorage);                     //!< Emits code for ac_cache object initialization
 //@}
