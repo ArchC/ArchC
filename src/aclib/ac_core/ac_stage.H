@@ -18,28 +18,39 @@
 #include "ac_instr.H"
 
 //! ArchC base class for pipeline stages.
-
-template<class ac_instr> class ac_stage: public sc_prim_channel
+template<class ac_instr> class ac_stage
 {
- private:
-  /// Flush control variable.
-  bool fctrl_next;
-  /// Stall control variables.
-  bool sctrl_next;
-  bool sctrl_now;
  protected:
+  class ac_stage_control: public sc_prim_channel
+  {
+   public:
+    /// Flush control variable.
+    bool fctrl_next;
+    /// Stall control variables.
+    bool sctrl_next;
+    bool sctrl_now;
+
+    /// Constructor.
+    ac_stage_control()
+    {
+     fctrl_next = sctrl_next = sctrl_now = false;
+     return;
+    }
+
+    void update()
+    {
+     fctrl_next = false; // Flushing already took place (or will before anyone can ask).
+     sctrl_now = sctrl_next; // Stall state copied from future stall state.
+     sctrl_next = false; // Future stall state defaults to false.
+     return;
+    }
+  };
+
+  ac_stage_control ctrl;
   char* name;
   ac_stage<ac_instr>* prev;
   ac_sync_reg<ac_instr>* regin;
   ac_sync_reg<ac_instr>* regout;
-
-  virtual void update()
-  {
-   fctrl_next = false; // Flushing already took place (or will before anyone can ask).
-   sctrl_now = sctrl_next; // Stall state copied from future stall state.
-   sctrl_next = false; // Future stall state defaults to false.
-   return;
-  }
 
  public:
   virtual void behavior() = 0;
@@ -48,16 +59,16 @@ template<class ac_instr> class ac_stage: public sc_prim_channel
   {
    static ac_instr* nop = new ac_instr;
 
-   fctrl_next = true;
+   ctrl.fctrl_next = true;
    if (regout)
     regout->write(*nop);
-   request_update();
+   ctrl.request_update();
    return;
   }
 
   bool will_flush()
   {
-   return fctrl_next;
+   return ctrl.fctrl_next;
   }
 
   void stall()
@@ -65,7 +76,7 @@ template<class ac_instr> class ac_stage: public sc_prim_channel
    ac_stage<ac_instr>* p;
    static ac_instr* nop = new ac_instr;
 
-   sctrl_next = true;
+   ctrl.sctrl_next = true;
    if (regout)
     regout->write(*nop);
    p = this;
@@ -74,18 +85,18 @@ template<class ac_instr> class ac_stage: public sc_prim_channel
     p->regin->suspend();
     p = p->prev;
    }
-   request_update();
+   ctrl.request_update();
    return;
   }
 
   bool is_stalled()
   {
-   return sctrl_now;
+   return ctrl.sctrl_now;
   }
 
   bool will_stall()
   {
-   return sctrl_next;
+   return ctrl.sctrl_next;
   }
 
   const char* get_name() const
@@ -95,10 +106,6 @@ template<class ac_instr> class ac_stage: public sc_prim_channel
 
   ac_stage(const char* _name, ac_stage<ac_instr>* p, ac_sync_reg<ac_instr>* ri,
            ac_sync_reg<ac_instr>* ro):
-   sc_prim_channel(_name),
-   fctrl_next(false),
-   sctrl_next(false),
-   sctrl_now(false),
    prev(p),
    regin(ri),
    regout(ro)

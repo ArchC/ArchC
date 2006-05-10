@@ -56,6 +56,9 @@ const char* field_type = "int"; //!< A data type which can hold instruction fiel
 // DO NOT set pc_type to ac_word. BAD THINGS will happen. --Marilia
 const char* ptr_type = "unsigned long"; //!< A data type which can hold pointers
 const char* pc_type = "unsigned"; //!< The data type representing the value of ac_pc
+// This is used to initialize flushes_left in the stage implementation.
+// Think of a better way to find out this value. --Marilia
+const unsigned pipe_maximum_path_length = 7;
 
 // Defining traces and dasm strings
 #define PRINT_TRACE "%strace_file << hex << ap.decode_pc << dec << \"\\n\";\n"
@@ -560,7 +563,8 @@ void CreateArchHeader(void)
  free(filename);
  print_comment(output, "ArchC arch-specific resources header file.");
  fprintf(output, "#ifndef _%s_ARCH_H_\n", caps_project_name);
- fprintf(output, "#define _%s_ARCH_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_ARCH_H_\n", caps_project_name);
+ fprintf(output, "\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
  fprintf(output, "#include \"ac_arch_dec_if.H\"\n");
  fprintf(output, "#include \"ac_storage.H\"\n");
@@ -896,7 +900,8 @@ void CreateArchRefHeader(void)
  free(filename);
  print_comment(output, "ArchC arch-specific references header file.");
  fprintf(output, "#ifndef _%s_ARCH_REF_H_\n", caps_project_name);
- fprintf(output, "#define _%s_ARCH_REF_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_ARCH_REF_H_\n", caps_project_name);
+ fprintf(output, "\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
  fprintf(output, "#include \"ac_arch_ref.H\"\n");
  fprintf(output, "#include \"ac_memport.H\"\n");
@@ -929,6 +934,7 @@ void CreateArchRefHeader(void)
          INDENT[0], project_name, project_name, project_name, INDENT[0]);
  fprintf(output, "%sprivate:\n", INDENT[1]);
  fprintf(output, "%s%s_arch& p;\n", INDENT[2], project_name); // Do NOT replicate this in the "arch" file. --Marilia
+ fprintf(output, "\n");
  fprintf(output, "%sprotected:\n", INDENT[1]);
  // A statistics declaration used to be here, but it's in ac_arch (which is library) now. --Marilia
  if (ACDasmFlag)
@@ -1009,8 +1015,7 @@ void CreateArchRefHeader(void)
  // The cycle control variable. Only available for multi-cycle archs
  if (HaveMultiCycleIns)
   fprintf(output, "%sunsigned& ac_cycle;\n", INDENT[2]);
- fprintf(output, "\n");
-  // Constructor.
+ // Constructor.
  COMMENT(INDENT[2], "Default constructor.");
  fprintf(output, "%s%s_arch_ref(%s_arch& arch);\n", INDENT[2], project_name,
          project_name);
@@ -1057,7 +1062,8 @@ void CreateParmHeader(void)
  free(filename);
  print_comment(output, "ArchC parameters header file.");
  fprintf(output, "#ifndef _%s_PARMS_H_\n", caps_project_name);
- fprintf(output, "#define _%s_PARMS_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_PARMS_H_\n", caps_project_name);
+ fprintf(output, "\n");
  // Options defines.
  if (ACVerboseFlag
 #if 0 // Co-verification is currently unmaintained. --Marilia
@@ -1243,11 +1249,13 @@ void CreateISAHeader(void)
  free(filename);
  print_comment(output, isa_header_description);
  fprintf(output, "#ifndef _%s_ISA_H_\n", caps_project_name);
- fprintf(output, "#define _%s_ISA_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_ISA_H_\n", caps_project_name);
+ fprintf(output, "\n");
  fprintf(output, "#include \"ac_arch_dec_if.H\"\n");
  fprintf(output, "#include \"ac_decoder_rt.H\"\n");
  fprintf(output, "#include \"ac_instr.H\"\n");
- fprintf(output, "#include \"ac_instr_info.H\"\n\n");
+ fprintf(output, "#include \"ac_instr_info.H\"\n");
+ fprintf(output, "\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
  fprintf(output, "#include \"%s_arch.H\"\n", project_name);
  fprintf(output, "#include \"%s_arch_ref.H\"\n", project_name);
@@ -1266,6 +1274,7 @@ void CreateISAHeader(void)
  fprintf(output, "%sprivate:\n", INDENT[1]);
  fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n",
          INDENT[2], project_name);
+ fprintf(output, "\n");
  fprintf(output, "%spublic:\n", INDENT[1]);
  fprintf(output, "%sunsigned current_instruction_id;\n", INDENT[2]);
  COMMENT(INDENT[2], "Decoding structures.");
@@ -1279,7 +1288,8 @@ void CreateISAHeader(void)
          INDENT[2], project_name);
  fprintf(output, "%sstatic const ac_instr_info instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n",
          INDENT[2], project_name);
- fprintf(output, "%sac_decoder_full* decoder;\n\n", INDENT[2]);
+ fprintf(output, "%sac_decoder_full* decoder;\n", INDENT[2]);
+ fprintf(output, "\n");
  // Constructor.
  COMMENT(INDENT[2], "Standard constructor.");
  if (pipe_list)
@@ -1326,41 +1336,54 @@ void CreateISAHeader(void)
  fprintf(output,"#endif\n");
 #endif
  // End of constructor.
- fprintf(output, "%sreturn;\n%s}\n\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  // Instruction metas.
  fprintf(output, "%sinline const char* get_name()\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_name;\n%s}\n\n",
+ fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_name;\n%s}\n",
          INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const char* get_name(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_name;\n%s}\n\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_name;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const char* get_mnemonic()\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_mnemonic;\n%s}\n\n",
+ fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_mnemonic;\n%s}\n",
          INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const char* get_mnemonic(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_mnemonic;\n%s}\n\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_mnemonic;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const unsigned get_size()\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n\n",
+ fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n",
          INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const unsigned get_size(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  if (HaveMultiCycleIns)
  {
   fprintf(output, "%sinline const unsigned get_cycles()\n%s{\n", INDENT[2], INDENT[2]);
-  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_cycles;\n%s}\n\n",
+  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_cycles;\n%s}\n",
           INDENT[3], INDENT[2]);
+  fprintf(output, "\n");
   fprintf(output, "%sinline const unsigned get_cycles(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
-  fprintf(output, "%sreturn instr_table[id].ac_instr_cycles;\n%s}\n\n", INDENT[3], INDENT[2]);
+  fprintf(output, "%sreturn instr_table[id].ac_instr_cycles;\n%s}\n", INDENT[3], INDENT[2]);
+  fprintf(output, "\n");
  }
  fprintf(output, "%sinline const unsigned get_min_latency()\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n\n",
+ fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n",
          INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const unsigned get_min_latency(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const unsigned get_max_latency()\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n\n",
+ fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n",
          INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  fprintf(output, "%sinline const unsigned get_max_latency(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "\n");
  // Instruction Behavior Method declarations.
  // Instruction (generic -- really, someone should rename this --Marilia).
  fprintf(output, "%svoid _behavior_instruction(%s_parms::ac_stage_list stage, unsigned cycle",
@@ -1371,10 +1394,12 @@ void CreateISAHeader(void)
    fprintf(output, ", int %s", pfield->name);
   else
    fprintf(output, ", unsigned %s", pfield->name);
- fprintf(output, ");\n\n");
+ fprintf(output, ");\n");
+ fprintf(output, "\n");
  // Begin & end.
  fprintf(output, "%svoid _behavior_begin();\n", INDENT[2]);
- fprintf(output, "%svoid _behavior_end();\n\n", INDENT[2]);
+ fprintf(output, "%svoid _behavior_end();\n", INDENT[2]);
+ fprintf(output, "\n");
  // Types/formats.
  for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next)
  {
@@ -1501,7 +1526,8 @@ void CreateProcessorHeader(void)
  free(filename);
  print_comment(output, "Processor header file.");
  fprintf(output, "#ifndef _%s_H_\n", caps_project_name);
- fprintf(output, "#define _%s_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_H_\n", caps_project_name);
+ fprintf(output, "\n");
  fprintf(output, "#include <systemc.h>\n");
  fprintf(output, "#include \"ac_module.H\"\n");
  fprintf(output, "#include \"ac_utils.H\"\n");
@@ -1536,8 +1562,9 @@ void CreateProcessorHeader(void)
  fprintf(output, "%sprivate:\n", INDENT[1]);
  fprintf(output, "%stypedef cache_item<%s_parms::AC_DEC_FIELD_NUMBER> cache_item_t;\n",
          INDENT[2], project_name);
- fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n\n",
+ fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n",
          INDENT[2], project_name);
+ fprintf(output, "\n");
  fprintf(output, "%spublic:\n", INDENT[1]);
  fprintf(output, "%ssc_in<bool> clock;\n", INDENT[2]);
  fprintf(output, "%sdouble period;\n", INDENT[2]);
@@ -1572,6 +1599,8 @@ void CreateProcessorHeader(void)
              INDENT[2], ppipe->name, pstage->name, ppipe->name, pstage->next->name);
    }
  }
+ else // Since this thing is multicycle, ins_id must be -here-. --Marilia
+  fprintf(output, "%sunsigned ins_id = 0;\n", INDENT[2]);
  COMMENT(INDENT[2], "Start simulation.");
  fprintf(output, "%svoid init(int ac, char** av);\n", INDENT[2]);
  fprintf(output, "%svoid init();\n", INDENT[2]);
@@ -1591,7 +1620,8 @@ void CreateProcessorHeader(void)
   COMMENT(INDENT[2], "Decoder cache initialization method.");
   fprintf(output, "%svoid init_dec_cache();\n", INDENT[2]);
  }
- fprintf(output, "\n%sSC_HAS_PROCESS(%s);\n\n", INDENT[2], project_name);
+ fprintf(output, "%sSC_HAS_PROCESS(%s);\n", INDENT[2], project_name);
+ fprintf(output, "\n");
  COMMENT(INDENT[2], "Constructor.");
  fprintf(output, "%s%s(sc_module_name mname, double p): ac_module(mname), period(p), isa(*this",
          INDENT[2], project_name);
@@ -1656,6 +1686,7 @@ void CreateProcessorHeader(void)
   fprintf(output, "%sap = this;\n", INDENT[3]);
   fprintf(output, "%sstart_up = 1;\n", INDENT[3]);
   fprintf(output, "%sid = 1;\n", INDENT[3]);
+  fprintf(output, "%sins_id = 0;\n", INDENT[3]);
   if (ACDasmFlag)
    fprintf(output, "%sap->dasmfile.open(\"%s.dasm\");\n", INDENT[3],
            project_name);
@@ -1696,10 +1727,12 @@ void CreateStagesRefHeader(void)
  free(filename);
  print_comment(output, "Stages references header file.");
  fprintf(output, "#ifndef _%s_STAGES_REF_H_\n", caps_project_name);
- fprintf(output, "#define _%s_STAGES_REF_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_STAGES_REF_H_\n", caps_project_name);
+ fprintf(output, "\n");
  fprintf(output, "#include \"ac_instr.H\"\n");
  fprintf(output, "#include \"ac_sync_reg.H\"\n");
- fprintf(output, "#include \"%s_parms.H\"\n\n", project_name);
+ fprintf(output, "#include \"%s_parms.H\"\n", project_name);
+ fprintf(output, "\n");
  COMMENT(INDENT[0], "Forward declarations, needed to compile.")
  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
@@ -1709,8 +1742,9 @@ void CreateStagesRefHeader(void)
  fprintf(output, "%sclass %s_stages_ref\n%s{\n",
          INDENT[0], project_name, INDENT[0]);
  fprintf(output, "%sprivate:\n", INDENT[1]);
- fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n\n",
+ fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n",
          INDENT[2], project_name);
+ fprintf(output, "\n");
  fprintf(output, "%spublic:\n", INDENT[1]);
  // Declaring references to stages and automatic pipeline registers.
  COMMENT(INDENT[2], "References to stages and automatic pipeline registers.");
@@ -1725,6 +1759,7 @@ void CreateStagesRefHeader(void)
             "%sac_sync_reg<ac_instr_t>& pr_%s_%s_%s_%s;\n",
             INDENT[2], ppipe->name, pstage->name, ppipe->name, pstage->next->name);
   }
+ fprintf(output, "\n");
  COMMENT(INDENT[2], "Constructor.");
  fprintf(output, "%s%s_stages_ref(", INDENT[2], project_name);
  // References to stages and automatic pipeline registers.
@@ -1807,7 +1842,8 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   free(stage_filename);
   print_comment(output, "Stage module header file.");
   fprintf(output, "#ifndef _%s_%s_STAGE_H_\n", caps_project_name, caps_stage_name);
-  fprintf(output, "#define _%s_%s_STAGE_H_\n\n", caps_project_name, caps_stage_name);
+  fprintf(output, "#define _%s_%s_STAGE_H_\n", caps_project_name, caps_stage_name);
+  fprintf(output, "\n");
   fprintf(output, "#include \"ac_stage.H\"\n");
   fprintf(output, "#include \"ac_instr.H\"\n");
   fprintf(output, "#include \"%s_isa.H\"\n", project_name);
@@ -1819,8 +1855,10 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
   if ((pstage->id == 1) && ACGDBIntegrationFlag)
   {
-   fprintf(output, "#include \"ac_gdb_interface.H\"\n\n");
-   fprintf(output, "%sextern ac_GDB* gdbstub;\n\n", INDENT[0]);
+   fprintf(output, "#include \"ac_gdb_interface.H\"\n");
+   fprintf(output, "\n");
+   fprintf(output, "%sextern ac_GDB* gdbstub;\n", INDENT[0]);
+   fprintf(output, "\n");
   }
 #endif
   // Declaring stage namespace.
@@ -1847,7 +1885,11 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
           INDENT[3], project_name);
   fprintf(output, "%s%s_arch& ap;\n", INDENT[3], project_name);
   if ((pstage->id == 1) && ACABIFlag)
+  {
+   fprintf(output, "%sint flushes_left;\n", INDENT[3]);
    fprintf(output, "%s%s_syscall syscall;\n", INDENT[3], project_name);
+  }
+  fprintf(output, "\n");
   fprintf(output, "%spublic:\n", INDENT[2]);
   if (pstage->id == 1)
    if (ACDecCacheFlag)
@@ -1855,13 +1897,14 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   fprintf(output, "%s%s_isa& isa;\n", INDENT[3], project_name);
   if (pstage->id == 1)
    fprintf(output, "%sbool start_up;\n", INDENT[3]);
-  fprintf(output, "%sunsigned id;\n\n%svoid behavior();\n", INDENT[3],
-          INDENT[3]);
+  fprintf(output, "%sunsigned id;\n", INDENT[3]);
+  fprintf(output, "%svoid behavior();\n", INDENT[3]);
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
   if ((pstage->id == 1) && ACGDBIntegrationFlag) // This stage might inherit from ac_GDB_interface, so it needs prototypes. --Marilia
    fprintf(output, "%svirtual int nRegs();\n%svirtual ac_word reg_read(int reg);\n%svirtual void reg_write(int reg, ac_word value);\n%svirtual unsigned char mem_read(unsigned int address);\n%svirtual void mem_write(unsigned int address, unsigned char byte);\n",
            INDENT[3], INDENT[3], INDENT[3], INDENT[3], INDENT[3]);
 #endif
+ fprintf(output, "\n");
   // Constructor. All stages have the same constructor parameter list, it's up to the caller to provide correct parameters. --Marilia
   fprintf(output, "%s%s_%s(const char* _name, %s_arch& ra, %s_isa& i, ac_stage<ac_instr_t>* p, ac_sync_reg<ac_instr_t>* ri, ac_sync_reg<ac_instr_t>* ro): ac_stage<ac_instr_t>(_name, p, ri, ro), %s_arch_ref(ra), ap(ra)",
           INDENT[3], project_name, stage_name, project_name, project_name,
@@ -1873,6 +1916,8 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   if (pstage->id == 1)
   {
    fprintf(output, "%sstart_up = 1;\n", INDENT[4]);
+   if (ACABIFlag)
+    fprintf(output, "%sflushes_left = %d;\n", INDENT[4], pipe_maximum_path_length);
    if (ACDecCacheFlag)
     fprintf(output, "%sDEC_CACHE = 0;\n", INDENT[4]);
    if (ACDasmFlag)
@@ -1883,12 +1928,14 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   fprintf(output, "%s}\n", INDENT[3]); 
   if ((pstage->id == 1) && ACDecCacheFlag)
   {
-   fprintf(output, "\n%s~%s_%s()\n%s{\n", INDENT[3], project_name, stage_name,
+   fprintf(output, "\n");
+   fprintf(output, "%s~%s_%s()\n%s{\n", INDENT[3], project_name, stage_name,
            INDENT[3]);
    fprintf(output, "%sif (DEC_CACHE)\n%sfree(DEC_CACHE);\n%sreturn;\n%s}\n", INDENT[4], INDENT[5],
            INDENT[4], INDENT[3]);
    // End of destructor.
-   fprintf(output, "\n%svoid init_dec_cache()\n%s{\n%sDEC_CACHE = reinterpret_cast<cache_item_t*>(calloc(sizeof(cache_item_t), dec_cache_size));\n%sreturn;\n%s}\n",
+   fprintf(output, "\n");
+   fprintf(output, "%svoid init_dec_cache()\n%s{\n%sDEC_CACHE = reinterpret_cast<cache_item_t*>(calloc(sizeof(cache_item_t), dec_cache_size));\n%sreturn;\n%s}\n",
            INDENT[3], INDENT[3], INDENT[4], INDENT[4], INDENT[3]);
   }
   fprintf(output, "%s};\n", INDENT[1]);
@@ -1925,7 +1972,8 @@ void CreateRegsHeader(void)
    }
    print_comment(output, "ArchC formatted registers header file.");
    fprintf(output, "#ifndef _%s_FMT_REGS_H_\n", caps_project_name);
-   fprintf(output, "#define _%s_FMT_REGS_H_\n\n", caps_project_name);
+   fprintf(output, "#define _%s_FMT_REGS_H_\n", caps_project_name);
+   fprintf(output, "\n");
    fprintf(output, "#include \"ac_sync_reg.H\"\n");
    fprintf(output, "#include <string>\n\n");
    fprintf(output, "#include \"%s_parms.H\"\n", project_name);
@@ -1935,7 +1983,8 @@ void CreateRegsHeader(void)
   // Declaring formatted register class.
   fprintf(output, "%sclass %s_%s\n%s{\n", INDENT[0], project_name,
           pformat->name, INDENT[0]);
-  fprintf(output, "%schar* name;\n\n", INDENT[2]);
+  fprintf(output, "%schar* name;\n", INDENT[2]);
+  fprintf(output, "\n");
   fprintf(output, "%spublic:\n", INDENT[1]);
   // TO DO: Registers with parameterized size. The templated class ac_reg is still not
   //        working with sc_unit<x> types.
@@ -1996,7 +2045,8 @@ void CreateCoverifHeader(void) // TODO -- maybe.
  }
  print_comment(output, "ArchC Co-verification Class header file.");
  fprintf(output, "#ifndef _AC_VERIFY_H_\n");
- fprintf(output, "#define _AC_VERIFY_H_\n\n");
+ fprintf(output, "#define _AC_VERIFY_H_\n");
+ fprintf(output, "\n");
  fprintf(output, "#include <fstream>\n");
  fprintf(output, "#include <list>\n");
  fprintf(output, "#include \"archc.H\"\n");
@@ -2009,6 +2059,7 @@ void CreateCoverifHeader(void) // TODO -- maybe.
          INDENT[0]);
  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
   fprintf(output, "%slog_list %s_changes;\n", INDENT[2], pstorage->name);
+ fprintf(output, "\n");
  fprintf(output, "%spublic:\n", INDENT[1]);
  fprintf(output, "%sofstream output;\n", INDENT[2]);
  // Printing log method.
@@ -2110,18 +2161,18 @@ void CreateStatsHeaderTmpl(void)
  // Declaring processor stats
  fprintf(output, "AC_SET_STATS(%s, INSTRUCTIONS, SYSCALLS);\n", project_name);
  // Declaring instruction stats
- fprintf(output, "AC_SET_INSTR_STATS(%s, COUNT);\n\n", project_name);
+ fprintf(output, "AC_SET_INSTR_STATS(%s, COUNT);\n", project_name);
+ fprintf(output, "\n");
  // Declaring proc_all_stats struct
  fprintf(output, "struct %s_all_stats\n%s{\n", project_name, INDENT[0]);
  // Declaring processor stats collector object
- fprintf(output, "%s%s_stats stats;\n\n", INDENT[2], project_name);
+ fprintf(output, "%s%s_stats stats;\n", INDENT[2], project_name);
   // Declaring instruction stats collector objects
  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
  {
   fprintf(output, "%s%s_instr_stats %s_istats;\n",
           INDENT[2], project_name, pinstr->name);
  }
- fprintf(output, "\n");
  // Declaring instruction stats collector object array
  fprintf(output,
          "%s%s_instr_stats* instr_stats[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n",
@@ -2157,7 +2208,8 @@ void CreateIntrHeader(void)
  free(filename);
  print_comment(output, description);
  fprintf(output, "#ifndef _%s_INTR_HANDLERS_H\n", caps_project_name);
- fprintf(output, "#define _%s_INTR_HANDLERS_H\n\n", caps_project_name);
+ fprintf(output, "#define _%s_INTR_HANDLERS_H\n", caps_project_name);
+ fprintf(output, "\n");
  fprintf(output, "#include \"ac_intr_handler.H\"\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
  fprintf(output, "#include \"%s_arch.H\"\n", project_name);
@@ -2200,7 +2252,8 @@ void CreateIntrMacrosHeader(void)
  free(filename);
  print_comment(output, description);
  fprintf(output, "#ifndef _%s_IH_BHV_MACROS_H_\n", caps_project_name);
- fprintf(output, "#define _%s_IH_BHV_MACROS_H_\n\n", caps_project_name);
+ fprintf(output, "#define _%s_IH_BHV_MACROS_H_\n", caps_project_name);
+ fprintf(output, "\n");
  /* ac_behavior main macro */
  fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
          project_name);
@@ -2647,7 +2700,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
   if (pstage->id != 1)
   {
    fprintf(output, "\n");
-   fprintf(output, "%sif (is_stalled())\n%srequest_update();\n", INDENT[1], INDENT[2]);
+   fprintf(output, "%sif (is_stalled())\n%sctrl.request_update();\n", INDENT[1], INDENT[2]);
    fprintf(output, "%sinstr_vec = new ac_instr_t(regin->read());\n", INDENT[1]);
    fprintf(output, "%sins_id = instr_vec->get(IDENT);\n", INDENT[1]);
    fprintf(output, "%sif (ins_id != 0)\n%s{\n", INDENT[1], INDENT[1]);
@@ -2696,10 +2749,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
     fprintf(output, "%sextern ofstream trace_file;\n", INDENT[1]);
    }
    if (ACABIFlag)
-   {
-    fprintf(output, "%sstatic int flushes_left = 7;\n", INDENT[1]);
     fprintf(output, "%sstatic ac_instr_t* the_nop = new ac_instr_t;\n", INDENT[1]);
-   }
 #if 0 // Co-verification is currently unmaintained. --Marilia
    if (ACVerifyFlag)
    {
@@ -2714,7 +2764,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
    if (ACDecCacheFlag)
     fprintf(output, "%scache_item_t* ins_cache;\n", INDENT[1]);
    fprintf(output, "\n");
-   fprintf(output, "%sif (is_stalled())\n%srequest_update();\n", INDENT[1], INDENT[2]);
+   fprintf(output, "%sif (is_stalled())\n%sctrl.request_update();\n", INDENT[1], INDENT[2]);
    EmitFetchInit(output, 1);
    base_indent = 2;
    if (ACABIFlag)
@@ -2972,8 +3022,6 @@ void CreateProcessorImpl(void)
    fprintf(output, "%sextern bool ac_do_trace;\n", INDENT[1]);
    fprintf(output, "%sextern ofstream trace_file;\n", INDENT[1]);
   }
-  // Since this thing is multicycle, ins_id must be static or else we'll meet a pretty segfault. --Marilia
-  fprintf(output, "%sstatic unsigned ins_id = 0;\n", INDENT[1]);
   if (ACVerifyFlag)
   {
    fprintf(output, "%sextern int msqid;\n", INDENT[1]);
@@ -2993,7 +3041,7 @@ void CreateProcessorImpl(void)
   // Emitting processor behavior method implementation.
   EmitMultiCycleProcessorBhv(output);
  }
- //fprintf(output, "%sac_verify();\n", INDENT[1]);
+ fprintf(output, "%sac_verify();\n", INDENT[1]);
  fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
  if (!pipe_list && ACDecCacheFlag)
   fprintf(output, "\n%svoid %s::init_dec_cache()\n%s{\n%sDEC_CACHE = reinterpret_cast<cache_item_t*>(calloc(sizeof(cache_item_t), dec_cache_size));\n%sreturn;\n%s}\n",
@@ -3940,7 +3988,7 @@ void EmitPipeABIDefine(FILE* output)
  }
  fprintf(output, "%ssyscall.NAME(); \\\n", INDENT[5]);
  fprintf(output, "%sac_instr_counter++; \\\n", INDENT[5]);
- fprintf(output, "%sflushes_left = 7; \\\n", INDENT[5]);
+ fprintf(output, "%sflushes_left = %d; \\\n", INDENT[5], pipe_maximum_path_length);
  fprintf(output, "%s} \\\n", INDENT[4]);
  fprintf(output, "%sregout->write(*the_nop); \\\n", INDENT[4]);
  fprintf(output, "%sbreak;\n", INDENT[4]);
