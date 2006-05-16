@@ -437,7 +437,10 @@ int main(int argc, char** argv)
   caps_project_name = malloc(sizeof(char) * (1 + strlen(project_name)));
   i = 0;
   while (project_name[i])
-   caps_project_name[i] = toupper(project_name[i++]);
+  {
+   caps_project_name[i] = toupper(project_name[i]);
+   i++;
+  }
   caps_project_name[i] = '\0';
   // Internally, ac_stage is already converted to ac_pipe by the parser. --Marilia
   if (stage_list)
@@ -1510,8 +1513,8 @@ void CreateProcessorHeader(void)
  extern char* project_name;
  extern int stage_num;
  extern int HaveMultiCycleIns;
- ac_stg_list* pstage;
- ac_pipe_list* ppipe;
+ ac_stg_list* pstage, pstage_in;
+ ac_pipe_list* ppipe, ppipe_in;
  char* prev_stage_name;
  char* filename;
  FILE* output;
@@ -1600,7 +1603,7 @@ void CreateProcessorHeader(void)
    }
  }
  else // Since this thing is multicycle, ins_id must be -here-. --Marilia
-  fprintf(output, "%sunsigned ins_id = 0;\n", INDENT[2]);
+  fprintf(output, "%sunsigned ins_id;\n", INDENT[2]);
  COMMENT(INDENT[2], "Start simulation.");
  fprintf(output, "%svoid init(int ac, char** av);\n", INDENT[2]);
  fprintf(output, "%svoid init();\n", INDENT[2]);
@@ -1614,7 +1617,8 @@ void CreateProcessorHeader(void)
  COMMENT(INDENT[2], "Verification method.");
  fprintf(output, "%svoid ac_verify();\n", INDENT[2]);
  COMMENT(INDENT[2], "Behavior method.");
- fprintf(output, "%svoid behavior();\n", INDENT[2]);
+ if (!pipe_list) // Pipelined architectures do not need a processor behavior.
+  fprintf(output, "%svoid behavior();\n", INDENT[2]);
  if (!pipe_list && ACDecCacheFlag) // No pipeline, but with decode cache.
  {
   COMMENT(INDENT[2], "Decoder cache initialization method.");
@@ -1679,10 +1683,15 @@ void CreateProcessorHeader(void)
   fprintf(output, ", ac_GDB_interface(*this)");
 #endif
  fprintf(output, "\n%s{\n", INDENT[2]);
- fprintf(output, "%sSC_METHOD(behavior);\n%ssensitive_pos << clock;\n",
-         INDENT[3], INDENT[3]);
+ if (pipe_list)
+  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
+   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
+    fprintf(output, "%s%s_%s.clock(clock);\n", INDENT[3], ppipe->name, pstage->name);
  if (!pipe_list)
  {
+  fprintf(output, "%sSC_METHOD(behavior);\n", INDENT[3]);
+  fprintf(output, "%ssensitive_pos << clock;\n", INDENT[3]);
+  fprintf(output, "%sdont_initialize();\n", INDENT[3]);
   fprintf(output, "%sap = this;\n", INDENT[3]);
   fprintf(output, "%sstart_up = 1;\n", INDENT[3]);
   fprintf(output, "%sid = 1;\n", INDENT[3]);
@@ -1692,7 +1701,14 @@ void CreateProcessorHeader(void)
            project_name);
  }
  else
-  fprintf(output, "%sdont_initialize();\n", INDENT[3]);
+ {
+  fprintf(output, "%sSC_METHOD(ac_verify);\n", INDENT[3]);
+  fprintf(output, "%ssensitive", INDENT[3]);
+  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
+   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
+    fprintf(output, " << %s_%s.done", ppipe->name, pstage->name);
+  fprintf(output, ";\n%sdont_initialize();\n", INDENT[3]);
+ }
  fprintf(output, "%sreturn;\n%s}\n\n", INDENT[3], INDENT[2]);
  COMMENT(INDENT[2], "Destructor.");
  fprintf(output, "%s~%s()\n%s{\n", INDENT[2], project_name, INDENT[2]);
@@ -1830,7 +1846,10 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   }
   i = 0;
   while (stage_name[i])
-   caps_stage_name[i] = toupper(stage_name[i++]);
+  {
+   caps_stage_name[i] = toupper(stage_name[i]);
+   i++;
+  }
   caps_stage_name[i] = '\0';
   stage_filename = (char*) malloc(sizeof(char) * (4 + strlen(project_name) + strlen(stage_name)));
   sprintf(stage_filename, "%s_%s.H", project_name, stage_name);
@@ -1871,7 +1890,7 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
            project_name);
   else
 #endif
-   fprintf(output, "%sclass %s_%s: public ac_stage< ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> >, public %s_arch_ref\n",
+   fprintf(output, "%sclass %s_%s: public sc_module, public ac_stage< ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> >, public %s_arch_ref\n",
            INDENT[1], project_name, stage_name, project_name, project_name, project_name,
            project_name);
   // Declaring stage module.
@@ -1898,7 +1917,10 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   if (pstage->id == 1)
    fprintf(output, "%sbool start_up;\n", INDENT[3]);
   fprintf(output, "%sunsigned id;\n", INDENT[3]);
+  fprintf(output, "%ssc_in<bool> clock;\n", INDENT[3]);
+  fprintf(output, "%ssc_event done;\n", INDENT[3]);
   fprintf(output, "%svoid behavior();\n", INDENT[3]);
+  fprintf(output, "%sSC_HAS_PROCESS(%s_%s);\n", INDENT[3], project_name, stage_name);
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
   if ((pstage->id == 1) && ACGDBIntegrationFlag) // This stage might inherit from ac_GDB_interface, so it needs prototypes. --Marilia
    fprintf(output, "%svirtual int nRegs();\n%svirtual ac_word reg_read(int reg);\n%svirtual void reg_write(int reg, ac_word value);\n%svirtual unsigned char mem_read(unsigned int address);\n%svirtual void mem_write(unsigned int address, unsigned char byte);\n",
@@ -1906,7 +1928,7 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
 #endif
  fprintf(output, "\n");
   // Constructor. All stages have the same constructor parameter list, it's up to the caller to provide correct parameters. --Marilia
-  fprintf(output, "%s%s_%s(const char* _name, %s_arch& ra, %s_isa& i, ac_stage<ac_instr_t>* p, ac_sync_reg<ac_instr_t>* ri, ac_sync_reg<ac_instr_t>* ro): ac_stage<ac_instr_t>(_name, p, ri, ro), %s_arch_ref(ra), ap(ra)",
+  fprintf(output, "%s%s_%s(sc_module_name _name, %s_arch& ra, %s_isa& i, ac_stage<ac_instr_t>* p, ac_sync_reg<ac_instr_t>* ri, ac_sync_reg<ac_instr_t>* ro): sc_module(_name), ac_stage<ac_instr_t>(_name, p, ri, ro), %s_arch_ref(ra), ap(ra)",
           INDENT[3], project_name, stage_name, project_name, project_name,
           project_name);
   if ((pstage->id == 1) && ACABIFlag)
@@ -1924,6 +1946,9 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
     fprintf(output, "%sap.dasmfile.open(\"%s.dasm\");\n", INDENT[4],
             project_name);
   }
+  fprintf(output, "%sSC_METHOD(behavior);\n", INDENT[4]);
+  fprintf(output, "%ssensitive_pos << clock;\n", INDENT[4]);
+  fprintf(output, "%sdont_initialize();\n", INDENT[4]);
   fprintf(output, "%sreturn;\n", INDENT[4]); // End of constructor.
   fprintf(output, "%s}\n", INDENT[3]); 
   if ((pstage->id == 1) && ACDecCacheFlag)
@@ -1941,7 +1966,8 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   fprintf(output, "%s};\n", INDENT[1]);
   // End of namespace.
   fprintf(output, "%s}\n\n", INDENT[0]);
-  fprintf(output, "#endif // _%s_%s_STAGE_H_\n", caps_project_name, stage_name);
+  fprintf(output, "#endif // _%s_%s_STAGE_H_\n", caps_project_name, caps_stage_name);
+  free(caps_stage_name);
   free(stage_name);
   fclose(output);
  }
@@ -2075,9 +2101,9 @@ void CreateCoverifHeader(void) // TODO -- maybe.
   fprintf(output, "%selse\n", INDENT[3]);
  }
  fprintf(output, "%s{\n", INDENT[3]);
- fprintf(output, "%sAC_ERROR(\"Logging aborted! Unknown storage device used for verification: \" << name);",
+ fprintf(output, "%sAC_ERROR(\"Logging aborted! Unknown storage device used for verification: \" << name);\n",
          INDENT[4]);
- fprintf(output, "%sreturn;", INDENT[4]);
+ fprintf(output, "%sreturn;\n", INDENT[4]);
  fprintf(output, "%s}\n", INDENT[3]);
  fprintf(output, "%sadd_log(pdevchg, address, datum, time);\n", INDENT[3]);
  fprintf(output, "%sreturn;\n%s}\n", INDENT[3], INDENT[2]);
@@ -2737,6 +2763,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
    if (pstage->id != stage_num)
     fprintf(output, "%sregout->write(*instr_vec);\n", INDENT[1]);
    fprintf(output, "%sdelete instr_vec;\n", INDENT[1]);
+   fprintf(output, "%sdone.notify();\n", INDENT[1]);
    fprintf(output, "%sreturn;\n", INDENT[1]);
    fprintf(output, "%s}\n", INDENT[0]);
   }
@@ -2792,6 +2819,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
    }
    // Closing else.
    fprintf(output, "%s}\n", INDENT[1]);
+   fprintf(output, "%sdone.notify();\n", INDENT[1]);
    fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
   }
   free(stage_name);
@@ -2992,30 +3020,25 @@ void CreateProcessorImpl(void)
   //fprintf(output, "%s%s.change_save();\n", INDENT[1], pstorage->name);
     fprintf(output, "%s%s.reset_log();\n", INDENT[1], pstorage->name);
  fprintf(output, "#endif\n");
- fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
- fprintf(output, "\n");
- fprintf(output, "%svoid %s::behavior()\n%s{\n", INDENT[0], project_name,
-         INDENT[0]);
- fprintf(output, "%sif (ac_stop_flag)\n%sreturn;\n", INDENT[1], INDENT[2]);
  if (pipe_list)
- {
-  for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
-   for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
-    fprintf(output, "%s%s_%s.behavior();\n", INDENT[1], ppipe->name,
-            pstage->name);
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
    for (pstage = ppipe->stages; pstage->next != NULL; pstage = pstage->next)
     if (ppipe->next || pstage->next)
     {
-     fprintf(output, "%sif (%s_%s.will_stall())\n%s{\n", INDENT[1],
-             ppipe->name, pstage->name, INDENT[1]);
-     fprintf(output, "%sac_pc.suspend();\n", INDENT[2]);
-     fprintf(output, "%sac_instr_counter--;\n", INDENT[2]);
-     fprintf(output, "%s}\n", INDENT[1]);
-    }
- }
- else
- { // Since main() bails out if the model isn't pipelined or muticycle, I'm just assuming it's multicycle. --Marilia
+    fprintf(output, "%sif (%s_%s.will_stall())\n%s{\n", INDENT[1],
+            ppipe->name, pstage->name, INDENT[1]);
+    fprintf(output, "%sac_pc.suspend();\n", INDENT[2]);
+    fprintf(output, "%sac_instr_counter--;\n", INDENT[2]);
+    fprintf(output, "%s}\n", INDENT[1]);
+   }
+ fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
+ fprintf(output, "\n");
+ if (!pipe_list)
+ {
+  fprintf(output, "%svoid %s::behavior()\n%s{\n", INDENT[0], project_name,
+          INDENT[0]);
+  fprintf(output, "%sif (ac_stop_flag)\n%sreturn;\n", INDENT[1], INDENT[2]);
+  // Since main() bails out if the model isn't pipelined or muticycle, I'm just assuming it's multicycle. --Marilia
   fprintf(output, "%s%s_arch& ap = *this;\n", INDENT[1], project_name); // I'm shameless, I know. --Marilia
   if (ACDebugFlag)
   {
@@ -3032,7 +3055,7 @@ void CreateProcessorImpl(void)
   if (ACDecCacheFlag)
    fprintf (output, "%scache_item_t* ins_cache;\n", INDENT[1]);
   if (ac_host_endian == 0)
-    fprintf(output, "%schar fetch[%s_parms::AC_WORDSIZE / 8];\n\n", INDENT[1], project_name);
+   fprintf(output, "%schar fetch[%s_parms::AC_WORDSIZE / 8];\n\n", INDENT[1], project_name);
   if (HaveMemHier)
   {
    fprintf(output, "%sif (ac_wait_sig)\n", INDENT[1]);
@@ -3040,9 +3063,9 @@ void CreateProcessorImpl(void)
   }
   // Emitting processor behavior method implementation.
   EmitMultiCycleProcessorBhv(output);
+  fprintf(output, "%sac_verify();\n", INDENT[1]);
+  fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
  }
- fprintf(output, "%sac_verify();\n", INDENT[1]);
- fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
  if (!pipe_list && ACDecCacheFlag)
   fprintf(output, "\n%svoid %s::init_dec_cache()\n%s{\n%sDEC_CACHE = reinterpret_cast<cache_item_t*>(calloc(sizeof(cache_item_t), dec_cache_size));\n%sreturn;\n%s}\n",
           INDENT[0], project_name, INDENT[0], INDENT[1], INDENT[1], INDENT[0]);
@@ -3312,6 +3335,7 @@ void CreateISAInitImpl(void)
   perror("ArchC could not open output file");
   exit(1);
  }
+ free(filename);
  print_comment(output, "ISA initialization file.");
  fprintf(output, "#include \"%s_parms.H\"\n\n", project_name);
  fprintf(output, "#include \"%s_isa.H\"\n\n", project_name);
@@ -3597,6 +3621,7 @@ void EmitDecStruct(FILE* output)
 /***************************************/
 void EmitDecodification(FILE* output, int base_indent)
 {
+ extern ac_pipe_list* pipe_list;
  extern char* project_name;
  extern int wordsize, fetchsize, HaveMemHier;
 
@@ -3675,6 +3700,8 @@ void EmitDecodification(FILE* output, int base_indent)
  fprintf(output, "%scerr << \"PC = \" << hex << ap.decode_pc << dec << endl;\n",
          INDENT[base_indent + 1]);
  fprintf(output, "%sap.stop();\n", INDENT[base_indent + 1]);
+ if (pipe_list)
+  fprintf(output, "%sdone.notify();\n", INDENT[base_indent + 1]);
  fprintf(output, "%sreturn;\n", INDENT[base_indent + 1]);
  fprintf(output, "%s}\n", INDENT[base_indent]);
  fprintf(output, "%sisa.current_instruction_id = ins_id;\n", INDENT[base_indent]);
@@ -3817,6 +3844,8 @@ void EmitInstrExec(FILE* output, int base_indent)
 void EmitFetchInit(FILE* output, int base_indent)
 {
  extern int HaveMultiCycleIns;
+ extern ac_pipe_list* pipe_list;
+
  if (!ACDecCacheFlag)
   fprintf(output, "%sif (ac_pc >= APP_MEM->get_size())\n%s{\n",
           INDENT[base_indent], INDENT[base_indent]);
@@ -3836,6 +3865,8 @@ void EmitFetchInit(FILE* output, int base_indent)
  }
 #endif
  fprintf(output, "%sap.stop();\n", INDENT[base_indent + 1]);
+ if (pipe_list)
+  fprintf(output, "%sdone.notify();\n", INDENT[base_indent + 1]);
  fprintf(output, "%sreturn;\n", INDENT[base_indent + 1]);
  fprintf(output, "%s}\n", INDENT[base_indent]);
  fprintf(output, "%selse\n%s{\n", INDENT[base_indent], INDENT[base_indent]);
