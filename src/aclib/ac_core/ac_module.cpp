@@ -36,7 +36,6 @@ std::list<ac_module*> ac_module::mods_list;
 /// Standard constructor.
 ac_module::ac_module() : sc_module(sc_gen_unique_name("ac_module")),
 			 mod_id(next_mod_id++),
-			 ac_stop_flag(0),
 			 ac_exit_status(0) {
   this_mod = mods_list.insert(mods_list.end(), this);
   return;
@@ -45,7 +44,6 @@ ac_module::ac_module() : sc_module(sc_gen_unique_name("ac_module")),
 /// Named constructor.
 ac_module::ac_module(sc_module_name nm) : sc_module(nm),
 					  mod_id(next_mod_id++),
-					  ac_stop_flag(0),
 					  ac_exit_status(0) {
   this_mod = mods_list.insert(mods_list.end(), this);
   return;

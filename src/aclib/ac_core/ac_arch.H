@@ -11,7 +11,6 @@
  * IC-UNICAMP                                         *
  * http://www.lsc.ic.unicamp.br                       *
  ******************************************************/
- 
 
 #ifndef  _AC_ARCH_H_
 #define  _AC_ARCH_H_
@@ -20,7 +19,6 @@
 #include <stdio.h>
 
 #include  "ac_regbank.H"
-//#include  "ac_reg.H" /// No longer needed. --Marilia
 
 template <typename T, typename U> class ac_memport;
 
@@ -48,10 +46,10 @@ public:
   bool ac_annul_sig;
   bool ac_mt_endian;
   bool ac_tgt_endian;
-  //ac_reg<unsigned> ac_pc; /// This -can't- stay here. Moving down. --Marilia
   unsigned ac_start_addr;
   unsigned long long ac_instr_counter;
   unsigned long long ac_cycle_counter;
+  int ac_stop_flag;
   double time_step;
   int argc;
   char **argv;
@@ -79,16 +77,10 @@ public:
     ac_annul_sig(0),
     ac_mt_endian(0),
     ac_tgt_endian(0),
-#if 0 /// No longer here. --Marilia
-#ifdef AC_DELAY
-    ac_pc("ac_pc", 0, time_step),
-#else
-    ac_pc("ac_pc", 0),
-#endif // AC_DELAY
-#endif
     ac_start_addr(0),
     ac_instr_counter(0),
     ac_cycle_counter(0),
+    ac_stop_flag(0),
     ac_heap_ptr(0),
     dec_cache_size(0),
     quant(0),
@@ -131,12 +123,6 @@ public:
   void ac_parallel( ){
     ac_parallel_sig = 1;
   };
-
-#if 0 /// Not needed here. --Marilia.
-  /// Flush method.
-  void ac_flush( char *stage ){
-  };
-#endif
 
   void InitStat() {
     ac_run_start_time = times(&ac_run_times);

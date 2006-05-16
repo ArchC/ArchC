@@ -49,7 +49,6 @@ class ac_module: public sc_module
   /// Module unique ID.
   const unsigned mod_id;
 
-  int ac_stop_flag;
   int ac_exit_status;
 
   // SystemC special declaration.

@@ -23,7 +23,6 @@
 // ArchC includes
 #include "ac_log.H"
 #include "ac_arch.H"
-//#include "ac_reg.H" /// Not here, see ac_arch.H for details. --Marilia
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -50,10 +49,10 @@ public:
   bool& ac_annul_sig;
   bool& ac_mt_endian;
   bool& ac_tgt_endian;
-  //ac_reg<unsigned>& ac_pc; /// Not here. --Marilia
   unsigned& ac_start_addr;
   unsigned long long& ac_instr_counter;
   unsigned long long& ac_cycle_counter;
+  int& ac_stop_flag;
   double& time_step;
   int& argc;
   char**& argv;
@@ -74,10 +73,10 @@ public:
     ac_annul_sig(arch.ac_annul_sig),
     ac_mt_endian(arch.ac_mt_endian),
     ac_tgt_endian(arch.ac_tgt_endian),
-    //ac_pc(arch.ac_pc), /// Not here. --Marilia
     ac_start_addr(arch.ac_start_addr),
     ac_instr_counter(arch.ac_instr_counter),
     ac_cycle_counter(arch.ac_cycle_counter),
+    ac_stop_flag(arch.ac_stop_flag),
     time_step(arch.time_step),
     argc(arch.argc),
     argv(arch.argv),
@@ -118,12 +117,6 @@ public:
     ac_parallel_sig = 1;
   }
 
-#if 0 /// Not needed here. --Marilia
-  /// Flush method.
-  void ac_flush(char *stage) {
-  }
-#endif
-
   /// Stop method.
   void stop(int status = 0)
   {
@@ -134,7 +127,7 @@ public:
   /// Read access to ac_pc (placeholder).
   virtual unsigned get_ac_pc()
   {
-    return archref.get_ac_pc();
+   return archref.get_ac_pc();
   }
 };
 

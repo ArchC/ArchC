@@ -2726,6 +2726,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
   if (pstage->id != 1)
   {
    fprintf(output, "\n");
+   fprintf(output, "%sif (ac_stop_flag)\n%sreturn;\n", INDENT[1], INDENT[2]);
    fprintf(output, "%sif (is_stalled())\n%sctrl.request_update();\n", INDENT[1], INDENT[2]);
    fprintf(output, "%sinstr_vec = new ac_instr_t(regin->read());\n", INDENT[1]);
    fprintf(output, "%sins_id = instr_vec->get(IDENT);\n", INDENT[1]);
@@ -2791,6 +2792,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name)
    if (ACDecCacheFlag)
     fprintf(output, "%scache_item_t* ins_cache;\n", INDENT[1]);
    fprintf(output, "\n");
+   fprintf(output, "%sif (ac_stop_flag)\n%sreturn;\n", INDENT[1], INDENT[2]);
    fprintf(output, "%sif (is_stalled())\n%sctrl.request_update();\n", INDENT[1], INDENT[2]);
    EmitFetchInit(output, 1);
    base_indent = 2;
