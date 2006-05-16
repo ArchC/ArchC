@@ -233,7 +233,7 @@ int main(int argc, char** argv)
  // Uncomment the line bellow if you want to debug the parser.
  //yydebug = 1;
  // Initializes the pre-processor.
- acppInit();
+ acppInit(0);
  ++argv, --argc; // Skip over program name.
  // First argument must be the file or --help option.
  if (argc > 0)
