@@ -196,7 +196,7 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
           read(fd, &tmp, sizeof(ac_fetch));
           *(ac_fetch *) (data_mem + p_vaddr + j) = convert_endian(sizeof(ac_fetch), tmp, match_endian);
         }
-        memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
+        //memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
       }
 
       //next header/segment
@@ -261,7 +261,7 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
         if (ac_heap_ptr < tshaddr + tshsize) ac_heap_ptr = tshaddr + tshsize;
 
         if (!strcmp(string_table+convert_endian(4,shdr.sh_name, match_endian), ".bss")) {
-          memset(data_mem + tshaddr, 0, tshsize);
+          //memset(data_mem + tshaddr, 0, tshsize);
           //continue;
           break; // .bss is supposed to be the last one
         }
