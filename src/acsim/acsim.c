@@ -982,8 +982,8 @@ int main(int argc, char** argv) {
     fprintf( output, "static const unsigned int AC_FETCHSIZE = %d; \t //!< Architecture fetchsize in bits.\n", fetchsize);
     fprintf( output, "static const unsigned int AC_MATCH_ENDIAN = %d; \t //!< If the simulated arch match the endian with host.\n", ac_match_endian);
     fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n", ac_tgt_endian);
-    fprintf( output, "static const unsigned int AC_RAMSIZE = %u; \t //!< Architecture RAM size in bytes (storage %s).\n", load_device->size, load_device->name);
-    fprintf( output, "static const unsigned int AC_RAM_END = %u; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
+    fprintf( output, "static const unsigned int AC_RAMSIZE = %uU; \t //!< Architecture RAM size in bytes (storage %s).\n", load_device->size, load_device->name);
+    fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
 
     if (ACGDBIntegrationFlag)
     fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
@@ -2471,8 +2471,8 @@ void CreateArchImpl() {
     case DCACHE:
 
       if( !pstorage->parms ) { //It is a generic cache. Just emit a base container object.
-        fprintf(output, "%s%s_stg(\"%s_stg\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
       }
       else{
         //It is an ac_cache object.
@@ -2483,24 +2483,24 @@ void CreateArchImpl() {
     case MEM:
 
       if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf(output, "%s%s_stg(\"%s_stg\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
       }
       else{
         //It is an ac_mem object.
-        fprintf(output, "%s%s_stg(\"%s_stg\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
       }
       break;
 
     case TLM_PORT:
-      fprintf(output, "%s%s_port(\"%s_port\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-      fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      fprintf(output, "%s%s_port(\"%s_port\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
       break;
 
     default:
-      fprintf(output, "%s%s_stg(\"%s_stg\", %d),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-      fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
       break;
     }
     if (pstorage->next != NULL)
