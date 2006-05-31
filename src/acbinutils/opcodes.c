@@ -11,6 +11,7 @@
  */
 static void create_operand_string(ac_asm_insn *insn, char **output);
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize);
+static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
 
 
 
@@ -75,6 +76,7 @@ int CreateOpcodeTable(const char *table_filename)
     /* base image */
     /*----------------------------------------------------------------*/
     unsigned long base_image = 0x00;
+    unsigned long dmask = 0x00;
     unsigned long format_id = 99;     /* a pseudo_instr has a 99 format id */
 
     ac_dec_format *pfrm = format_ins_list;
@@ -84,32 +86,36 @@ int CreateOpcodeTable(const char *table_filename)
       /* get the format of this instruction. 0 is the first */
       format_id = 0;
       while ((pfrm != NULL) && strcmp(asml->insn->format, pfrm->name)) {
-          format_id++; 
-          pfrm = pfrm->next;
+        format_id++; 
+        pfrm = pfrm->next;
       }
 
       if (pfrm == NULL) internal_error();
       else {
-          base_image = 0x00;
         /* for each decoding field, finds its place in the format and encode it in 
         the base_image variable */
           {
-             ac_dec_list *pdl = asml->insn->dec_list;
-             while (pdl != NULL) {       
-                ac_dec_field *pdf = pfrm->fields;
-                while ((pdf != NULL) && strcmp(pdl->name, pdf->name)) pdf = pdf->next;
+            ac_dec_list *pdl = asml->insn->dec_list;
+
+            while (pdl != NULL) {       
+              ac_dec_field *pdf = pfrm->fields;
+              while ((pdf != NULL) && strcmp(pdl->name, pdf->name)) pdf = pdf->next;
          
-                if (pdf == NULL) internal_error();
-                else base_image |= encode_insn_field(pdl->value, pfrm->size, pdf->first_bit, pdf->size);
+              if (pdf == NULL) internal_error();
+              else {
+                base_image |= encode_insn_field(pdl->value, pfrm->size, pdf->first_bit, pdf->size);
+                dmask |= encode_dmask_field(pfrm->size, pdf->first_bit, pdf->size);
+              }
                  
-                pdl = pdl->next;         
-             }  
-             ac_const_field_list *cfP = asml->const_fields;
-             while (cfP != NULL) {
-                
-               base_image |= encode_insn_field(cfP->value, pfrm->size, cfP->field.first_bit, cfP->field.size);
-               cfP = cfP->next;
-             }
+              pdl = pdl->next;         
+            }  
+
+            ac_const_field_list *cfP = asml->const_fields;
+            while (cfP != NULL) {
+              base_image |= encode_insn_field(cfP->value, pfrm->size, cfP->field.first_bit, cfP->field.size);
+              dmask |= encode_dmask_field(pfrm->size, cfP->field.first_bit, cfP->field.size);                
+              cfP = cfP->next;
+            }
           }
 
       }      
@@ -136,7 +142,9 @@ int CreateOpcodeTable(const char *table_filename)
      Optional statistic field
      ***/
     fprintf(output, ",\t0");
-     
+
+    /* Mask, used for disassemble */
+    fprintf(output, ", \t0x%08X", dmask);
 
     fprintf(output, "},\n"); 
 
@@ -326,3 +334,21 @@ static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_si
 
   return return_value;
 }
+
+static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize) 
+{
+  // TODO: see if the 'val' field can accept constant values (this is not being checked atm)
+  unsigned int mask1 = 0xffffffff;
+  unsigned int mask2 = 0xffffffff;
+  unsigned int field_value=0;
+  
+  int i=0;
+  for (i;i<fsize;i++){
+    field_value = (field_value<<1) + 1;
+  }
+
+  mask1 <<= (insn_size-(fbit+1));
+  mask2 >>= fbit+1-fsize;
+  return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
+}
+

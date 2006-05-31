@@ -67,3 +67,43 @@ char *get_arch_name()
 {
   return arch_name;
 }
+
+/*
+ * Returns the max format size of the architecture word (in bits)
+ */
+unsigned int get_max_format_size() 
+{
+  extern ac_dec_format *format_ins_list;
+  ac_dec_format *pfrm = format_ins_list;
+  int max_size = 0;
+             
+  while (pfrm != NULL) {
+    if (pfrm->size > max_size)
+      max_size = pfrm->size;
+    pfrm = pfrm->next;
+  }
+
+  return max_size;
+}
+
+/*
+ * Returns if the architecture has variable formats (1) or no (0)
+ */
+unsigned int get_variable_format_size() 
+{
+  extern ac_dec_format *format_ins_list;
+  ac_dec_format *pfrm = format_ins_list;
+
+  int variable_format_size = 0;
+  int size = pfrm->size;
+               
+  while (pfrm != NULL) {
+    if (pfrm->size != size) {
+      variable_format_size = 1;
+      break;
+    }
+    pfrm = pfrm->next;
+  }
+
+  return variable_format_size;
+}

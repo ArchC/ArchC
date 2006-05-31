@@ -10,6 +10,8 @@
 
 static reloc_howto_type* ___arch_name___`_reloc_type_lookup' (bfd *, bfd_reloc_code_real_type);
 static void ___arch_name___`_elf_info_to_howto' (bfd *, arelent *, Elf_Internal_Rela *);
+static long long getbits(unsigned int bitsize, char *location, int endian); 
+static void putbits(unsigned int bitsize, char *location, long long value, int endian);
 
 
 /* ArchC generic relocation routine prototype*/
@@ -22,8 +24,6 @@ bfd_elf_archc_reloc (bfd *abfd,
              bfd *output_bfd,
              char **error_message ATTRIBUTE_UNUSED);
 
-static long long getbits(unsigned int bitsize, char *location, int endian);
-static void putbits(unsigned int bitsize, char *location, long long value, int endian);
 
 /* carry relocation function prototype */
 bfd_reloc_status_type
@@ -218,8 +218,6 @@ bfd_elf_archc_reloc (bfd *abfd,
   
   return bfd_reloc_ok;
 }
-
-
 
 /*
  * 1 = big, 0 = little

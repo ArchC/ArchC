@@ -35,13 +35,16 @@ FILES_TO_PATCH = \
 	gas/Makefile.in \
 	opcodes/configure \
 	opcodes/Makefile.in \
+	opcodes/disassemble.c \
 	ld/configure.tgt \
-	ld/Makefile.in 
+	ld/Makefile.in \
+  	include/dis-asm.h
 
 FILES_TO_COPY = \
 	gas/config/tc-xxxxx.c \
 	gas/config/tc-xxxxx.h \
 	opcodes/xxxxx-opc.c \
+	opcodes/xxxxx-dis.c \
 	include/opcode/xxxxx.h \
 	include/elf/xxxxx.h \
 	bfd/elf32-xxxxx.c \

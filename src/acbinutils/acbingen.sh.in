@@ -134,6 +134,7 @@ m4 -P defines.m4 binutils/include/opcode/xxxxx.h > binutils/include/opcode/${ARC
 m4 -P defines.m4 binutils/bfd/cpu-xxxxx.c > binutils/bfd/cpu-${ARCH_NAME}.c
 m4 -P defines.m4 binutils/gas/config/tc-xxxxx.h > binutils/gas/config/tc-${ARCH_NAME}.h
 m4 -P defines.m4 binutils/opcodes/xxxxx-opc.c > binutils/opcodes/${ARCH_NAME}-opc.c
+m4 -P defines.m4 binutils/opcodes/xxxxx-dis.c > binutils/opcodes/${ARCH_NAME}-dis.c
 m4 -P defines.m4 binutils/include/elf/xxxxx.h > binutils/include/elf/${ARCH_NAME}.h
 m4 -P defines.m4 binutils/bfd/elf32-xxxxx.c > binutils/bfd/elf32-${ARCH_NAME}.c
 m4 -P defines.m4 binutils/gas/config/tc-xxxxx.c > binutils/gas/config/tc-${ARCH_NAME}.c

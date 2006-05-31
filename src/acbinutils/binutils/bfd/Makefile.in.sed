@@ -16,4 +16,4 @@ cpu-xxxxx.lo: cpu-xxxxx.c $(INCDIR)/filenames.h
 /aout-adobe.lo:/ i\
 elf32-xxxxx.lo: elf32-xxxxx.c $(INCDIR)/filenames.h elf-bfd.h \\\
   $(INCDIR)/elf/common.h $(INCDIR)/elf/internal.h $(INCDIR)/elf/external.h \\\
-  $(INCDIR)/bfdlink.h $(INCDIR)/elf/xxxxx.h elf32-target.h
+  $(INCDIR)/bfdlink.h $(INCDIR)/elf/xxxxx.h elf32-target.h 

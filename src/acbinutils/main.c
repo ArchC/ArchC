@@ -295,6 +295,8 @@ static int Createm4File()
   
   fprintf(output, "m4_define(`___arch_name___', `%s')m4_dnl\n", get_arch_name());
   fprintf(output, "m4_define(`___word_size___', `%d')m4_dnl\n", get_arch_size());
+  fprintf(output, "m4_define(`___max_format_size___', `%d')m4_dnl\n", get_max_format_size());
+  fprintf(output, "m4_define(`___variable_format_size___', `%d')m4_dnl\n", get_variable_format_size());
 
   /* 1 = big, 0 = little */
   fprintf(output, "m4_define(`___endian_str___', `%s')m4_dnl\n", ac_tgt_endian ? "AC_BIG_ENDIAN" : "AC_LITTLE_ENDIAN");
