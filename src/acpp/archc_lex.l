@@ -21,6 +21,12 @@
 #define MAX_CODE_CONST  256
 #define MAX_BLOCK_CONST  4096
 #define DEBUG_LEX 0
+#define MAX_INCLUDE_DEPTH 10
+
+YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+int include_stack_ptr = 0;
+
+
 %}
 
 DIGIT    [0-9]
@@ -33,6 +39,7 @@ HEXA_DIGIT [0-9A-Fa-f]
 %x BLOCK_START BLOCK_STATE
 %x HEXA
 %x ARCH
+%x INCLUDE
 
 %option noyywrap
 
@@ -216,6 +223,8 @@ HEXA_DIGIT [0-9A-Fa-f]
      #endif
    }
 
+<INITIAL>"#include" 	BEGIN(INCLUDE);
+
  /***************************************************/
  /* Regular expressions for ArchC ISA reserved words*/
  /***************************************************/
@@ -369,6 +378,35 @@ HEXA_DIGIT [0-9A-Fa-f]
               return AC_ARCH; 
 
    }
+
+
+ /**************************************************/
+ /* Regular expressions for including other files  */
+ /**************************************************/
+
+<INCLUDE>[" "\t\r]	{
+}
+
+<INCLUDE>[^ \t\n]+   {
+	int i,j;
+
+        if ( include_stack_ptr >= MAX_INCLUDE_DEPTH ) {
+		fprintf( stderr, "Too many #include's" );
+		exit( 1 );
+        }
+
+        include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+	if (yytext[yyleng - 1] == '\"') yytext[yyleng - 1] = '\0';
+	if (yytext[0] == '\"') yytext++;
+        yyin = fopen( yytext, "r" );
+        if ( !yyin ) {
+		fprintf( stderr, "ArchC Lexical ERROR: Couldn't open input file %s \n", yytext );
+	}
+
+        yy_switch_to_buffer(yy_create_buffer( yyin, YY_BUF_SIZE ) );
+
+        BEGIN(INITIAL);
+        }
 
  /******************************************************/
  /* Regular expressions for ARchC ARCH reserved words */
@@ -535,8 +573,14 @@ HEXA_DIGIT [0-9A-Fa-f]
    }
 
 <INITIAL,ARCH><<EOF>>   { 
-             BEGIN(INITIAL);
-             yyterminate();
+	if ( --include_stack_ptr < 0 ) {
+		BEGIN(INITIAL);
+		yyterminate();
+	}
+	else {
+		yy_delete_buffer( YY_CURRENT_BUFFER );
+		yy_switch_to_buffer(include_stack[include_stack_ptr] );
+	}
    } 
 
 .  { 
