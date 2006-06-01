@@ -1,29 +1,33 @@
-/* 
-    ArchC disassembler generator - Copyright (C) 2002-2006  The ArchC Team
-
-    This program is free software; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the Free
-    Software Foundation; either version 2 of the License, or (at your option)
-    any later version.
-
-    This program is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-    more details.
+/* ex: set tabstop=2 expandtab: 
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
+/* Print ___arch_name___ instructions for GDB, the GNU debugger, or for objdump.
+   Copyright 2005, 2006 --- The ArchC Team
 
-/********************************************************/
-/* xxxxx-dis.c: The ArchC disassembler generator.       */
-/* Author: Alexandre Keunecke I. de Mendonça            */
-/*         Felipe Guimarães Carvalho                    */
-/*         Max Ruben de Oliveira Schultz                */
-/* Date: 08-03-2005                                     */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Systems Design Automation Lab (LAPS)                 */
-/* Federal University of Santa Catarina (UFSC)          */
-/* http://www.laps.inf.ufsc.br                          */
-/********************************************************/
+This file is automatically retargeted by ArchC binutils generation tool. 
+This file is part of GDB, GAS, and the GNU binutils.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
+
+/*
+ * written by:
+ *   Alexandre Keunecke I. de Mendonca            
+ *   Felipe Guimaraes Carvalho                    
+ *   Max Ruben de Oliveira Schultz                
+ */
+
 
 #include <setjmp.h>
 #include <stdio.h>
