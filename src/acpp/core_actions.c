@@ -1,6 +1,29 @@
-/* ex: set tabstop=2 expandtab:
+/* ex: set tabstop=2 expandtab: 
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
+/**
+ * @file      core_actions.c
+ * @author    Sandro Rigo
+ *            Marcus Bartholomeu
+ *            Alexandro Baldassin
+ *            Thiago Sigrist
+ *            Marilia Chiozo
+ * 
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ * 
+ * @version   1.0
+ * @date      Fri, 02 Jun 2006 10:59:18 -0300
+ * 
+ * @brief     Core language semantic actions
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #include "core_actions.h"
 #include <ctype.h>

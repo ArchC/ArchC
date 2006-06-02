@@ -1,35 +1,28 @@
-/* ex: set tabstop=2 expandtab: */
-/* 
-    ArchC parser (asm module) - Copyright (C) 2002-2005  The ArchC Team
-
-    This program is free software; you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by the Free
-    Software Foundation; either version 2 of the License, or (at your option)
-    any later version.
-
-    This program is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-    more details.
+/* ex: set tabstop=2 expandtab: 
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
-
-/********************************************************/
-/* asm_actions.h: ArchC parser (asm module).            */
-/* Author: Alexandro Baldassin                          */
-/* Date: 01-06-2005                                     */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
-
-/*! \file asm_actions.h
- * \brief ArchC assembly-related semantic actions
+/**
+ * @file      asm_actions.h
+ * @author    Alexandro Baldassin
+ * 
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ * 
+ * @version   1.0
+ * @date      Fri, 02 Jun 2006 10:59:18 -0300
+ * 
+ * @brief     ArchC assembly-related semantic actions
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
-/*! \defgroup asmact_group Assembly semantic actions 
- * \ingroup bison_group
+/** @defgroup asmact_group Assembly semantic actions 
+ * @ingroup bison_group
  *
  * This module provides the functions called by the 
  * language rules to deal with assembly-related constructs.

@@ -1,42 +1,36 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
-/*  ArchC Pre-processor generates tools for the described arquitecture
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+/* ex: set tabstop=2 expandtab: 
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
-
-/********************************************************/
-/* acpp.h: The ArchC pre-processor.                     */
-/* Author: Sandro Rigo                                  */
-/* Date: 16-07-2002                                     */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
-
-/*! \file acpp.h
- * \brief ArchC Pre-processor header file.
- *   
+/**
+ * @file      acpp.h
+ * @author    Sandro Rigo
+ *            Marcus Bartholomeu
+ *            Alexandro Baldassin
+ * 
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ * 
+ * @version   1.0
+ * @date      Fri, 02 Jun 2006 10:59:18 -0300
+ * 
+ * @brief     ArchC Pre-processor header file
+ * 
  *  This file contains wrapper functions to interface with 
  *  the GNU bison/flex files. In the future it should scale
  *  to support an intermediate file representation.
+ *  
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
-/*! \defgroup acpp_group The ArchC pre-processor (acpp)
+/** @defgroup acpp_group The ArchC pre-processor (acpp)
  * 
  * The ArchC pre-processor module contains the lexer and parser
- * definitions (GNU lex and bison) and the data types filled by
+ * definitions (GNU lex and bison) and data types filled by
  * the semantic action rules.
  * @{
  */

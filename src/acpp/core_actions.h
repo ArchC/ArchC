@@ -1,28 +1,47 @@
 /* ex: set tabstop=2 expandtab: 
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
-
-#ifndef _CORE_ACTIONS_H_
-#define _CORE_ACTIONS_H_
-
-/*! \file core_actions.c
- * \brief Core language semantic actions
+/**
+ * @file      core_actions.h
+ * @author    Sandro Rigo
+ *            Marcus Bartholomeu
+ *            Alexandro Baldassin
+ *            Thiago Sigrist
+ *            Marilia Chiozo
+ * 
+ * @author    The ArchC Team
+ *            http://www.archc.org/
  *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ * 
+ * @version   1.0
+ * @date      Fri, 02 Jun 2006 10:59:18 -0300
+ * 
+ * @brief     Core language semantic actions
+ * 
  * This file contain the semantic actions and variables called/used
  * by the main parser module \ref bison_group
+ *  
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
-/*! \defgroup coreact_group Core semantic actions
- * \ingroup bison_group
+/** @defgroup coreact_group Core semantic actions
+ * @ingroup bison_group
  *
  * Exported variables are filled by the parser and then can be used by
  * the generator tools. The interface functions are used by the parser
  * to deal with the data structures.
  * In the future each variable should be changed by an interface 
- * function, hence avoiding global variables.
+ * function, hence avoiding global ones.
  * 
  * @{
  */
+
+#ifndef _CORE_ACTIONS_H_
+#define _CORE_ACTIONS_H_
 
 #include "ac_decoder.h"
 #include "acsim.h"
