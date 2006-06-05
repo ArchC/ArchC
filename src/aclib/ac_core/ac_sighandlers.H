@@ -1,3 +1,5 @@
+#ifndef AC_SIGHANDLERS_H
+#define AC_SIGHANDLERS_H
 //Signal handlers for interrupt and segmentation fault (set in ac_start() )
 #include <signal.h>
 typedef void (*sighandler_t)(int);
@@ -28,3 +30,4 @@ void sigusr2_handler(int signal)
   gdbstub->connect();*/
 }
 #endif /* USE_GDB */
+#endif // AC_SIGHANDLERS_H
