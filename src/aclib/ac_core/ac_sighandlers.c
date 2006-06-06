@@ -1,8 +1,6 @@
-#ifndef AC_SIGHANDLERS_H
-#define AC_SIGHANDLERS_H
-//Signal handlers for interrupt and segmentation fault (set in ac_start() )
-#include <signal.h>
-typedef void (*sighandler_t)(int);
+#include "ac_sighandlers.H"
+#include <stdlib.h>
+
 void sigint_handler(int signal)
 {
   fprintf(stderr, "ArchC: INTERUPTED BY THE SIGNAL %d\n", signal);
@@ -30,4 +28,4 @@ void sigusr2_handler(int signal)
   gdbstub->connect();*/
 }
 #endif /* USE_GDB */
-#endif // AC_SIGHANDLERS_H
+
