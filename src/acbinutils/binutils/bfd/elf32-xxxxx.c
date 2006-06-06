@@ -34,6 +34,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #include `"elf/'___arch_name___`.h"'
 #include "libiberty.h"
 
+/*
+ BFD prior to version 2.16 does not include bfd_get_section_limit
+*/
+#ifndef bfd_get_section_limit
+#define bfd_get_section_limit(bfd, sec) \
+  (((sec)->_cooked_size) \
+   / bfd_octets_per_byte (bfd))
+#endif
 
 static reloc_howto_type* ___arch_name___`_reloc_type_lookup' (bfd *, bfd_reloc_code_real_type);
 static void ___arch_name___`_elf_info_to_howto' (bfd *, arelent *, Elf_Internal_Rela *);
