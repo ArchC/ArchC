@@ -1,5 +1,6 @@
 #include "ac_sighandlers.H"
 #include <stdlib.h>
+#include "ac_module.H"
 
 void sigint_handler(int signal)
 {
@@ -20,12 +21,10 @@ void sigusr1_handler(int signal)
   fprintf(stderr, "ArchC: -------------------- Continuing Simulation ------------------\n");
 }
 
-#ifdef USE_GDB
 void sigusr2_handler(int signal)
 {
   fprintf(stderr, "ArchC: Received signal %d. Starting GDB support (not implemented).\n", signal);
 /*  gdbstub->enable();
   gdbstub->connect();*/
 }
-#endif /* USE_GDB */
 
