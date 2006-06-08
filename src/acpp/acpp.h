@@ -1,4 +1,4 @@
-/* ex: set tabstop=2 expandtab: 
+/* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /**
@@ -6,29 +6,29 @@
  * @author    Sandro Rigo
  *            Marcus Bartholomeu
  *            Alexandro Baldassin
- * 
+ *
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
- * 
+ *
  * @version   1.0
  * @date      Fri, 02 Jun 2006 10:59:18 -0300
- * 
+ *
  * @brief     ArchC Pre-processor header file
- * 
- *  This file contains wrapper functions to interface with 
+ *
+ *  This file contains wrapper functions to interface with
  *  the GNU bison/flex files. In the future it should scale
  *  to support an intermediate file representation.
- *  
+ *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
 
 /** @defgroup acpp_group The ArchC pre-processor (acpp)
- * 
+ *
  * The ArchC pre-processor module contains the lexer and parser
  * definitions (GNU lex and bison) and data types filled by
  * the semantic action rules.
@@ -46,16 +46,17 @@ extern char *project_name;
 extern char *isa_filename;
 extern int  wordsize;
 extern int  fetchsize;
+extern int  fetchbuffersize;
 extern int  ac_tgt_endian;
 
 /* Function prototypes */
 
-/*! 
+/*!
  * Initialises the pre-processor.
  * Always call this functions before doing any other acpp function
  * call.
  *
- * \param[in] force_asm_syntax 
+ * \param[in] force_asm_syntax
  *            1- forces the new assembly syntax (need by the binary utilities generation tool)
  *            0- accepts an old and lazy assembly syntax (compatible with old models)
  */
@@ -88,5 +89,3 @@ extern int  acppRun();
 /** @} */
 
 #endif /*_ACCP_H_*/
-
- 

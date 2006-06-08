@@ -1,4 +1,4 @@
-/* ex: set tabstop=2 expandtab: 
+/* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /**
@@ -6,23 +6,23 @@
  * @author    Sandro Rigo
  *            Marcus Bartholomeu
  *            Alexandro Baldassin
- * 
+ *
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
- * 
+ *
  * @version   1.0
  * @date      Fri, 02 Jun 2006 10:59:18 -0300
- * 
+ *
  * @brief     ArchC Pre-processor implementation file
- * 
- *  This file contains wrapper functions to interface with 
+ *
+ *  This file contains wrapper functions to interface with
  *  the GNU bison/flex files. In the future it should scale
  *  to support an intermediate file representation.
- *  
+ *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
@@ -32,7 +32,7 @@
 
 /*! bison/flex related imported functions/variables */
 extern int yyparse();
-extern FILE *yyin;
+extern FILE* yyin;
 extern int line_num;
 extern int force_setasm_syntax;
 
@@ -51,7 +51,7 @@ void acppInit(int force_asm_syntax)
 }
 
 
-int acppLoad(char *filename)
+int acppLoad(char* filename)
 {
   acppUnload();
   return (int) (yyin = fopen(filename, "r" ));
@@ -70,5 +70,3 @@ int acppRun()
   line_num = 1;
   return yyparse();
 }
-
-

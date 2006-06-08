@@ -1,30 +1,31 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
-/*  ArchC simulator generator generates simulators for the described architecture
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+/* ex: set tabstop=2 expandtab:
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
+/**
+ * @file      actsim.h
+ * @author    Sandro Rigo
+ *            Marcus Bartholomeu
+ *            Alexandro Baldassin
+ *            Thiago Sigrist
+ *            Marilia Chiozo
+ *
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   1.0
+ * @date      Tue, 06 Jun 2006 18:05:49 -0300
+ *
+ * @brief     The ArchC timed simulator generator
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
-/********************************************************/
-/* actsim.h: The ArchC timed simulator generator.       */
-/* Author: Sandro Rigo, Marilia Felippe Chiozo          */
-/* Date: 16-07-2002, 30-01-2006                         */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
 ////////////////////////////////////////////////////////////////
-
 /*!\file actsim.h
   \brief ArchC Timed Simulator Generator header file
   This file contains the structures and macro definitions
@@ -43,6 +44,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ac_decoder.h"
+#include "ac_tools_common.h"
 
 /*Defining indentation */
 #ifdef _NEMDEFS_SINGLEINDENT_
@@ -84,7 +86,7 @@ char* SYSTEMC_PATH;   //!< Path where SystemC is installed.
 char* TARGET_ARCH;    //!< Architecture of the host machine.
 char* CC_PATH;        //!< C/C++ compiler path
 char* OPT_FLAGS;      //!< Optimization flags to be passed to the compiler
-char* DEBUG_FLAGS;    //!< Debugging flags to be passed to the compiler 
+char* DEBUG_FLAGS;    //!< Debugging flags to be passed to the compiler
 char* OTHER_FLAGS;    //!< Miscellaneous flags to be passed to the compiler
 //@}
 
@@ -128,59 +130,6 @@ enum _ac_cmd_options
 
 typedef enum _ac_cmd_options_ ac_cmd_options;
 
-//! Enumeration type for storage device types
-enum _ac_sto_types {MEM, CACHE, ICACHE, DCACHE, REG, REGBANK, TLM_PORT,
-                    TLM_INTR_PORT};
-
-typedef enum _ac_sto_types ac_sto_types;
-
-//! List of a Cache's parameters
-typedef struct _ac_cache_parms
-{
- char* str;                    //!< Used for string parameters.
- unsigned value;               //!< Used for numerical parameters.
- struct _ac_cache_parms* next; //!< Next element
-} ac_cache_parms;
-
-//! List of Storage Devices
-typedef struct _ac_sto_list
-{
- char* name;                   //!< Device name.
- char* format;                 //!< Device format. Only possible for registers.
- unsigned size;                //!< Size expressed in bytes. Used for memories and generic caches.
- unsigned width;               //!< Width of registers expressed in bits. Used for register banks.
- unsigned level;               //!< Memory hierachy level. 
- ac_sto_types type;            //!< Type of the device
- struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
- ac_cache_parms* parms;        //!< Parameter list used for (not generic) ac_cache  declarations.
- struct _ac_sto_list* next;    //!< Next element
-} ac_sto_list;
-
-//!List of Stages
-typedef struct _ac_stg_list
-{
- char* name;                   //!< Device name.
- unsigned id;                  //!< Stage Identification Number.
- struct _ac_stg_list* next;    //!< Next element
-} ac_stg_list;
-
-//!List of Pipelines
-typedef struct _ac_pipe_list
-{
- char* name;                   //!< Device name.
- unsigned id;                  //!< Pipe identification Number.
- ac_stg_list* stages;          //!< List of Stages
- struct _ac_pipe_list* next;   //!< Next element
-} ac_pipe_list;
-
-//! Used to check the endianess of the host machine.
-typedef union
-{
- int i;
- //char c[4];
- char c[sizeof(int)];
-} endian;
-
 //@}
 
 ///////////////////////////////////////
@@ -211,7 +160,7 @@ void CreateCoverifHeader(void);                   //!< Creates the header file f
 void CreateStatsHeaderTmpl(void);                 //!< Creates the header file for ArchC statistics collection class.
 void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
 void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.
-void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls. 
+void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls.
 void CreateMakefile(void);                        //!< Creates a Makefile for the ArchC model.
 
 void CreateArchRefImpl(void);                    //!< Creates the .cpp file for <project>_arch_ref class.

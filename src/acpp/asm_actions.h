@@ -1,32 +1,32 @@
-/* ex: set tabstop=2 expandtab: 
+/* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /**
  * @file      asm_actions.h
  * @author    Alexandro Baldassin
- * 
+ *
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
- * 
+ *
  * @version   1.0
  * @date      Fri, 02 Jun 2006 10:59:18 -0300
- * 
+ *
  * @brief     ArchC assembly-related semantic actions
- * 
+ *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
 
-/** @defgroup asmact_group Assembly semantic actions 
+/** @defgroup asmact_group Assembly semantic actions
  * @ingroup bison_group
  *
- * This module provides the functions called by the 
+ * This module provides the functions called by the
  * language rules to deal with assembly-related constructs.
- * 
+ *
  *
  * General overview of the constructs and the way things work.
  *
@@ -34,32 +34,32 @@
  *    ac_asm_map
  * ********************
  *
- * A list of the mappings declared is stored in the 'mapping_list' variable. 
- * It can be retrieved through the 'ac_asm_get_mapping_list()' function. 
+ * A list of the mappings declared is stored in the 'mapping_list' variable.
+ * It can be retrieved through the 'ac_asm_get_mapping_list()' function.
  * It's up to the caller to get the info they need in the list, just be sure
  * you don't change it ;)
  *
  * Basic Parser Info:
- *   
+ *
  * Upon finding the 'ac_asm_map' keyword, the parser should call
- * 'acpp_asm_create_mapping_block()' with the ID as an argument. This will 
- * check for redefinition of the ID and add it to the internal list. After 
- * this, each <symbol> found in the right side of the attribution must be 
- * added calling either 'acpp_asm_add_mapping_symbol()' or 
- * 'acpp_asm_add_mapping_symbol_range()' depending if the symbol include a 
- * range [] or not. The value (or the range of values) can then be assigned 
+ * 'acpp_asm_create_mapping_block()' with the ID as an argument. This will
+ * check for redefinition of the ID and add it to the internal list. After
+ * this, each <symbol> found in the right side of the attribution must be
+ * added calling either 'acpp_asm_add_mapping_symbol()' or
+ * 'acpp_asm_add_mapping_symbol_range()' depending if the symbol include a
+ * range [] or not. The value (or the range of values) can then be assigned
  * through the 'acpp_asm_add_symbol_value()' function. The dependency among
  *  the calls to the functions is:
- * 
+ *
  * Step 1 - call acpp_asm_create_mapping_block() to create a mapping block
- * 
+ *
  * Step 2 - call acpp_asm_add_mapping_symbol() or
- *          acpp_asm_add_mapping_symbol_range() to stack symbol definitions 
+ *          acpp_asm_add_mapping_symbol_range() to stack symbol definitions
  *          for that block
- *          
+ *
  * Step 3 - call acpp_asm_add_symbol_value() to assign a value (or a range of
  *          values) to the symbol(s) stacked
- *          
+ *
  * Step 4 - either add more symbols going to step 2 or create another mapping
  *          block going to step 1
  *
@@ -70,81 +70,81 @@
  *
  * set_asm is tied up to an 'ac_instr' type. It's the type used by the ArchC
  * language so that instructions can be created.  Every insn declared by
- * 'ac_instr' can use a property called 'set_asm' to declared its assembly 
+ * 'ac_instr' can use a property called 'set_asm' to declared its assembly
  * syntax and encoding scheme.  'set_asm' resembles the standard C function
- * 'scanf': there's a string with literal and formatting characters (those 
- * starting with the '%' char) and a list of arguments for each of the 
- * formatting characters. The syntax string is not parsed by the bison 
- * itself; it uses some of the functions implemented here. 
+ * 'scanf': there's a string with literal and formatting characters (those
+ * starting with the '%' char) and a list of arguments for each of the
+ * formatting characters. The syntax string is not parsed by the bison
+ * itself; it uses some of the functions implemented here.
  *
  *
  * A list of the insn syntaxes declared are stored in the 'asm_insn_list'
  * variable. It can be retrieved through the 'ac_asm_get_asm_insn_list()'
- * function. It's up to the caller to get the info they need in the list, 
+ * function. It's up to the caller to get the info they need in the list,
  * just be sure you don't change it ;)
- * 
+ *
  * Basic Parser Info:
  *
  * When a 'set_asm' directive is found in the ArchC source file and its syntax
- * should be checked, you must call the init function 'acpp_asm_new_insn()'. 
+ * should be checked, you must call the init function 'acpp_asm_new_insn()'.
  * It initializes some internal states. After that, syntax strings are parsed
  * through a calling to the function 'acpp_asm_parse_asm_string()'. Arguments
- * and constant arguments are processed by calling 'acpp_asm_parse_asm_argument()' 
- * or 'acpp_asm_parse_const_asm_argument()'. To insert the insn to the list, 
- * call 'acpp_asm_end_insn()'. It's the last step when parsing the whole 
- * 'set_asm' stuff. Those functions work by creating internal representation 
+ * and constant arguments are processed by calling 'acpp_asm_parse_asm_argument()'
+ * or 'acpp_asm_parse_const_asm_argument()'. To insert the insn to the list,
+ * call 'acpp_asm_end_insn()'. It's the last step when parsing the whole
+ * 'set_asm' stuff. Those functions work by creating internal representation
  * of the strings being parsed. end_insn is responsable for creating the final
  * asm string and insert it into the asm_insn_list.
  *
  * The dependency among the calls to the functions is:
  *
- * Step 1 - call acpp_asm_new_insn() before any other function, to initialize 
+ * Step 1 - call acpp_asm_new_insn() before any other function, to initialize
  *          internal states
- *          
+ *
  * Step 2 - call acpp_asm_parse_asm_insn() to parse the syntax string
- * 
- * Step 3 - either call acpp_asm_parse_asm_argument() or 
+ *
+ * Step 3 - either call acpp_asm_parse_asm_argument() or
  *          acpp_asm_parse_const_asm_argument() to process the each argument
- *          
+ *
  * Step 4 - call acpp_asm_end_insn() to create a new ac_asm_insn and insert it
  *          in the list of insns
  *
- * 
+ *
  * ********************
  *    pseudo_instr
  * ********************
  *
- * A pseudo insn is also stored in the 'asm_insn_list'. However, some fields 
- * of the structure ac_asm_insn has some fixed values.  'mnemonic' and 
- * 'operand' fields store the mnemonic and operands strings of 
- * <pseudo_declaration>. 'insn' field is always NULL since there is no 
- * ac_dec_instr attached to a pseudo. 'const_image' is always 0 since 
- * pseudo-ops don't have arguments. 'pseudo_list' is a string list with all 
- * <pseudo_member> as declared in the ArchC source file. 'num_pseudo' is the 
+ * A pseudo insn is also stored in the 'asm_insn_list'. However, some fields
+ * of the structure ac_asm_insn has some fixed values.  'mnemonic' and
+ * 'operand' fields store the mnemonic and operands strings of
+ * <pseudo_declaration>. 'insn' field is always NULL since there is no
+ * ac_dec_instr attached to a pseudo. 'const_image' is always 0 since
+ * pseudo-ops don't have arguments. 'pseudo_list' is a string list with all
+ * <pseudo_member> as declared in the ArchC source file. 'num_pseudo' is the
  * number of pseudo members in the 'pseudo_list' field.
  *
  * Basic Parser Info:
  *
- * 'acpp_asm_parse_asm_insn()' is also used to parse <pseudo_declaration> 
- * setting the flag 'is_pseudo' to 0 (like a native insn).  Only after that 
- * one should call 'acpp_asm_new_pseudo()'. To insert each <pseudo_member>, 
- * call 'acpp_asm_add_pseudo_member()'. It will insert them in the pseudo_list. 
+ * 'acpp_asm_parse_asm_insn()' is also used to parse <pseudo_declaration>
+ * setting the flag 'is_pseudo' to 0 (like a native insn).  Only after that
+ * one should call 'acpp_asm_new_pseudo()'. To insert each <pseudo_member>,
+ * call 'acpp_asm_add_pseudo_member()'. It will insert them in the pseudo_list.
  * To finish, call 'acpp_asm_end_insn()' to insert it in the asm_insn_list.
  * The dependency among the calls to the functions is:
  *
  * Step 1 - call acpp_asm_parse_asm_insn() to parse the base pseudo-op string
  *           (<pseudo_declaration>)
-   *           
- * Step 2 - call acpp_asm_new_pseudo() to initialize internal states in 
+   *
+ * Step 2 - call acpp_asm_new_pseudo() to initialize internal states in
  *          pseudo-op processing
- *          
- * Step 3 - call acpp_asm_add_pseudo_member() for each insn of the pseudo 
+ *
+ * Step 3 - call acpp_asm_add_pseudo_member() for each insn of the pseudo
  *           declaration
  *
  * Step 4 - call acpp_asm_end_insn() to insert all in the asm_insn_list
  *
  *
- * 
+ *
  * @{
  */
 
@@ -206,9 +206,9 @@ typedef struct _ac_asm_insn_field {
 typedef struct _ac_modifier_list {
   operand_modifier type;
   unsigned int addend;
-  unsigned int sign;       /*!< 0 - unsigned, 1 - signed */ 
+  unsigned int sign;       /*!< 0 - unsigned, 1 - signed */
   unsigned int carry;      /*!< 0 - no carry, 1 - carry */
-  struct _ac_modifier_list *next;  
+  struct _ac_modifier_list *next;
 } ac_modifier_list;
 
 typedef struct _ac_operand_list {
@@ -232,7 +232,7 @@ typedef struct _ac_const_field_list {
  */
 typedef struct _ac_asm_insn {
   char *mnemonic;             /*!< mnemonic part of asm syntax */
-  char *op_literal;             
+  char *op_literal;
   ac_operand_list *operands;
   ac_dec_instr *insn;         /*!< pointer to original ac_dec_instr - NULL if it's a pseudo insn */
   ac_const_field_list *const_fields;
@@ -261,7 +261,7 @@ extern int acpp_asm_add_symbol_value(int val1, int val2, char *error_msg);
 
 
 /* set_asm relative functions */
-extern void acpp_asm_new_insn(); /* also used by pseudo_op */ 
+extern void acpp_asm_new_insn(); /* also used by pseudo_op */
 extern int acpp_asm_parse_asm_string(char *asm_str, int is_pseudo, char *error_msg); /* also used by pseudo_op */
 extern int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_concatenated, char *error_msg);
 extern int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int iconst_field, char *sconst_field, char *error_msg);

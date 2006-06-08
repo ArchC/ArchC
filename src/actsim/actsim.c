@@ -1,29 +1,30 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
-/*  ArchC Pre-processor generates tools for the described architecture
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+/* ex: set tabstop=2 expandtab:
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
+/**
+ * @file      actsim.c
+ * @author    Sandro Rigo
+ *            Marcus Bartholomeu
+ *            Alexandro Baldassin
+ *            Thiago Sigrist
+ *            Marilia Chiozo
+ *
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   1.0
+ * @date      Tue, 06 Jun 2006 18:05:35 -0300
+ *
+ * @brief     The ArchC timed simulator generator
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
-/********************************************************/
-/* actsim.c: The ArchC timed simulator generator.       */
-/* Author: Sandro Rigo, Marilia Felippe Chiozo          */
-/* Date: 16-07-2002, 30-01-2006                         */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
 //////////////////////////////////////////////////////////
 /*!\file actsim.c
   \brief The ArchC pre-processor.
@@ -87,16 +88,16 @@ char* arch_filename;                            //!< Stores ArchC arquitecture f
 char* caps_project_name;                        //!< Holds the all-caps version of the project name, for header files.
 ac_stg_list* fetch_stage = NULL;                //!< Pointer to the fetch stage.
 
-int ac_host_endian;                             //!< Indicates the endianess of the host machine
-extern int ac_tgt_endian;                       //!< Indicates the endianess of the host machine
-int ac_match_endian;                            //!< Indicates whether host and target endianess match on or not
+int ac_host_endian;                             //!< Indicates the endianness of the host machine
+extern int ac_tgt_endian;                       //!< Indicates the endianness of the host machine
+int ac_match_endian;                            //!< Indicates whether host and target endianness match on or not
 
 //! This structure describes one command-line option mapping.
 /*!  It is used to manage command line options, following gcc style. */
 struct option_map
 {
- const char* name;                          //!< The long option's name. 
- const char* equivalent;                    //!< The equivalent short-name for options. 
+ const char* name;                          //!< The long option's name.
+ const char* equivalent;                    //!< The equivalent short-name for options.
  const char* arg_desc;                      //!< The option description.
  /* Argument info.  A string of flag chars; NULL equals no options.
     r => argument required.
@@ -222,7 +223,7 @@ int main(int argc, char** argv)
  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveTLMIntrPorts;
  extern ac_decoder_full* decoder;
  // Uncomment the line bellow if you want to debug the parser.
- //extern int yydebug; 
+ //extern int yydebug;
  ac_pipe_list* ppipe;
  ac_stg_list* pstage;
  int argn, i, j;
@@ -373,7 +374,7 @@ int main(int argc, char** argv)
   AC_ERROR("Parser terminated unsuccessfully.\n");
   return EXIT_FAILURE;
  }
- // Parsing ArchC ISA declaration file. 
+ // Parsing ArchC ISA declaration file.
  AC_MSG("Parsing AC_ISA declaration file: %s\n", isa_filename);
  if (acppRun())
  {
@@ -412,10 +413,10 @@ int main(int argc, char** argv)
    //AC_MSG("Warning: No fetchsize defined. Default is to be equal to wordsize (%d).\n", wordsize);
    fetchsize = wordsize;
   }
-  // Testing host endianess.
+  // Testing host endianness.
   a.i = 255;
   b.i = 0;
-  b.c[sizeof(int) - 1] = 255;
+  b.c[(sizeof(int) / sizeof(char)) - 1] = 255;
   if (a.i == b.i)
    ac_host_endian = 1; // Host machine is big endian.
     else
@@ -702,12 +703,12 @@ void CreateArchHeader(void)
    case CACHE:
    case ICACHE:
    case DCACHE:
-    if (!HaveMemHier)
+    if (!pstorage->parms)
     { // It is a generic cache. Just emit a base container object.
      fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
              INDENT[2], project_name, project_name, pstorage->name);
-     init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %d), %s(*this, %s_stg)",
+     init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
                             pstorage->name, pstorage->name, pstorage->size,
                             pstorage->name, pstorage->name, pstorage->size);
     }
@@ -726,11 +727,12 @@ void CreateArchHeader(void)
      fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
              INDENT[2], project_name, project_name, pstorage->name);
-     init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %d), %s(*this, %s_stg)",
+     init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
                             pstorage->name, pstorage->name, pstorage->size,
                             pstorage->name, pstorage->name, pstorage->size);
     }
     else // It is an ac_mem object.
+     // Some initialization stuff is supposed to go here, but this is unmaintained code. --Marilia
      fprintf(output, "%sac_mem %s;\n", INDENT[2], pstorage->name);
     break;
    /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT */
@@ -738,7 +740,7 @@ void CreateArchHeader(void)
     fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[2], pstorage->name);
     fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
             INDENT[2], project_name, project_name, pstorage->name);
-    init_list_p += sprintf(init_list_p, ", %s_port(\"%s_port\", %d), %s(*this, %s_port)",
+    init_list_p += sprintf(init_list_p, ", %s_port(\"%s_port\", %uU), %s(*this, %s_port)",
                            pstorage->name, pstorage->name, pstorage->size,
                            pstorage->name, pstorage->name);
     break;
@@ -751,7 +753,7 @@ void CreateArchHeader(void)
     fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
     fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
             INDENT[2], project_name, project_name, pstorage->name);
-    init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %d), %s(*this, %s_stg)",
+    init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
                            pstorage->name, pstorage->name, pstorage->size,
                            pstorage->name, pstorage->name, pstorage->size);
   }
@@ -1032,7 +1034,7 @@ void CreateArchRefHeader(void)
  fprintf(output, "%sunsigned get_ac_pc();\n", INDENT[2]);
  fprintf(output, "};\n\n"); // End of class.
  fprintf(output, "#endif // _%s_ARCH_REF_H_\n", caps_project_name);
- fclose(output); 
+ fclose(output);
  return;
 }
 
@@ -1051,7 +1053,7 @@ void CreateParmHeader(void)
  extern char* project_name;
  ac_stg_list* pstage;
  ac_pipe_list* ppipe;
- //! File containing decoding structures 
+ //! File containing decoding structures
  FILE* output;
  char* filename;
 
@@ -1121,10 +1123,10 @@ void CreateParmHeader(void)
          "%sstatic const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n",
          INDENT[2], ac_tgt_endian);
  fprintf(output,
-         "%sstatic const unsigned int AC_RAMSIZE = %u; \t //!< Architecture RAM size in bytes (storage %s).\n",
+         "%sstatic const unsigned int AC_RAMSIZE = %uU; \t //!< Architecture RAM size in bytes (storage %s).\n",
          INDENT[2], load_device->size, load_device->name);
  fprintf(output,
-         "%sstatic const unsigned int AC_RAM_END = %u; \t //!< Architecture end of RAM (storage %s).\n",
+         "%sstatic const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n",
          INDENT[2], load_device->size, load_device->name);
  fprintf(output, "\n\n");
  COMMENT(INDENT[0],"Word type definitions.");
@@ -1513,8 +1515,8 @@ void CreateProcessorHeader(void)
  extern char* project_name;
  extern int stage_num;
  extern int HaveMultiCycleIns;
- ac_stg_list* pstage, pstage_in;
- ac_pipe_list* ppipe, ppipe_in;
+ ac_stg_list* pstage;
+ ac_pipe_list* ppipe;
  char* prev_stage_name;
  char* filename;
  FILE* output;
@@ -1950,7 +1952,7 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   fprintf(output, "%ssensitive_pos << clock;\n", INDENT[4]);
   fprintf(output, "%sdont_initialize();\n", INDENT[4]);
   fprintf(output, "%sreturn;\n", INDENT[4]); // End of constructor.
-  fprintf(output, "%s}\n", INDENT[3]); 
+  fprintf(output, "%s}\n", INDENT[3]);
   if ((pstage->id == 1) && ACDecCacheFlag)
   {
    fprintf(output, "\n");
@@ -2178,7 +2180,7 @@ void CreateStatsHeaderTmpl(void)
   exit(1);
  }
  print_comment(output, "ArchC Processor statistics data header file.");
- fprintf(output, "#ifndef _%s_STATS_H_\n", caps_project_name); 
+ fprintf(output, "#ifndef _%s_STATS_H_\n", caps_project_name);
  fprintf(output, "#define _%s_STATS_H_\n\n", caps_project_name);
  fprintf(output, "#include <fstream>\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
@@ -3226,7 +3228,7 @@ void CreateImplTmpl(void)
   if (pipe_list)
   {
    fprintf(output, "\n%svoid ac_behavior(%s)\n%s{\n", INDENT[0], pformat->name,
-           INDENT[0]); 
+           INDENT[0]);
    fprintf(output, "%sswitch (stage)\n%s{\n", INDENT[1], INDENT[1]);
    for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
     for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
@@ -3236,7 +3238,7 @@ void CreateImplTmpl(void)
     }
    fprintf(output, "%sdefault:\n", INDENT[2]);
    fprintf(output, "%s}\n", INDENT[1]);
-   fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);  
+   fprintf(output, "%sreturn;\n%s}\n", INDENT[1], INDENT[0]);
   }
   else
    fprintf(output, "\n%svoid ac_behavior(%s)\n%s{\n%sreturn;\n%s}\n", INDENT[0],
@@ -3247,7 +3249,7 @@ void CreateImplTmpl(void)
   if (pipe_list)
   {
    fprintf(output, "\n%svoid ac_behavior(%s)\n%s{\n", INDENT[0], pinstr->name,
-           INDENT[0]); 
+           INDENT[0]);
    fprintf(output, "%sswitch (stage)\n%s{\n", INDENT[1], INDENT[1]);
    for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
     for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
@@ -3453,7 +3455,7 @@ void CreateRegsImpl(void)
  // Declaring formatted registers behavior methods.
  for (pformat = format_reg_list; pformat != NULL; pformat = pformat->next)
   fprintf(output, "%svoid ac_behavior(%s)\n%s{\n%sreturn;\n%s}\n\n", INDENT[0],
-          pformat->name, INDENT[0], INDENT[1], INDENT[0]); 
+          pformat->name, INDENT[0], INDENT[1], INDENT[0]);
  // End of file.
  fclose(output);
  return;
@@ -3522,7 +3524,7 @@ void EmitDecStruct(FILE* output)
  // Field structure.
  i = 0;
  fprintf(output, "%sac_dec_field %s_isa::fields[%s_parms::AC_DEC_FIELD_NUMBER] =\n%s {\n",
-         INDENT[0], project_name, project_name, INDENT[0]); 
+         INDENT[0], project_name, project_name, INDENT[0]);
  for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next)
   for (pdecfield = pformat->fields; pdecfield != NULL; pdecfield = pdecfield->next)
   {

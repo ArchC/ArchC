@@ -1,29 +1,28 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
-/*  Generic decoder for arquitectures described in ArchC
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
+/* ex: set tabstop=2 expandtab:
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
+/**
+ * @file      ac_decoder.c
+ * @author    Sandro Rigo
+ *            Marcus Bartholomeu
+ *            Marcelo de Almeida Oliveira (contributor)
+ *
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   1.0
+ * @date      Wed, 07 Jun 2006 16:49:59 -0300
+ *
+ * @brief     The ArchC decoder generator.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
-/********************************************************/
-/* The ArchC Decoder Generator                          */
-/* Author: Marcus Bartholomeu and Sandro Rigo           */
-/* Contributor: Marcelo de Almeida Oliveira             */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
 //////////////////////////////////////////////////////////
 /*! \file ac_decoder.c
   \brief Creates the decoder for the target ISA.
@@ -148,7 +147,7 @@ int CompareFields(const void *p1, const void *p2)
 int CheckFields(const ac_dec_field *f1, const ac_dec_field *f2)
 {
   if (!strcmp(f1 -> name, f2 -> name)) {
-    if (strcmp(f1 -> name, "0")) {  
+    if (strcmp(f1 -> name, "0")) {
       if ((f1 -> size != f2 -> size) || (f1 -> first_bit != f2 -> first_bit)) {
         fprintf(stderr, "Field '%s' defined in two formats but with different size or position.\n", f1 -> name);
         return 0;
@@ -156,7 +155,7 @@ int CheckFields(const ac_dec_field *f1, const ac_dec_field *f2)
     }
     else
       return 1;
-    
+
     return -1;
   }
   return 1;
@@ -191,7 +190,7 @@ ac_dec_field *FindDecField(ac_dec_field *fields, char *name)
   while (fields) {
     if (!strcmp(fields -> name, name))
       return fields;
-    
+
     fields = fields -> next;
   }
 
@@ -201,9 +200,9 @@ ac_dec_field *FindDecField(ac_dec_field *fields, char *name)
 
 ac_dec_field *PutIDs(ac_dec_format *formats, unsigned nFields)
      /* TODO:
-        - porque o indice e o id não são iguais? (poderia pegar o nome pelo id) (id 0 reservado)
-        - porque não muda o id na mesma estrutura recebida?
-        - nFields é na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
+        - porque o indice e o id nï¿½ sï¿½ iguais? (poderia pegar o nome pelo id) (id 0 reservado)
+        - porque nï¿½ muda o id na mesma estrutura recebida?
+        - nFields ï¿½na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
       */
 {
   ac_dec_field *fields, *tmp;
@@ -229,18 +228,18 @@ ac_dec_field *PutIDs(ac_dec_format *formats, unsigned nFields)
         }
         else if (result == 0) error++;
       }
-      
+
       if (!found) {
         tmp -> id = limit + 1;
         fields[limit] = *tmp;
         fields[limit].name = NewString(tmp -> name);
-        
+
         if (limit != 0)
           fields[limit - 1].next = &(fields[limit]);
-        
+
         fields[limit++].next = NULL;
       }
-      
+
       tmp = tmp -> next;
     }
     f = f -> next;
@@ -258,7 +257,7 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
   //ac_dec_field *f;
   ac_dec_list *l = instruction -> dec_list;
   //enum {IncludeSubCheck, IncludeNext} action;
-  
+
   if (l == NULL) {
     fprintf(stderr, "Error: Instruction %s doesn't have a decode list.\n", instruction -> name);
     exit(1);
@@ -273,7 +272,7 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
     d -> subcheck = NULL;
     d -> next = NULL;
   }
-    
+
   while (l) {
     // Same field and same value to check
     if ((!strcmp(d -> check -> name, l -> name)) && (d -> check -> value == l -> value))
@@ -311,7 +310,7 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
       }
     }
   }
-            
+
   d -> found = instruction;
   d -> subcheck = NULL;
 
@@ -359,7 +358,7 @@ ac_decoder_full *CreateDecoder(ac_dec_format *formats, ac_dec_instr *instruction
   full -> fields = allFields;
   full -> instructions = instructions;
   full -> nFields = nFields;
-  
+
   return full;
 }
 
@@ -460,7 +459,7 @@ unsigned *DecodeAsInstruction(ac_decoder_full * decoder, ac_dec_instr *instructi
 
   //!Looking for the instruction format structure.
   format = FindFormat(decoder->formats, instruction->format);
-  
+
   //!Get Format's field list
   list = format -> fields;
 
@@ -485,9 +484,9 @@ unsigned *DecodeAsInstruction(ac_decoder_full * decoder, ac_dec_instr *instructi
 unsigned *Decode(ac_decoder_full *decoder, unsigned char *buffer, int quant)
 {
   ac_dec_instr *instruction;
-  
+
   instruction = FindInstruction(decoder, buffer, quant);
-  
+
   if (instruction != NULL) {
     return DecodeAsInstruction(decoder, instruction, buffer, quant);
   }

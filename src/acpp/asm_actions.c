@@ -1,22 +1,22 @@
-/* ex: set tabstop=2 expandtab: 
+/* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /**
  * @file      asm_actions.c
  * @author    Alexandro Baldassin
- * 
+ *
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
- * 
+ *
  * @version   1.0
  * @date      Fri, 02 Jun 2006 10:59:18 -0300
- * 
+ *
  * @brief     ArchC assembly-related semantic actions
- * 
+ *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
@@ -24,15 +24,15 @@
 /*
 *******************************
  -> ac_asm_map
-*******************************   
+*******************************
 
-  syntax: 
+  syntax:
     <asm_map> ::= 'ac_asm_map' <marker> '{' (<symbol_mapping>)*';' '}'
 
     <marker> -a valid identifier used as a mapping ID- must be unique
     a valid identifier is  [a-zA-Z][_a-zA-Z0-9]* (declared in the .lex file)
 
-    <symbol_mapping> ::= <symbol>(,<symbol>)* '=' <value> |                         
+    <symbol_mapping> ::= <symbol>(,<symbol>)* '=' <value> |
                          <symbol>'['<value>'..'<value>']' '=' '['<value>'..'<value>']' |
                          '['<value>'..'<value>']'<symbol> '=' '['<value>'..'<value>']' |
         <symbol>'['<value>'..'<value>']'<symbol> '=' '['<value>'..'<value>']'
@@ -44,16 +44,16 @@
     <value2> -any integer-
 
   valid example:
- 
+
       ac_asm_map reg {
          "$"[0..31] = [0..31];
          "$zero" = 0;
          "$v"[0..1] = [2..3];
          "$t"[8..9] = [24..25];
-         "$s"[0..7] = [16..23];    
+         "$s"[0..7] = [16..23];
          "k"[0..1] = [26..27];
          "$gp" = 28;
-         "$s8", "$fp" = 30;       
+         "$s8", "$fp" = 30;
          "e"[1..3]"i" = [10..8];
       }
 
@@ -61,9 +61,9 @@
 
 
 
-******************************* 
+*******************************
  -> set_asm
-******************************* 
+*******************************
 
  The general format of a set_asm declaration is:
 
@@ -76,28 +76,28 @@
     created using [a-zA-Z][_a-zA-Z0-9]* and are declared using 'the ac_asm_map'
     keyword or else it's of a built-in type.  Some things you should be aware
     of when talking about syntax strings are:
-       
+
      . the first whitespace found in the string splits it in the 'mnemonic' and
-       'operands' parts; if there is no whitespace then there is no operand string 
+       'operands' parts; if there is no whitespace then there is no operand string
        for that insn syntax;
-        example: 
-    set_asm("add x1, x2");  
+        example:
+    set_asm("add x1, x2");
       "add"   -> mnemonic
       "x1,x2" -> operands
 
-     . you can put the format identifier between the '[' ']' character when using 
+     . you can put the format identifier between the '[' ']' character when using
        the '%' character;
         example:
     set_asm("add %[register],%register", ...);
       both '%[register]' and '%register' have the same effect
 
-     . formatting string in the mnemonic part of the string has a different meaning: 
-       it tells to expand that in the symbols defined under the format 
+     . formatting string in the mnemonic part of the string has a different meaning:
+       it tells to expand that in the symbols defined under the format
        identifier (only identifiers created through 'ac_asm_map' are valid);
         example:
           ac_asm_map annul {
       "" = 0;
-            ",a" = 1;   
+            ",a" = 1;
           }
 
           set_asm("bvs%[anul] %expRW", an, ...);
@@ -105,8 +105,8 @@
              "bvs   %expRW" (encoding the format field 'an' with the value 0);
        "bvs,a %expRW" (encoding the format field 'an' with the value 1);
 
-     . in operand strings, every sequence of the chars [a-zA-Z0-9_$.] are grouped as a 
-       single token. All other valid characters are also a token. Among tokens it's not 
+     . in operand strings, every sequence of the chars [a-zA-Z0-9_$.] are grouped as a
+       single token. All other valid characters are also a token. Among tokens it's not
        necessary to specify whitespaces, they are implict.
         example:
          the following declarations are the same:
@@ -114,15 +114,15 @@
           set_asm("add %reg,[%reg]", ...);
           set_asm(" add %reg , [  %reg]", ...);
 
-     the next one is not valid since there should be a valid identifier following 
+     the next one is not valid since there should be a valid identifier following
          the first '%' char:
-      
+
           set_asm("add % reg, %reg", ...);
-         
-     . some characters cannot be part of the string. Those are described by the 
-       is_mnemonic_* and is_operand_* functions. Some characters can appear in the mnemonic 
+
+     . some characters cannot be part of the string. Those are described by the
+       is_mnemonic_* and is_operand_* functions. Some characters can appear in the mnemonic
        part but not in the operand, and vice-versa.
-                    
+
     <list_of_arguments> should match one of the fields declared through
     ac_format under the instruction which its assembly syntax is being
     specified. To every marker specified in the syntax string there should be
@@ -130,7 +130,7 @@
     second argument is relative to the second marker and so. A constant
     argument is the one which can be assigned to a constant integer or symbol
     at the declaration time. They don't need any marker in the syntax string
-    
+
       Example:
         ("add %reg, %imm", rs, imm)   -> '%reg's argument is 'rs' and '%imm' argument is 'imm
         ("add %reg", rs, imm=10)      -> here 'imm=10' is a constant argument
@@ -140,36 +140,36 @@
 
 
 
-******************************* 
+*******************************
  -> pseudo_instr
-******************************* 
+*******************************
 
   syntax:
     <pseudo_insn> ::= 'pseudo_instr' '(' <pseudo_declaration> ')' '{' {<pseudo_member> ';'}*1 '}'
 
-    <pseudo_declaration> is a string of almost the same type of <syntax_string>. 
+    <pseudo_declaration> is a string of almost the same type of <syntax_string>.
       Markers cannot be used in the mnemonic string.
 
-    <pseudo_member> is a string with the insn syntaxes that should be executed 
-      when <pseudo_declaration> is found. This string follows the same basic 
-      syntax of <syntax_string>: mnemonic string cannot use markers. Macro 
-      substitutions are made using an integer from 0-9 right after the '%' 
-      character. 0 corresponds to the first marker in the <pseudo_declaration>, 
+    <pseudo_member> is a string with the insn syntaxes that should be executed
+      when <pseudo_declaration> is found. This string follows the same basic
+      syntax of <syntax_string>: mnemonic string cannot use markers. Macro
+      substitutions are made using an integer from 0-9 right after the '%'
+      character. 0 corresponds to the first marker in the <pseudo_declaration>,
       1 to the second, and so on...
 
       example:
-    
+
       pseudo_instr("li %reg, %imm") {
         "lui %0, \%hi(%1)";
         "ori %0, %0, %1";
       }
 
-      When processing the macro insn 'li %reg, %imm', the assembler will 
-      validate and evaluate the %reg and %imm fields. Then it will execute 
-      the following two insns: 'lui' and 'ori'. %0 will be replaced by the 
-      evaluated %reg, and %1 will be replaced by the evaluted %imm field in 
+      When processing the macro insn 'li %reg, %imm', the assembler will
+      validate and evaluate the %reg and %imm fields. Then it will execute
+      the following two insns: 'lui' and 'ori'. %0 will be replaced by the
+      evaluated %reg, and %1 will be replaced by the evaluted %imm field in
       the 'lui' insn.
-      Note: Theorically a <pseudo_member> can be another pseudo_instr. 
+      Note: Theorically a <pseudo_member> can be another pseudo_instr.
         However it's not tested yet.
 
 
@@ -178,16 +178,16 @@
 
 Some conventions:
 
-- asm specific parser structures use the prefix string 'ac_asm' 
+- asm specific parser structures use the prefix string 'ac_asm'
   (that's because the decoder structures use 'ac_dec')
 
-- there are no global variables shared among modules. Interface functions are 
-  used instead. Functions which are used by the parser use the prefix 'acpp_asm' 
-  whereas those used by the generating tool or this module itself use the prefix 
+- there are no global variables shared among modules. Interface functions are
+  used instead. Functions which are used by the parser use the prefix 'acpp_asm'
+  whereas those used by the generating tool or this module itself use the prefix
   'ac_asm'.
 
-- where an error might raise, an interface function will use a variable (error_msg) 
-  to store its message and will return 0. The caller is responsable for allocating 
+- where an error might raise, an interface function will use a variable (error_msg)
+  to store its message and will return 0. The caller is responsable for allocating
   memory for error_msg before the call is made.
 
 - variables and functions internal to this module uses the C -STATIC- qualifier.
@@ -204,8 +204,8 @@ Some conventions:
 #include "asm_actions.h"
 
 
-/* 
-  ac_asm_map variables 
+/*
+  ac_asm_map variables
 */
 
 static ac_asm_map_list *mapping_list = NULL;       /* map list header pointer */
@@ -215,11 +215,11 @@ static ac_asm_map_list *mapping_list_tail = NULL;  /* tail pointer */
 this variable holds the list of the symbol-value mapping being parsed for the
 current mapping element.
 */
-static ac_asm_symbol **map_symbol_list = NULL;    
+static ac_asm_symbol **map_symbol_list = NULL;
 static ac_asm_symbol *map_symbol_list_tail = NULL;  /* pointer to the tail */
 
 /* a list of the symbol names being parsed by a single symbol-value mapping */
-static strlist *symbol_name_list;  
+static strlist *symbol_name_list;
 static strlist *symbol_name_list_tail;  /* pointer to the tail */
 
 
@@ -228,7 +228,7 @@ static strlist *symbol_name_list_tail;  /* pointer to the tail */
   set_asm variables
 */
 
-/* 
+/*
    acpp_asm_parse_asm_str(), acpp_asm_parse_asm_argument() and acpp_asm_parse_const_asm_argument()
 uses these internal buffer to store the building of the final asm string done in acpp_asm_end_insn()
 */
@@ -297,15 +297,15 @@ static int get_symbol_value(char *symbol, long int *symbol_id) {
   while (ml != NULL && !found) {
 
     ac_asm_symbol *sl = ml->symbol_list;
- 
+
     while (sl != NULL) {
       if (!strcmp(sl->symbol, symbol)) {
         symbol_value = sl->value;
         found = 1;
         break;
-      } 
+      }
       sl = sl->next;
-    } 
+    }
 
     ml = ml->next;
   }
@@ -317,7 +317,7 @@ static int get_symbol_value(char *symbol, long int *symbol_id) {
 
 
 /*
-  Searchs for the marker string 'marker' in the mapping_list. 
+  Searchs for the marker string 'marker' in the mapping_list.
   If not found, NULL is returned.
 */
 static ac_asm_map_list *find_mapping_marker(char *marker) {
@@ -335,7 +335,7 @@ static ac_asm_map_list *find_mapping_marker(char *marker) {
 }
 
 
-/* 
+/*
   Searchs for a symbol definition 'symbol' in the current mapping block.
 */
 static ac_asm_symbol *find_mapping_symbol(char *symbol) {
@@ -364,7 +364,7 @@ static ac_asm_symbol *find_mapping_symbol(char *symbol) {
 /*
  A map symbol name may not include:
    . spaces (isspace())
-   . ;  (statement delimiter in GNU As - can be changed)  
+   . ;  (statement delimiter in GNU As - can be changed)
    . #  (commentary in GNU As - can be changed)
    . '  (single quote)
    . / * (C start comment block)
@@ -373,12 +373,12 @@ static ac_asm_symbol *find_mapping_symbol(char *symbol) {
  Note:
   Be careful when defining symbols for mnemonic expansions. Some characters like '.' may
 cause problems with the GNU as assembler.
-   
+
 */
 inline static int is_map_symbol_name(char *s) {
   if (isspace(*s) || *s == ';' || *s == '\''
       || (*s == '/' && *(s+1) == '*')
-      || (*s == '*' && *(s+1) == '/') ) 
+      || (*s == '*' && *(s+1) == '/') )
     return 0;
 
   return 1;
@@ -399,13 +399,13 @@ inline static int is_map_symbol_end(char *s) {
 /*
  Validates ArchC identifiers
 
- This should be equal to the ID in the lex file, but is enough the way it is (no need for the _begin 
+ This should be equal to the ID in the lex file, but is enough the way it is (no need for the _begin
  version)
 */
 inline static int is_identifier(char *s) {
-  return ((*s >= 'a' && *s <= 'z') 
-    || (*s >= 'A' && *s <= 'Z') 
-    || (*s >= '0' && *s <= '9') 
+  return ((*s >= 'a' && *s <= 'z')
+    || (*s >= 'A' && *s <= 'Z')
+    || (*s >= '0' && *s <= '9')
     || *s == '_');
 }
 
@@ -417,15 +417,15 @@ inline static int is_identifier(char *s) {
 */
 
 inline static int is_mnemonic_begin(char *s) {
-  return (((*s >= 'a') && (*s <= 'z')) 
-         || ((*s >= 'A') && (*s <= 'Z')) 
+  return (((*s >= 'a') && (*s <= 'z'))
+         || ((*s >= 'A') && (*s <= 'Z'))
    || (*s == '_') || (*s == '%'));
 }
 
 inline static int is_mnemonic_name(char *s) {
   if ( *s == ';' || *s == '\''
       || (*s == '/' && *(s+1) == '*')
-      || (*s == '*' && *(s+1) == '/') ) 
+      || (*s == '*' && *(s+1) == '/') )
     return 0;
 
   return 1;
@@ -436,15 +436,15 @@ inline static int is_mnemonic_name(char *s) {
   Almost the same as the mnemonics version but the '%'.
 */
 inline static int is_pseudo_mnemonic_begin(char *s) {
-  return (((*s >= 'a') && (*s <= 'z')) 
-         || ((*s >= 'A') && (*s <= 'Z')) 
+  return (((*s >= 'a') && (*s <= 'z'))
+         || ((*s >= 'A') && (*s <= 'Z'))
    || (*s == '_'));
 }
 
 inline static int is_pseudo_mnemonic_name(char *s) {
-  if ( *s == ';' || *s == '#' || *s == '\'' || *s == '%' 
+  if ( *s == ';' || *s == '#' || *s == '\'' || *s == '%'
       || (*s == '/' && *(s+1) == '*')
-      || (*s == '*' && *(s+1) == '/') ) 
+      || (*s == '*' && *(s+1) == '/') )
     return 0;
 
   return 1;
@@ -467,18 +467,18 @@ inline static int is_group_token(char *s) {
  *
  *
  */
-static insert_modifier(ac_modifier_list *list, ac_modifier_list *mod) 
+static insert_modifier(ac_modifier_list *list, ac_modifier_list *mod)
 {
   mod->next = NULL;
-  
+
   if (list == NULL) {
     list = mod;
   }
-  else { 
+  else {
     ac_modifier_list *head = list;
     while (head->next != NULL) head = head->next;
-    head->next = mod;    
-  }   
+    head->next = mod;
+  }
 }
 
 /*
@@ -499,7 +499,7 @@ get_addend(char addend_type, char **st, ac_modifier_list *modifier)
   modifier->carry = 0;
   modifier->addend = -1; // default
   modifier->sign = 0;
-  
+
   if ((sl-1) != *st) {
     char savec = *sl;
     *sl = '\0';
@@ -570,11 +570,11 @@ static int create_operand(char *s, ac_operand_list **oper)
   *oper = (ac_operand_list *)malloc(sizeof(ac_operand_list));
   (*oper)->next = NULL;
   (*oper)->fields = NULL;
-  
+
   (*oper)->str = (char *)malloc(strlen(s)+1);
   strcpy((*oper)->str, s);
-    
-   
+
+
   /* find operand type */
   if ( *s == 'e' && *(s+1) == 'x' && *(s+2) == 'p' ) {
     (*oper)->type = op_exp;
@@ -601,11 +601,11 @@ static int create_operand(char *s, ac_operand_list **oper)
   while (*st != '\0') {
 
     ac_modifier_list *modifier = (ac_modifier_list *)malloc(sizeof(ac_modifier_list));
-    
+
     switch (*st) {
 
       case 'H':
-        modifier->type = mod_high; 
+        modifier->type = mod_high;
         get_addend('H', &st, modifier);
         break;
 
@@ -622,8 +622,8 @@ static int create_operand(char *s, ac_operand_list **oper)
       case 'R':
         modifier->type = mod_pcrel;
         get_addend('R', &st, modifier);
-        break; 
-        
+        break;
+
       case 'r':
         modifier->type = mod_pcrelext;
         get_addend('R', &st, modifier);
@@ -632,20 +632,20 @@ static int create_operand(char *s, ac_operand_list **oper)
       default:
          return 0;
     }
-  
+
     /* insert in the list */
     if ((*oper)->modifiers == NULL) {
       (*oper)->modifiers = modifier;
     }
-    else { 
+    else {
       ac_modifier_list *head = (*oper)->modifiers;
       while (head->next != NULL) head = head->next;
       head->next = modifier;
-    }   
-    
+    }
+
     st++;
   }
-  return 1; 
+  return 1;
 }
 
 
@@ -732,7 +732,7 @@ int acpp_asm_create_mapping_block(char *marker, char *error_msg)
    This adds a single symbol to the current symbol names (symbol_name_list). A
   symbol-value pair is only added to the mapping list when a call to
   add_symbol_value is done.
-  
+
 
    symbol -> the symbol to add. It must be unique for this mapping block (error
 if not). The symbol string is parsed to check for invalid characters (checked
@@ -768,7 +768,7 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
   if (*s1 != '\0') { /* this condition validates empty symbols "" */
 
     while (1) {
-    
+
       if (*(s1+1) == '\0') {
         if (!is_map_symbol_end(s1)) {
           sprintf(error_msg, "Symbol '%s' cannot end with character '%c'", symbol, *s1);
@@ -776,13 +776,13 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
         }
         break;
       }
-      
+
       s1++;
       if (!is_map_symbol_name(s1)) {
         sprintf(error_msg, "Symbol '%s' cannot have character '%c' in its name", symbol, *s1);
         return 0;
-      } 
-    } 
+      }
+    }
   }
 
   /* ok, symbol validated.. so add it to the end of symbol_name_list */
@@ -792,7 +792,7 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
   strcpy(t_s->str, symbol);
   t_s->next= NULL;
 
-  if (!symbol_name_list) { 
+  if (!symbol_name_list) {
     symbol_name_list = t_s;
     symbol_name_list_tail = symbol_name_list;
   }
@@ -806,7 +806,7 @@ int acpp_asm_add_mapping_symbol(char *symbol, char *error_msg) {
 
 
 /*
- 
+
   This function adds ranged symbols (those with [..]) to the
 symbol_name_list. It does some range checking. Only non-negatives integers are
 allowed. It works by building each string with the range specified and calling
@@ -827,7 +827,7 @@ int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *
   int increment_sign = (r1 < r2) ? 1 : -1;
   char final_symbol[200];  /* a guess :/ */
 
-  if (sb == NULL && sa == NULL) { 
+  if (sb == NULL && sa == NULL) {
     sprintf(error_msg, "Internal parser error");
     return 0;
   }
@@ -836,7 +836,7 @@ int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *
     sprintf(error_msg, "Only positive values are accepted");
     return 0;
   }
-  
+
   /* creates a string and adds it calling add_mapping_symbol for each symbol created */
   final_symbol[0] = '\0';
   char *p_fs = final_symbol;
@@ -850,7 +850,7 @@ int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *
   int i;
   for (i=0; i<=range; i++) {
     p_fs = saved_p_fs;
-  
+
     sprintf(p_fs, "%d", r1+(i*increment_sign));
 
     while (*p_fs != '\0') p_fs++;
@@ -902,13 +902,13 @@ int acpp_asm_add_symbol_value(int val1, int val2, char *error_msg) {
     if (range+1 != symbol_number) {
       sprintf(error_msg, "Different ranges specified in symbol mapping");
       return 0;
-    }  
+    }
   }
 
   /* assign each symbol to its value and adds to the map_symbol_list list */
   strlist *t_sl = symbol_name_list;
   ac_asm_symbol *t_symbol = NULL;
-  
+
   int i=0;
   while (t_sl != NULL) {
 
@@ -921,7 +921,7 @@ int acpp_asm_add_symbol_value(int val1, int val2, char *error_msg) {
     t_symbol->next = NULL;
 
     /* insert it in the map_symbol_list */
-    if (!*map_symbol_list) { 
+    if (!*map_symbol_list) {
       *map_symbol_list = t_symbol;
       map_symbol_list_tail = *map_symbol_list;
     }
@@ -965,23 +965,23 @@ file.
 **********************************************/
 
 /*
-  Check if a mapping marker pointed by 's' is valid. 
+  Check if a mapping marker pointed by 's' is valid.
 
   str -> string to be validated (after the '%')
-  marker -> string in which the marker name will be stored (must be allocated 
+  marker -> string in which the marker name will be stored (must be allocated
   by the caller) (only if returned value == 1)
 
 
-  str will always point to the next element after the marker name (if there 
+  str will always point to the next element after the marker name (if there
   is a ']', it will point after that)
 */
 static int validate_marker(char **str, char *marker, char *error_msg) {
-  int has_lbrack = 0;  
+  int has_lbrack = 0;
   char *s = marker;
 
   *s = '\0';
 
-  if (**str == '[') { 
+  if (**str == '[') {
     has_lbrack = 1;
     (*str)++;
   }
@@ -991,7 +991,7 @@ static int validate_marker(char **str, char *marker, char *error_msg) {
     s++;
     (*str)++;
   }
-  
+
   if (has_lbrack && **str != ']') {
     sprintf(error_msg, "No matching ']' found");
     return 0;
@@ -1022,7 +1022,7 @@ void acpp_asm_new_insn() {
   pseudo_list = NULL;      /* make sure no pseudo-op will be added */
   num_pseudo_insn = 0;
 
-  num_args_found = 0;  
+  num_args_found = 0;
   c_image = 0;
 
   in_error = 0; /* keep track of errors */
@@ -1048,20 +1048,20 @@ uses a lightly different format (following the '%' there is a number, not
 identifier) that are stored internally in the formatted_pseudo variable (when
 is_pseudo == 1).
 
-  asm_str   -> original string, as found in the .ac files with the set_asm 
+  asm_str   -> original string, as found in the .ac files with the set_asm
                directives
 
-  is_pseudo ->  0 - 'native' instructions. 
+  is_pseudo ->  0 - 'native' instructions.
               !0 - pseudo-ops members have different semantics for the % arguments.
 
-  Notes: 
+  Notes:
        After each %(marker) sequence it's put a ':' character.
-       Only the marker (%) character is saved in the mnemonic part of the string. 
+       Only the marker (%) character is saved in the mnemonic part of the string.
        The type of the marker is saved in 'mnemonic_marker'.
        Base built-in types cannot be defined by the user.
 
   Some examples of outputed format_asm_str:
-  
+
      input  -> "add %reg, %reg"
      output -> "add %reg:,%reg:"
 
@@ -1070,7 +1070,7 @@ is_pseudo == 1).
 
 
   TODO:
-   falta validar no caso de pseudo_instr que os mnemonicos nao possam conter markers 
+   falta validar no caso de pseudo_instr que os mnemonicos nao possam conter markers
    (jah q is_pseudo == 0 e nao tem como saber se eh pseudo ou nao a insn base)
    checar por sintaxe jah definida das instrucoes declaradas sob a pseudo?
 
@@ -1089,7 +1089,7 @@ arguments one pseudo member may have.
 
   /* choose which buffer to use: native or pseudo insn */
   if (is_pseudo) s_out = formatted_pseudo;
-  else s_out = formatted_asm_str;    
+  else s_out = formatted_asm_str;
 
   *s_out = '\0';
 
@@ -1121,12 +1121,12 @@ arguments one pseudo member may have.
     if (is_pseudo && !is_pseudo_mnemonic_name(s)) {
       sprintf(error_msg, "Invalid symbol found in mnemonic string: '%c'", *s);
       in_error = 1;
-      return 0;      
+      return 0;
     }
     else if (!is_mnemonic_name(s)) {
       sprintf(error_msg, "Invalid symbol found in mnemonic string: '%c'", *s);
       in_error = 1;
-      return 0;      
+      return 0;
     }
 
     /* mnemonic formatting identifier */
@@ -1138,7 +1138,7 @@ arguments one pseudo member may have.
         sprintf(error_msg, "Maximum number of conversion specifiers is 1");
         in_error = 1;
         return 0;
-      }  
+      }
 
       s++;
 
@@ -1155,20 +1155,20 @@ arguments one pseudo member may have.
 
       ac_asm_map_list *ml = find_mapping_marker(s_out);
       if (ml == NULL) {
-        sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", s_out);  
+        sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", s_out);
         in_error = 1;
         return 0;
       }
 
       *s_out = '%';
-      s_out++; 
+      s_out++;
 
       mnemonic_marker = ml;
       ml->used_where |= 2;
       num_args_expected++;
 
     }
-    else if (*s == '\\') {  
+    else if (*s == '\\') {
 
       /* only valid escape sequence is \% */
 
@@ -1182,13 +1182,13 @@ arguments one pseudo member may have.
         in_error = 1;
         return 0;
       }
-      
+
       *s_out = '%';
       s_out++;
       s++;
 
     }
-    else {   
+    else {
       *s_out = *s;
       s_out++;
       s++;
@@ -1196,19 +1196,19 @@ arguments one pseudo member may have.
   }
 
   if (!is_pseudo) {
-    *s_out = '\0'; 
+    *s_out = '\0';
     current_insn->mnemonic = (char *)malloc(strlen(formatted_asm_str)+1);
     strcpy(current_insn->mnemonic, formatted_asm_str);
 
     s_out = formatted_asm_str;
-    
+
     current_insn->operands = NULL;
   }
 
   /************ operands parsing **************/
 
   ac_operand_list *operands = NULL;
-  
+
   while (isspace(*s)) s++;
 
   if (*s == '\0') { /* no operand found */
@@ -1218,7 +1218,7 @@ arguments one pseudo member may have.
       current_insn->op_literal = (char *)malloc(strlen(formatted_asm_str)+1);
       strcpy(current_insn->op_literal, formatted_asm_str);
     }
-    return 1;   
+    return 1;
   }
 
   if (is_pseudo) {
@@ -1229,7 +1229,7 @@ arguments one pseudo member may have.
   while (*s != '\0') {
 
     while (isspace(*s)) s++;
-    
+
     if (!is_operand_string(s)) {
       sprintf(error_msg, "Invalid character found in assembly string: '/%c'", *s);
       in_error = 1;
@@ -1253,14 +1253,14 @@ arguments one pseudo member may have.
           s_out++;
         }
       }
-      
+
       continue;
     }
 
     if (*s == '%') {
       *s_out = *s;
       s_out++;
-      s++; 
+      s++;
 
       if (is_pseudo) {
         if (*s >= '0' && *s <= '9') {
@@ -1285,7 +1285,7 @@ arguments one pseudo member may have.
 
         if (!validate_marker(&s, s_out, error_msg)) {
           in_error = 1;
-          return 0; 
+          return 0;
         }
 
         ac_operand_list *operand = NULL;
@@ -1322,10 +1322,10 @@ arguments one pseudo member may have.
         }
 //        while (*s_out != '\0') s_out++;
 //        *s_out = ':';
-//        s_out++;    
-  
+//        s_out++;
+
       }
-    } 
+    }
     else if (*s == '\\') {
       /* only valid scape sequence is \% */
 
@@ -1342,15 +1342,15 @@ arguments one pseudo member may have.
         in_error = 1;
         return 0;
       }
-      
+
       *s_out = '%';
       s_out++;
       s++;
     }
-    else { 
+    else {
       *s_out = *s;
       s_out++;
-      s++;    
+      s++;
     }
   }
 
@@ -1379,12 +1379,12 @@ format (from the left to the right of the insn format) followed by ':'.
 
 
  pf  -> pointer to the format associated with this insn field
- field_str -> an argument string as found in the ArchC source file 
+ field_str -> an argument string as found in the ArchC source file
  (for constant arguments, use const version of this function)
 
  Note:
    For mnemonics arguments, 'formatted_arg_str' is not changed.
- 
+
  example:
 
   input: "imm"  (let's say it's field 3)
@@ -1404,7 +1404,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
     in_error = 1;
     return 0;
   }
-     
+
 
   /* whenever we start building a new formatted_arg_str, make a pointer to its beggining */
 //  if (num_args_found == 0)
@@ -1422,7 +1422,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
 
   ac_asm_insn_field *newfield = (ac_asm_insn_field *)malloc(sizeof(ac_asm_insn_field));
 
-  newfield->name = (char *)malloc(strlen(pfield->name)+1);  
+  newfield->name = (char *)malloc(strlen(pfield->name)+1);
   strcpy(newfield->name, pfield->name);
 
   newfield->size = pfield->size;
@@ -1435,23 +1435,23 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   ac_operand_list *matching_op = current_insn->operands;
 
   if (matching_op == NULL) {
-    sprintf(error_msg, "Invalid number of arguments");       
+    sprintf(error_msg, "Invalid number of arguments");
     in_error = 1;
     return 0;
   }
-  
+
   while (counter) {
-    matching_op = matching_op->next;     
+    matching_op = matching_op->next;
     if (matching_op == NULL) {
-      sprintf(error_msg, "Invalid number of arguments");       
+      sprintf(error_msg, "Invalid number of arguments");
       in_error = 1;
       return 0;
     }
 
     counter--;
-  }  
-  
-  
+  }
+
+
   if (matching_op->fields == NULL) {
     matching_op->fields = newfield;
   }
@@ -1460,8 +1460,8 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
     while (head->next != NULL) head = head->next;
     head->next = newfield;
   }
-  
-  
+
+
   //  sprintf(&(formatted_arg_str[arg_str_ind]), "%d:", f_id);
 //  sprintf(f_arg_str_p, "%d:", f_id);
 
@@ -1481,32 +1481,32 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
     . an int const of the form:   <field> = int_value
     . a string const of the form: <field> = str_value
 
-  pf        -> pointer to the format of the instruction this argument is being 
+  pf        -> pointer to the format of the instruction this argument is being
                set to
   field_str -> <field> field of the instruction format which will be constant
-  iconst_field, sconst_field -> integer and string const field. Only one must be 
-               valid at a time. A value of NULL in sconst_field indicates this 
+  iconst_field, sconst_field -> integer and string const field. Only one must be
+               valid at a time. A value of NULL in sconst_field indicates this
                constant argument is of type int. Otherwise it's a string type
- 
+
   Constant argument does not alter the 'formatted_arg_str'. Instead, it uses
 c_image to store the const value assigned by the user in an ArchC source file.
 
   examples:
 
    ArchC source:  "imm = 10"
-      . 10 will be encoded in its right position within the format field 'imm' 
+      . 10 will be encoded in its right position within the format field 'imm'
         and saved in 'c_image'
 
    ArchC source:  "imm = $ra"
-      . first the value of '$ra' will be found, then it'll encoded and saved 
+      . first the value of '$ra' will be found, then it'll encoded and saved
         in 'c_image'
 
 */
-int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int iconst_field, char *sconst_field, char *error_msg) 
+int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int iconst_field, char *sconst_field, char *error_msg)
 {
 
   /* if str const type, find the symbol value */
-  if (sconst_field != NULL) {  
+  if (sconst_field != NULL) {
     long int symbol_value;
 
     if (!get_symbol_value(sconst_field, &symbol_value)) {
@@ -1525,7 +1525,7 @@ int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int ic
     sprintf(error_msg, "Invalid field used as argument: '%s'", field_str);
     in_error = 1;
     return 0;
-  }  
+  }
 
   ac_const_field_list *cfield = (ac_const_field_list *)malloc(sizeof(ac_const_field_list));
   cfield->next = NULL;
@@ -1546,8 +1546,8 @@ int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int ic
     while (head->next != NULL) head = head->next;
     head->next = cfield;
   }
-  
-  /* encode it, saving in 'c_image' 
+
+  /* encode it, saving in 'c_image'
      note that there will be only 1 encoding for each format field, so it's ok to use the OR operation */
 //  c_image |= ac_asm_encode_insn_field(iconst_field, pf, pfield);
 
@@ -1575,7 +1575,7 @@ static ac_const_field_list *clone_const_fields(ac_const_field_list *cfields)
       while (head->next != NULL) head = head->next;
       head->next = newfield;
     }
-    
+
     lh = lh->next;
   }
 
@@ -1622,7 +1622,7 @@ static void print_asm_insn(ac_asm_insn *insn)
 
       modlist = modlist->next;
     }
-    
+
     printf("\n  fields:\n\n");
     ac_asm_insn_field *flist = ops->fields;
     while (flist != NULL) {
@@ -1631,10 +1631,10 @@ static void print_asm_insn(ac_asm_insn *insn)
       flist = flist->next;
     }
     printf("\n");
-    
+
     ops = ops->next;
   }
-  
+
   /* insn skipped */
 
   printf("\nconst fields:\n");
@@ -1648,23 +1648,23 @@ static void print_asm_insn(ac_asm_insn *insn)
   printf("\npseudo list:\n");
   strlist *sl = insn->pseudolist;
   while (sl != NULL) {
-    printf("  %s\n", sl->str);     
+    printf("  %s\n", sl->str);
     sl = sl->next;
   }
 
   printf("\nnumber of pseudos: %d\n\n", insn->num_pseudo);
-  
+
 }
 
 
 /*
   This should be called after the syntax string and argument field are
-  processed.  
+  processed.
   Strings 'formatted_asm_str' and 'formatted_arg_str' are merged
   and a new acpp_asm_insn is inserted in the insn list. In case a mnemonic
   marker exists, its expansion is done here also.
 
-  p -> pointer to the relative ac_dec_insn 
+  p -> pointer to the relative ac_dec_insn
 
 
   Format of insn->operand :
@@ -1684,7 +1684,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     sprintf(error_msg, "Invalid number of arguments");
     return 0;
   }
-  
+
   /* An error already happened... don't waste more time then */
   if (in_error) return 1;
 
@@ -1697,7 +1697,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     ac_operand_list *opP = current_insn->operands;
     while (opP != NULL) {
       ac_asm_insn_field *newfield = (ac_asm_insn_field *)malloc(sizeof(ac_asm_insn_field));
-      
+
       newfield->name = NULL;
       newfield->size = 0;
       newfield->first_bit = 0;
@@ -1705,14 +1705,14 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       newfield->reloc_id = 0;
       newfield->next = NULL;
 
-      opP->fields = newfield;      
-      
+      opP->fields = newfield;
+
       opP = opP->next;
     }
   }
-  
-  
-  /********** 
+
+
+  /**********
    Creates the mnemonic (expand it if needed, and creates the ac_asm_insn)
   ***********/
 
@@ -1728,7 +1728,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
 
     ac_asm_insn *insn = (ac_asm_insn *) malloc(sizeof(ac_asm_insn));
 
-    insn->op_literal = (char *)malloc(strlen(current_insn->op_literal)+1);    
+    insn->op_literal = (char *)malloc(strlen(current_insn->op_literal)+1);
     strcpy(insn->op_literal, current_insn->op_literal);
 
     insn->operands = current_insn->operands;
@@ -1738,13 +1738,13 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     insn->num_pseudo = num_pseudo_insn;
     insn->next = NULL;
 
-    /* if there's a mnemonic marker, expand it */  
+    /* if there's a mnemonic marker, expand it */
     if (mnemonic_marker != NULL)
     {
       if (sl == NULL) break;   /* last symbol, get out */
 
       /* -1 because of the '%' we are deleting */
-      insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+strlen(sl->symbol)+1-1); 
+      insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+strlen(sl->symbol)+1-1);
       char *mnem = insn->mnemonic;
       char *mt = current_insn->mnemonic;
 
@@ -1755,8 +1755,8 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
         valid scape sequence is '%'. Note that the memory allocated to insn->mnemonic
         may not be complety used because of this.
       */
-      if (*mt == '\\') 
-        mt++; 
+      if (*mt == '\\')
+        mt++;
         *mnem = *mt;
         mnem++;
         mt++;
@@ -1770,9 +1770,9 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       /* concatenate the rest of the string */
       while (*mt != '\0') {
 
-        if (*mt == '\\') 
+        if (*mt == '\\')
           mt++;
-  
+
         *mnem = *mt;
         mnem++;
         mt++;
@@ -1787,10 +1787,10 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       if( pf == NULL ) {
         sprintf(error_msg, "Internal Error"); /* this should never happen */
         return 0;
-      } 
+      }
       ac_dec_field *pfield = mnemonic_marker_field;
 
-      /* add a constant field */ 
+      /* add a constant field */
       ac_const_field_list *cfield = (ac_const_field_list *)malloc(sizeof(ac_const_field_list));
       cfield->next = NULL;
 
@@ -1801,31 +1801,31 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       cfield->field.size = pfield->size;
       cfield->field.first_bit = pfield->first_bit;
       cfield->field.id = 0; /* not used */
-      
+
 
       if (insn->const_fields == NULL) {
         insn->const_fields = cfield;
       }
       else { /* add at the head */
         cfield->next = insn->const_fields;
-        insn->const_fields = cfield;           
+        insn->const_fields = cfield;
       }
-      
+
       sl = sl->next;
     }
     else { /* only one mnemonic */
 
       insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+1);
       strcpy(insn->mnemonic, current_insn->mnemonic);
- 
+
       exit_loop = 1;
     }
 
 
 //    print_asm_insn(insn);
-    
 
-    /* Insert the new ac_asm_insn into the asm_insn_list 
+
+    /* Insert the new ac_asm_insn into the asm_insn_list
        It's inserted in alphabetical ordering. In case there are two or more
        insns with the same mnemonic, its order in the list is the same as they
        appear in the ArchC source file */
@@ -1836,7 +1836,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
 
       ac_asm_insn *t = asm_insn_list;
       ac_asm_insn *last = asm_insn_list;
-      
+
       if (strcmp(insn->mnemonic, t->mnemonic) < 0) { /* insert in the head */
         insn->next = asm_insn_list;
         asm_insn_list = insn;
@@ -1915,12 +1915,12 @@ int acpp_asm_add_pseudo_member(char *pseudo, char *error_msg)
   strlist *sl = (strlist *)malloc(sizeof(strlist));
   sl->next = NULL;
 
-  if (!acpp_asm_parse_asm_string(pseudo, 1, error_msg)) 
+  if (!acpp_asm_parse_asm_string(pseudo, 1, error_msg))
     return 0;
 
   sl->str = (char *) malloc(strlen(formatted_pseudo)+1);
   strcpy(sl->str, formatted_pseudo);
- 
+
   /* Insert the pseudo string in the list - at the tail */
   strlist *pL = pseudo_list;
 

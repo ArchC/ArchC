@@ -1,4 +1,4 @@
-/* ex: set tabstop=2 expandtab: 
+/* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /**
@@ -8,76 +8,83 @@
  *            Alexandro Baldassin
  *            Thiago Sigrist
  *            Marilia Chiozo
- * 
+ *
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
- * 
+ *
  * @version   1.0
  * @date      Fri, 02 Jun 2006 10:59:18 -0300
- * 
+ *
  * @brief     Core language semantic actions
- * 
+ *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
 
 #include "core_actions.h"
+#include "bj_hash.h"
 #include <ctype.h>
 #include <string.h>
 
-static ac_dec_instr *instr_list_tail;
-static ac_sto_list *storage_list_tail;
-static ac_pipe_list *pipe_list_tail;
-static ac_cache_parms *parms_list_tail;
-static ac_dec_field *field_list;     
-static ac_cache_parms *parms_list;
+static ac_pipe_list* pipe_list_tail;
+static ac_cache_parms* parms_list_tail;
+static ac_dec_field* field_list;
+static ac_cache_parms* parms_list;
 
+static int parse_format(char** fieldstr, int sum_size, int size_limit, ac_dec_field** field_list_head, ac_dec_field** field_list_tail, char* error_msg);
 
-static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_field **field_list_head, ac_dec_field **field_list_tail, char *error_msg);
+static symbol_table_entry* symbol_table[1 << ST_IDX_SIZE];
 
-
-
-ac_dec_format *format_ins_list;    
-ac_dec_format *format_ins_list_tail;
-ac_dec_field  *common_instr_field_list;
-ac_dec_field  *common_instr_field_list_tail;
-ac_dec_format *format_reg_list;    
-ac_dec_format *format_reg_list_tail;
-ac_dec_instr *instr_list;          
-ac_pipe_list *pipe_list;           
-ac_stg_list  *stage_list;          
-ac_sto_list  *storage_list;        
-ac_sto_list  *tlm_intr_port_list;
-ac_sto_list  *tlm_intr_port_list_tail;
-
+ac_dec_format* format_ins_list;
+ac_dec_format* format_ins_list_tail;
+ac_dec_field* common_instr_field_list;
+ac_dec_field* common_instr_field_list_tail;
+ac_dec_format* format_reg_list;
+ac_dec_format* format_reg_list_tail;
+ac_dec_instr* instr_list;
+ac_dec_instr* instr_list_tail;
+ac_grp_list* group_list;
+ac_grp_list* group_list_tail;
+ac_pipe_list* pipe_list;
+ac_stg_list* stage_list;
+ac_sto_list* storage_list;
+ac_sto_list* storage_list_tail;
+ac_sto_list* tlm_intr_port_list;
+ac_sto_list* tlm_intr_port_list_tail;
 
 int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveCycleRange;
 int ControlInstrInfoLevel;
 int HaveTLMPorts;
 int HaveTLMIntrPorts;
 
-int instr_num;     
-int declist_num;  
-int format_num;   
-int const_count;  
-int stage_num;    
-int pipe_num;     
-int reg_width;   
+int instr_num;
+int declist_num;
+int format_num;
+int group_num;
+int const_count;
+int stage_num;
+int pipe_num;
+int reg_width;
 int largest_format_size;
 
-ac_sto_list *fetch_device; 
+ac_sto_list* fetch_device;
+
+char* helper_body;
 
 
 
-
-
-
-void init_core_actions() 
+void init_core_actions()
 {
+  unsigned i;
+
+  /* initializing symbol table */
+  for (i = 0; i < (1 << ST_IDX_SIZE); i++)
+   symbol_table[i] = NULL;
+
   /* module variables */
   instr_list_tail = NULL;
   storage_list_tail = NULL;
@@ -87,11 +94,11 @@ void init_core_actions()
   parms_list = NULL;
 
   /* interface variables */
-  format_ins_list = NULL; 
+  format_ins_list = NULL;
   format_ins_list_tail = NULL;
   common_instr_field_list = NULL;
   common_instr_field_list_tail = NULL;
-  format_reg_list = NULL; 
+  format_reg_list = NULL;
   format_reg_list_tail = NULL;
   instr_list = NULL;
   pipe_list = NULL;
@@ -99,74 +106,161 @@ void init_core_actions()
   storage_list = NULL;
   tlm_intr_port_list = NULL;
   tlm_intr_port_list_tail = NULL;
+  group_list = NULL;
 
-  HaveFormattedRegs = 0; 
+  HaveFormattedRegs = 0;
   HaveMultiCycleIns = 0;
   HaveMemHier = 0;
   HaveCycleRange = 0;
   ControlInstrInfoLevel = 0;
   HaveTLMPorts = 0;
-  HaveTLMIntrPorts = 0;   
+  HaveTLMIntrPorts = 0;
 
-  instr_num = 0;     
-  declist_num = 0;  
-  format_num = 0;   
-  const_count = 0;  
-  stage_num = 0;    
-  pipe_num = 0;     
-  reg_width = 0;  
+  instr_num = 0;
+  declist_num = 0;
+  format_num = 0;
+  group_num = 0;
+  const_count = 0;
+  stage_num = 0;
+  pipe_num = 0;
+  reg_width = 0;
   largest_format_size = 0;
 
   fetch_device = NULL;
+
+  helper_body = NULL;
+
+  return;
 }
 
-
-ac_dec_instr *find_instr(char *name)
+symbol_table_entry* find_symbol(char* name, ac_parser_type type)
 {
-  ac_dec_instr *pinstr = instr_list;
-  
-  while (pinstr != NULL) {
-    if (!strcmp(pinstr->name, name)) break;
-    pinstr = pinstr->next;
-  }
-  
-  return pinstr;
+ symbol_table_entry* p = NULL;
+ unsigned idx;
+
+ idx = (unsigned) (bj_hash((void*) name, strlen(name), 0) & ((1 << ST_IDX_SIZE) - 1));
+ p = symbol_table[idx];
+ while (p != NULL)
+ {
+  if (!strcmp(p->name, name))
+   break;
+  p = p->next;
+ }
+ return p;
 }
 
-ac_dec_format *find_format(char *name)
+int add_symbol(char* name, ac_parser_type type, void* info)
 {
-  ac_dec_format *pformat = format_ins_list;
+ symbol_table_entry* p;
+ unsigned idx;
 
-  while (pformat != NULL) {
-    if (!strcmp(pformat->name, name)) break;
-    pformat = pformat->next;
-  }
-
-  return pformat;
+ if (find_symbol(name, type) != NULL)
+  return 0;
+ idx = (unsigned) (bj_hash((void*) name, strlen(name), 0) & ((1 << ST_IDX_SIZE) - 1));
+ if (symbol_table[idx] == NULL)
+ {
+  symbol_table[idx] = (symbol_table_entry*) malloc(sizeof(symbol_table_entry));
+  p = symbol_table[idx];
+ }
+ else
+ {
+  p = symbol_table[idx];
+  while (p->next != NULL)
+   p = p->next;
+  p->next = (symbol_table_entry*) malloc(sizeof(symbol_table_entry));
+  p = p->next;
+ }
+ p->name = (char*) malloc(sizeof(char) * (1 + strlen(name)));
+ strcpy(p->name, name);
+ p->type = type;
+ p->info = info;
+ return 1;
 }
 
-ac_sto_list *find_storage(char *name)
+void purge_symbol_table(void)
 {
-  ac_sto_list *pstorage = storage_list;
+ symbol_table_entry* p;
+ symbol_table_entry* tmp;
+ unsigned idx;
 
-  while (pstorage != NULL) {
-    if (!strcmp(pstorage->name, name)) break;
-    pstorage = pstorage->next;
+ for (idx = 0; idx < (1 << ST_IDX_SIZE); idx++)
+ {
+  p = symbol_table[idx];
+  while (p != NULL)
+  {
+   tmp = p->next;
+   free(p);
+   p = tmp;
   }
-
-  return pstorage;
+ }
+ return;
 }
 
-ac_dec_field *find_field(ac_dec_format *pformat, char *name)
+ac_dec_instr* find_instr(char* name)
 {
-  ac_dec_field *pfield = pformat->fields;
-  
-  while (pfield != NULL) {
-    if (!strcmp(pfield->name, name)) break;
+/*** Old implementation, replaced by symbol table aware implementation. --Marilia
+ ac_dec_instr* pinstr = instr_list;
 
-    pfield = pfield->next;
-  }
-  return pfield;
+ while (pinstr != NULL)
+ {
+  if (!strcmp(pinstr->name, name))
+   break;
+  pinstr = pinstr->next;
+ }
+ return pinstr;
+*/
+ symbol_table_entry* p;
+
+ p = find_symbol(name, INSTR);
+ if (p)
+  return ((ac_dec_instr*) p->info);
+ return NULL;
+}
+
+ac_dec_format* find_format(char* name)
+{
+ /*** Old implementation, replaced by symbol table aware implementation. --Marilia
+ ac_dec_format* pformat = format_ins_list;
+
+ while (pformat != NULL)
+ {
+  if (!strcmp(pformat->name, name)) break;
+   pformat = pformat->next;
+ }
+ return pformat;
+ */
+ symbol_table_entry* p;
+
+ p = find_symbol(name, INSTR_FMT);
+ if (p)
+  return ((ac_dec_format*) p->info);
+ return NULL;
+}
+
+ac_sto_list* find_storage(char* name)
+{
+ ac_sto_list* pstorage = storage_list;
+
+ while (pstorage != NULL)
+ {
+  if (!strcmp(pstorage->name, name))
+   break;
+  pstorage = pstorage->next;
+ }
+ return pstorage;
+}
+
+ac_dec_field* find_field(ac_dec_format* pformat, char* name)
+{
+ ac_dec_field* pfield = pformat->fields;
+
+ while (pfield != NULL)
+ {
+  if (!strcmp(pfield->name, name))
+   break;
+  pfield = pfield->next;
+ }
+ return pfield;
 }
 
 
@@ -178,15 +272,17 @@ ac_dec_field *find_field(ac_dec_format *pformat, char *name)
   \param str      String containg field declarations.
   \param is_instr 0 for a register format, nonzero for instruction format. */
 /***************************************/
-int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* str, char *error_msg, int is_instr)
+int add_format(ac_dec_format** head, ac_dec_format** tail, char* name, char* str, char* error_msg, int is_instr)
 {
-  ac_dec_field *field_list_tail = field_list;
-  ac_dec_field *pfield, *pf, *ppf;
-  ac_dec_format *pformat;
+  ac_dec_field* field_list_tail = field_list;
+  ac_dec_field* pfield;
+  ac_dec_field* pf;
+  ac_dec_field* ppf;
+  ac_dec_format* pformat;
   int sum_size = parse_format(&str, 0, -1, &field_list, &field_list_tail, error_msg);
 
   if (sum_size == -1) return 0;
-  
+
   //Create new format
   pformat = (ac_dec_format*) malloc( sizeof(ac_dec_format));
   pformat->name  = name;
@@ -198,7 +294,7 @@ int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* st
   field_list = 0;
 
   //Keeping track of the largest format
-  if( sum_size >largest_format_size ) 
+  if( sum_size >largest_format_size )
     largest_format_size = sum_size;
 
   //Put new format in the formats list
@@ -274,14 +370,13 @@ int add_format( ac_dec_format **head, ac_dec_format **tail, char *name, char* st
 }
 
 
-
 /***************************************/
 /*!Add instruction to instruction list.
   \param name The name of the instruction to be added. */
 /***************************************/
-int add_instr(char* name, char *typestr, ac_dec_instr **pinstr, char *error_msg) 
+int add_instr(char* name, char* typestr, ac_dec_instr** pinstr, char* error_msg)
 {
-  ac_dec_instr *ppins;
+  ac_dec_instr* ppins;
 
   (*pinstr) = (ac_dec_instr*) malloc( sizeof(ac_dec_instr));
   (*pinstr)->name = (char*) malloc( strlen(name)+1);
@@ -316,77 +411,148 @@ int add_instr(char* name, char *typestr, ac_dec_instr **pinstr, char *error_msg)
 
 
 /**************************************/
+/*! Add a new group to group list.
+  \param name The name of the group to be added. */
+/**************************************/
+ac_grp_list* add_group(char* name)
+{
+ ac_grp_list* group;
+
+ group_num++;
+ group = (ac_grp_list*) malloc(sizeof(ac_grp_list));
+ group->name = (char*) malloc(sizeof(char) * (1 + strlen(name)));
+ strcpy(group->name, name);
+ group->id = group_num;
+ group->instrs = NULL;
+ group->next = NULL;
+ if (group_list_tail)
+ {
+  group_list_tail->next = group;
+  group_list_tail = group;
+ }
+ else /* First group in the list */
+  group_list_tail = group_list = group;
+ return group;
+}
+
+
+/**************************************/
+/*! Add a instruction reference to a list.
+  \param name The name of the instruction to be added.
+  \param instr_refs Pointer to the instructions reference list. */
+/**************************************/
+int add_instr_ref(char* name, ac_instr_ref_list** instr_refs, char* error_msg)
+{
+ ac_instr_ref_list* list = *instr_refs;
+ ac_instr_ref_list* iref;
+
+ iref = (ac_instr_ref_list*) malloc(sizeof(ac_instr_ref_list));
+ iref->instr = find_instr(name);
+ if (iref->instr == NULL)
+ {
+  free(iref);
+  sprintf(error_msg, "Undeclared instruction: %s", name);
+  return 0;
+ }
+ iref->next = NULL;
+ if (list)
+ {
+  if (list->instr == iref->instr)
+  {
+   free(iref);
+   sprintf(error_msg, "Instruction %s already in group", name);
+   return 2;
+  }
+  while (list->next != NULL)
+  {
+   if (list->instr == iref->instr)
+   {
+    free(iref);
+    sprintf(error_msg, "Instruction %s already in group", name);
+    return 2;
+   }
+   list = list->next;
+  }
+  list->next = iref;
+ }
+ else
+  *instr_refs = iref;
+ return 1;
+}
+
+
+/**************************************/
 /*! Add a pipeline to pipe list.
   \param name The name of the pipeline to be added. */
 /***************************************/
-ac_pipe_list *add_pipe(char* name)
+ac_pipe_list* add_pipe(char* name)
 {
-  ac_pipe_list *ppipe;
-   
-  pipe_num++;
-  ppipe = (ac_pipe_list*) malloc( sizeof(ac_pipe_list));
-  ppipe->name = (char*) malloc( strlen(name)+1);
-  strcpy(ppipe->name, name);  
-  ppipe->id = pipe_num;
-  ppipe->stages = NULL;
-  ppipe->next = NULL;
+ ac_pipe_list* ppipe;
 
-  if( pipe_list_tail ){
-     pipe_list_tail->next = ppipe;
-     pipe_list_tail = ppipe;
-  }
-  else  { /*  First pipe being added to the list */
-     pipe_list_tail = pipe_list = ppipe;
-  }
+ pipe_num++;
+ ppipe = (ac_pipe_list*) malloc(sizeof(ac_pipe_list));
+ ppipe->name = (char*) malloc(sizeof(char) * (strlen(name) + 1));
+ strcpy(ppipe->name, name);
+ ppipe->id = pipe_num;
+ ppipe->stages = NULL;
+ ppipe->next = NULL;
 
-  return ppipe;
+ if (pipe_list_tail)
+ {
+  pipe_list_tail->next = ppipe;
+  pipe_list_tail = ppipe;
+ }
+ else
+ { /* First pipe being added to the list */
+  pipe_list_tail = pipe_list = ppipe;
+ }
+ return ppipe;
 }
-
 
 
 /**************************************/
 /*! Add stage to stage list.
   \param name The name of the stage to be added. */
 /***************************************/
-void add_stage( char* name, ac_stg_list** listp )
+ac_stg_list* add_stage(char* name, ac_stg_list** listp)
 {
-  ac_stg_list *list, *pstage;  
+ ac_stg_list* list;
+ ac_stg_list* pstage;
 
-  stage_num++;
-  pstage = (ac_stg_list*) malloc( sizeof(ac_stg_list));
-  pstage->name = (char*) malloc( strlen(name)+1);
-  strcpy(pstage->name, name); 
-  pstage->id = stage_num;
-  pstage->next = NULL;
+ stage_num++;
+ pstage = (ac_stg_list*) malloc(sizeof(ac_stg_list));
+ pstage->name = (char*) malloc(sizeof(char) * (strlen(name) + 1));
+ strcpy(pstage->name, name);
+ pstage->id = stage_num;
+ pstage->next = NULL;
 
-  list = *listp;
-  /* Inserting at the tail */
-  if( list ){
-
-     /* finding list tail */
-     for(; list->next != NULL; list= list->next ){}
-
-     /* Adding stage */
-     list->next = pstage;
-  }
-  else  { /*  First stage being added to the list */
-     *listp = pstage;
-  }
-
+ list = *listp;
+ /* Inserting at the tail */
+ if (list)
+ {
+  /* finding list tail */
+  for(; list->next != NULL; list = list->next);
+  /* Adding stage */
+  list->next = pstage;
+ }
+ else
+ { /* First stage being added to the list */
+  *listp = pstage;
+ }
+ return pstage;
 }
-
 
 
 /**************************************/
 /*! Add a new device to the storage list.
-  \param name The name of the device to be added. 
+  \param name The name of the device to be added.
   \param size The size of the device to be added.
   \param type The type of the device to be added. */
 /***************************************/
-int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, char *error_msg)
+int add_storage(char* name, unsigned size, ac_sto_types type, char* typestr, char* error_msg)
 {
   ac_sto_list *pstorage;
-   
+
   pstorage = (ac_sto_list*) malloc( sizeof(ac_sto_list));
   pstorage->name = (char*) malloc( strlen(name)+1);
   strcpy(pstorage->name,name);
@@ -396,7 +562,7 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
   }
   else
     pstorage->format = NULL;
-    
+
   pstorage->size = size;
 
 
@@ -410,13 +576,13 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
       parms_list = parms_list_tail = NULL;
     }
     else{ /* Generic cache object */
-      if (pstorage->size==0){        
+      if (pstorage->size==0){
         sprintf(error_msg, "Invalid size in cache declaration: %s", name);
         return 0;
       }
       else
         pstorage->parms = NULL;
-    }   
+    }
   }
 
   pstorage->type = type;
@@ -458,14 +624,13 @@ int add_storage( char* name, unsigned size, ac_sto_types type, char *typestr, ch
 }
 
 
-
 /**************************************/
 /*! Add a new field to the end of the decoding sequence list.
   \param pinstr Pointer to the current instruction.
   \param name   The name of the field to be added.
   \param value  The value of the field to be added. */
 /***************************************/
-int add_dec_list( ac_dec_instr *pinstr, char* name, int value, char *error_msg)
+int add_dec_list(ac_dec_instr* pinstr, char* name, int value, char* error_msg)
 {
   ac_dec_list *pdec_list;
   ac_dec_format *pformat;
@@ -473,7 +638,7 @@ int add_dec_list( ac_dec_instr *pinstr, char* name, int value, char *error_msg)
 
   /* Find format */
   pformat = find_format(pinstr->format);
-  if( pformat == NULL ) {     
+  if( pformat == NULL ) {
     sprintf(error_msg, "Instr %s: Format not found for this instruction", pinstr->name);
     return 0;
   }
@@ -504,19 +669,18 @@ int add_dec_list( ac_dec_instr *pinstr, char* name, int value, char *error_msg)
   else{
     ac_dec_list *aux;
     for(aux =pinstr->dec_list; aux->next != NULL; aux = aux->next);
-    aux->next = pdec_list;      
+    aux->next = pdec_list;
   }
 
   return 1;
 }
 
 
-
 /**************************************/
 /*! Get the existing structure for control flow instructions or create one.
   \param pinstr Pointer to the current instruction. */
 /***************************************/
-ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
+ac_control_flow* get_control_flow_struct(ac_dec_instr* pinstr)
 {
   if (!pinstr->cflow)
     pinstr->cflow = calloc(sizeof(ac_control_flow),1);
@@ -524,36 +688,32 @@ ac_control_flow *get_control_flow_struct(ac_dec_instr *pinstr)
 }
 
 
-
-void add_parms(char *name, int value)
+void add_parms(char* name, int value)
 {
   ac_cache_parms *pparms;
 
   pparms = (ac_cache_parms*) malloc( sizeof(ac_cache_parms));
-  pparms->value = value;  
+  pparms->value = value;
   if (name != NULL) {
-    pparms->str = (char*) malloc(strlen(name)+1); 
+    pparms->str = (char*) malloc(strlen(name)+1);
     strcpy(pparms->str, name);
   }
   else
     pparms->str = NULL;
 
   pparms->next = NULL;
-  
+
   if ( parms_list == NULL )
     parms_list = parms_list_tail= pparms;
   else {
     parms_list_tail->next = pparms;
     parms_list_tail = pparms;
-  }         
+  }
 }
 
 
 
 
-
-
-   
 /********************************************************/
 /*!Parse format string generating field list.
   \param fieldstr Reference to string containing field declarations.
@@ -562,12 +722,12 @@ void add_parms(char *name, int value)
   \param field_list_head Head of the field list.
   \param field_list_tail Tail of the field list.        */
 /********************************************************/
-static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_field **field_list_head, ac_dec_field **field_list_tail, char *error_msg)
+static int parse_format(char** fieldstr, int sum_size, int size_limit, ac_dec_field** field_list_head, ac_dec_field** field_list_tail, char* error_msg)
 {
-  char *str = *fieldstr;
+  char* str = *fieldstr;
   int first_bit = sum_size;
-  char *fieldend;
-  
+  char* fieldend;
+
   //Eat spaces
   for (; **fieldstr && isspace(**fieldstr); (*fieldstr)++);
 
@@ -632,7 +792,7 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
         //Set value
         pfield->val = 0;
       }
-      
+
       //Set size
       if (*fieldend != ':') {
         sprintf(error_msg, "Size not given in \"%s\"", *fieldstr);
@@ -641,7 +801,7 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
       *fieldstr = fieldend+1;
       value = strtol(*fieldstr, &fieldend, 0);
       if (fieldend == *fieldstr) {
-        sprintf(error_msg, "Invalid size in \"%s\", character %d", str, (*fieldstr)-str);        
+        sprintf(error_msg, "Invalid size in \"%s\", character %d", str, (*fieldstr)-str);
         return -1;
       }
       pfield->size = value;
@@ -652,7 +812,7 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
         (*fieldstr)++;
         if ((**fieldstr == 's') || (**fieldstr == 'S'))
           pfield->sign=1;
-        else if ((**fieldstr != 'u') && (**fieldstr != 'U')) {          
+        else if ((**fieldstr != 'u') && (**fieldstr != 'U')) {
           sprintf(error_msg, "Invalid sign specification in \"%s\", character %d", str, (*fieldstr)-str);
           return -1;
         }
@@ -663,7 +823,7 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
       pfield->first_bit = sum_size-1;
       //Set id
       pfield->id = 0;
-    
+
       //Put the new field in the list
       pfield->next = NULL;
       if(*field_list_head){
@@ -674,21 +834,21 @@ static int parse_format(char **fieldstr, int sum_size, int size_limit, ac_dec_fi
         *field_list_tail = *field_list_head = pfield;
       }
     }
-    
+
     //Eat spaces
     for (; **fieldstr && isspace(**fieldstr); (*fieldstr)++);
   }
-    
+
   return sum_size;
 }
 
+
 void str_upper(char* str)
 {
-  int i = 0;
-  int length = strlen(str);
+ int i = 0;
+ int length = strlen(str);
 
-  for (i = 0; i < length; i++) {
-    str[i] = toupper(str[i]);
-  }
+ for (i = 0; i < length; i++)
+  str[i] = toupper(str[i]);
+ return;
 }
-

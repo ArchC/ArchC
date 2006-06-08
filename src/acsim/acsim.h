@@ -25,9 +25,9 @@
 /* http://www.lsc.ic.unicamp.br                         */
 ////////////////////////////////////////////////////////////////
 
-/*!\file acsim.h                                                
-  \brief ArchC Simulator Generator header file                      
-  This file contains the structures and macro definitions    
+/*!\file acsim.h
+  \brief ArchC Simulator Generator header file
+  This file contains the structures and macro definitions
   needed by the ArchC Simulator.                              */
 ////////////////////////////////////////////////////////////////
 
@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ac_decoder.h"
+#include "ac_tools_common.h"
 
 /*Defining indentation */
 #define INDENT0  ""
@@ -71,7 +72,7 @@ char *TLM_PATH;       //!<Path to the TLM directory
 char *TARGET_ARCH;    //!<Architecture of the host machine.
 char *CC_PATH;        //!<C/C++ compiler path
 char *OPT_FLAGS;      //!<Optimization flags to be passed to the compiler
-char *DEBUG_FLAGS;    //!<Debugging flags to be passed to the compiler 
+char *DEBUG_FLAGS;    //!<Debugging flags to be passed to the compiler
 char *OTHER_FLAGS;    //!<Miscellaneous flags to be passed to the compiler
 //@}
 
@@ -109,52 +110,6 @@ enum _ac_cmd_options {
 
 typedef enum  _ac_cmd_options_ ac_cmd_options;
 
-//! Enumeration type for storage device types
-enum _ac_sto_types { MEM, CACHE, ICACHE, DCACHE, REG, REGBANK, TLM_PORT, TLM_INTR_PORT };
-
-typedef enum _ac_sto_types ac_sto_types;
-
-//! List of a Cache's parameters
-typedef struct _ac_cache_parms{
-  char *str;                    //!< Used for string parameters.
-  unsigned value;                       //!< Used for numerical parameters.
-  struct _ac_cache_parms *next; //!< Next element
-} ac_cache_parms;
-
-//! List of Storage Devices
-typedef struct _ac_sto_list{
-  char *name;                   //!< Device name.
-  char *format;                 //!< Device format. Only possible for registers.
-  unsigned size;                //!< Size expressed in bytes. Used for memories and generic caches.
-  unsigned width;               //!< Width of registers expressed in bits. Used for register banks.
-  unsigned level;               //!< Memory hierachy level. 
-  ac_sto_types type;            //!< Type of the device
-  struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
-  ac_cache_parms *parms;        //!< Parameter list used for (not generic) ac_cache  declarations.
-  struct _ac_sto_list *next;    //!< Next element
-} ac_sto_list;
-
-//!List of Stages
-typedef struct _ac_stg_list{
-  char *name;                   //!< Device name.
-  unsigned id;                  //!< Stage Identification Number.
-  struct _ac_stg_list *next;    //!< Next element
-} ac_stg_list;
-
-//!List of Pipelines
-typedef struct _ac_pipe_list{
-  char *name;                   //!< Device name.
-  unsigned id;                  //!< Pipe identification Number.
-  ac_stg_list *stages;          //!< List of Stages
-  struct _ac_pipe_list *next;   //!< Next element
-} ac_pipe_list;
-
-//!Used to check the endianess of the host machine.
-typedef union  {
-  int i;
-  char c[4];
-}endian;
-
 //@}
 
 ///////////////////////////////////////
@@ -182,10 +137,10 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name);  //!< Creates th
 void CreateProcessorHeader(void);                 //!< Creates the header file for the processor module.
 void CreateParmHeader(void);                      //!< Creates the header file for ArchC common parameters.
 void CreateRegsHeader(void);                      //!< Creates the header file for ArchC formatted registers.
-void CreateStatsHeaderTmpl(void);                     //!< Creates the header file for ArchC statistics collection class.    
+void CreateStatsHeaderTmpl(void);                     //!< Creates the header file for ArchC statistics collection class.
 //!Create the implementation file for ArchC statistics collection class.
 void CreateStatsImplTmpl();
-void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls. 
+void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls.
 void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
 void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.
 void CreateMakefile(void);                        //!< Creates a Makefile for teh ArchC nodel.
