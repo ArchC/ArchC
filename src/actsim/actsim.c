@@ -1229,6 +1229,7 @@ void CreateParmHeader(void)
 void CreateISAHeader(void)
 {
  extern ac_pipe_list* pipe_list;
+ extern ac_grp_list* group_list;
  extern int stage_num;
  extern ac_dec_format* format_ins_list;
  extern ac_dec_field* common_instr_field_list;
@@ -1237,6 +1238,7 @@ void CreateISAHeader(void)
  extern int HaveFormattedRegs, HaveMultiCycleIns;
  ac_stg_list* pstage;
  ac_pipe_list* ppipe;
+ ac_grp_list* pgroup;
  ac_dec_field* pfield;
  ac_dec_format* pformat;
  ac_dec_instr* pinstr;
@@ -1279,6 +1281,9 @@ void CreateISAHeader(void)
  fprintf(output, "%sprivate:\n", INDENT[1]);
  fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n",
          INDENT[2], project_name);
+ for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
+  fprintf(output, "%sstatic bool group_%s[%s_parms::AC_DEC_INSTR_NUMBER];\n",
+          INDENT[2], pgroup->name, project_name);
  fprintf(output, "\n");
  fprintf(output, "%spublic:\n", INDENT[1]);
  fprintf(output, "%sunsigned current_instruction_id;\n", INDENT[2]);
@@ -1389,6 +1394,19 @@ void CreateISAHeader(void)
  fprintf(output, "%sinline const unsigned get_max_latency(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
  fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
  fprintf(output, "\n");
+ // Group query methods.
+ for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
+ {
+  fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
+          INDENT[2], pgroup->name, INDENT[2]);
+  fprintf(output, "%sreturn group_%s[current_instruction_id];\n%s}\n",
+          INDENT[3], pgroup->name, INDENT[2]);
+  fprintf(output, "\n");
+  fprintf(output, "%sinline const bool belongs_to_%s(unsigned id)\n%s{\n",
+          INDENT[2], pgroup->name, INDENT[2]);
+  fprintf(output, "%sreturn group_%s[id];\n%s}\n", INDENT[3], pgroup->name, INDENT[2]);
+  fprintf(output, "\n");
+ }
  // Instruction Behavior Method declarations.
  // Instruction (generic -- really, someone should rename this --Marilia).
  fprintf(output, "%svoid _behavior_instruction(%s_parms::ac_stage_list stage, unsigned cycle",
@@ -3328,6 +3346,11 @@ void CreateArchGDBImplTmpl(void)
 void CreateISAInitImpl(void)
 {
  extern char* project_name;
+ extern ac_dec_instr* instr_list;
+ extern ac_grp_list* group_list;
+ ac_dec_instr* pinstr;
+ ac_grp_list* pgroup;
+ ac_instr_ref_list* pref;
  char* filename;
  FILE* output;
 
@@ -3343,6 +3366,25 @@ void CreateISAInitImpl(void)
  print_comment(output, "ISA initialization file.");
  fprintf(output, "#include \"%s_parms.H\"\n\n", project_name);
  fprintf(output, "#include \"%s_isa.H\"\n\n", project_name);
+ for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
+ {
+  fprintf(output, "%sbool %s_isa::group_%s[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s{\n",
+          INDENT[0], project_name, pgroup->name, project_name, INDENT[1]);
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
+  {
+   for (pref = pgroup->instrs; pref != NULL; pref = pref->next)
+    if (pref->instr == pinstr)
+     break;
+   if (pref == NULL)
+    fprintf(output, "%sfalse", INDENT[2]);
+   else
+    fprintf(output, "%strue", INDENT[2]);
+   if (pinstr->next)
+    fprintf(output, ",\n");
+   else
+    fprintf(output, "\n%s};\n\n", INDENT[1]);
+  }
+ }
  EmitDecStruct(output);
  fclose(output);
  return;

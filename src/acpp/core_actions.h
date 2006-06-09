@@ -105,7 +105,6 @@ extern ac_sto_list* fetch_device; //!< Indicates the device used for fetching in
 extern void init_core_actions();
 extern symbol_table_entry* find_symbol(char* name, ac_parser_type type);
 extern int add_symbol(char* name, ac_parser_type type, void* info);
-extern void purge_symbol_table(void);
 extern ac_dec_instr* find_instr(char* name);
 extern ac_dec_format* find_format(char* name);
 extern ac_sto_list *find_storage(char* name);

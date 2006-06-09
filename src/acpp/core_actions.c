@@ -177,38 +177,8 @@ int add_symbol(char* name, ac_parser_type type, void* info)
  return 1;
 }
 
-void purge_symbol_table(void)
-{
- symbol_table_entry* p;
- symbol_table_entry* tmp;
- unsigned idx;
-
- for (idx = 0; idx < (1 << ST_IDX_SIZE); idx++)
- {
-  p = symbol_table[idx];
-  while (p != NULL)
-  {
-   tmp = p->next;
-   free(p);
-   p = tmp;
-  }
- }
- return;
-}
-
 ac_dec_instr* find_instr(char* name)
 {
-/*** Old implementation, replaced by symbol table aware implementation. --Marilia
- ac_dec_instr* pinstr = instr_list;
-
- while (pinstr != NULL)
- {
-  if (!strcmp(pinstr->name, name))
-   break;
-  pinstr = pinstr->next;
- }
- return pinstr;
-*/
  symbol_table_entry* p;
 
  p = find_symbol(name, INSTR);
@@ -219,16 +189,6 @@ ac_dec_instr* find_instr(char* name)
 
 ac_dec_format* find_format(char* name)
 {
- /*** Old implementation, replaced by symbol table aware implementation. --Marilia
- ac_dec_format* pformat = format_ins_list;
-
- while (pformat != NULL)
- {
-  if (!strcmp(pformat->name, name)) break;
-   pformat = pformat->next;
- }
- return pformat;
- */
  symbol_table_entry* p;
 
  p = find_symbol(name, INSTR_FMT);

@@ -52,8 +52,8 @@ extern int  ac_tgt_endian;
 /* Function prototypes */
 
 /*!
- * Initialises the pre-processor.
- * Always call this functions before doing any other acpp function
+ * Initialises the preprocessor.
+ * Always call this function before doing any other acpp function
  * call.
  *
  * \param[in] force_asm_syntax
@@ -68,7 +68,7 @@ extern void acppInit(int force_asm_syntax);
  * \parm[in] filename name of the file to be parsed
  * \return 1 if file is open, 0 otherwise
  */
-extern int  acppLoad(char *filename);
+extern int acppLoad(char *filename);
 
 /*!
  * Unloads any previously loaded file.
@@ -83,8 +83,7 @@ extern void acppUnload();
  *
  * \return  1 if an error ocurred while parsing, 0 otherwise
  */
-extern int  acppRun();
-
+extern int acppRun();
 
 /** @} */
 
