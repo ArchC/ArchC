@@ -156,7 +156,8 @@ static const unsigned char charmap[] = {
 	(uc)'\370',(uc)'\371',(uc)'\372',(uc)'\373',(uc)'\374',(uc)'\375',(uc)'\376',(uc)'\377',
 };
 
-static int case_insensitive = 0;
+static int insensitive_symbols = 0;
+static int sensitive_mno = 0;
 
 /* hash tables: symbol and opcode */
 static struct hash_control *sym_hash = NULL;
@@ -260,7 +261,7 @@ md_begin()
     const char *t_symbol = udsymbols[i].symbol;
     char *symtoadd = NULL;
 
-    if (case_insensitive) {
+    if (insensitive_symbols) {
       symtoadd  = (char *) malloc(strlen(t_symbol)+1);
       strcpy(symtoadd, t_symbol);
       strtolower(symtoadd);
@@ -298,6 +299,14 @@ md_assemble(char *str)
      'str' we are parsing at the moment */
   char *s_pos = str;
 
+  /* pointer to the mnemonic string - 0-ended */
+  char *p_mnemonic = sensitive_mno ? original_case_string : str;
+
+  /* if it is a pseudo instruction we always use 'str' because
+     'original_case_string' is not filled by pseudo_assemble */
+  if (has_pseudo)
+    p_mnemonic = str;
+
   /* a char used to store the value of the char in a string whenever we need 
      to break the original 'str' into substrings adding '\0', so we can
      restore the 'str' to full original string later */
@@ -305,7 +314,6 @@ md_assemble(char *str)
 
   /* buffer used to store ArchC argument string and a pointer to scan it */
   char buffer[200];
-
 
   /* advance till first space (this indicates we should have got a mnemonic) 
      or end of string (maybe a mnemonic with no operands) */
@@ -320,12 +328,12 @@ md_assemble(char *str)
   *s_pos = '\0';
 
   /* try finding the opcode in the hash table */
-  insn = (acasm_opcode *) hash_find (op_hash, str);
+  insn = (acasm_opcode *) hash_find (op_hash, p_mnemonic);
 
   /* if the instruction was not found then abort this insn encoding (it won't
      abort the assembler though, just move to the next one) */
   if (insn == NULL) {
-    as_bad (_("unrecognized mnemonic: %s"), str);
+    as_bad (_("unrecognized mnemonic: %s"), p_mnemonic);
     return;
   }
 
@@ -347,7 +355,7 @@ md_assemble(char *str)
     out_insn.is_pseudo = insn->pseudo_idx;
     insn_error = NULL;
 
-    if (case_insensitive) {
+    if (insensitive_symbols) {
       strtolower(s_pos);
       strtolower(buffer);
     }
@@ -365,13 +373,13 @@ md_assemble(char *str)
   } 
 
   if (insn_error) {
-    as_bad(_("%s in insn: '%s'"), insn_error, str);
+    as_bad(_("%s in insn: '%s'"), insn_error, p_mnemonic);
     return;
   }
 
   if (insn->pseudo_idx) {
     if (has_pseudo != 0) {
-      as_bad(_("Pseudo-insn %s called by another pseudo-insn. Not assembled.'\n"), str);
+      as_bad(_("Pseudo-insn %s called by another pseudo-insn. Not assembled.'\n"), p_mnemonic);
       return;    
     }
     has_pseudo = 1;
@@ -960,7 +968,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
 char *
 ___arch_name___`_canonicalize_symbol_name'(char *c)
 {
-  if (case_insensitive) {
+  if (insensitive_symbols) {
     strtolower(c);
   }
 
@@ -1142,12 +1150,13 @@ static int ac_valid_symbol(char *ac_symbol, char *parser_symbol, long int *value
    void md_after_parse_args ()
 --------------------------------------------------------------------------------------
 */
-const char *md_shortopts = "i";
+const char *md_shortopts = "is";
 
 struct option md_longopts[] =
 {
-  {"insensitive", no_argument, NULL, OPTION_MD_BASE},
-  {"archc", no_argument, NULL, OPTION_MD_BASE+1} 
+  {"insensitive-syms", no_argument, NULL, OPTION_MD_BASE},
+  {"sensitive-mno", no_argument, NULL, OPTION_MD_BASE+1},
+  {"archc", no_argument, NULL, OPTION_MD_BASE+2} 
 };
 size_t md_longopts_size = sizeof (md_longopts);
 
@@ -1167,10 +1176,15 @@ md_parse_option (int c, char *arg ATTRIBUTE_UNUSED)
   {
     case OPTION_MD_BASE+0:
     case 'i':
-      case_insensitive = 1;
+      insensitive_symbols = 1;
+      break;
+    
+    case OPTION_MD_BASE+1:
+    case 's':
+      sensitive_mno = 1;
       break;
      
-    case OPTION_MD_BASE+1: /* display archc version information; */  
+    case OPTION_MD_BASE+2: /* display archc version information; */  
       archc_show_information();
       exit (EXIT_SUCCESS); 
       break;
@@ -1189,7 +1203,10 @@ md_show_usage (FILE *stream)
   fprintf (stream, "md options:\n\n");
 
   fprintf (stream, _("\
-  -i,--insensitive        use case-insensitive symbols\n"));
+  -i,--insensitive-syms   use case-insensitive symbols\n"));
+
+  fprintf (stream, _("\
+  -s,--sensitive-mno      use case-sensitive mnemonic strings\n"));
   
   fprintf (stream, _("\
   --archc                 display ArchC information\n"));
