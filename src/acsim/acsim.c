@@ -527,7 +527,7 @@ int main(int argc, char** argv) {
 
 	//Formatted registers have a special class.
 	if( pstorage->format != NULL ){
-	  fprintf( output, "%sac_%s %s;\n", INDENT[1], pstorage->name, pstorage->name);
+	  fprintf( output, "%s%s_fmt_%s %s;\n", INDENT[1], project_name, pstorage->name, pstorage->name);
 	}
 	else{
 	  switch( (unsigned)(pstorage->width) ){
@@ -755,7 +755,7 @@ int main(int argc, char** argv) {
 
 	//Formatted registers have a special class.
 	if( pstorage->format != NULL ){
-	  fprintf( output, "%sac_%s& %s;\n", INDENT[1], pstorage->name, pstorage->name);
+	  fprintf( output, "%s%s_fmt_%s& %s;\n", INDENT[1], project_name, pstorage->name, pstorage->name);
 	}
 	else{
 	  switch( (unsigned)(pstorage->width) ){
@@ -1735,7 +1735,7 @@ void CreateRegsHeader() {
         }
       }
       //Declaring formatted register class.
-      fprintf( output, "class ac_%s {\n", pstorage->name);
+      fprintf( output, "class %s_fmt_%s {\n", project_name, pstorage->name);
       fprintf( output, "%sstring name;\n", INDENT[1]);
       fprintf( output, "public:\n");
 
@@ -1748,10 +1748,10 @@ void CreateRegsHeader() {
 
       //Declaring class constructor.
       if (ACDelayFlag) {
-        fprintf( output, "%sac_%s(char* n, double& ts): \n", INDENT[1], pstorage->name);
+        fprintf( output, "%s%s_fmt_%s(char* n, double& ts): \n", INDENT[1], project_name, pstorage->name);
       }
       else {
-        fprintf( output, "%sac_%s(char* n): \n", INDENT[1], pstorage->name);
+        fprintf( output, "%s%s_fmt_%s(char* n): \n", INDENT[1], project_name, pstorage->name);
       }
       for( pfield = pformat->fields; pfield->next != NULL; pfield = pfield->next) {
         //Initializing field names with reg name. This is to enable Formatted Reg stats.
