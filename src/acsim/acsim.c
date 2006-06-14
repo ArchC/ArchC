@@ -3920,10 +3920,19 @@ void EmitUpdateMethod( FILE *output){
         fprintf( output, "%s%s.process_request( );\n", INDENT[1], pstorage->name);
     }
   }
-  fprintf(output, "%sif (ac_stop_flag == 0)\n", INDENT[1]);
-  fprintf( output, "%swait(1, SC_NS);\n", INDENT[2]);
+  fprintf(output, "%sif (ac_stop_flag) {\n", INDENT[1]);
+  fprintf( output, "%sreturn;\n", INDENT[2]);
+  fprintf( output, "%s}\n", INDENT[1]);
+  fprintf( output, "%selse {\n", INDENT[1]);
+  fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", INDENT[2]);
+  fprintf( output, "%sinstr_in_batch++;\n", INDENT[3]);
+  fprintf( output, "%s}\n", INDENT[2]);
+  fprintf( output, "%selse {\n", INDENT[2]);
+  fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[3]);
+  fprintf( output, "%swait(1, SC_NS);\n", INDENT[3]);
+  fprintf( output, "%s}\n", INDENT[2]);
 
-  fprintf(output, "%selse return;\n\n", INDENT[1]);
+  fprintf(output, "%s}\n\n", INDENT[1]);
 
   fprintf( output, "%s} // for (;;)\n", INDENT[0]);
   fprintf( output, "%s} // behavior()\n\n", INDENT[0]);

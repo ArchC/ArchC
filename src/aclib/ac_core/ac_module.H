@@ -51,6 +51,9 @@ class ac_module: public sc_module
 
   int ac_exit_status;
 
+  unsigned int instr_in_batch;
+  unsigned int instr_batch_size;
+
   // SystemC special declaration.
   SC_HAS_PROCESS(ac_module);
 
@@ -74,6 +77,9 @@ class ac_module: public sc_module
 
   /// Public method that unregisters module (ie, it's no longer running).
   void set_stopped();
+
+  /// Public method that sets the size of the uninterrupted instruction batch
+  void set_instr_batch_size(unsigned int size);
 
 };
 
