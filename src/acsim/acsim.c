@@ -499,7 +499,7 @@ int main(int argc, char** argv) {
       fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
 
     if( HaveFormattedRegs )
-      fprintf( output, "#include  \"ac_fmt_regs.H\"\n");
+      fprintf( output, "#include  \"%s_fmt_regs.H\"\n", project_name);
     fprintf( output, " \n");
 
     if (ACGDBIntegrationFlag) {
@@ -1684,81 +1684,113 @@ int main(int argc, char** argv) {
   }
 
   //!Creates Formatted Registers Header File
-  void CreateRegsHeader() {
-    extern ac_dec_format *format_reg_list;
-    extern ac_sto_list *storage_list;
+void CreateRegsHeader() {
+  extern ac_dec_format *format_reg_list;
+  extern ac_sto_list *storage_list;
 
-    ac_sto_list *pstorage;
-    ac_dec_format *pformat;
-    ac_dec_field *pfield;
+  extern char* project_name;
+  extern char* upper_project_name;
 
-    int flag = 1;
-    FILE *output;
-    char filename[] = "ac_fmt_regs.H";
+  ac_sto_list *pstorage;
+  ac_dec_format *pformat;
+  ac_dec_field *pfield;
+
+  int flag = 1;
+  FILE *output;
+  char filename[256];
+
+  sprintf( filename, "%s_fmt_regs.H", project_name);
+
+  for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
+
+    if(( pstorage->type == REG ) && (pstorage->format != NULL )){
+
+      if(flag){  //Print this just once.
+        if ( !(output = fopen( filename, "w"))){
+          perror("ArchC could not open output file");
+          exit(1);
+        }
 
 
-    for( pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next ){
+        print_comment( output, "ArchC Formatted Registers header file.");
+        fprintf( output, "#ifndef  %s_FMT_REGS_H\n", upper_project_name);
+        fprintf( output, "#define  %s_FMT_REGS_H\n\n", upper_project_name);
 
-      if(( pstorage->type == REG ) && (pstorage->format != NULL )){
+        fprintf( output, "#include  <iostream>\n");
+        fprintf( output, "#include  <string>\n");
+        fprintf( output, "#include  \"ac_reg.H\"\n");
+        fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
+        fprintf( output, "\n\n");
 
-	if(flag){  //Print this just once.
-	  if ( !(output = fopen( filename, "w"))){
-	    perror("ArchC could not open output file");
-	    exit(1);
-	  }
+        fprintf( output, "using std::ostream;\n");
+        fprintf( output, "using std::string;\n\n");
 
-
-	  print_comment( output, "ArchC Formatted Registers header file.");
-	  fprintf( output, "#ifndef  _AC_FMT_REGS_H\n");
-	  fprintf( output, "#define  _AC_FMT_REGS_H\n\n");
-	
-	  fprintf( output, "#include  \"ac_storage.H\"\n");
-	  fprintf( output, "#include  \"ac_parms.H\"\n");
-	  fprintf( output, "\n\n");
-
-	  COMMENT(INDENT[0],"ArchC classes for formatted registers.\n");
-	  flag = 0;
-	}
-
-	for( pformat = format_reg_list; pformat!= NULL; pformat=pformat->next){
-	  if(!(strcmp(pformat->name, pstorage->format))){
-	    break;
-	  }
-	}
-	//Declaring formatted register class.
-	fprintf( output, "class ac_%s {\n", pstorage->name);
-	fprintf( output, "%schar* name;\n", INDENT[1]);
-	fprintf( output, "public:\n");
-	
-	//TO DO: Registers with parameterized size. The templated class ac_reg is still not
-	//       working with sc_unit<x> types.
-	for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
-	  fprintf( output,"%sac_reg<unsigned> %s;\n",INDENT[1],pfield->name );
-
-	fprintf( output, "\n\n");
-
-	//Declaring class constructor.
-	fprintf( output, "%sac_%s(char* n): \n", INDENT[1], pstorage->name);
-	for( pfield = pformat->fields; pfield->next != NULL; pfield = pfield->next)
-	  //Initializing field names with reg name. This is to enable Formatted Reg stats.
-	  //Need to be changed if we adopt statistics collection for each field individually.
-	  fprintf( output,"%s%s(\"%s\",%d),\n",INDENT[2],pfield->name,pstorage->name, 0 );
-	//Last field.
-	fprintf( output,"%s%s(\"%s\",%d){name = n;}\n\n",INDENT[2],pfield->name,pstorage->name, 0 );
-
-	fprintf( output,"%svoid change_dump(ostream& output){}\n\n",INDENT[1] );
-	fprintf( output,"%svoid reset_log(){}\n\n",INDENT[1] );
-	fprintf( output,"%svoid behavior(ac_stage_list stage = (ac_stage_list)0, int cycle = 0);\n\n",INDENT[1] );
-	fprintf( output, "};\n\n");
-
+        COMMENT(INDENT[0],"ArchC classes for formatted registers.\n");
+        flag = 0;
       }
-    }
 
-    if(!flag){ //We had at last one formatted reg declared.
-      fprintf( output, "#endif //_AC_FMT_REGS_H\n");
-      fclose(output);
+      for( pformat = format_reg_list; pformat!= NULL; pformat=pformat->next){
+        if(!(strcmp(pformat->name, pstorage->format))){
+          break;
+        }
+      }
+      //Declaring formatted register class.
+      fprintf( output, "class ac_%s {\n", pstorage->name);
+      fprintf( output, "%sstring name;\n", INDENT[1]);
+      fprintf( output, "public:\n");
+
+      //TO DO: Registers with parameterized size. The templated class ac_reg is still not
+      //       working with sc_unit<x> types.
+      for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
+        fprintf( output,"%sac_reg<unsigned> %s;\n",INDENT[1],pfield->name );
+
+      fprintf( output, "\n\n");
+
+      //Declaring class constructor.
+      if (ACDelayFlag) {
+        fprintf( output, "%sac_%s(char* n, double& ts): \n", INDENT[1], pstorage->name);
+      }
+      else {
+        fprintf( output, "%sac_%s(char* n): \n", INDENT[1], pstorage->name);
+      }
+      for( pfield = pformat->fields; pfield->next != NULL; pfield = pfield->next) {
+        //Initializing field names with reg name. This is to enable Formatted Reg stats.
+        //Need to be changed if we adopt statistics collection for each field individually.
+        if (ACDelayFlag) {
+          fprintf( output,"%s%s(\"%s\",%d,ts),\n",INDENT[2],pfield->name,pstorage->name, 0 );
+        }
+        else {
+          fprintf( output,"%s%s(\"%s\",%d),\n",INDENT[2],pfield->name,pstorage->name, 0 );
+        }
+      }
+      //Last field.
+      if (ACDelayFlag) {
+        fprintf( output,"%s%s(\"%s\",%d,ts){name = n;}\n\n",INDENT[2],pfield->name,pstorage->name, 0 );
+      }
+      else {
+        fprintf( output,"%s%s(\"%s\",%d){name = n;}\n\n",INDENT[2],pfield->name,pstorage->name, 0 );
+      }
+
+      fprintf( output,"%svoid change_dump(ostream& output){}\n\n",INDENT[1] );
+      fprintf( output,"%svoid reset_log(){}\n\n",INDENT[1] );
+      if (ACDelayFlag) {
+        fprintf( output,"%svoid commit_delays(double time)\n",INDENT[1] );
+        fprintf( output,"%s{\n",INDENT[1] );
+        for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+          fprintf( output,"%s%s.commit_delays(time);\n", INDENT[2], pfield->name);
+        }
+        fprintf( output,"%s}\n",INDENT[1] );
+      }
+      fprintf( output, "};\n\n");
+
     }
   }
+
+  if(!flag){ //We had at last one formatted reg declared.
+    fprintf( output, "#endif // %s_FMT_REGS_H\n", upper_project_name);
+    fclose(output);
+  }
+}
 
 
 //!Create the header file for ArchC statistics collection class.
@@ -2459,7 +2491,7 @@ void CreateArchImpl() {
 
       //Formatted registers have a special class.
       if (pstorage->format != NULL) {
-        fprintf(output, "%s%s(*this, \"%s\"", INDENT[1], pstorage->name, pstorage->name);
+        fprintf(output, "%s%s(\"%s\"", INDENT[1], pstorage->name, pstorage->name);
       }
       else {
         fprintf(output, "%s%s(\"%s\", 0", INDENT[1], pstorage->name, pstorage->name);
@@ -2976,13 +3008,16 @@ void CreateIntrTmpl() {
 //!Creates Formatted Registers Implementation File.
 void CreateRegsImpl() {
   extern ac_sto_list *storage_list;
+  extern char* project_name;
 
   ac_sto_list *pstorage;
 
   FILE *output;
-  char filename[] = "ac_regs.cpp.tmpl";
+  char filename[256];
   char description[] = "Formatted Register Behavior implementation file.";
 
+  sprintf(filename, "%s_regs.cpp.tmpl", project_name);
+  
   if ( !(output = fopen( filename, "w"))){
     perror("ArchC could not open output file");
     exit(1);
@@ -2992,8 +3027,8 @@ void CreateRegsImpl() {
 
   print_comment( output, description);
 
-  fprintf( output, "#include \"ac_fmt_regs.H\"\n");
-  fprintf( output, "#include \"archc.H\"\n");
+  fprintf( output, "#include \"%s_fmt_regs.H\"\n", project_name);
+  fprintf( output, "#include \"ac_utils.H\"\n");
   fprintf( output, " \n");
 
   //Declaring formatted register behavior methods.
@@ -3259,7 +3294,7 @@ void CreateMakefile(){
   fprintf( output, "ACHEAD := $(MODULE)_parms.H $(MODULE)_arch.H $(MODULE)_arch_ref.H $(MODULE)_isa.H $(MODULE)_bhv_macros.H ");
 
   if(HaveFormattedRegs)
-    fprintf( output, "ac_fmt_regs.H ");
+    fprintf( output, "$(MODULE)_fmt_regs.H ");
 
   if(ACStatsFlag)
     fprintf( output, "%s_stats.H ", project_name);
