@@ -73,8 +73,6 @@ int largest_format_size;
 
 ac_sto_list* fetch_device;
 
-char* helper_body;
-
 
 
 void init_core_actions()
@@ -127,8 +125,6 @@ void init_core_actions()
   largest_format_size = 0;
 
   fetch_device = NULL;
-
-  helper_body = NULL;
 
   return;
 }
@@ -670,7 +666,6 @@ void add_parms(char* name, int value)
     parms_list_tail = pparms;
   }
 }
-
 
 
 

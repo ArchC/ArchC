@@ -50,7 +50,6 @@ const char* main_filename = "main.cpp.tmpl";
 const char* make_filename = "Makefile.archc";
 const char* proc_module_header_description = "Processor module header file.";
 const char* proc_module_impl_description = "Processor module implementation file.";
-const unsigned long scratch_space_size = 5000; //!< Determines the size of a string used by actsim to create the "arch" headers
 
 // Const strings; these might be replaced by variables in the future.
 const char* field_type = "int"; //!< A data type which can hold instruction fields
@@ -63,8 +62,7 @@ const unsigned pipe_maximum_path_length = 7;
 
 // Defining traces and dasm strings
 #define PRINT_TRACE "%strace_file << hex << ap.decode_pc << dec << \"\\n\";\n"
-//#define PRINT_DASM "%sdasmfile << hex << decode_pc << dec << \": \" << *instr << *format <<\"\t\t(\" << instr->get_name() << \",\" << format->get_name() << \")\" <<endl;\n"
-#define PRINT_DASM "%sdasmfile << hex << ap.decode_pc << dec << \": \" << \"(\" << isa.instructions[1 + ins_id].name << \",\" << %s_isa::instructions[1 + ins_id].format << \")\" << endl;\n"
+#define PRINT_DASM "%sdasmfile << hex << ap.decode_pc << dec << \": \" << \"(\" << isa.instructions[1 + ins_id].name << \",\" << %s_parms::%s_isa::instructions[1 + ins_id].format << \")\" << endl;\n"
 
 // Command-line options flags
 int ACABIFlag = 0;                              //!< Indicates whether an ABI was provided or not
@@ -550,8 +548,6 @@ void CreateArchHeader(void)
  ac_dec_format* pformat;
  ac_dec_field* pfield;
  char* cache_str;
- char init_list[scratch_space_size];
- char* init_list_p = init_list;
  char* prev_stage_name;
  FILE* output;
  char* filename;
@@ -619,7 +615,6 @@ void CreateArchHeader(void)
  COMMENT(INDENT[2], "Program Counter register.");
  fprintf(output, "%sac_sync_reg<%s> ac_pc;\n",
          INDENT[2], pc_type);
- init_list_p += sprintf(init_list_p, ", ac_pc(\"ac_pc\", 0)");
  /* Declaring storage devices */
  COMMENT(INDENT[2], "Storage devices.");
  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
@@ -629,12 +624,8 @@ void CreateArchHeader(void)
    case REG:
     // Formatted registers have a special class.
     if (pstorage->format != NULL)
-    {
-     fprintf(output, "%s%s_%s %s;\n", INDENT[2], project_name, pstorage->format,
+     fprintf(output, "%s%s_fmt_%s %s;\n", INDENT[2], project_name, pstorage->format,
              pstorage->name);
-     init_list_p += sprintf(init_list_p, ", %s(\"%s\")", pstorage->name,
-                            pstorage->name);
-    }
     else
     {
      switch ((unsigned) (pstorage->width))
@@ -664,16 +655,11 @@ void CreateArchHeader(void)
        break;
       default:
        AC_ERROR("Register width not supported: %d\n", pstorage->width);
-       break;
      }
-     init_list_p += sprintf(init_list_p, ", %s(\"%s\", 0)", pstorage->name,
-                            pstorage->name);
     }
     break;
    case REGBANK:
     // Emiting register bank. Checking whether a register width was declared.
-    init_list_p += sprintf(init_list_p, ", %s(\"%s\")", pstorage->name,
-                           pstorage->name);
     switch ((unsigned) pstorage->width)
     {
      case 0:
@@ -708,18 +694,9 @@ void CreateArchHeader(void)
      fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
              INDENT[2], project_name, project_name, pstorage->name);
-     init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
-                            pstorage->name, pstorage->name, pstorage->size,
-                            pstorage->name, pstorage->name, pstorage->size);
     }
-    else
-    { // It is an ac_cache object.
+    else // It is an ac_cache object.
      fprintf(output, "%sac_cache %s;\n", INDENT[2], pstorage->name);
-     cache_str = (char*) malloc(sizeof(char) * (534 + (2 * strlen(pstorage->name))));
-     EmitCacheInitialization(cache_str, pstorage);
-     init_list_p += sprintf(init_list_p, ", %s", cache_str);
-     free(cache_str);
-    }
     break;
    case MEM:
     if (!HaveMemHier)
@@ -727,12 +704,8 @@ void CreateArchHeader(void)
      fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
              INDENT[2], project_name, project_name, pstorage->name);
-     init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
-                            pstorage->name, pstorage->name, pstorage->size,
-                            pstorage->name, pstorage->name, pstorage->size);
     }
     else // It is an ac_mem object.
-     // Some initialization stuff is supposed to go here, but this is unmaintained code. --Marilia
      fprintf(output, "%sac_mem %s;\n", INDENT[2], pstorage->name);
     break;
    /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT */
@@ -740,36 +713,88 @@ void CreateArchHeader(void)
     fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[2], pstorage->name);
     fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
             INDENT[2], project_name, project_name, pstorage->name);
-    init_list_p += sprintf(init_list_p, ", %s_port(\"%s_port\", %uU), %s(*this, %s_port)",
-                           pstorage->name, pstorage->name, pstorage->size,
-                           pstorage->name, pstorage->name);
     break;
    case TLM_INTR_PORT:
     fprintf(output, "%sac_tlm_intr_port %s;\n", INDENT[2], pstorage->name);
-    init_list_p += sprintf(init_list_p, ", %s(\"%s\")", pstorage->name,
-                           pstorage->name);
     break;
    default:
     fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
     fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
             INDENT[2], project_name, project_name, pstorage->name);
-    init_list_p += sprintf(init_list_p, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
-                           pstorage->name, pstorage->name, pstorage->size,
-                           pstorage->name, pstorage->name, pstorage->size);
   }
  }
  // The cycle control variable. Only available for multi-cycle archs.
  if (HaveMultiCycleIns)
- {
   fprintf(output, "%sunsigned ac_cycle;\n", INDENT[2]);
-  init_list_p += sprintf(init_list_p, ", ac_cycle(1)");
- }
  fprintf(output, "\n");
   // Constructor.
  COMMENT(INDENT[2], "Constructor.");
- fprintf(output, "%sexplicit %s_arch(): ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword>(%s_parms::AC_MAX_BUFFER)%s",
-         INDENT[2], project_name, project_name, project_name, project_name,
-         init_list);
+ fprintf(output, "%sexplicit %s_arch(): ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword>(%s_parms::AC_MAX_BUFFER)",
+         INDENT[2], project_name, project_name, project_name, project_name);
+//// Initialization begin.
+ fprintf(output, ", ac_pc(\"ac_pc\", 0)");
+ /* Initializing storage devices */
+ for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
+ {
+  switch (pstorage->type)
+  {
+   case REG:
+    // Formatted registers have a special class.
+    if (pstorage->format != NULL)
+     fprintf(output, ", %s(\"%s\")", pstorage->name, pstorage->name);
+    else
+     fprintf(output, ", %s(\"%s\", 0)", pstorage->name, pstorage->name);
+    break;
+   case REGBANK:
+    fprintf(output, ", %s(\"%s\")", pstorage->name, pstorage->name);
+    break;
+   case CACHE:
+   case ICACHE:
+   case DCACHE:
+    if (!pstorage->parms) // It is a generic cache. Just emit a base container object.
+     fprintf(output, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
+             pstorage->name, pstorage->name, pstorage->size,
+             pstorage->name, pstorage->name);
+    else
+    { // It is an ac_cache object.
+     cache_str = (char*) malloc(sizeof(char) * (534 + (2 * strlen(pstorage->name))));
+     EmitCacheInitialization(cache_str, pstorage);
+     fprintf(output, ", %s", cache_str);
+     free(cache_str);
+    }
+    break;
+   case MEM:
+    if (!HaveMemHier) // It is a generic mem. Just emit a base container object.
+     fprintf(output, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
+             pstorage->name, pstorage->name, pstorage->size,
+             pstorage->name, pstorage->name);
+#if 0 // Unmaintained. --Marilia
+    else // It is an ac_mem object.
+     // Some initialization stuff is supposed to go here, but this is unmaintained code. --Marilia
+     fprintf(output, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
+             pstorage->name, pstorage->name, pstorage->size,
+             pstorage->name, pstorage->name);
+#endif
+    break;
+   /* IMPORTANT TODO: TLM_PORT and TLM_INTR_PORT */
+   case TLM_PORT:
+    fprintf(output, ", %s_port(\"%s_port\", %uU), %s(*this, %s_port)",
+            pstorage->name, pstorage->name, pstorage->size,
+            pstorage->name, pstorage->name);
+    break;
+   case TLM_INTR_PORT:
+    fprintf(output, ", %s(\"%s\")", pstorage->name, pstorage->name);
+    break;
+   default:
+    fprintf(output, ", %s_stg(\"%s_stg\", %uU), %s(*this, %s_stg)",
+            pstorage->name, pstorage->name, pstorage->size,
+            pstorage->name, pstorage->name);
+  }
+ }
+ // The cycle control variable. Only available for multi-cycle archs.
+ if (HaveMultiCycleIns)
+  fprintf(output, ", ac_cycle(1)");
+//// Initialization end.
  fprintf(output, "\n%s{\n", INDENT[2]);
  COMMENT(INDENT[3], "Initializing.");
  /* Setting endianness match, */
@@ -955,7 +980,7 @@ void CreateArchRefHeader(void)
    case REG:
     // Formatted registers have a special class.
     if (pstorage->format != NULL)
-     fprintf(output, "%s%s_%s& %s;\n", INDENT[2], project_name, pstorage->format,
+     fprintf(output, "%s%s_fmt_%s& %s;\n", INDENT[2], project_name, pstorage->format,
              pstorage->name);
     else
      // This is correct, isn't it? That registers default to ac_word? --Marilia
@@ -1234,6 +1259,7 @@ void CreateISAHeader(void)
  extern ac_dec_format* format_ins_list;
  extern ac_dec_field* common_instr_field_list;
  extern char* project_name;
+ extern char* helper_contents;
  extern ac_dec_instr* instr_list;
  extern int HaveFormattedRegs, HaveMultiCycleIns;
  ac_stg_list* pstage;
@@ -1271,40 +1297,46 @@ void CreateISAHeader(void)
  if (ACStatsFlag)
   fprintf(output, "#include \"%s_stats.H\"\n", project_name);
  fprintf(output, "\n");
- fprintf(output, "%sclass %s_isa: public %s_arch_ref", INDENT[0],
+ fprintf(output, "%snamespace %s_parms\n%s{\n", INDENT[0], project_name, INDENT[0]);
+ fprintf(output, "%sclass %s_isa: public %s_arch_ref", INDENT[1],
          project_name, project_name);
  if (pipe_list)
   fprintf(output, ", public %s_stages_ref", project_name);
  if (ACStatsFlag)
   fprintf(output, ", public %s_all_stats", project_name);
- fprintf(output, "\n%s{\n", INDENT[0]);
- fprintf(output, "%sprivate:\n", INDENT[1]);
- fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n",
-         INDENT[2], project_name);
+ fprintf(output, "\n%s{\n", INDENT[1]);
+ fprintf(output, "%sprivate:\n", INDENT[2]);
+ fprintf(output, "%stypedef ac_instr<AC_DEC_FIELD_NUMBER> ac_instr_t;\n",
+         INDENT[3]);
  for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
-  fprintf(output, "%sstatic bool group_%s[%s_parms::AC_DEC_INSTR_NUMBER];\n",
-          INDENT[2], pgroup->name, project_name);
+  fprintf(output, "%sstatic bool group_%s[AC_DEC_INSTR_NUMBER];\n",
+          INDENT[3], pgroup->name);
  fprintf(output, "\n");
- fprintf(output, "%spublic:\n", INDENT[1]);
- fprintf(output, "%sunsigned current_instruction_id;\n", INDENT[2]);
- COMMENT(INDENT[2], "Decoding structures.");
- fprintf(output, "%sstatic ac_dec_field fields[%s_parms::AC_DEC_FIELD_NUMBER];\n",
-         INDENT[2], project_name);
- fprintf(output, "%sstatic ac_dec_format formats[%s_parms::AC_DEC_FORMAT_NUMBER];\n",
-         INDENT[2], project_name);
- fprintf(output, "%sstatic ac_dec_list dec_list[%s_parms::AC_DEC_LIST_NUMBER];\n",
-         INDENT[2], project_name);
- fprintf(output, "%sstatic ac_dec_instr instructions[%s_parms::AC_DEC_INSTR_NUMBER];\n",
-         INDENT[2], project_name);
- fprintf(output, "%sstatic const ac_instr_info instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n",
-         INDENT[2], project_name);
- fprintf(output, "%sac_decoder_full* decoder;\n", INDENT[2]);
+ fprintf(output, "%spublic:\n", INDENT[2]);
+ fprintf(output, "%sunsigned current_instruction_id;\n", INDENT[3]);
+ COMMENT(INDENT[3], "Decoding structures.");
+ fprintf(output, "%sstatic ac_dec_field fields[AC_DEC_FIELD_NUMBER];\n",
+         INDENT[3]);
+ fprintf(output, "%sstatic ac_dec_format formats[AC_DEC_FORMAT_NUMBER];\n",
+         INDENT[3]);
+ fprintf(output, "%sstatic ac_dec_list dec_list[AC_DEC_LIST_NUMBER];\n",
+         INDENT[3]);
+ fprintf(output, "%sstatic ac_dec_instr instructions[AC_DEC_INSTR_NUMBER];\n",
+         INDENT[3]);
+ fprintf(output, "%sstatic const ac_instr_info instr_table[AC_DEC_INSTR_NUMBER + 1];\n",
+         INDENT[3]);
+ fprintf(output, "%sac_decoder_full* decoder;\n", INDENT[3]);
+ if (helper_contents)
+ {
+  fprintf(output, helper_contents);
+  fprintf(output, "\n");
+ }
  fprintf(output, "\n");
  // Constructor.
- COMMENT(INDENT[2], "Standard constructor.");
+ COMMENT(INDENT[3], "Standard constructor.");
  if (pipe_list)
  {
-  fprintf(output, "%s%s_isa(%s_arch& ref", INDENT[2], project_name, project_name);
+  fprintf(output, "%s%s_isa(%s_arch& ref", INDENT[3], project_name, project_name);
   // References to stages and automatic pipeline registers.
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
    for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
@@ -1333,84 +1365,84 @@ void CreateISAHeader(void)
   fprintf(output, ")");
  }
  else
-  fprintf(output, "%s%s_isa(%s_arch& ref): %s_arch_ref(ref)", INDENT[2],
+  fprintf(output, "%s%s_isa(%s_arch& ref): %s_arch_ref(ref)", INDENT[3],
           project_name, project_name, project_name);
- fprintf(output, "\n%s{\n", INDENT[2]);
- COMMENT(INDENT[3], "Building decoder.");
+ fprintf(output, "\n%s{\n", INDENT[3]);
+ COMMENT(INDENT[4], "Building decoder.");
  fprintf(output, "%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n",
-         INDENT[3], project_name, project_name);
+         INDENT[4], project_name, project_name);
 #ifdef ADD_DEBUG
  fprintf(output,"#ifdef AC_DEBUG_DECODER\n");
- fprintf(output,"%sShowDecFormat(formats);\n", INDENT[3]);
- fprintf(output,"%sShowDecoder(decoder->decoder, 0);\n", INDENT[3]);
+ fprintf(output,"%sShowDecFormat(formats);\n", INDENT[4]);
+ fprintf(output,"%sShowDecoder(decoder->decoder, 0);\n", INDENT[4]);
  fprintf(output,"#endif\n");
 #endif
  // End of constructor.
- fprintf(output, "%sreturn;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sreturn;\n%s}\n", INDENT[4], INDENT[3]);
  fprintf(output, "\n");
  // Instruction metas.
- fprintf(output, "%sinline const char* get_name()\n%s{\n", INDENT[2], INDENT[2]);
+ fprintf(output, "%sinline const char* get_name()\n%s{\n", INDENT[3], INDENT[3]);
  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_name;\n%s}\n",
-         INDENT[3], INDENT[2]);
+         INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const char* get_name(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_name;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sinline const char* get_name(unsigned id)\n%s{\n", INDENT[3], INDENT[3]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_name;\n%s}\n", INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const char* get_mnemonic()\n%s{\n", INDENT[2], INDENT[2]);
+ fprintf(output, "%sinline const char* get_mnemonic()\n%s{\n", INDENT[3], INDENT[3]);
  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_mnemonic;\n%s}\n",
-         INDENT[3], INDENT[2]);
+         INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const char* get_mnemonic(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_mnemonic;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sinline const char* get_mnemonic(unsigned id)\n%s{\n", INDENT[3], INDENT[3]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_mnemonic;\n%s}\n", INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const unsigned get_size()\n%s{\n", INDENT[2], INDENT[2]);
+ fprintf(output, "%sinline const unsigned get_size()\n%s{\n", INDENT[3], INDENT[3]);
  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n",
-         INDENT[3], INDENT[2]);
+         INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const unsigned get_size(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sinline const unsigned get_size(unsigned id)\n%s{\n", INDENT[3], INDENT[3]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[4], INDENT[3]);
  fprintf(output, "\n");
  if (HaveMultiCycleIns)
  {
-  fprintf(output, "%sinline const unsigned get_cycles()\n%s{\n", INDENT[2], INDENT[2]);
+  fprintf(output, "%sinline const unsigned get_cycles()\n%s{\n", INDENT[3], INDENT[3]);
   fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_cycles;\n%s}\n",
-          INDENT[3], INDENT[2]);
+          INDENT[4], INDENT[3]);
   fprintf(output, "\n");
-  fprintf(output, "%sinline const unsigned get_cycles(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
-  fprintf(output, "%sreturn instr_table[id].ac_instr_cycles;\n%s}\n", INDENT[3], INDENT[2]);
+  fprintf(output, "%sinline const unsigned get_cycles(unsigned id)\n%s{\n", INDENT[3], INDENT[3]);
+  fprintf(output, "%sreturn instr_table[id].ac_instr_cycles;\n%s}\n", INDENT[4], INDENT[3]);
   fprintf(output, "\n");
  }
- fprintf(output, "%sinline const unsigned get_min_latency()\n%s{\n", INDENT[2], INDENT[2]);
+ fprintf(output, "%sinline const unsigned get_min_latency()\n%s{\n", INDENT[3], INDENT[3]);
  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n",
-         INDENT[3], INDENT[2]);
+         INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const unsigned get_min_latency(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sinline const unsigned get_min_latency(unsigned id)\n%s{\n", INDENT[3], INDENT[3]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const unsigned get_max_latency()\n%s{\n", INDENT[2], INDENT[2]);
+ fprintf(output, "%sinline const unsigned get_max_latency()\n%s{\n", INDENT[3], INDENT[3]);
  fprintf(output, "%sreturn instr_table[current_instruction_id].ac_instr_size;\n%s}\n",
-         INDENT[3], INDENT[2]);
+         INDENT[4], INDENT[3]);
  fprintf(output, "\n");
- fprintf(output, "%sinline const unsigned get_max_latency(unsigned id)\n%s{\n", INDENT[2], INDENT[2]);
- fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[3], INDENT[2]);
+ fprintf(output, "%sinline const unsigned get_max_latency(unsigned id)\n%s{\n", INDENT[3], INDENT[3]);
+ fprintf(output, "%sreturn instr_table[id].ac_instr_size;\n%s}\n", INDENT[4], INDENT[3]);
  fprintf(output, "\n");
  // Group query methods.
  for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
  {
   fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
-          INDENT[2], pgroup->name, INDENT[2]);
+          INDENT[3], pgroup->name, INDENT[3]);
   fprintf(output, "%sreturn group_%s[current_instruction_id];\n%s}\n",
-          INDENT[3], pgroup->name, INDENT[2]);
+          INDENT[4], pgroup->name, INDENT[3]);
   fprintf(output, "\n");
   fprintf(output, "%sinline const bool belongs_to_%s(unsigned id)\n%s{\n",
-          INDENT[2], pgroup->name, INDENT[2]);
-  fprintf(output, "%sreturn group_%s[id];\n%s}\n", INDENT[3], pgroup->name, INDENT[2]);
+          INDENT[3], pgroup->name, INDENT[3]);
+  fprintf(output, "%sreturn group_%s[id];\n%s}\n", INDENT[4], pgroup->name, INDENT[3]);
   fprintf(output, "\n");
  }
  // Instruction Behavior Method declarations.
  // Instruction (generic -- really, someone should rename this --Marilia).
- fprintf(output, "%svoid _behavior_instruction(%s_parms::ac_stage_list stage, unsigned cycle",
-         INDENT[2], project_name);
+ fprintf(output, "%svoid _behavior_instruction(ac_stage_list stage, unsigned cycle",
+         INDENT[3]);
  /* common_instr_field_list has the list of fields for the generic instruction. */
  for (pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next)
   if (pfield->sign)
@@ -1420,14 +1452,14 @@ void CreateISAHeader(void)
  fprintf(output, ");\n");
  fprintf(output, "\n");
  // Begin & end.
- fprintf(output, "%svoid _behavior_begin();\n", INDENT[2]);
- fprintf(output, "%svoid _behavior_end();\n", INDENT[2]);
+ fprintf(output, "%svoid _behavior_begin();\n", INDENT[3]);
+ fprintf(output, "%svoid _behavior_end();\n", INDENT[3]);
  fprintf(output, "\n");
  // Types/formats.
  for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next)
  {
-  fprintf(output, "%svoid _behavior_%s_%s(%s_parms::ac_stage_list stage, unsigned cycle",
-          INDENT[2], project_name, pformat->name, project_name);
+  fprintf(output, "%svoid _behavior_%s_%s(ac_stage_list stage, unsigned cycle",
+          INDENT[3], project_name, pformat->name);
   for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
    if (pfield->sign)
     fprintf(output, ", int %s", pfield->name);
@@ -1442,8 +1474,8 @@ void CreateISAHeader(void)
   for (pformat = format_ins_list;
        (pformat != NULL) && strcmp(pinstr->format, pformat->name);
        pformat = pformat->next);
-  fprintf(output, "%svoid behavior_%s(%s_parms::ac_stage_list stage, unsigned cycle",
-          INDENT[2], pinstr->name, project_name);
+  fprintf(output, "%svoid behavior_%s(ac_stage_list stage, unsigned cycle",
+          INDENT[3], pinstr->name);
   for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
    if (pfield->sign)
     fprintf(output, ", int %s", pfield->name);
@@ -1452,6 +1484,8 @@ void CreateISAHeader(void)
   fprintf(output, ");\n");
  }
  // End of class.
+ fprintf(output, "%s};\n", INDENT[1]);
+ // End of namespace.
  fprintf(output, "%s};\n", INDENT[0]);
  fprintf(output, "\n#endif // _%s_ISA_H_\n", caps_project_name);
  // End of file.
@@ -1467,15 +1501,17 @@ void CreateISAHeader(void)
  free(filename);
  fprintf(output, "#ifndef _%s_BHV_MACROS_H_\n", caps_project_name);
  fprintf(output, "#define _%s_BHV_MACROS_H_\n\n", caps_project_name);
-
+ // ac_memory typedef. Copied&pasted from acsim. --Marilia
+ fprintf(output, "typedef ac_memport<%s_parms::ac_word, %s_parms::ac_Hword> ac_memory;\n\n",
+         project_name, project_name);
  COMMENT(INDENT[0], "Macros for instruction behaviors.\n");
  // ac_behavior main macro.
  fprintf(output, "#ifndef ac_behavior\n");
  fprintf(output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr()\n");
  fprintf(output, "#endif\n\n");
  // ac_behavior 2nd level macros - generic instruction.
- fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction(%s_parms::ac_stage_list stage, unsigned cycle",
-         project_name, project_name);
+ fprintf(output, "#define AC_BEHAVIOR_instruction() %s_parms::%s_isa::_behavior_instruction(%s_parms::ac_stage_list stage, unsigned cycle",
+         project_name, project_name, project_name);
  /* common_instr_field_list has the list of fields for the generic instruction. */
  for (pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next)
   if (pfield->sign)
@@ -1485,15 +1521,15 @@ void CreateISAHeader(void)
  fprintf(output, ")\n");
  fprintf(output, "\n");
  // ac_behavior 2nd level macros - pseudo-instructions begin, end.
- fprintf(output, "#define AC_BEHAVIOR_begin() %s_isa::_behavior_begin()\n", project_name);
- fprintf(output, "#define AC_BEHAVIOR_end() %s_isa::_behavior_end()\n", project_name);
+ fprintf(output, "#define AC_BEHAVIOR_begin() %s_parms::%s_isa::_behavior_begin()\n", project_name, project_name);
+ fprintf(output, "#define AC_BEHAVIOR_end() %s_parms::%s_isa::_behavior_end()\n", project_name, project_name);
  fprintf(output, "\n");
  // ac_behavior 2nd level macros - instruction types.
  for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next)
  {
   fprintf(output,
-          "#define AC_BEHAVIOR_%s() %s_isa::_behavior_%s_%s(%s_parms::ac_stage_list stage, unsigned cycle",
-          pformat->name, project_name, project_name, pformat->name, project_name);
+          "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::_behavior_%s_%s(%s_parms::ac_stage_list stage, unsigned cycle",
+          pformat->name, project_name, project_name, project_name, pformat->name, project_name);
   for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
    if (pfield->sign)
     fprintf(output, ", int %s", pfield->name);
@@ -1506,8 +1542,8 @@ void CreateISAHeader(void)
  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
  {
   fprintf(output,
-          "#define AC_BEHAVIOR_%s() %s_isa::behavior_%s(%s_parms::ac_stage_list stage, unsigned cycle",
-          pinstr->name, project_name, pinstr->name, project_name);
+          "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::behavior_%s(%s_parms::ac_stage_list stage, unsigned cycle",
+          pinstr->name, project_name, project_name, pinstr->name, project_name);
   for (pformat = format_ins_list;
        (pformat != NULL) && strcmp(pinstr->format, pformat->name);
        pformat = pformat->next);
@@ -1604,7 +1640,7 @@ void CreateProcessorHeader(void)
  }
  fprintf(output, "%sbool has_delayed_load;\n", INDENT[2]);
  fprintf(output, "%schar* delayed_load_program;\n", INDENT[2]);
- fprintf(output, "%s%s_isa isa;\n", INDENT[2], project_name);
+ fprintf(output, "%s%s_parms::%s_isa isa;\n", INDENT[2], project_name, project_name);
  //! Declaring stages modules.
  if (pipe_list)
  { // Pipeline list exists. Used for ac_pipe declarations.
@@ -1933,7 +1969,7 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   if (pstage->id == 1)
    if (ACDecCacheFlag)
     fprintf(output, "%scache_item_t* DEC_CACHE;\n", INDENT[3]);
-  fprintf(output, "%s%s_isa& isa;\n", INDENT[3], project_name);
+  fprintf(output, "%s%s_parms::%s_isa& isa;\n", INDENT[3], project_name, project_name);
   if (pstage->id == 1)
    fprintf(output, "%sbool start_up;\n", INDENT[3]);
   fprintf(output, "%sunsigned id;\n", INDENT[3]);
@@ -1948,9 +1984,9 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
 #endif
  fprintf(output, "\n");
   // Constructor. All stages have the same constructor parameter list, it's up to the caller to provide correct parameters. --Marilia
-  fprintf(output, "%s%s_%s(sc_module_name _name, %s_arch& ra, %s_isa& i, ac_stage<ac_instr_t>* p, ac_sync_reg<ac_instr_t>* ri, ac_sync_reg<ac_instr_t>* ro): sc_module(_name), ac_stage<ac_instr_t>(_name, p, ri, ro), %s_arch_ref(ra), ap(ra)",
+  fprintf(output, "%s%s_%s(sc_module_name _name, %s_arch& ra, %s_parms::%s_isa& i, ac_stage<ac_instr_t>* p, ac_sync_reg<ac_instr_t>* ri, ac_sync_reg<ac_instr_t>* ro): sc_module(_name), ac_stage<ac_instr_t>(_name, p, ri, ro), %s_arch_ref(ra), ap(ra)",
           INDENT[3], project_name, stage_name, project_name, project_name,
-          project_name);
+          project_name, project_name);
   if ((pstage->id == 1) && ACABIFlag)
    fprintf(output, ", syscall(ra)");
   fprintf(output, ", isa(i)\n%s{\n", INDENT[3]);
@@ -2027,7 +2063,7 @@ void CreateRegsHeader(void)
    flag = 0;
   }
   // Declaring formatted register class.
-  fprintf(output, "%sclass %s_%s\n%s{\n", INDENT[0], project_name,
+  fprintf(output, "%sclass %s_fmt_%s\n%s{\n", INDENT[0], project_name,
           pformat->name, INDENT[0]);
   fprintf(output, "%schar* name;\n", INDENT[2]);
   fprintf(output, "\n");
@@ -2038,7 +2074,7 @@ void CreateRegsHeader(void)
    fprintf(output, "%sac_sync_reg<unsigned long> %s;\n", INDENT[2], pfield->name);
   fprintf(output, "\n");
   // Declaring class constructor. Friggin' ugly, I know, let me know if you have a better way. --Marilia
-  fprintf(output, "%s%s_%s(char* n): name(n)", INDENT[2], project_name,
+  fprintf(output, "%s%s_fmt_%s(char* n): name(n)", INDENT[2], project_name,
           pformat->name);
   for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
    fprintf(output, ", %s(std::string(std::string(n) + std::string(\"_%s\")).c_str(), %d)",
@@ -2066,7 +2102,7 @@ void CreateRegsHeader(void)
   fprintf(output, "#ifndef ac_behavior\n");
   fprintf(output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr()\n");
   for (pformat = format_reg_list; pformat != NULL; pformat = pformat->next)
-   fprintf(output, "#define AC_BEHAVIOR_%s() %s_%s::behavior(%s_parms::ac_stage_list stage = static_cast<%s_parms::ac_stage_list>(0), int cycle = 0)\n",
+   fprintf(output, "#define AC_BEHAVIOR_%s() %s_fmt_%s::behavior(%s_parms::ac_stage_list stage = static_cast<%s_parms::ac_stage_list>(0), int cycle = 0)\n",
            pformat->name, project_name, pformat->name, project_name, project_name);
   fprintf(output, "#endif // !ac_behavior\n");
 #endif
@@ -2573,8 +2609,6 @@ void CreateArchRefImpl(void)
  ac_sto_list* pstorage;
  ac_dec_format* pformat;
  ac_dec_field* pfield;
- char init_list[scratch_space_size];
- char* init_list_p = init_list;
  FILE* output;
  char* filename;
 
@@ -2608,19 +2642,19 @@ void CreateArchRefImpl(void)
   fprintf(output, "#define PORT_NUM 5000 // Port to which GDB binds for remote debugging.\n");
   fprintf(output, "#endif // PORT_NUM\n" );
  }
+ fprintf(output, "\n");
 #endif
+ // Constructor.
+ COMMENT(INDENT[0], "Default constructor.");
+ fprintf(output, "%s%s_arch_ref::%s_arch_ref(%s_arch& arch): ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch), p(arch)",
+         INDENT[0], project_name, project_name, project_name, project_name, project_name);
  /* Finding storage devices */
  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
-  init_list_p += sprintf(init_list_p, ", %s(arch.%s)", pstorage->name,
-                         pstorage->name);
+  fprintf(output, ", %s(arch.%s)", pstorage->name, pstorage->name);
  // The cycle control variable. Only available for multi-cycle archs.
  if (HaveMultiCycleIns)
-  init_list_p += sprintf(init_list_p, ", ac_cycle(arch.ac_cycle)");
- fprintf(output, "\n");
-  // Constructor.
- COMMENT(INDENT[0], "Default constructor.");
- fprintf(output, "%s%s_arch_ref::%s_arch_ref(%s_arch& arch): ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch), p(arch)%s, ac_pc(arch.ac_pc)",
-         INDENT[0], project_name, project_name, project_name, project_name, project_name, init_list);
+  fprintf(output, ", ac_cycle(arch.ac_cycle)");
+ fprintf(output, ", ac_pc(arch.ac_pc)");
  if (ACDasmFlag)
   fprintf(output, ", dasmfile(arch.dasmfile)");
  fprintf(output, "\n%s{\n", INDENT[0]);
@@ -3115,14 +3149,15 @@ void CreateMainTmpl(void)
  }
  print_comment(output, description);
  free(description);
- fprintf(output, "%sconst char* project_name=\"%s\";\n", INDENT[0],
+ fprintf(output, "%sconst char* project_name = \"%s\";\n", INDENT[0],
          project_name);
- fprintf(output, "%sconst char* project_file=\"%s\";\n", INDENT[0],
+ fprintf(output, "%sconst char* project_file = \"%s\";\n", INDENT[0],
          arch_filename);
- fprintf(output, "%sconst char* archc_version=\"%s\";\n", INDENT[0], ACVersion);
- fprintf(output, "%sconst char* archc_options=\"%s\";\n", INDENT[0], ACOptions);
+ fprintf(output, "%sconst char* archc_version = \"%s\";\n", INDENT[0], ACVersion);
+ fprintf(output, "%sconst char* archc_options = \"%s\";\n", INDENT[0], ACOptions);
  fprintf(output, "\n");
  fprintf(output, "#include <systemc.h>\n");
+ fprintf(output, "#include \"ac_stats_base.h\"\n");
  fprintf(output, "#include \"%s.H\"\n", project_name);
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
  if (ACGDBIntegrationFlag)
@@ -3368,8 +3403,9 @@ void CreateISAInitImpl(void)
  fprintf(output, "#include \"%s_isa.H\"\n\n", project_name);
  for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
  {
-  fprintf(output, "%sbool %s_isa::group_%s[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s{\n",
-          INDENT[0], project_name, pgroup->name, project_name, INDENT[1]);
+  COMMENT(INDENT[0], "Group %s table initialization.", pgroup->name);
+  fprintf(output, "%sbool %s_parms::%s_isa::group_%s[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s{\n",
+          INDENT[0], project_name, project_name, pgroup->name, project_name, INDENT[1]);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
   {
    for (pref = pgroup->instrs; pref != NULL; pref = pref->next)
@@ -3565,8 +3601,8 @@ void EmitDecStruct(FILE* output)
 
  // Field structure.
  i = 0;
- fprintf(output, "%sac_dec_field %s_isa::fields[%s_parms::AC_DEC_FIELD_NUMBER] =\n%s {\n",
-         INDENT[0], project_name, project_name, INDENT[0]);
+ fprintf(output, "%sac_dec_field %s_parms::%s_isa::fields[%s_parms::AC_DEC_FIELD_NUMBER] =\n%s {\n",
+         INDENT[0], project_name, project_name, project_name, INDENT[0]);
  for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next)
   for (pdecfield = pformat->fields; pdecfield != NULL; pdecfield = pdecfield->next)
   {
@@ -3575,7 +3611,7 @@ void EmitDecStruct(FILE* output)
            pdecfield->name, pdecfield->size, pdecfield->first_bit,
            pdecfield->id, pdecfield->val, pdecfield->sign);
    if (pdecfield->next)
-    fprintf(output, "&(%s_isa::fields[%d])},\n", project_name, i);
+    fprintf(output, "&(%s_parms::%s_isa::fields[%d])},\n", project_name, project_name, i);
    else
    {
     fprintf(output, "NULL}");
@@ -3589,15 +3625,15 @@ void EmitDecStruct(FILE* output)
  // Format structure.
  i = 0;
  count_fields = 0;
- fprintf(output, "%sac_dec_format %s_isa::formats[%s_parms::AC_DEC_FORMAT_NUMBER] =\n%s {\n",
-         INDENT[0], project_name, project_name, INDENT[0]);
+ fprintf(output, "%sac_dec_format %s_parms::%s_isa::formats[%s_parms::AC_DEC_FORMAT_NUMBER] =\n%s {\n",
+         INDENT[0], project_name, project_name, project_name, INDENT[0]);
  for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next)
  {
   i++;
-  fprintf(output, "%s{\"%s\", %d, &(%s_isa::fields[%d]), ", INDENT[1],
-          pformat->name, pformat->size, project_name, count_fields);
+  fprintf(output, "%s{\"%s\", %d, &(%s_parms::%s_isa::fields[%d]), ", INDENT[1],
+          pformat->name, pformat->size, project_name, project_name, count_fields);
   if (pformat->next)
-   fprintf(output, "&(%s_isa::formats[%d])},\n", project_name, i);
+   fprintf(output, "&(%s_parms::%s_isa::formats[%d])},\n", project_name, project_name, i);
   else
    fprintf(output, "NULL}\n%s };\n\n", INDENT[0]);
   for (pdecfield = pformat->fields; pdecfield != NULL; pdecfield = pdecfield->next)
@@ -3605,8 +3641,8 @@ void EmitDecStruct(FILE* output)
  }
  // Decode list structure.
  i = 0;
- fprintf(output, "%sac_dec_list %s_isa::dec_list[%s_parms::AC_DEC_LIST_NUMBER] =\n%s {\n",
-         INDENT[0], project_name, project_name, INDENT[0]);
+ fprintf(output, "%sac_dec_list %s_parms::%s_isa::dec_list[%s_parms::AC_DEC_LIST_NUMBER] =\n%s {\n",
+         INDENT[0], project_name, project_name, project_name, INDENT[0]);
  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
   for (pdeclist = pinstr->dec_list; pdeclist != NULL; pdeclist = pdeclist->next)
   {
@@ -3614,7 +3650,7 @@ void EmitDecStruct(FILE* output)
    fprintf(output, "%s{\"%s\", %d, ", INDENT[1], pdeclist->name,
            pdeclist->value);
    if (pdeclist->next)
-    fprintf(output, "&(%s_isa::dec_list[%d])},\n", project_name, i);
+    fprintf(output, "&(%s_parms::%s_isa::dec_list[%d])},\n", project_name, project_name, i);
    else
    {
     fprintf(output, "NULL}");
@@ -3629,17 +3665,17 @@ void EmitDecStruct(FILE* output)
 // Instruction structure.
  i = 0;
  count_fields = 0;
- fprintf(output, "%sac_dec_instr %s_isa::instructions[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s {\n",
-         INDENT[0], project_name, project_name, INDENT[0]);
+ fprintf(output, "%sac_dec_instr %s_parms::%s_isa::instructions[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s {\n",
+         INDENT[0], project_name, project_name, project_name, INDENT[0]);
  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
  {
   i++;
-  fprintf(output, "%s{\"%s\", %d, \"%s\", \"%s\", \"%s\", %d, %d, %d, %d, &(%s_isa::dec_list[%d]), 0, ",
+  fprintf(output, "%s{\"%s\", %d, \"%s\", \"%s\", \"%s\", %d, %d, %d, %d, &(%s_parms::%s_isa::dec_list[%d]), 0, ",
           INDENT[1], pinstr->name, pinstr->size, pinstr->mnemonic,
           pinstr->asm_str, pinstr->format, pinstr->id, pinstr->cycles,
-          pinstr->min_latency, pinstr->max_latency, project_name, count_fields);
+          pinstr->min_latency, pinstr->max_latency, project_name, project_name, count_fields);
   if (pinstr->next)
-   fprintf(output, "&(%s_isa::instructions[%d])},\n", project_name, i);
+   fprintf(output, "&(%s_parms::%s_isa::instructions[%d])},\n", project_name, project_name, i);
   else
    fprintf(output, "NULL}\n%s };\n\n", INDENT[0]);
   for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next)
@@ -3649,8 +3685,8 @@ void EmitDecStruct(FILE* output)
    count_fields++;
  }
  // Instruction information structure.
- fprintf(output, "%sconst ac_instr_info %s_isa::instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] =\n%s {\n",
-         INDENT[0], project_name, project_name, INDENT[0]);
+ fprintf(output, "%sconst ac_instr_info %s_parms::%s_isa::instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] =\n%s {\n",
+         INDENT[0], project_name, project_name, project_name, INDENT[0]);
  fprintf(output, "%sac_instr_info(0, \"_ac_invalid_\", \"_ac_invalid_\", %d, 0, 0, 0)",
          INDENT[1], (wordsize / 8));
  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
@@ -3840,7 +3876,7 @@ void EmitInstrExec(FILE* output, int base_indent)
  }
  fprintf(output, "%s}\n", INDENT[base_indent]);
  if (ACDasmFlag)
-  fprintf(output, PRINT_DASM, INDENT[base_indent], project_name);
+  fprintf(output, PRINT_DASM, INDENT[base_indent], project_name, project_name);
  if (ACStatsFlag)
  {
   if (!pipe_list)
@@ -3857,10 +3893,10 @@ void EmitInstrExec(FILE* output, int base_indent)
 #if 0 // No cycle counting as of yet. --Marilia
   if (HaveCycleRange)
   {
-   fprintf(output, "%sac_sim_stats.ac_min_cycle_count += %s_isa::instr_table[ins_id].ac_instr_min_latency;\n",
-           INDENT[base_indent], project_name);
-   fprintf(output, "%sac_sim_stats.ac_max_cycle_count += %s_isa::instr_table[ins_id].ac_instr_max_latency;\n",
-           INDENT[base_indent], project_name);
+   fprintf(output, "%sac_sim_stats.ac_min_cycle_count += %s_parms::%s_isa::instr_table[ins_id].ac_instr_min_latency;\n",
+           INDENT[base_indent], project_name, project_name);
+   fprintf(output, "%sac_sim_stats.ac_max_cycle_count += %s_parms::%s_isa::instr_table[ins_id].ac_instr_max_latency;\n",
+           INDENT[base_indent], project_name, project_name);
   }
 #endif
   if (!pipe_list)
@@ -3975,7 +4011,7 @@ void EmitMultiCycleProcessorBhv(FILE* output)
   fprintf(output, PRINT_TRACE, INDENT[base_indent + 1]);
  }
  if (ACDasmFlag)
-  fprintf(output, PRINT_DASM, INDENT[base_indent + 1], project_name);
+  fprintf(output, PRINT_DASM, INDENT[base_indent + 1], project_name, project_name);
  if (ACStatsFlag)
  {
   fprintf(output, "%sisa.stats[%s_stat_ids::INSTRUCTIONS]++;\n",
@@ -3983,10 +4019,10 @@ void EmitMultiCycleProcessorBhv(FILE* output)
   fprintf(output, "%s(*(isa.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n",
           INDENT[base_indent], project_name);
 #if 0 // No cycle counting as of yet. --Marilia
-  fprintf(output, "%sac_sim_stats.ac_min_cycle_count += %s_isa::instr_table[ins_id].ac_instr_min_latency;\n",
-          INDENT[base_indent], project_name);
-  fprintf(output, "%sac_sim_stats.ac_max_cycle_count += %s_isa::instr_table[ins_id].ac_instr_max_latency;\n",
-          INDENT[base_indent], project_name);
+  fprintf(output, "%sac_sim_stats.ac_min_cycle_count += %s_parms::%s_isa::instr_table[ins_id].ac_instr_min_latency;\n",
+          INDENT[base_indent], project_name, project_name);
+  fprintf(output, "%sac_sim_stats.ac_max_cycle_count += %s_parms::%s_isa::instr_table[ins_id].ac_instr_max_latency;\n",
+          INDENT[base_indent], project_name, project_name);
 #endif
  }
  fprintf(output, "%s}\n", INDENT[base_indent - 1]);
@@ -4024,8 +4060,8 @@ void EmitMultiCycleProcessorBhv(FILE* output)
   fprintf(output, "%sbreak;\n", INDENT[base_indent]);
  }
  fprintf(output, "%s}\n", INDENT[base_indent - 2]);
- fprintf(output, "%sif (ac_cycle > %s_isa::instr_table[ins_id].ac_instr_cycles)\n",
-         INDENT[base_indent - 2], project_name);
+ fprintf(output, "%sif (ac_cycle > %s_parms::%s_isa::instr_table[ins_id].ac_instr_cycles)\n",
+         INDENT[base_indent - 2], project_name, project_name);
  fprintf(output, "%sac_cycle = 1;\n", INDENT[base_indent - 1]);
  if (ACABIFlag)
  {

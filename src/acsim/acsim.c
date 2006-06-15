@@ -1129,6 +1129,7 @@ int main(int argc, char** argv) {
     extern ac_dec_format *format_ins_list;
     extern char *project_name;
     extern char *upper_project_name;
+    extern char* helper_contents;
     extern ac_dec_instr *instr_list;
     extern int HaveMultiCycleIns;
     extern int wordsize;
@@ -1164,32 +1165,37 @@ int main(int argc, char** argv) {
       fprintf(output, "#include \"%s_stats.H\"\n", project_name);
     fprintf( output, "\n");
 
-    fprintf( output, "class %s_isa: public %s_arch_ref", project_name,
-	     project_name);
+    fprintf(output, "namespace %s_parms\n{\n", project_name);
+    fprintf(output, "class %s_isa: public %s_arch_ref", project_name,
+            project_name);
     if (ACStatsFlag)
       fprintf(output, ", public %s_all_stats", project_name);
     fprintf(output, " {\n");
 
     fprintf(output, "private:\n");
-    fprintf(output, "typedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", project_name);
+    fprintf(output, "typedef ac_instr<AC_DEC_FIELD_NUMBER> ac_instr_t;\n");
     for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
-     fprintf(output, "%sstatic bool group_%s[%s_parms::AC_DEC_INSTR_NUMBER];\n",
-             INDENT[1], pgroup->name, project_name);
+     fprintf(output, "%sstatic bool group_%s[AC_DEC_INSTR_NUMBER];\n",
+             INDENT[1], pgroup->name);
     fprintf(output, "\n");
 
     fprintf(output, "public:\n");
-
-    fprintf( output, "\n");
-    fprintf( output, "%sstatic ac_dec_field fields[%s_parms::AC_DEC_FIELD_NUMBER];\n", INDENT[1], project_name);
-    fprintf( output, "%sstatic ac_dec_format formats[%s_parms::AC_DEC_FORMAT_NUMBER];\n", INDENT[1], project_name);
-    fprintf( output, "%sstatic ac_dec_list dec_list[%s_parms::AC_DEC_LIST_NUMBER];\n", INDENT[1], project_name);
-    fprintf( output, "%sstatic ac_dec_instr instructions[%s_parms::AC_DEC_INSTR_NUMBER];\n", INDENT[1], project_name);
-    fprintf( output, "%sstatic const ac_instr_info instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1], project_name, project_name);
+    fprintf(output, "%sstatic ac_dec_field fields[AC_DEC_FIELD_NUMBER];\n", INDENT[1]);
+    fprintf(output, "%sstatic ac_dec_format formats[AC_DEC_FORMAT_NUMBER];\n", INDENT[1]);
+    fprintf(output, "%sstatic ac_dec_list dec_list[AC_DEC_LIST_NUMBER];\n", INDENT[1]);
+    fprintf(output, "%sstatic ac_dec_instr instructions[AC_DEC_INSTR_NUMBER];\n", INDENT[1]);
+    fprintf(output, "%sstatic const ac_instr_info instr_table[AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1]);
 
     fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
 
     /* current instruction ID */
     fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
+    /* ac_helper */
+    if (helper_contents)
+    {
+     fprintf(output, helper_contents);
+     fprintf(output, "\n");
+    }
 
     //Emiting Constructor.
     COMMENT(INDENT[1], "Constructor.");
@@ -1271,7 +1277,9 @@ int main(int argc, char** argv) {
     fprintf(output, "\n");
 
     /* Closing class declaration. */
-    fprintf( output,"};\n\n" );
+    fprintf(output,"};\n");
+    /* Closing namespace declaration. */
+    fprintf(output,"};\n\n");
 
     /* END OF FILE */
     fprintf( output, "\n\n#endif //_%s_ISA_H\n\n", upper_project_name);
@@ -1294,7 +1302,8 @@ int main(int argc, char** argv) {
     fprintf( output, "#define ac_behavior(instr) AC_BEHAVIOR_##instr ()\n\n");
 
     /* ac_behavior 2nd level macros - generic instruction */
-    fprintf(output, "#define AC_BEHAVIOR_instruction() %s_isa::_behavior_instruction(", project_name);
+    fprintf(output, "#define AC_BEHAVIOR_instruction() %s_parms::%s_isa::_behavior_instruction(",
+            project_name, project_name);
     /* common_instr_field_list has the list of fields for the generic instruction. */
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
       if( pfield->sign )
@@ -1307,14 +1316,14 @@ int main(int argc, char** argv) {
     fprintf(output, ")\n\n");
 
     /* ac_behavior 2nd level macros - pseudo-instructions begin, end */
-    fprintf(output, "#define AC_BEHAVIOR_begin() %s_isa::_behavior_begin()\n", project_name);
-    fprintf(output, "#define AC_BEHAVIOR_end() %s_isa::_behavior_end()\n", project_name);
+    fprintf(output, "#define AC_BEHAVIOR_begin() %s_parms::%s_isa::_behavior_begin()\n", project_name, project_name);
+    fprintf(output, "#define AC_BEHAVIOR_end() %s_parms::%s_isa::_behavior_end()\n", project_name, project_name);
 
     fprintf(output, "\n");
 
     /* ac_behavior 2nd level macros - instruction types */
     for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-      fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::_behavior_%s_%s(", pformat->name, project_name, project_name, pformat->name);
+      fprintf(output, "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::_behavior_%s_%s(", pformat->name, project_name, project_name, project_name, pformat->name);
       for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
 	if (pfield -> sign)
 	  fprintf(output, "int %s", pfield->name);
@@ -1329,7 +1338,7 @@ int main(int argc, char** argv) {
 
     /* ac_behavior 2nd level macros - instructions */
     for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-      fprintf(output, "#define AC_BEHAVIOR_%s() %s_isa::behavior_%s(", pinstr->name, project_name, pinstr->name);
+      fprintf(output, "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::behavior_%s(", pinstr->name, project_name, project_name, pinstr->name);
       for (pformat = format_ins_list;
 	   (pformat != NULL) && strcmp(pinstr->format, pformat->name);
 	   pformat = pformat->next);
@@ -1419,7 +1428,7 @@ int main(int argc, char** argv) {
       }
 
       fprintf( output, "%ssc_out<bool> bhv_done;\n", INDENT[1]);
-      fprintf( output, "%s%s_isa  ISA;\n", INDENT[1], project_name );
+      fprintf( output, "%s%s_parms::%s_isa ISA;\n", INDENT[1], project_name, project_name);
 
 
 
@@ -1560,7 +1569,7 @@ int main(int argc, char** argv) {
     fprintf(output, "%sbool has_delayed_load;\n", INDENT[1]);
     fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
 
-    fprintf( output, "%s%s_isa ISA;\n", INDENT[1], project_name );
+    fprintf( output, "%s%s_parms::%s_isa ISA;\n", INDENT[1], project_name, project_name);
     if (ACABIFlag)
       fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
 
@@ -2814,9 +2823,9 @@ void CreateImplTmpl(){
   /* Creating group tables. */
   for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
   {
-   COMMENT(INDENT[0], "Group %s table initialization.");
-   fprintf(output, "%sbool %s_isa::group_%s[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s{\n",
-           INDENT[0], project_name, pgroup->name, project_name, INDENT[1]);
+   COMMENT(INDENT[0], "Group %s table initialization.", pgroup->name);
+   fprintf(output, "%sbool %s_parms::%s_isa::group_%s[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s{\n",
+           INDENT[0], project_name, project_name, pgroup->name, project_name, INDENT[1]);
    for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next)
    {
     for (pref = pgroup->instrs; pref != NULL; pref = pref->next)
@@ -2835,8 +2844,8 @@ void CreateImplTmpl(){
   COMMENT(INDENT[0],"Fields table declaration.");
 
   /* Creating field table */
-  fprintf(output, "ac_dec_field %s_isa::fields[%s_parms::AC_DEC_FIELD_NUMBER] = {\n",
-          project_name, project_name);
+  fprintf(output, "ac_dec_field %s_parms::%s_isa::fields[%s_parms::AC_DEC_FIELD_NUMBER] = {\n",
+          project_name, project_name, project_name);
   i = 0;
   for (pformat = format_ins_list; pformat != NULL; pformat = pformat->next) {
     for (pdecfield = pformat->fields; pdecfield != NULL; pdecfield = pdecfield->next) {
@@ -2850,7 +2859,7 @@ void CreateImplTmpl(){
               pdecfield->val,
               pdecfield->sign);
       if (pdecfield->next)
-        fprintf(output, "&(%s_isa::fields[%d])},\n", project_name, i + 1);
+        fprintf(output, "&(%s_parms::%s_isa::fields[%d])},\n", project_name, project_name, i + 1);
       else
         fprintf(output, "NULL}");
 
@@ -2862,20 +2871,22 @@ void CreateImplTmpl(){
   fprintf(output, "\n};\n\n");
 
   /* Creating format structure */
-  fprintf(output, "ac_dec_format %s_isa::formats[%s_parms::AC_DEC_FORMAT_NUMBER] = {\n",
-          project_name, project_name);
+  fprintf(output, "ac_dec_format %s_parms::%s_isa::formats[%s_parms::AC_DEC_FORMAT_NUMBER] = {\n",
+          project_name, project_name, project_name);
   i = 0;
   count_fields = 0;
   for( pformat = format_ins_list; pformat!= NULL; pformat = pformat->next){
     /* fprintf char* name, int size, ac_dec_field* fields, next */
-    fprintf(output, "%s{\"%s\", %d, &(%s_isa::fields[%d]), ",
+    fprintf(output, "%s{\"%s\", %d, &(%s_parms::%s_isa::fields[%d]), ",
             INDENT[1],
             pformat->name,
             pformat->size,
             project_name,
+            project_name,
             count_fields);
     if (pformat->next)
-      fprintf(output, "&(%s_isa::formats[%d])},\n",
+      fprintf(output, "&(%s_parms::%s_isa::formats[%d])},\n",
+              project_name,
               project_name,
               i + 1);
     else
@@ -2888,8 +2899,8 @@ void CreateImplTmpl(){
   fprintf(output, "\n};\n\n");
 
   /* Creating decode list structure */
-  fprintf(output, "ac_dec_list %s_isa::dec_list[%s_parms::AC_DEC_LIST_NUMBER] = {\n",
-          project_name, project_name);
+  fprintf(output, "ac_dec_list %s_parms::%s_isa::dec_list[%s_parms::AC_DEC_LIST_NUMBER] = {\n",
+          project_name, project_name, project_name);
   i = 0;
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     for (pdeclist = pinstr->dec_list; pdeclist != NULL;
@@ -2900,7 +2911,7 @@ void CreateImplTmpl(){
               pdeclist->name,
               pdeclist->value);
       if (pdeclist->next)
-        fprintf(output, "&(%s_isa::dec_list[%d])},\n", project_name, i + 1);
+        fprintf(output, "&(%s_parms::%s_isa::dec_list[%d])},\n", project_name, project_name, i + 1);
       else
         fprintf(output, "NULL}");
 
@@ -2914,13 +2925,13 @@ void CreateImplTmpl(){
 
   /* Creating instruction structure */
   fprintf(output,
-          "ac_dec_instr %s_isa::instructions[%s_parms::AC_DEC_INSTR_NUMBER] = {\n",
-          project_name, project_name);
+          "ac_dec_instr %s_parms::%s_isa::instructions[%s_parms::AC_DEC_INSTR_NUMBER] = {\n",
+          project_name, project_name, project_name);
   i = 0;
   count_fields = 0;
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     /* fprintf char* name, int size, char* mnemonic, char* asm_str, char* format, unsigned id, unsigned cycles, unsigned min_latency, unsigned max_latency, ac_dec_list* dec_list, ac_control_flow* cflow, ac_dec_instr* next */
-    fprintf(output, "%s{\"%s\", %d, \"%s\", \"%s\", \"%s\", %d, %d, %d, %d, &(%s_isa::dec_list[%d]), %d, ",
+    fprintf(output, "%s{\"%s\", %d, \"%s\", \"%s\", \"%s\", %d, %d, %d, %d, &(%s_parms::%s_isa::dec_list[%d]), %d, ",
             INDENT[1],
             pinstr->name,
             pinstr->size,
@@ -2932,10 +2943,11 @@ void CreateImplTmpl(){
             pinstr->min_latency,
             pinstr->max_latency,
             project_name,
+            project_name,
             count_fields,
             0);
     if (pinstr->next)
-      fprintf(output, "&(%s_isa::instructions[%d])},\n", project_name, i + 1);
+      fprintf(output, "&(%s_parms::%s_isa::instructions[%d])},\n", project_name, project_name, i + 1);
     else
       fprintf(output, "NULL}\n");
     for (pdeclist = pinstr->dec_list; pdeclist != NULL; pdeclist = pdeclist->next)
@@ -2946,8 +2958,8 @@ void CreateImplTmpl(){
 
   /* Creating instruction table */
   fprintf(output, "const ac_instr_info\n");
-  fprintf(output, "%s_isa::instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] = {\n",
-          project_name, project_name);
+  fprintf(output, "%s_parms::%s_isa::instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] = {\n",
+          project_name, project_name, project_name);
   fprintf(output, "%sac_instr_info(0, \"_ac_invalid_\", \"_ac_invalid_\", %d),\n", INDENT[1], wordsize / 8);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     fprintf(output, "%sac_instr_info(%d, \"%s\", \"%s\", %d)",
@@ -4048,8 +4060,8 @@ void EmitInstrExec( FILE *output, int base_indent){
   //Pipelined archs can annul an instruction through pipelining flushing.
   if(stage_list || pipe_list ){
     fprintf( output, "%sISA._behavior_instruction( (ac_stage_list) id );\n", INDENT[base_indent]);
-/*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
-/*     fprintf( output, "%s(ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name); */
+/*     fprintf( output, "%s(ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_type_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name, project_name); */
+/*     fprintf( output, "%s(ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name, project_name); */
   }
   else{
     fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
@@ -4061,8 +4073,8 @@ void EmitInstrExec( FILE *output, int base_indent){
     }
     fprintf(output, ");\n");
 
-    /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_type_behavior))();\n", INDENT[base_indent], project_name); */
-    /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_isa::instr_table[ins_id].ac_instr_behavior))();\n", INDENT[base_indent], project_name); */
+    /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_type_behavior))();\n", INDENT[base_indent], project_name, project_name); */
+    /*     fprintf( output, "%sif(!ac_annul_sig) (ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_behavior))();\n", INDENT[base_indent], project_name, project_name); */
   }
 
   /* Switch statement for instruction selection */

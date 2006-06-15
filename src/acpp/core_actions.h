@@ -97,8 +97,6 @@ extern int pipe_num;     //!< Number of Pipelines
 extern int reg_width;    //!< Bit width of registers in a regbank.
 extern int largest_format_size;
 
-extern char* helper_body; //!< For ac_helper declarations.
-
 extern ac_sto_list* fetch_device; //!< Indicates the device used for fetching instructions.
 
 /* functions used in the semantic actions */

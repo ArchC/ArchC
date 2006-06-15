@@ -276,7 +276,6 @@ HEXA_DIGIT [0-9A-Fa-f]
   return AC_GROUP;
  }
 
- /*** Experimental feature. --Marilia
 <INITIAL>"ac_helper" {
   #if DEBUG_LEX
   printf("AC_HELPER: %s\n", yytext);
@@ -285,7 +284,6 @@ HEXA_DIGIT [0-9A-Fa-f]
   BEGIN(BLOCK_ALT_START);
   return AC_HELPER;
  }
- */
 
 <INITIAL>"ac_asm_map" {
   #if DEBUG_LEX

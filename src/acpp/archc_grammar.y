@@ -82,6 +82,7 @@ static int parse_error = 0;            //!< Indicates parse error occurred.
 char* project_name;                   //!< Name of the ArchC project being processed.
 char* upper_project_name;             //!< Name of the ArchC project being processed, converted to uppercase.
 char* isa_filename;                   //!< Name for the isa class file.
+char* helper_contents;                //!< Contents of the ac_helper declaration.
 int wordsize;                         //!< Size of the word type in bits for the current project.
 int fetchsize;                        //!< Size of the fetch word type in bits for the current project.
 int fetchbuffersize;                  //!< Size of the fetch buffer in bytes for the current project.
@@ -160,8 +161,7 @@ static void yywarn(const char* format, ...)
 %token <text> CYCLE_RANGE
 %token <text> IS_JUMP IS_BRANCH COND DELAY DELAY_COND BEHAVIOR
 %token <text> AC_ASM_MAP PSEUDO_INSTR
-%token <text> AC_GROUP
-/*** Experimental feature. --Marilia AC_HELPER */
+%token <text> AC_GROUP AC_HELPER
 
 /* ISA non-terminals */
 %type <text> input isadec isadecbody formatdeclist instrdeclist ctordec
@@ -170,8 +170,7 @@ static void yywarn(const char* format, ...)
 %type <text> fieldinitlist fieldinit rangedec interval
 %type <text> asmmaplist asmmapdec mapbodylist mapbody symbollist
 %type <text> pseudodec pseudobodylist pseudobody
-%type <text> groupdeclist groupdec
- /*** Experimental feature. --Marilia helperdec */
+%type <text> groupdeclist groupdec helperdec
 
 /* ARCH Tokens */
 %token <text> AC_ARCH
@@ -248,22 +247,26 @@ isadec: AC_ISA_UPPER LPAREN ID RPAREN LBRACE
       isadecbody RBRACE SEMICOLON {}
       ;
 
-isadecbody: /*** Experimental feature. --Marilia helperdec */
-      formatdeclist instrdeclist groupdeclist asmmaplist ctordec
+isadecbody:
+      helperdec formatdeclist instrdeclist groupdeclist asmmaplist ctordec
       ;
 
 /*******************************************/
 /* Parsing helper declarations             */
 /*******************************************/
 
-/*** Experimental feature. --Marilia
 helperdec: AC_HELPER BLOCK SEMICOLON
       {
-       // TODO: code this thing //
+       if (helper_contents)
+        yywarn("Multiple ac_helper declarations. Ignored");
+       else
+       {
+        helper_contents = $2;/*(char*) malloc(sizeof(char) * (1 + strlen($2)));*/
+        /*strcpy(helper_contents, $2);*/
+       }
       }
-      | // empty string // {}
+      | /* empty string */ {}
       ;
-*/
 
 /*******************************************/
 /* Parsing format declarations             */
@@ -414,7 +417,7 @@ symbollist: COMMA STR
 ctordec: ISA_CTOR LPAREN ID RPAREN LBRACE ctordecbody RBRACE SEMICOLON
       ;
 
-ctordecbody:  asmdec ctordecbody
+ctordecbody: asmdec ctordecbody
       | decoderdec ctordecbody
       | cyclesdec ctordecbody
       | rangedec ctordecbody
@@ -697,13 +700,14 @@ behaviordec: ID DOT BEHAVIOR BLOCK SEMICOLON
 /******************************************************/
 archdec: AC_ARCH LPAREN ID RPAREN LBRACE
       {
-       /* Middle rule action to start emiting ARCH module declaration. */
+       /* Middle rule action to start emitting ARCH module declaration. */
        project_name = (char*) malloc(sizeof(char) * (strlen($3) + 1));
        upper_project_name = (char*) malloc(sizeof(char) * (strlen($3) + 1));
        strcpy(project_name, $3);
        strcpy(upper_project_name, $3);
        str_upper(upper_project_name);
        descrp = ARCH_D;
+       helper_contents = NULL;
        /* Initialisation section */
        /* local variables */
        current_type = NULL;
