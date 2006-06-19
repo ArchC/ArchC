@@ -1,3 +1,21 @@
+/**
+ * @file      accsim_extras.h
+ * @author    Sandro Rigo
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Wed, 17 Jul 2002 08:07:46 -0200
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+
 ////////////////////////////////
 // CONFIGURATION
 ////////////////////////////////

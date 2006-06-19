@@ -1,11 +1,20 @@
 /**
- * @file   ac_instr_info.H
- * @author Thiago Massariolli Sigrist
- * @date   Thu May 12 13:54:55 2005
+ * @file      ac_instr_info.H
+ * @author    Thiago Massariolli Sigrist
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Thu May 12 13:54:55 2005
  * 
- * @brief  Defines a struct containing information about an instruction.
+ * @brief     Defines a struct containing information about an instruction.
  * 
- * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

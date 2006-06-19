@@ -1,35 +1,27 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  Generic decoder for arquitectures described in ArchC
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-*/
-
-/********************************************************/
-/* The ArchC Decoder Generator                          */
-/* Author: Marcus Bartholomeu and Sandro Rigo           */
-/*                                                      */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
-
-/*! \file ac_decoder_rt.H
-  \brief ArchC Decoder header file.
-  This file contains the structures needed for the ArchC Pre-processor to build
-  the decoder for the target ISA.
-*/
+/**
+ * @file      ac_decoder_rt.H
+ * @author    Marcus Bartholomeu
+ *            Sandro Rigo
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:20 -0300
+ * 
+ * @brief     ArchC Decoder header file.
+ *            This file contains the structures needed for the ArchC
+ *            Pre-processor to build  the decoder for the target ISA.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #ifndef _AC_DECODER_RT_HPP_
 #define _AC_DECODER_RT_HPP_

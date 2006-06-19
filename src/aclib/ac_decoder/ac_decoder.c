@@ -1,13 +1,14 @@
 /* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
+
 /**
  * @file      ac_decoder.c
  * @author    Sandro Rigo
  *            Marcus Bartholomeu
  *            Marcelo de Almeida Oliveira (contributor)
  *
- * @author    The ArchC Team
+ *            The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
@@ -17,19 +18,13 @@
  * @version   1.0
  * @date      Wed, 07 Jun 2006 16:49:59 -0300
  *
- * @brief     The ArchC decoder generator.
+ * @brief     Creates the decoder for the target ISA.
+ *            This file contains the functions needed to create the 
+ *            decoder for the target ISA described in the ArchC file.
  *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
-
-//////////////////////////////////////////////////////////
-/*! \file ac_decoder.c
-  \brief Creates the decoder for the target ISA.
-
-  This file contains the functions needed to create the decoder for
-  the target ISA described in the ArchC file.
-*/
 
 #include <stdio.h>
 #include <string.h>

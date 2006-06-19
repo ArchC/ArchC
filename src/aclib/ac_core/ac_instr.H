@@ -1,12 +1,22 @@
 /**
- * @file   ac_instr.H
- * @author Sandro Rigo
- * @author Thiago Massariolli Sigrist
- * @date   Thu May 19 11:26:09 2005
+ * @file      ac_instr.H
+ * @author    Sandro Rigo
+ *            Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Thu May 19 11:26:09 2005
  * 
- * @brief  Defines a container for instruction signals.
+ * @brief     Defines a container for instruction signals.
  * 
- * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

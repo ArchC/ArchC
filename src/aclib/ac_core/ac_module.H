@@ -1,11 +1,21 @@
 /**
- * @file   ac_module.H
- * @author Thiago Massariolli Sigrist
- * @date   Thu May 12 10:15:27 2005
+ * @file      ac_module.H
+ * @author    Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Thu May 12 10:15:27 2005
  * 
- * @brief  Defines the abstract class for an ArchC module.
+ * @brief     Defines the abstract class for an ArchC module.
  * 
- * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

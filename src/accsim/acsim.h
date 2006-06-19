@@ -1,38 +1,26 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  ArchC simulator generator generates simulators for the described arquitecture
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-*/
-
-/********************************************************/
-/* acsim.h: The ArchC simulator generator.              */
-/* Author: Sandro Rigo                                  */
-/* Date: 16-07-2002                                     */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-////////////////////////////////////////////////////////////////
-
-/*!\file acsim.h                                                
-  \brief ArchC Simulator Generator header file                      
-  This file contains the structures and macro definitions    
-  needed by the ArchC Simulator.                              */
-////////////////////////////////////////////////////////////////
-
-/** @defgroup acsim ArchC simulator generator
- * @{
+/**
+ * @file      acsim.h
+ * @author    Sandro Rigo
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Wed, 17 Jul 2002 08:07:46 -0200
+ * 
+ * @brief     The ArchC simulator generator.
+ *            This file contains the structures and macro definitions
+ *            needed by the ArchC Simulator.
+ * @defgroup acsim ArchC simulator generator
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 #ifndef _ACSIM_H_

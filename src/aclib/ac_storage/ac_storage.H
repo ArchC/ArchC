@@ -1,11 +1,21 @@
 /**
- * @file   ac_storage.H
- * @author Thiago Massariolli Sigrist
- * @date   Tue Sep 13 17:16:51 2005
- * 
- * @brief  Defines a class modeling a basic storage device (memory).
- * 
- * 
+ * @file      ac_storage.H
+ * @author    Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Tue Sep 13 17:16:51 2005
+ *
+ * @brief     Defines a class modeling a basic storage device (memory).
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

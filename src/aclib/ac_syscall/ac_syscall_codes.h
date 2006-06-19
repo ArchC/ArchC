@@ -1,13 +1,25 @@
-/* System calls codes copied from include/asm/unistd.h
-   at a Linux Red Hat 9 machine */
-
+/**
+ * @file      ac_syscall_codes.h
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:20 -0300
+ *
+ * @brief     This file contains the system call numbers.
+ *            System calls codes copied from include/asm/unistd.h
+ *            at a Linux Red Hat 9 machine
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #ifndef _AC_SYSCALL_CODES_
 #define _AC_SYSCALL_CODES_
-
-/*
- * This file contains the system call numbers.
- */
 
 #define __NR_exit		  1
 #define __NR_fork		  2

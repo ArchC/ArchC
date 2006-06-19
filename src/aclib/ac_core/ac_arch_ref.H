@@ -1,11 +1,21 @@
 /**
- * @file   ac_arch_ref.H
- * @author Thiago Massariolli Sigrist
- * @date   Thu May 12 14:01:01 2005
+ * @file      ac_arch_ref.H
+ * @author    Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Thu May 12 14:01:01 2005
  * 
- * @brief  Defines a class that contains references to the ac_arch fields.
+ * @brief     Defines a class that contains references to the ac_arch fields.
  * 
- * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

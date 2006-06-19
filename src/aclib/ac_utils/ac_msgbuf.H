@@ -1,10 +1,23 @@
-//////////////////////////////////////////////////////////
-/*!\file ac_msgbuf.H
-  \brief The ArchC structures for IPC
-
-  This class contains  structures for IPC during co-verification
-*/
-//////////////////////////////////////////////////////////
+/**
+ * @file      ac_msgbuf.H
+ * @author    Sandro Rigo
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     The ArchC structures for IPC
+ *            This class contains  structures for IPC during co-verification
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 //////////////////////////////////////////////////////////
 // ArchC co-verification protocol:

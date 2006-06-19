@@ -1,36 +1,27 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  Generic decoder for arquitectures described in ArchC
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-*/
-
-/********************************************************/
-/* The ArchC Decoder Generator                          */
-/* Author: Marcus Bartholomeu and Sandro Rigo           */
-/* Contributor: Marcelo de Almeida Oliveira             */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
-//////////////////////////////////////////////////////////
-/*! \file ac_decoder_rt.c
-  \brief Creates the decoder for the target ISA.
-
-  This file contains the functions needed to create the decoder for
-  the target ISA described in the ArchC file.
-*/
+/**
+ * @file      ac_decoder_rt.cpp
+ * @author    Marcus Bartholomeu
+ *            Marcelo de Almeida Oliveira (Contributor)
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:20 -0300
+ * 
+ * @brief     Creates the decoder for the target ISA.
+ *            This file contains the functions needed to create the 
+ *            decoder for the target ISA described in the ArchC file.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -158,9 +149,9 @@ ac_dec_field* ac_dec_field::FindDecField(string name) {
 // USEFUL?
 ac_dec_field* ac_dec_field::PutIDs(ac_dec_format *formats, unsigned nFields)
      /* TODO:
-        - porque o indice e o id não são iguais? (poderia pegar o nome pelo id) (id 0 reservado)
-        - porque não muda o id na mesma estrutura recebida?
-        - nFields é na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
+        - porque o indice e o id nï¿½ sï¿½ iguais? (poderia pegar o nome pelo id) (id 0 reservado)
+        - porque nï¿½ muda o id na mesma estrutura recebida?
+        - nFields ï¿½na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
       */
 {
   ac_dec_field* fields;

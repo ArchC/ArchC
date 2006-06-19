@@ -1,36 +1,24 @@
-/** \file ac_gdb.H
- * GDB Support for ArchC simulators.
+/**
+ * @file      ac_gdb.H
+ * @author    Daniel Cabrini Hauagge    <ra008388@ic.unicamp.br>
+ *            Gustavo Sverzut Barbieri  <ra008849@ic.unicamp.br>
+ *            Joao Victor Andrade Neves <ra008951@ic.unicamp.br>
+ *            Rafael Dantas de Castro   <ra009663@ic.unicamp.br>
  *
- *    This is just the header file. Look for documentation in ac_gdb.cpp or in 
- * the doxygen auto-generated files.
+ *            The ArchC Team
+ *            http://www.archc.org/
  *
- ******************************************************************************
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
  *
- * \note When modifing this file respect:
- * \li License
- * \li Previous author names. Add your own after current ones.
- * \li Coding style (basically emacs style)
- * \li Commenting style. This code use doxygen (http://www.doxygen.org)
- *     to be documented.
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
  *
- ******************************************************************************
- *                                                                             
- * LICENSE:
- *    GNU GPL --- General Public License, version 2.0 or greater.
- *    See archc/COPYING for more information.
- *
- * \author Daniel Cabrini Hauagge    <ra008388@ic.unicamp.br>
- * \author Gustavo Sverzut Barbieri  <ra008849@ic.unicamp.br>
- * \author Joao Victor Andrade Neves <ra008951@ic.unicamp.br>
- * \author Rafael Dantas de Castro   <ra009663@ic.unicamp.br>
- *
- ******************************************************************************
- * GDB Support for ArchC simulators.
- *
- *    This file implements AC_GDB methods to support GDB communication protocol
- * (see info gdb / "Remote Protocol"). The current implementation supports the
- * following gdb commands:
- *
+ * @brief     GDB Support for ArchC simulators.
+ *            This file implements AC_GDB methods to support GDB 
+ *            communication protocol (see info gdb / "Remote Protocol"). 
+ *            The current implementation supports the following gdb commands:
  \verbatim
  .----------------.---------------------------------------.-----------------.
  | Command        | Function Description                  | Return value    |
@@ -75,7 +63,8 @@
  *    This file is to be processor agnostic!  Every code that depends on 
  * processor specific features must be handled in AC_GDB_Interface.
  *
- *******************************************************************************
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  * \note When modifing this file respect:
  * \li License
@@ -84,33 +73,15 @@
  * \li Commenting style. This code use doxygen (http://www.doxygen.org)
  *     to be documented.
  *
- * \note This code contains code from others, see the helper functions below for
- *       origin references and copyright notices. Those code lines come from 
- *       Linux kernel and are under GNU-GPL.
- *
- *
  * \todo Right now, just memory breakpoints are supported, the other (hardware,
  *       write, read and access) are not implemented. They are marked as:
  *           \code // FIXME --- not yet supported \endcode
  *       If you want to improve GDB support, try to implement these.
- *
- *
- *******************************************************************************
- *                                                                             
- * LICENSE:
- *    GNU GPL --- General Public License, version 2.0 or greater.
- *    See archc/COPYING for more information.
- *
- * \author Daniel Cabrini Hauagge    <ra008388@ic.unicamp.br>
- * \author Gustavo Sverzut Barbieri  <ra008849@ic.unicamp.br>
- * \author Joao Victor Andrade Neves <ra008951@ic.unicamp.br>
- * \author Rafael Dantas de Castro   <ra009663@ic.unicamp.br>
- *
  * NOTICE:
  *    Contains extracts from Linux Kernel code. See below.
  *
- *******************************************************************************
  */
+
 #ifndef _AC_GDB_H_
 #define _AC_GDB_H_
 

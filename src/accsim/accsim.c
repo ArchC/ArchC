@@ -1,29 +1,26 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  ArchC Pre-processor generates tools for the described arquitecture
-    Copyright (C) 2004  The ArchC Team
+/**
+ * @file      accsim.c
+ * @author    Marcus Bartholomeu
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Wed, 19 Mar 2003 08:07:46 -0200
+ * 
+ * @brief     The ArchC pre-processor for compiled simulation.
+ *            This file contains functions for compiled simulation.
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-*/
-
-/*************************************************************/
-/* Accs.c: The ArchC pre-processor for compiled simulation.  */
-/* Author: Marcus Bartholomeu                                */
-/* Created: 19-03-2003                                       */
-/*************************************************************/
-//////////////////////////////////////////////////////////
-/*!\file accs.c
-  \brief The ArchC pre-processor for compiled simulation.
-  This file contains functions for compiled simulation.
-*/
 //////////////////////////////////////////////////////////
 
 #include <stdlib.h>
@@ -586,7 +583,7 @@ int accs_ReadHexProgram(char* prog_filename)
 
     //Not comment, it must be an HEX digit
     else if (! isxdigit(hex1)) {
-      //AC_MSG("Reading application program %s (invalid file?)\n", prog_filename);
+      //AC_MSG("Reading application program %s (invalid accsim.c)\n", prog_filename);
       free(instr_mem);
       return EXIT_FAILURE;
     }
@@ -594,7 +591,7 @@ int accs_ReadHexProgram(char* prog_filename)
     //Found one HEX digit, must read another one
     else if ((fscanf(prog, "%c", &hex2) == EOF) ||
              (!isxdigit(hex2))) {
-      //AC_MSG("Reading application program %s (invalid file?)\n", prog_filename);
+      //AC_MSG("Reading application program %s (invalid accsim.c)\n", prog_filename);
       free(instr_mem);
       return EXIT_FAILURE;
     }

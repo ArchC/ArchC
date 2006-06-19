@@ -1,10 +1,23 @@
-/** \file breakpoints.H
- * Breakpoint support
+/**
+ * @file      breakpoints.H
+ * @author    Daniel Cabrini Hauagge    <ra008388@ic.unicamp.br>
+ *            Gustavo Sverzut Barbieri  <ra008849@ic.unicamp.br>
+ *            Joao Victor Andrade Neves <ra008951@ic.unicamp.br>
+ *            Rafael Dantas de Castro   <ra009663@ic.unicamp.br>
  *
- *    This is just the header file. Look for documentation in breakpoints.cpp 
- * or in the doxygen auto-generated files.
+ *            The ArchC Team
+ *            http://www.archc.org/
  *
- ******************************************************************************
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     Breakpoint support
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  * \note When modifing this file respect:
  * \li License
@@ -13,22 +26,9 @@
  * \li Commenting style. This code use doxygen (http://www.doxygen.org)
  *     to be documented.
  *
- *
  * \todo  This class should be replaced for standard STL element.
- *
- ******************************************************************************
- *                                                                             
- * LICENSE:
- *    GNU GPL --- General Public License, version 2.0 or greater.
- *    See archc/COPYING for more information.
- *
- * \author Daniel Cabrini Hauagge    <ra008388@ic.unicamp.br>
- * \author Gustavo Sverzut Barbieri  <ra008849@ic.unicamp.br>
- * \author Joao Victor Andrade Neves <ra008951@ic.unicamp.br>
- * \author Rafael Dantas de Castro   <ra009663@ic.unicamp.br>
- *
- ******************************************************************************
  */
+
 #ifndef _BREAKPOINTS_H_
 #define _BREAKPOINTS_H_
 

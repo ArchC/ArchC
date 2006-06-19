@@ -1,11 +1,21 @@
 /**
- * @file   ac_inout_if.H
- * @author Thiago Massariolli Sigrist
- * @date   Mon Sep 12 20:45:27 2005
- * 
- * @brief  Defines an interface class with input/output methods.
- * 
- * 
+ * @file      ac_inout_if.H
+ * @author    Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon Sep 12 20:45:27 2005
+ *
+ * @brief     Defines an interface class with input/output methods.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

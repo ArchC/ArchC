@@ -1,10 +1,22 @@
-/***************************************************************************
- *            ac_stage.H
+/**
+ * @file      ac_stage.H
+ * @author    Marilia Felippe Chiozo
  *
- *  Mon May 30 06:04:52 2005
- *  Copyright 2005  Marilia Felippe Chiozo
- *  Email ra030038@ic.unicamp.br
- ****************************************************************************/
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 30 May 2005 06:04:52 -0200
+ * 
+ * @brief     brief?
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #ifndef _AC_STAGE_H_
 #define _AC_STAGE_H_

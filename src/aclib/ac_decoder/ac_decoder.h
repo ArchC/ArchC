@@ -1,12 +1,11 @@
-/* ex: set tabstop=2 expandtab:
-   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
-*/
+/* ex: set tabstop=2 expandtab:   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*- */
+
 /**
  * @file      ac_decoder.h
  * @author    Sandro Rigo
  *            Marcus Bartholomeu
  *
- * @author    The ArchC Team
+ *            The ArchC Team
  *            http://www.archc.org/
  *
  *            Computer Systems Laboratory (LSC)
@@ -16,17 +15,13 @@
  * @version   1.0
  * @date      Wed, 07 Jun 2006 16:48:24 -0300
  *
- * @brief     The ArchC decoder generator.
+ * @brief     ArchC Decoder header file.
+ *            This file contains the structures needed for the ArchC
+ *            Pre-processor to build the decoder for the target ISA.
  *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
  */
-
-/*! \file ac_decoder.h
-  \brief ArchC Decoder header file.
-  This file contains the structures needed for the ArchC Pre-processor to build
-  the decoder for the target ISA.
-*/
 
 #ifndef _AC_DECODER_H_
 #define _AC_DECODER_H_

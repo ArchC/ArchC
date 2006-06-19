@@ -1,37 +1,23 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  ArchC Cache Library for ArchC architecture simulators
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-*/
-
-/********************************************************/
-/* The ArchC memory simulation class.                   */
-/* Author:  Pablo Viana (CIn-UFPE)                      */
-/* Contact: pvs@cin.ufpe.br                             */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
-//////////////////////////////////////////////////////////
-/*!\file ac_mem.cpp
-  \brief The ArchC Mem device class. Implementation file.
-
-*/
-/************************************************
- * Author: Pablo Viana
- ************************************************/
+/**
+ * @file      ac_mem.cpp
+ * @author    Pablo Viana <pvs@cin.ufpe.br>
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            CIn - UFPE
+ *
+ * @version   version?
+ * @date      Thu Sep 22 11:47:36 2005
+ *
+ * @brief     The ArchC Mem device class. Implementation file.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+ 
 //////////////////////////////////////////////////////////
 
 

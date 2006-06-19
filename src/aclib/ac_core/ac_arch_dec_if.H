@@ -1,13 +1,21 @@
 /**
- * @file   ac_arch_dec_if.H
- * @author Thiago Massariolli Sigrist
- * @date   Fri Nov 18 19:53:16 2005
+ * @file      ac_arch_dec_if.H
+ * @author    Thiago Massariolli Sigrist
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Fri Nov 18 19:53:16 2005
  * 
- * @brief  Defines an ac_arch specialization that contains GetBits()
+ * @brief     Defines an ac_arch specialization that contains GetBits()
  * 
- * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
-
 
 //////////////////////////////////////////////////////////////////////////////
 

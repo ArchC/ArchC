@@ -1,10 +1,23 @@
-/************************************************
+/**
+ * @file      ac_log.H
+ * @author    Sandro Rigo
  *
- *  ac_log.H - include file for ArchC log types
+ *            The ArchC Team
+ *            http://www.archc.org/
  *
- * Author: Sandro Rigo
- * Date  : 02/04/2002  
- ************************************************/
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     Include file for ArchC log types
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+ 
 #ifndef _AC_LOG_H
 #define _AC_LOG_H
 

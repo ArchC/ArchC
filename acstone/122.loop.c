@@ -1,6 +1,19 @@
-/**********************************************************************
- It is a simple main function that uses for loops.
-**********************************************************************/
+/**
+ * @file      122.loop.c
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:21 -0300
+ * @brief     It is a simple main function that uses for loops.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 /* The file begin.h is included if compiler flag -DBEGINCODE is used */
 #ifdef BEGINCODE

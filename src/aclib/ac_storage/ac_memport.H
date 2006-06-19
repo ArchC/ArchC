@@ -1,11 +1,21 @@
 /**
- * @file   ac_memport.H
- * @author Thiago Massariolli Sigrist
- * @date   Thu Sep 22 11:47:36 2005
- * 
- * @brief  Defines a wrapper template class for memory access.
- * 
- * 
+ * @file      ac_memport.H
+ * @author    Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Thu Sep 22 11:47:36 2005
+ *
+ * @brief     Defines a wrapper template class for memory access.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
 
 //////////////////////////////////////////////////////////////////////////////

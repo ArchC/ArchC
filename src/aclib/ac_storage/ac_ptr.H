@@ -1,13 +1,22 @@
 /**
- * @file   ac_ptr.H
- * @author Thiago Massariolli Sigrist
- * @date   Tue Sep 13 19:05:35 2005
- * 
- * @brief  Defines a convenience union for pointers to integer types.
- * 
- * 
+ * @file      ac_ptr.H
+ * @author    Thiago Massariolli Sigrist
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Tue Sep 13 19:05:35 2005
+ *
+ * @brief     Defines a convenience union for pointers to integer types.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
  */
-
 
 //////////////////////////////////////////////////////////////////////////////
 

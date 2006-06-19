@@ -1,15 +1,22 @@
-/********************************************************/
-/* The ArchC model debug library.                       */
-/* Author: Marcus Bartholomeu                           */
-/*                                                      */
-/* For more information on ArchC, please visit:         */
-/* http://www.archc.org                                 */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
+/**
+ * @file      ac_debug_model.H
+ * @author    Marcus Bartholomeu
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     The ArchC model debug library.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #ifdef DEBUG_MODEL
 #  include <stdio.h>

@@ -1,3 +1,21 @@
+/**
+ * @file      ac_syscall_wrapper.h
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:20 -0300
+ *
+ * @brief     brief?
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+
 #ifndef _AC_SYSCALL_WRAPPER_H_
 #define _AC_SYSCALL_WRAPPER_H_
 

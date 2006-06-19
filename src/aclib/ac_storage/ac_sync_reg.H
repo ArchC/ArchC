@@ -1,38 +1,27 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/*  ArchC Register Library for the ArchC architecture simulators
-    Copyright (C) 2002-2004  The ArchC Team
-
-    This library is free software; you can redistribute it and/or
-    modify it under the terms of the GNU Lesser General Public
-    License as published by the Free Software Foundation; either
-    version 2.1 of the License, or (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-    Lesser General Public License for more details.
-*/
-
-/********************************************************/
-/* Synchronous register class                           */
-/* Author:  Sandro Rigo, Marilia Felippe Chiozo         */
-/*                                                      */
-/*                                                      */
-/* The ArchC Team                                       */
-/* Computer Systems Laboratory (LSC)                    */
-/* IC-UNICAMP                                           */
-/* http://www.lsc.ic.unicamp.br                         */
-/********************************************************/
-
-//////////////////////////////////////////////////////////
-/*!\file ac_sync_reg.H
-  \brief The ArchC synchronous register class.
-
-  This class contains  members and methods needed by
-  synchronous register devices for behavioral simulation.
-*/
-//////////////////////////////////////////////////////////
+/**
+ * @file      ac_sync_reg.H
+ * @author    Sandro Rigo
+ *            Marilia Felipe Chiozo
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     The ArchC synchronous register class.
+ *            This class contains  members and methods needed by
+ *            synchronous register devices for behavioral simulation.
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #ifndef _AC_SYNC_REG_H_
 #define _AC_SYNC_REG_H_

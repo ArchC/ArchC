@@ -1,13 +1,31 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
+/**
+ * @file      ac_verify.cpp
+ * @author    The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     brief?
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+
 #include "ac_verify.H"
 
 
 /*!Logging structural model changes for a given device.
-  \parm pdevchg A pointer to the change list of the device.
-  \parm address The address being modified.
-  \parm datum   The new value being stored at address.
-  \parm time    Simulation time of this modification.
+  \param pdevchg A pointer to the change list of the device.
+  \param address The address being modified.
+  \param datum   The new value being stored at address.
+  \param time    Simulation time of this modification.
 */
 void ac_verify::add_log( log_list  *pdevchg, unsigned address, unsigned datum, double time  ) { 
 

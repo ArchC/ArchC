@@ -1,20 +1,26 @@
-/********************************************************/
-/* ac_verifier.cpp: The ArchC co-verification engine    */
-/* Author: Sandro Rigo                                  */
-/* Starting Date: 10-10-2003                            */
-/*                                                      */
-/********************************************************/
-//////////////////////////////////////////////////////////
-/*!\file ac_verifier.cpp
-  \brief The ArchC co-verification engine
-
-  This file contains functions to control the ArchC 
-  co-verification engine. This engine will supervise
-	simulation of two ArchC models monitoring updates to the
-	storage devices. This is accomplished through IPC messages
-*/
-//////////////////////////////////////////////////////////
-
+/**
+ * @file      acverifier.cpp
+ * @author    Sandro Rigo
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   version?
+ * @date      Mon, 19 Jun 2006 15:33:19 -0300
+ *
+ * @brief     The ArchC co-verification engine
+ *            This file contains functions to control the ArchC 
+ *            co-verification engine. This engine will supervise
+ *            simulation of two ArchC models monitoring updates to the
+ *            storage devices. This is accomplished through IPC messages
+ *
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
 
 #include <stdlib.h>
 #include <errno.h>
