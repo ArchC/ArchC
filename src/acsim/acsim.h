@@ -96,6 +96,7 @@ enum _ac_cmd_options {
   OPVerbose,
   OPVersion,
   OPGDBIntegration,
+  OPWait,
   ACNumberOfOptions
 };
 

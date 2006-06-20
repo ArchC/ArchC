@@ -45,6 +45,7 @@ int  ACVerboseFlag=0;                           //!<Indicates whether verbose op
 int  ACVerifyFlag=0;                            //!<Indicates whether verification option is turned on or not
 int  ACVerifyTimedFlag=0;                       //!<Indicates whether verification option is turned on for a timed behavioral model
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
+int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
 
 //char *ACVersion = "2.0alpha1";                        //!<Stores ArchC version number.
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
@@ -88,6 +89,7 @@ struct option_map option_map[] = {
   {"--verbose"       , "-vb"         ,"Display update logs for storage devices during simulation.", "o"},
   {"--version"       , "-vrs"        ,"Display ACSIM version.", 0},
   {"--gdb-integration", "-gdb"       ,"Enable support for debbuging programs running on the simulator.", 0},
+  {"--no-wait"       , "-nw"        ,"Disable wait() at execution thread.", 0},
   0
 };
 
@@ -255,6 +257,11 @@ int main(int argc, char** argv) {
             case OPGDBIntegration:
               ACGDBIntegrationFlag=1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPWait:
+              ACWaitFlag = 0;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
 
             default:
               break;
@@ -3924,16 +3931,21 @@ void EmitUpdateMethod( FILE *output){
   fprintf(output, "%sif (ac_stop_flag) {\n", INDENT[1]);
   fprintf( output, "%sreturn;\n", INDENT[2]);
   fprintf( output, "%s}\n", INDENT[1]);
-  fprintf( output, "%selse {\n", INDENT[1]);
-  fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", INDENT[2]);
-  fprintf( output, "%sinstr_in_batch++;\n", INDENT[3]);
-  fprintf( output, "%s}\n", INDENT[2]);
-  fprintf( output, "%selse {\n", INDENT[2]);
-  fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[3]);
-  fprintf( output, "%swait(1, SC_NS);\n", INDENT[3]);
-  fprintf( output, "%s}\n", INDENT[2]);
 
-  fprintf(output, "%s}\n\n", INDENT[1]);
+  if (ACWaitFlag) {
+    fprintf( output, "%selse {\n", INDENT[1]);
+
+    fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", INDENT[2]);
+    fprintf( output, "%sinstr_in_batch++;\n", INDENT[3]);
+    fprintf( output, "%s}\n", INDENT[2]);
+
+    fprintf( output, "%selse {\n", INDENT[2]);
+    fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[3]);
+    fprintf( output, "%swait(1, SC_NS);\n", INDENT[3]);
+    fprintf( output, "%s}\n", INDENT[2]);
+
+    fprintf(output, "%s}\n\n", INDENT[1]);
+  }
 
   fprintf( output, "%s} // for (;;)\n", INDENT[0]);
   fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
