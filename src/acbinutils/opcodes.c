@@ -271,6 +271,10 @@ int CreatePseudoOpsTable(const char *optable_filename)
 
 /*
  * module function implementations 
+ *
+ * format:
+ *   %<op_id>:<mod_id>:<addend>:<fid1+fid2+fid3...>:rel_id:
+ *
  */
 
 static void create_operand_string(ac_asm_insn *insn, char **output) 
@@ -297,6 +301,26 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       }
 
       *s = ':';
+      s++;
+
+      /* mod_id */
+
+      sprintf(s, "%d", opP->modifier.type);
+      while (*s >= '0' && *s <= '9') s++;
+
+      *s = ':';
+      s++;
+
+
+      /* addend */
+      /* TODO: check for negative addends */
+      sprintf(s, "%d", opP->modifier.addend);
+      while (*s >= '0' && *s <= '9') s++;
+
+      *s = ':';
+
+
+      /* fields */
 
       ac_asm_insn_field *fP = opP->fields;
       while (fP != NULL) {
@@ -305,11 +329,11 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
         sprintf(s, "%d", fP->id);
         while (*s >= '0' && *s <= '9') s++;
 
-        *s = ':'; 
+//        *s = ':'; 
 
-        s++;
-        sprintf(s, "%d", fP->reloc_id);
-        while (*s >= '0' && *s <= '9') s++;
+//        s++;
+//        sprintf(s, "%d", fP->reloc_id);
+//        while (*s >= '0' && *s <= '9') s++;
         
         fP = fP->next;
         if (fP != NULL) 
@@ -318,6 +342,15 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
 
       *s = ':';
       s++;
+
+      /* reloc id */
+
+      sprintf(s, "%d", opP->reloc_id);
+      while (*s >= '0' && *s <= '9') s++;
+      
+      *s = ':';
+      s++;
+
 
       opP = opP->next;
       /* TODO: check for NULL pointer */

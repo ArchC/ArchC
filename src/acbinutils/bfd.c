@@ -37,14 +37,17 @@
 
 typedef struct _ac_relocation_type {
   char *name;
-  unsigned id;
-  unsigned rightshift;
-  unsigned reloc_size;
-  unsigned bitsize;
-  unsigned bitpos;
-  unsigned mask;
-  unsigned pc_relative;
-  unsigned uses_carry;
+  unsigned int id;
+  unsigned int fields;
+  unsigned int format_id;
+  operand_modifier mod_id;
+//  unsigned rightshift;
+//  unsigned reloc_size;
+//  unsigned bitsize;
+//  unsigned bitpos;
+//  unsigned mask;
+//  unsigned pc_relative;
+//  unsigned uses_carry;
   struct _ac_relocation_type *next;
 } ac_relocation_type;
 
@@ -106,6 +109,32 @@ int CreateRelocIds(const char *relocid_filename)
 
 /*
   Relocation HOWTO structure - bfd/elf32-<arch>.c
+
+  Fields of the original BFD structure (reloc_howto_struct)
+  
+  . unsigned int type;
+  . unsigned int rightshift;
+  . int size;
+  . unsigned int bitsize;
+  . bfd_boolean pc_relative;
+  . unsigned int bitpos;
+  . enum complain_overflow complain_on_overflow;
+  . bfd_reloc_status_type (*special_function)
+    (bfd *, arelent *, struct bfd_symbol *, void *, asection *,
+     bfd *, char **);
+  . char *name;
+  . bfd_boolean partial_inplace;
+  . bfd_vma src_mask;
+  . bfd_vma dst_mask;
+  . bfd_boolean pcrel_offset;
+
+  Mapping from 'ac_relocation_type' to 'reloc_howto_struct'
+
+  id        --> type
+  fields    --> rightshift
+  format_id --> bitsize
+  mod_id    --> bitpos
+
 */
 int CreateRelocHowto(const char *reloc_howto_filename) 
 {
@@ -119,24 +148,27 @@ int CreateRelocHowto(const char *reloc_howto_filename)
   unsigned reloc_id = 1;
   ac_relocation_type *relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
-    char relocation_function[256];
-    sprintf(relocation_function, "_bfd_%s_elf_carry_reloc", get_arch_name());
+//    char relocation_function[256];
+//    sprintf(relocation_function, "_bfd_%s_elf_carry_reloc", get_arch_name());
     
     fprintf (output, "%sHOWTO (%s, %d, %d, %d, %s, %d, %s, %s, \"%s\", %s, 0x%x, 0x%x, %s),\n",
       IND1,
-      relocation->name,
-      relocation->rightshift,
-      relocation->reloc_size,
-      relocation->bitsize,
-      relocation->pc_relative ? "TRUE" : "FALSE",
-      relocation->bitpos,
-      "complain_overflow_dont",
-      relocation->uses_carry ? relocation_function : "bfd_elf_archc_reloc",
-      relocation->name,
-      "FALSE", // PENDENTE. Isso mesmo?
-      0, // PENDENTE - Usar o mesmo do de baixo ou 0?
-      relocation->mask, 
-      "TRUE" // PENDENTE. Isso mesmo?
+      relocation->name,       /* type */
+      relocation->fields,     /* rightshift */
+//      relocation->rightshift,
+      0, /* not used */       /* size */
+      relocation->format_id,  /* bitsize */
+//      relocation->bitsize,
+      "FALSE", /* not used */ /* pc-relative */
+      relocation->mod_id,     /* bitpos */
+//      relocation->bitpos,
+      "complain_overflow_dont", /* not used */
+      "bfd_elf_archc_reloc",    /* always this one */
+      relocation->name,       /* name */
+      "TRUE", /* not used */  /* partial_inplace */
+      0, /* not used */       /* src mask */
+      0, /* not used */       /* dst mask */
+      "TRUE" /* not used */   /* pcrel_offset */
     );
     reloc_id++;
     relocation = find_relocation_by_id(reloc_id);
@@ -216,17 +248,55 @@ static void process_instruction_relocation(ac_asm_insn *asml)
     }
      
     ac_asm_insn_field *fieldP = opP->fields;
+    ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
+    reloc->fields = 0;
+
+    while (fieldP != NULL) { /* encode field */
+    /* field id is encoded within bits in a long long variable 
+      field_id 0 -> ... 0000 0001
+      field_id 2 -> ... 0000 0100
+      ids 3 e 4  -> ... 0001 1000
+    */
+      reloc->fields |= 1 << fieldP->id;
+
+      fieldP = fieldP->next;
+    }
+    reloc->format_id = get_format_id(asml->insn->format);
+
+    reloc->mod_id = opP->modifier.type;
+
+
+
+    ac_relocation_type* reloc_found = find_relocation(reloc);
+
+    if (reloc_found == NULL) {
+      reloc->id = relocation_types_list ? relocation_types_list->id + 1 : 1;
+      reloc->name = (char*) malloc(sizeof(char)*128);
+      sprintf(reloc->name, "R_%s_ID%d_F%XFt%uM%d", get_arch_name(), reloc->id, reloc->fields, reloc->format_id, reloc->mod_id); 
+      reloc->next = relocation_types_list;
+      relocation_types_list = reloc;
+      opP->reloc_id = reloc->id;
+    } 
+    else { /* reloc found */
+      opP->reloc_id = reloc_found->id;          
+      free(reloc);
+    }
+
+    opP = opP->next;
+  }
+
+
 
      /* Get the sum of all fields in bits (from left to right)
       */
-    unsigned int fields_bit_size = 0;
-    for (; fieldP != NULL; fieldP = fieldP->next) 
-      fields_bit_size += fieldP->size; 
+//    unsigned int fields_bit_size = 0;
+//    for (; fieldP != NULL; fieldP = fieldP->next) 
+//      fields_bit_size += fieldP->size; 
     
-    fieldP = opP->fields;
-    while (fieldP != NULL) { /* for each field */
+//    fieldP = opP->fields;
+//    while (fieldP != NULL) { /* for each field */
 
-      fields_bit_size -= fieldP->size;
+//      fields_bit_size -= fieldP->size;
        
       /* fill in the relocation fields */
 
@@ -237,7 +307,7 @@ static void process_instruction_relocation(ac_asm_insn *asml)
        *   if the operand has multiple fields assigned to, then the 
        *   left fields must be shifted to the right
        */
-      unsigned rightshift = 0+fields_bit_size;
+//      unsigned rightshift = 0+fields_bit_size;
 
       /*
        * reloc_size
@@ -248,13 +318,13 @@ static void process_instruction_relocation(ac_asm_insn *asml)
        *   is being used as the bit size
        */
       //unsigned reloc_size = log_table[get_insn_size(asml)/8];
-      unsigned reloc_size = get_insn_size(asml);
+//      unsigned reloc_size = get_insn_size(asml);
 
       /*
        * bitsize
        * - size (in bits) of the field to be relocated
        */
-      unsigned bitsize = fieldP->size;
+//      unsigned bitsize = fieldP->size;
 
 
       /*
@@ -263,121 +333,121 @@ static void process_instruction_relocation(ac_asm_insn *asml)
        *   the relocation is shifted left by the number of bits 
        *   specified in this variable
        */
-      unsigned bitpos = get_insn_size(asml) - (fieldP->first_bit+1);
+//      unsigned bitpos = get_insn_size(asml) - (fieldP->first_bit+1);
 
       /*
        * mask
        * - selects which parts of the relocation field is inserted
        *   into the binary image
        */
-      unsigned long mask = 0;
-      unsigned i;
-      for (i=0; i < get_insn_size(asml); i++)
-        mask |= (1 << i);
+//      unsigned long mask = 0;
+//      unsigned i;
+//      for (i=0; i < get_insn_size(asml); i++)
+//        mask |= (1 << i);
 
       
-      mask >>= (get_insn_size(asml) - fieldP->size);
+//      mask >>= (get_insn_size(asml) - fieldP->size);
 
        /*
         * uses_carry
         * - if the carry of the lower part affect the high part of
         *   a field, then this flag should be 1
         */
-      unsigned uses_carry = 0;
+//      unsigned uses_carry = 0;
 
       /*
        * is_pcrel
        * - 1 if the field is pc-relative
        */
-      unsigned is_pcrel = 0;
+//      unsigned is_pcrel = 0;
 
       /*
        * has_high
        * - 1 if the operand has a high modifier assigned
        *
        */
-      unsigned has_high = 0;
+//      unsigned has_high = 0;
 
        /*
         * now apply the modifiers to the relocation fields
         */
-      ac_modifier_list *modP = opP->modifiers;
-      while (modP != NULL) {
+//      ac_modifier_list *modP = opP->modifiers;
+//      while (modP != NULL) {
 
-        switch (modP->type) {
-          case mod_low:
-            if (modP->addend >= 0 && modP->addend <= fieldP->size) {
-              mask >>= (fieldP->size - modP->addend);
-              bitsize = modP->addend;
-            }
+//        switch (modP->type) {
+//          case mod_low:
+//            if (modP->addend >= 0 && modP->addend <= fieldP->size) {
+//              mask >>= (fieldP->size - modP->addend);
+//              bitsize = modP->addend;
+//            }
             /* signed / unsigned - not being used! */
-            break;
+//            break;
             
-          case mod_high:
-            if (modP->addend >= 0 && modP->addend <= fieldP->size) {
-              rightshift += get_insn_size(asml) - modP->addend;
-              mask >>= (fieldP->size - modP->addend);
-              bitsize = modP->addend;
-            }
-            else
-              rightshift += get_insn_size(asml) - fieldP->size;
+//          case mod_high:
+//            if (modP->addend >= 0 && modP->addend <= fieldP->size) {
+//              rightshift += get_insn_size(asml) - modP->addend;
+//              mask >>= (fieldP->size - modP->addend);
+//              bitsize = modP->addend;
+//            }
+//            else
+//              rightshift += get_insn_size(asml) - fieldP->size;
 
-            uses_carry = modP->carry;
-            has_high = 1;
+//            uses_carry = modP->carry;
+//            has_high = 1;
             
             /* signed / unsigned - not being used! */            
-            break;
+//            break;
             
-          case mod_aligned:
-              if (modP->addend == -1)
-                 modP->addend = get_arch_size()/8;
-              rightshift += log_table[modP->addend];
-            break;
+//          case mod_aligned:
+//              if (modP->addend == -1)
+//                 modP->addend = get_arch_size()/8;
+//              rightshift += log_table[modP->addend];
+//            break;
             
-          case mod_pcrel:
-            is_pcrel = 1;
-            break;
+//          case mod_pcrel:
+//            is_pcrel = 1;
+//            break;
             
-          case mod_pcrelext:
-            is_pcrel = 1;
-            break;
-        }
+//          case mod_pcrelext:
+//            is_pcrel = 1;
+//            break;
+//        }
 
-        modP = modP->next;
-      }
+//        modP = modP->next;
+//      }
    
-      mask <<= bitpos;
+//      mask <<= bitpos;
       
-      ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
-      reloc->rightshift = rightshift;
-      reloc->reloc_size = reloc_size;
-      reloc->bitsize = bitsize;
-      reloc->pc_relative = is_pcrel;
-      reloc->bitpos = bitpos;
-      reloc->mask = mask;
-      reloc->uses_carry = uses_carry;
+//      ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
+//      reloc->rightshift = rightshift;
+//      reloc->reloc_size = reloc_size;
+//      reloc->bitsize = bitsize;
+//      reloc->pc_relative = is_pcrel;
+//      reloc->bitpos = bitpos;
+//      reloc->mask = mask;
+//      reloc->uses_carry = uses_carry;
 
-      ac_relocation_type* reloc_found = find_relocation(reloc);
+//      ac_relocation_type* reloc_found = find_relocation(reloc);
 
-      if (!reloc_found) {
-        reloc->id = relocation_types_list ? relocation_types_list->id + 1 : 1;
-        reloc->name = (char*) malloc(sizeof(char)*128);
-        sprintf(reloc->name, "R_%s_%d_%s%s%d%s", get_arch_name(), reloc->id, (is_pcrel ? "REL" : "") , (has_high ? "HI" : "LO"), bitsize, uses_carry ? "_CARRY" : "");
+//      if (!reloc_found) {
+//        reloc->id = relocation_types_list ? relocation_types_list->id + 1 : 1;
+//        reloc->name = (char*) malloc(sizeof(char)*128);
+//        sprintf(reloc->name, "R_%s_%d_%s%s%d%s", get_arch_name(), reloc->id, (is_pcrel ? "REL" : "") , (has_high ? "HI" : "LO"), bitsize, uses_carry ? "_CARRY" : "");
         
-        reloc->next = relocation_types_list;
-        relocation_types_list = reloc;
-        fieldP->reloc_id = reloc->id;
-      } 
-      else {
-        fieldP->reloc_id = reloc_found->id;          
-        free(reloc);
-      }
+//        reloc->next = relocation_types_list;
+//        relocation_types_list = reloc;
+//        fieldP->reloc_id = reloc->id;
+//      } 
+//      else {
+//        fieldP->reloc_id = reloc_found->id;          
+//        free(reloc);
+//      }
 
-      fieldP = fieldP->next;
-    }
+//      fieldP = fieldP->next;
+//    }
 
-    opP = opP->next;
-  }
+//    opP = opP->next;
+//  }
   
 }
 
@@ -398,6 +468,10 @@ static ac_relocation_type* find_relocation(ac_relocation_type* reloc)
 
 static int compare_relocs(ac_relocation_type* first, ac_relocation_type* second)
 {
+  return first->fields    == second->fields &&
+         first->format_id == second->format_id &&
+         first->mod_id    == second->mod_id;
+/*
   return first->rightshift == second->rightshift &&
          first->reloc_size == second->reloc_size &&
          first->bitsize == second->bitsize &&
@@ -405,4 +479,5 @@ static int compare_relocs(ac_relocation_type* first, ac_relocation_type* second)
          first->mask == second->mask &&
          first->pc_relative == second->pc_relative &&
          first->uses_carry == second->uses_carry;
+*/
 }

@@ -192,30 +192,31 @@ typedef struct _ac_asm_map_list {
 
 
 typedef enum {op_userdef, op_exp, op_imm, op_addr} operand_type;
-typedef enum {mod_low, mod_high, mod_aligned, mod_pcrel, mod_pcrelext} operand_modifier;
+typedef enum {mod_default, mod_low, mod_high, mod_aligned, mod_pcrel, mod_carry} operand_modifier;
 
 typedef struct _ac_asm_insn_field {
   char *name;
   unsigned int size;
   unsigned int first_bit;
   unsigned int id;
-  unsigned int reloc_id;
+//  unsigned int reloc_id;
   struct _ac_asm_insn_field *next;
 } ac_asm_insn_field;
 
 typedef struct _ac_modifier_list {
   operand_modifier type;
   unsigned int addend;
-  unsigned int sign;       /*!< 0 - unsigned, 1 - signed */
-  unsigned int carry;      /*!< 0 - no carry, 1 - carry */
-  struct _ac_modifier_list *next;
+//  unsigned int sign;       /*!< 0 - unsigned, 1 - signed */
+//  unsigned int carry;      /*!< 0 - no carry, 1 - carry */
+//  struct _ac_modifier_list *next;
 } ac_modifier_list;
 
 typedef struct _ac_operand_list {
   char *str;                      /*!< operand string */
   operand_type type;              /*!< operand type */
-  ac_modifier_list *modifiers;    /*!< modifiers assigned to this operand */
+  ac_modifier_list modifier;      /*!< modifiers assigned to this operand */
   ac_asm_insn_field *fields;      /*!< a chain of fields this operand is assigned to */
+  unsigned int reloc_id;
   struct _ac_operand_list *next;
 } ac_operand_list;
 
@@ -238,7 +239,7 @@ typedef struct _ac_asm_insn {
   ac_const_field_list *const_fields;
   strlist *pseudolist;        /*!< if a pseudo insn, it holds a list of the insns that make up the pseudo */
   long num_pseudo;            /*!< number of pseudo insns - only for speed reasons */
-  unsigned reloc_id;          /*!< Relocation id */
+//  unsigned reloc_id;          /*!< Relocation id */
   struct _ac_asm_insn *next;  /*!< pointer to next element */
 } ac_asm_insn;
 

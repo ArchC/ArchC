@@ -461,25 +461,6 @@ inline static int is_group_token(char *s) {
 }
 
 
-/*
- *
- *
- *
- *
- */
-static insert_modifier(ac_modifier_list *list, ac_modifier_list *mod)
-{
-  mod->next = NULL;
-
-  if (list == NULL) {
-    list = mod;
-  }
-  else {
-    ac_modifier_list *head = list;
-    while (head->next != NULL) head = head->next;
-    head->next = mod;
-  }
-}
 
 /*
  *   Parse and get the modifier's addend
@@ -496,9 +477,10 @@ get_addend(char addend_type, char **st, ac_modifier_list *modifier)
 
   while (*sl >= '0' && *sl <= '9') sl++;
 
-  modifier->carry = 0;
-  modifier->addend = -1; // default
-  modifier->sign = 0;
+//  modifier->carry = 0;
+//  modifier->addend = -1; // default
+  modifier->addend = 0; // default
+//  modifier->sign = 0;
 
   if ((sl-1) != *st) {
     char savec = *sl;
@@ -509,23 +491,23 @@ get_addend(char addend_type, char **st, ac_modifier_list *modifier)
     *sl = savec;
   }
 
-
+/*
   switch (addend_type) {
 
     case 'H': // [c][u|s]
       if (*sl == 'c') {
         sl++;
-        modifier->carry = 1;
+//        modifier->carry = 1;
       }
-      /* fall through */
+      // fall through 
     case 'L': // [u|s]
       if (*sl == 's') {
         sl++;
-        modifier->sign = 1;
+//        modifier->sign = 1;
       }
       else if (*sl == 'u') {
         sl++;
-        modifier->sign = 0;
+//        modifier->sign = 0;
       }
       break;
 
@@ -533,28 +515,29 @@ get_addend(char addend_type, char **st, ac_modifier_list *modifier)
     case 'R': // [b]
       if (*sl == 'b') {
         sl++;
-        if (modifier->addend != -1)
-          modifier->addend = modifier->addend * (-1);
-        else
-          modifier->addend = 0;
+//        if (modifier->addend != -1)
+//          modifier->addend = modifier->addend * (-1);
+//        else
+//          modifier->addend = 0;
       }
       break;
 
     case 'A': // [u|s]
       if (*sl == 's') {
         sl++;
-        modifier->sign = 1;
+//        modifier->sign = 1;
       }
       else if (*sl == 'u') {
         sl++;
-        modifier->sign = 0;
+//        modifier->sign = 0;
       }
       else
-        modifier->sign = 1; // default
+//        modifier->sign = 1; // default
       break;
   }
 
   *st = sl-1;
+*/
 }
 
 static int is_builtin_marker(char *s)
@@ -571,38 +554,57 @@ static int create_operand(char *s, ac_operand_list **oper)
   (*oper)->next = NULL;
   (*oper)->fields = NULL;
 
-  (*oper)->str = (char *)malloc(strlen(s)+1);
-  strcpy((*oper)->str, s);
+//  (*oper)->str = (char *)malloc(strlen(s)+1);
+//  strcpy((*oper)->str, s);
 
+  (*oper)->reloc_id = 0;
 
   /* find operand type */
   if ( *s == 'e' && *(s+1) == 'x' && *(s+2) == 'p' ) {
+    (*oper)->str = (char *)malloc(sizeof(char)+3+1);
+    strcpy((*oper)->str, "exp");
     (*oper)->type = op_exp;
     st += 3;
   }
   else if ( *s == 'a' && *(s+1) == 'd' && *(s+2) == 'd' && *(s+3) == 'r' ) {
+    (*oper)->str = (char *)malloc(sizeof(char)+4+1);
+    strcpy((*oper)->str, "addr");
     (*oper)->type = op_addr;
     st += 4;
   }
   else if ( *s == 'i' && *(s+1) == 'm' && *(s+2) == 'm') {
+    (*oper)->str = (char *)malloc(sizeof(char)+3+1);
+    strcpy((*oper)->str, "imm");
     (*oper)->type = op_imm;
     st += 3;
   }
   else {
+    (*oper)->str = (char *)malloc(strlen(s)+1);
+    strcpy((*oper)->str, s);
+
     (*oper)->type = op_userdef;
-    (*oper)->modifiers = NULL;
+    (*oper)->modifier.addend = 0;
+    (*oper)->modifier.type = mod_default;
 
      return 1;
   }
 
   /* get the modifiers */
-  (*oper)->modifiers = NULL;
+//  (*oper)->modifiers = NULL;
+  (*oper)->modifier.type = mod_default;
+  (*oper)->modifier.addend = 0;
 
   while (*st != '\0') {
 
-    ac_modifier_list *modifier = (ac_modifier_list *)malloc(sizeof(ac_modifier_list));
+//    ac_modifier_list *modifier = (ac_modifier_list *)malloc(sizeof(ac_modifier_list));
+    ac_modifier_list *modifier = &((*oper)->modifier);
 
     switch (*st) {
+ 
+      case 'C': 
+        modifier->type = mod_carry;
+        get_addend('C', &st, modifier);
+        break;
 
       case 'H':
         modifier->type = mod_high;
@@ -624,16 +626,16 @@ static int create_operand(char *s, ac_operand_list **oper)
         get_addend('R', &st, modifier);
         break;
 
-      case 'r':
-        modifier->type = mod_pcrelext;
-        get_addend('R', &st, modifier);
-        break;
+//      case 'r':
+//        modifier->type = mod_pcrelext;
+//        get_addend('R', &st, modifier);
+//        break;
 
       default:
          return 0;
     }
 
-    /* insert in the list */
+    /* insert in the list 
     if ((*oper)->modifiers == NULL) {
       (*oper)->modifiers = modifier;
     }
@@ -641,9 +643,9 @@ static int create_operand(char *s, ac_operand_list **oper)
       ac_modifier_list *head = (*oper)->modifiers;
       while (head->next != NULL) head = head->next;
       head->next = modifier;
-    }
+    } */
 
-    st++;
+    st++; break;
   }
   return 1;
 }
@@ -1375,7 +1377,7 @@ be encoded by the assembler generated.  It validates the field (check if it
 exists in the insn format) and create an internal string representation
 (formatted_arg_str) which is used by the assembler generated by the acasm
 tool. The format of this string is a number describing the field within the
-format (from the left to the right of the insn format) followed by ':'.
+format (from left to right of the insn format) followed by ':'.
 
 
  pf  -> pointer to the format associated with this insn field
@@ -1428,7 +1430,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   newfield->size = pfield->size;
   newfield->first_bit = pfield->first_bit;
   newfield->id = f_id;
-  newfield->reloc_id = 0;
+//  newfield->reloc_id = 0;
   newfield->next = NULL;
 
   unsigned counter = num_args_found - (mnemonic_marker ? 2: 1);
@@ -1602,28 +1604,29 @@ static void print_asm_insn(ac_asm_insn *insn)
       default:      printf("error");
     }
 
-    printf("  modifiers:\n\n");
-    ac_modifier_list *modlist = ops->modifiers;
-    while (modlist != NULL) {
+    printf("\n  modifier:\n");
+    ac_modifier_list modlist = ops->modifier;
+//    while (modlist != NULL) {
       printf("    type: ");
 
-      switch (modlist->type) {
+      switch (modlist.type) {
+        case mod_default: printf("default\n"); break;
         case mod_low: printf("low\n"); break;
         case mod_high: printf("high\n"); break;
         case mod_aligned: printf("aligned\n"); break;
         case mod_pcrel: printf("pcrel\n"); break;
-        case mod_pcrelext: printf("pcrelext\n"); break;
+        case mod_carry: printf("carry\n"); break;
         default: printf("error\n");
       }
 
-      printf("    addend: %d", modlist->addend);
-      printf("    sign: %d", modlist->sign);
-      printf("    carry: %d\n", modlist->carry);
+      printf("    addend: %d", modlist.addend);
+//      printf("    sign: %d", modlist->sign);
+//      printf("    carry: %d\n", modlist->carry);
 
-      modlist = modlist->next;
-    }
+//      modlist = modlist->next;
+//    }
 
-    printf("\n  fields:\n\n");
+    printf("\n\n  fields:\n");
     ac_asm_insn_field *flist = ops->fields;
     while (flist != NULL) {
        printf("    name: %s (id = %d)\n", flist->name, flist->id);
@@ -1702,7 +1705,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       newfield->size = 0;
       newfield->first_bit = 0;
       newfield->id = 0;
-      newfield->reloc_id = 0;
+//      newfield->reloc_id = 0;
       newfield->next = NULL;
 
       opP->fields = newfield;
@@ -1822,7 +1825,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     }
 
 
-//    print_asm_insn(insn);
+    print_asm_insn(insn);
 
 
     /* Insert the new ac_asm_insn into the asm_insn_list

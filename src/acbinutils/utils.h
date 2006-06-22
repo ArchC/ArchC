@@ -48,6 +48,7 @@
 #define IND4 "        "
 #define IND5 "          "
 
+extern int get_format_id(char *fname);
 extern unsigned int get_arch_size();
 extern unsigned int get_insn_size(ac_asm_insn *insn);
 extern unsigned int get_max_format_size();

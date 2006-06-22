@@ -48,6 +48,23 @@ void internal_error() {
 }
 
 /*
+ * Returns the format id of the string fname. (-1 if not found!)
+ */
+int get_format_id(char *fname)
+{
+  ac_dec_format *pfrm = format_ins_list;
+  unsigned int formatid = 0;
+  while ((pfrm != NULL) && strcmp(fname, pfrm->name)) {
+    formatid++;
+    pfrm = pfrm->next;
+  }
+  if (pfrm == NULL) return -1;
+  return formatid;
+}
+
+
+
+/*
  * Returns the size of the architecture word (in bits)
  * It uses the ac_wordsize currently
  * Note that it only support architectures with, at most, 32-bit words
