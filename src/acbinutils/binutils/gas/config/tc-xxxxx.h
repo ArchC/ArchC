@@ -42,13 +42,10 @@
 #define LOCAL_LABEL_PREFIX '$'
 
 typedef struct fix_addend {
-  unsigned long insn_format_id;
-  unsigned long insn_field_id;
-  int al_value;
-  int hl_value;
-  int flag;
-  int field_size;
-  int pcrel_add;
+  unsigned int format_id;
+  unsigned int fields;
+  int addend;
+  unsigned int mod_id;
 } archc_fix_addend;
 
 #define TC_FIX_TYPE archc_fix_addend
@@ -75,6 +72,10 @@ extern void ___arch_name___`_cons_fix_new'(struct frag *, int, unsigned int, str
       goto skip_label; \
   while (0)
 extern int ___arch_name___`_validate_fix'(struct fix *, asection *);
+
+extern void ___arch_name___`_adjust_reloc_count'(struct fix *, long);
+#define TC_ADJUST_RELOC_COUNT(fixP, seg_reloc_count) ___arch_name___`_adjust_reloc_count'(fixP, seg_reloc_count)
+
 
 #define DIFF_EXPR_OK            /* foo-. gets turned into PC relative relocs */
 #endif

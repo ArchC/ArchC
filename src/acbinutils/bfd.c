@@ -249,18 +249,10 @@ static void process_instruction_relocation(ac_asm_insn *asml)
      
     ac_asm_insn_field *fieldP = opP->fields;
     ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
-    reloc->fields = 0;
 
-    while (fieldP != NULL) { /* encode field */
-    /* field id is encoded within bits in a long long variable 
-      field_id 0 -> ... 0000 0001
-      field_id 2 -> ... 0000 0100
-      ids 3 e 4  -> ... 0001 1000
-    */
-      reloc->fields |= 1 << fieldP->id;
 
-      fieldP = fieldP->next;
-    }
+    reloc->fields = encode_fields(fieldP);
+
     reloc->format_id = get_format_id(asml->insn->format);
 
     reloc->mod_id = opP->modifier.type;

@@ -39,9 +39,11 @@
 #ifndef _OPCODES_H_
 #define _OPCODES_H_
 
+extern void create_operand_list();
 extern int CreateOpcodeTable(const char *table_filename);
 extern int CreateAsmSymbolTable(const char *symtab_filename);
 extern int CreatePseudoOpsTable(const char *optable_filename);
+extern int CreateOperandTable(const char *optable_filename);
 
 #endif /* _OPCODES_H_ */
 

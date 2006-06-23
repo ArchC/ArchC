@@ -42,6 +42,12 @@ const char *pseudo_instrs[] = {
 ___pseudo_table___
 };
 
+const acasm_operand operands[] = {
+___operand_table___
+};
+
+
+
 /*
  * 1 = big, 0 = little
  *
@@ -148,6 +154,58 @@ void putbits(unsigned int bitsize, char *location, long long value, int endian)
   }	
 }
 
+unsigned int get_num_fields(unsigned int encoded_field)
+{
+  /* count the number of 1's in the bit field */
+  unsigned numf = 0;
+  unsigned int shift = 1;
+
+  for (; shift; shift <<= 1) {
+    if (encoded_field & shift)
+      numf++;
+  }
+
+  return numf;
+}
+
+unsigned int get_field_id(unsigned int encoded_field, unsigned int pos)
+{
+  unsigned int id = 999;
+  unsigned int counter = 0;
+  unsigned int shift = 1;
+
+  for (; shift; shift <<= 1) {
+    if (encoded_field & shift) {
+      if (pos == 0) return counter;
+      pos--;
+    }
+    counter++;
+  }
+
+  return id;
+}
+
+
+
+/*
+ * Modifiers
+ * NOTE: This will be generated
+ */
+void modifier_R (unsigned int input, unsigned int address, int addend, unsigned int *imm)
+{
+
+  /* user written code */
+  *imm = input - address + addend;
+
+
+}
+
+/* will be automatically generated */
+unsigned int operand_buffer[32];
+
+
+
+const unsigned int num_oper_id = ((sizeof operands) / (sizeof(operands[0])));
 const int num_opcodes = ((sizeof opcodes) / (sizeof(opcodes[0])));
 const int num_symbols = ((sizeof udsymbols) / (sizeof(udsymbols[0])));
 const int num_pseudo_instrs = ((sizeof pseudo_instrs) / (sizeof(pseudo_instrs[0])));

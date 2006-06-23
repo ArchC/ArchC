@@ -558,6 +558,7 @@ static int create_operand(char *s, ac_operand_list **oper)
 //  strcpy((*oper)->str, s);
 
   (*oper)->reloc_id = 0;
+  (*oper)->oper_id = -1;
 
   /* find operand type */
   if ( *s == 'e' && *(s+1) == 'x' && *(s+2) == 'p' ) {
@@ -1825,7 +1826,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     }
 
 
-    print_asm_insn(insn);
+    //print_asm_insn(insn);
 
 
     /* Insert the new ac_asm_insn into the asm_insn_list

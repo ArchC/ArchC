@@ -48,6 +48,7 @@
 #define IND4 "        "
 #define IND5 "          "
 
+extern unsigned int encode_fields(ac_asm_insn_field *fields);
 extern int get_format_id(char *fname);
 extern unsigned int get_arch_size();
 extern unsigned int get_insn_size(ac_asm_insn *insn);

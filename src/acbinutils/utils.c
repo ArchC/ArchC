@@ -118,7 +118,7 @@ char *get_arch_name()
  */
 unsigned int get_max_format_size() 
 {
-  extern ac_dec_format *format_ins_list;
+//  extern ac_dec_format *format_ins_list;
   ac_dec_format *pfrm = format_ins_list;
   int max_size = 0;
              
@@ -136,7 +136,7 @@ unsigned int get_max_format_size()
  */
 unsigned int get_variable_format_size() 
 {
-  extern ac_dec_format *format_ins_list;
+//  extern ac_dec_format *format_ins_list;
   ac_dec_format *pfrm = format_ins_list;
 
   int variable_format_size = 0;
@@ -152,3 +152,22 @@ unsigned int get_variable_format_size()
 
   return variable_format_size;
 }
+
+
+/* field is encoded within bits in a 32-bit variable 
+ *   field_id 0 -> ... 0000 0001
+ *   field_id 2 -> ... 0000 0100
+ *   ids 3 e 4  -> ... 0001 1000
+ */
+unsigned int encode_fields(ac_asm_insn_field *fieldP)
+{
+  unsigned int encoding = 0;
+
+  while (fieldP != NULL) { /* encode field */
+    encoding |= 1 << fieldP->id;
+
+    fieldP = fieldP->next;
+  }
+  return encoding;
+}
+

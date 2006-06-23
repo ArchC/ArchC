@@ -205,7 +205,7 @@ typedef struct _ac_asm_insn_field {
 
 typedef struct _ac_modifier_list {
   operand_modifier type;
-  unsigned int addend;
+  int addend;
 //  unsigned int sign;       /*!< 0 - unsigned, 1 - signed */
 //  unsigned int carry;      /*!< 0 - no carry, 1 - carry */
 //  struct _ac_modifier_list *next;
@@ -216,7 +216,8 @@ typedef struct _ac_operand_list {
   operand_type type;              /*!< operand type */
   ac_modifier_list modifier;      /*!< modifiers assigned to this operand */
   ac_asm_insn_field *fields;      /*!< a chain of fields this operand is assigned to */
-  unsigned int reloc_id;
+  int oper_id;              /* not filled by parser, default = -1 */
+  unsigned int reloc_id;    /* not filled by parser, default = 0 */
   struct _ac_operand_list *next;
 } ac_operand_list;
 

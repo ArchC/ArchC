@@ -57,6 +57,7 @@ static int Createm4File();
 #define OPCODE_TABLE_FILE  "opcode.table"
 #define SYMBOL_TABLE_FILE  "symbol.table"
 #define PSEUDO_TABLE_FILE  "pseudo.table"
+#define OPERAND_TABLE_FILE "operand.table"
 #define RELOC_IDS_FILE     "reloc.ids"
 #define RELOC_HOWTO_FILE   "reloc.howto"
 #define RELOC_MAP_FILE     "reloc.map"
@@ -212,6 +213,7 @@ int main(int argc, char **argv)
  
   // Create the relocation list first
   create_relocation_list();
+  create_operand_list();
 
   strcpy(buffer, GEN_DIR);
   strcat(buffer, OPCODE_TABLE_FILE);
@@ -233,6 +235,14 @@ int main(int argc, char **argv)
     fprintf(stderr, "Error creating pseudo table.\n");
     exit(1);
   }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, OPERAND_TABLE_FILE);
+  if (!CreateOperandTable(buffer)) {  /* write the pseudo-op table */
+    fprintf(stderr, "Error creating operand table.\n");
+    exit(1);
+  }
+
   
   strcpy(buffer, GEN_DIR);
   strcat(buffer, RELOC_IDS_FILE);
@@ -304,6 +314,7 @@ static int Createm4File()
   fprintf(output, "m4_define(`___opcode_table___', `m4_include(%s)')m4_dnl\n", OPCODE_TABLE_FILE);
   fprintf(output, "m4_define(`___symbol_table___', `m4_include(%s)')m4_dnl\n", SYMBOL_TABLE_FILE);
   fprintf(output, "m4_define(`___pseudo_table___', `m4_include(%s)')m4_dnl\n", PSEUDO_TABLE_FILE);
+  fprintf(output, "m4_define(`___operand_table___', `m4_include(%s)')m4_dnl\n", OPERAND_TABLE_FILE);
 
   
   fprintf(output, "m4_define(`___reloc_ids___', `m4_include(%s)')m4_dnl\n", RELOC_IDS_FILE);

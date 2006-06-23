@@ -34,12 +34,92 @@
 #include "utils.h"
 #include "opcodes.h"
 
+/* This is almost the same structure in /include/opcode/xxxxx.h (acasm_operand)
+ TODO: find a way to unify the structures in a single file
+ */
+typedef struct _oper_list {
+  unsigned int id;   /* operand id */
+  char *name;  /* operand type name */
+  operand_type type;
+  operand_modifier mod_type;
+  int mod_addend;
+  unsigned int fields;
+  unsigned int reloc_id;
+  struct _oper_list *next;
+} oper_list;
+
+static oper_list *operand_list = NULL;
+
+
 /*
  * module function prototypes
  */
+static int find_operand(oper_list *opl);
 static void create_operand_string(ac_asm_insn *insn, char **output);
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize);
 static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
+
+
+void create_operand_list()
+{
+  
+  ac_asm_insn *asml = ac_asm_get_asm_insn_list();
+
+  /* for every instruction */
+  while (asml != NULL) {
+    ac_operand_list *opP = asml->operands;
+
+    /* for every operand */
+    while (opP != NULL) {
+ 
+      oper_list *oper = (oper_list *) malloc (sizeof(oper_list));
+
+      oper->name = (char *) malloc(sizeof(opP->str)+1);
+      strcpy(oper->name, opP->str);
+
+      oper->type = opP->type;
+    
+      oper->mod_type = opP->modifier.type;
+      oper->mod_addend = opP->modifier.addend;
+
+      oper->fields = encode_fields(opP->fields);
+
+      oper->reloc_id = opP->reloc_id;
+   
+      oper->next = NULL;
+
+      int opid = find_operand(oper);
+
+      if (opid == -1) { /* operand not defined yet */
+        if (operand_list == NULL) {
+          oper->id = 0;
+          opP->oper_id = 0;
+          operand_list = oper;
+        }
+        else {
+          oper_list *otmp = operand_list;
+          while (otmp->next != NULL) 
+            otmp = otmp->next;
+
+          oper->id = otmp->id+1; 
+          opP->oper_id = oper->id;
+          otmp->next = oper;
+        }
+      }
+      else {
+        opP->oper_id = opid;
+        
+        free(oper->name);
+        free(oper);
+      }
+      
+      opP = opP->next;
+    }
+
+    asml = asml->next;
+  }
+
+}
 
 
 
@@ -267,16 +347,44 @@ int CreatePseudoOpsTable(const char *optable_filename)
 }
 
 
+int CreateOperandTable(const char *optable_filename) 
+{
+  FILE *output;
+
+  if ((output = fopen(optable_filename, "w")) == NULL) 
+    return 0;
+
+  oper_list *opL = operand_list;
+
+  while (opL != NULL) {
+
+    fprintf(output, "%s{\"%s\",\t // (%d)\n\t", IND1, opL->name, opL->id);
+    fprintf(output, "%d,\t", opL->type);
+    fprintf(output, "%d,\t", opL->mod_type);
+    fprintf(output, "%d,\t", opL->mod_addend);
+    fprintf(output, "%u,\t", opL->fields);
+    fprintf(output, "%u ", opL->reloc_id);
+
+    fprintf(output, "},\n"); 
+
+    opL = opL->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
 
 
 /*
  * module function implementations 
  *
+ */
+
+/*
  * format:
  *   %<op_id>:<mod_id>:<addend>:<fid1+fid2+fid3...>:rel_id:
  *
  */
-
 static void create_operand_string(ac_asm_insn *insn, char **output) 
 {
   char *s = *output;
@@ -293,6 +401,13 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       s++;
       lit++;
 
+      sprintf(s, "%d", opP->oper_id);
+      while (*s >= '0' && *s <= '9') s++;
+
+      *s = ':';
+      s++;
+
+/*
       char *ls = opP->str;
       while (*ls != '\0') {
         *s = *ls;
@@ -303,7 +418,7 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       *s = ':';
       s++;
 
-      /* mod_id */
+      // mod_id 
 
       sprintf(s, "%d", opP->modifier.type);
       while (*s >= '0' && *s <= '9') s++;
@@ -312,15 +427,15 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       s++;
 
 
-      /* addend */
-      /* TODO: check for negative addends */
+      // addend
+      // TODO: check for negative addends 
       sprintf(s, "%d", opP->modifier.addend);
       while (*s >= '0' && *s <= '9') s++;
 
       *s = ':';
 
 
-      /* fields */
+      // fields 
 
       ac_asm_insn_field *fP = opP->fields;
       while (fP != NULL) {
@@ -343,14 +458,14 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       *s = ':';
       s++;
 
-      /* reloc id */
+      // reloc id 
 
       sprintf(s, "%d", opP->reloc_id);
       while (*s >= '0' && *s <= '9') s++;
       
       *s = ':';
       s++;
-
+*/
 
       opP = opP->next;
       /* TODO: check for NULL pointer */
@@ -411,5 +526,26 @@ static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsign
   mask1 <<= (insn_size-(fbit+1));
   mask2 >>= fbit+1-fsize;
   return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
+}
+
+
+/* -1 -> not found  */
+static int find_operand(oper_list *opl)
+{
+  oper_list *otmp = operand_list;
+
+  while (otmp != NULL) {
+    if (!strcmp(otmp->name, opl->name) &&
+         otmp->type == opl->type &&
+         otmp->mod_type == opl->mod_type &&
+         otmp->mod_addend == opl->mod_addend &&
+         otmp->fields == opl->fields &&
+         otmp->reloc_id == opl->reloc_id)
+      return otmp->id;
+
+    otmp = otmp->next;
+  }
+
+  return -1;
 }
 
