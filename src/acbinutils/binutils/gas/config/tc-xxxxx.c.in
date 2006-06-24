@@ -53,7 +53,7 @@ static void pseudo_assemble(void);
 static void emit_insn(void);
 static int get_expression(expressionS *, char **);
 static int get_operand(expressionS *ep, char **str);
-static int ac_valid_symbol(char *ac_symbol, char *parser_symbol, 
+static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, 
                            long int *value);
 static int ac_parse_operands(char *s_pos, char *args);
 static void apply_hi_operator(unsigned long *value, 
@@ -429,8 +429,6 @@ int ac_parse_operands(char *s_pos, char *args)
       if (operand_id >= num_oper_id)
         INTERNAL_ERROR();
     
-      operands[operand_id].type;
-
       switch (operands[operand_id].type) {
  
       /* EXP */ 
@@ -510,7 +508,7 @@ int ac_parse_operands(char *s_pos, char *args)
             In case of positive matching, arg_value will hold the symbol value as declared in the ArchC asm_symbol section.
           */
 
-            if (!ac_valid_symbol(op_buf, s_pos, &symbol_value)) {
+            if (!ac_valid_symbol(operands[operand_id].name, s_pos, &symbol_value)) {
               insn_error = "unrecognized operand symbol";
               return KEEP_GOING;
             }
@@ -550,7 +548,7 @@ int ac_parse_operands(char *s_pos, char *args)
             save_c = *s_pos;
             *s_pos = '\0';
 
-            if (!ac_valid_symbol(op_buf, s_start, &symbol_value)) {
+            if (!ac_valid_symbol(operands[operand_id].name, s_start, &symbol_value)) {
               insn_error = "unrecognized operand symbol";
               *s_pos = save_c;
               return KEEP_GOING;
@@ -768,19 +766,22 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
 void
 ___arch_name___`_adjust_reloc_count'(struct fix *fixP, long seg_reloc_count)
 {
-  if (fixP->fx_done) 
-    return;
+  /* NOTE: seg_reloc_count is actually not used in BFD_ASSEMBLER mode */
+  for (; fixP; fixP = fixP->next) {
 
-  ++seg_reloc_count;
+    if (fixP->fx_done) 
+      continue;
 
-  if (fixP->fx_addsy == NULL)
-    fixP->fx_addsy = abs_section_sym;
+    ++seg_reloc_count;
 
-  symbol_mark_used_in_reloc (fixP->fx_addsy);
+    if (fixP->fx_addsy == NULL)
+      fixP->fx_addsy = abs_section_sym;
 
-  if (fixP->fx_subsy != NULL)
-    symbol_mark_used_in_reloc (fixP->fx_subsy);
+    symbol_mark_used_in_reloc (fixP->fx_addsy);
 
+    if (fixP->fx_subsy != NULL)
+      symbol_mark_used_in_reloc (fixP->fx_subsy);
+  }
 }
 
 
@@ -943,7 +944,7 @@ get_operand (expressionS *ep, char **str)
 /* 
   if ac_symbol == "" then marker is not checked
 */
-static int ac_valid_symbol(char *ac_symbol, char *parser_symbol, long int *value)
+static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, long int *value)
 {
   acasm_symbol *msymb = NULL;
   
@@ -1276,7 +1277,7 @@ encode_cons_field(unsigned long val_const, unsigned int oper_id)
           break;
  
         case mod_pcrel:
-          modifier_R(val_const, frag_now, operands[oper_id].mod_addend, &operand_buffer[fid]);
+          modifier_R(val_const, frag_now_fix(), operands[oper_id].mod_addend, &operand_buffer[fid]);
           break;
  
         default: INTERNAL_ERROR();
