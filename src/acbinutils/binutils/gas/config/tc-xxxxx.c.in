@@ -37,11 +37,37 @@
 #include `"opcode/'___arch_name___`.h"'
 
 
+#define DEBUG_ON
+
+#ifdef DEBUG_ON
+#  include <stdio.h>
+#  define dbg_printf(args...) fprintf(stderr, "DBG: " args)
+#  define dbg_print_insn(insn)  print_opcode_structure(stderr, insn)
+#  define dbg_print_operand_info(opid) print_operand_info(stderr, opid)
+#else 
+#  define dbg_printf(args...)
+#  define dbg_print_insn(insn) 
+#  define dbg_print_operand_info(opid)
+#endif
+
+
 #ifdef __STDC__
 #define INTERNAL_ERROR() as_fatal (_("Internal error: line %d, %s"), __LINE__, __FILE__)
 #else
 #define INTERNAL_ERROR() as_fatal (_("Internal error"));
 #endif
+
+typedef struct _acfixuptype
+{
+  expressionS ref_expr_fix; /* symbol in which the relocation points to */
+  
+  int addend;
+  unsigned int fields;
+  unsigned int mod_id;
+
+  unsigned int reloc_id;
+  struct _acfixuptype *next;
+} acfixuptype;
 
 
 static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value);
@@ -63,6 +89,9 @@ static void sign_extend(unsigned long *value, int bit_size,
 static void create_fixup(unsigned oper_id);
 static void encode_cons_field(unsigned long val_const, unsigned int oper_id);
 static void strtolower(char *str);
+static void clean_out_insn(void);
+static void free_all_fixups(acfixuptype *fix);
+
 
 /*
   variables used by the core
@@ -152,19 +181,6 @@ static int in_imm_mode = 0;
 static expressionS ref_expr;
 
 
-typedef struct _acfixuptype
-{
-  expressionS ref_expr_fix; /* symbol in which the relocation points to */
-  
-  int addend;
-  unsigned int fields;
-  unsigned int mod_id;
-
-  unsigned int reloc_id;
-  struct _acfixuptype *next;
-} acfixuptype;
-
-
 /* out_insn is the current instruction being assembled */
 static struct insn_encoding
 {
@@ -246,6 +262,8 @@ md_begin()
 void 
 md_assemble(char *str)
 {
+  dbg_printf("Assembling instruction \"%s\"\n", str);
+
   static int has_pseudo = 0;
 
   /* insn we need to encode at this call */
@@ -302,13 +320,15 @@ md_assemble(char *str)
 
   /* main encoding loop */
   for (;;) {
+    dbg_printf("Parsing using the following structure:\n");
+    dbg_print_insn(insn);
+
     strcpy(buffer, insn->args);
+
+    clean_out_insn();
 
     out_insn.image = insn->image;
     out_insn.format = insn->format_id;
-   // TODO: Clean any allocated memory in fixup
-    out_insn.fixup = NULL;
-    out_insn.op_num = 0;    
     out_insn.is_pseudo = insn->pseudo_idx;
     insn_error = NULL;
 
@@ -316,6 +336,8 @@ md_assemble(char *str)
       strtolower(s_pos);
       strtolower(buffer);
     }
+
+    dbg_printf("Parsing operand \"%s\" using format \"%s\"\n", s_pos, buffer);  
     
     int go_next = ac_parse_operands(s_pos, buffer); /* parse the operands */
 
@@ -425,7 +447,11 @@ int ac_parse_operands(char *s_pos, char *args)
       args++;                  /* next literal character/operand */
 
       unsigned int operand_id = atoi(op_buf);
-   
+
+      dbg_printf("Processing operand type ( %d ) :\n", operand_id);
+      dbg_print_operand_info(operand_id);
+ 
+
       if (operand_id >= num_oper_id)
         INTERNAL_ERROR();
     
@@ -767,7 +793,7 @@ void
 ___arch_name___`_adjust_reloc_count'(struct fix *fixP, long seg_reloc_count)
 {
   /* NOTE: seg_reloc_count is actually not used in BFD_ASSEMBLER mode */
-  for (; fixP; fixP = fixP->next) {
+  for (; fixP; fixP = fixP->fx_next) {
 
     if (fixP->fx_done) 
       continue;
@@ -1306,6 +1332,30 @@ static void strtolower(char *str)
   while (*str != '\0') {
     *str = (uc)charmap[(uc)*str];
     str++;
+  }
+}
+
+static void clean_out_insn()
+{
+  out_insn.image = 0;
+  out_insn.format = 0;
+  out_insn.is_pseudo = 0;
+  out_insn.op_num = 0;
+  out_insn.op_pos[9*2] = 0;
+  free_all_fixups(out_insn.fixup);
+  out_insn.fixup = NULL;
+}
+
+static void free_all_fixups(acfixuptype *fix)
+{
+  acfixuptype *current_fixP = fix;
+  acfixuptype *last_fixP;
+
+  while (current_fixP != NULL) {
+    last_fixP = current_fixP;
+    current_fixP = current_fixP->next; 
+
+    free (last_fixP);
   }
 }
 
