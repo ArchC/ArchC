@@ -61,8 +61,8 @@ typedef struct {
   unsigned long value;
 } acasm_symbol;
 
-extern void print_operand_info(FILE *stream, unsigned int opid);
-extern void print_opcode_structure(FILE *stream, acasm_opcode *insn);
+extern void print_operand_info(FILE *stream, unsigned int indent, unsigned int opid);
+extern void print_opcode_structure(FILE *stream, unsigned int indent, acasm_opcode *insn);
 
 extern long long getbits(unsigned int bitsize, char *location, int endian); 
 extern void putbits(unsigned int bitsize, char *location, long long value, int endian);

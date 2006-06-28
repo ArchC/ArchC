@@ -47,57 +47,60 @@ ___operand_table___
 };
 
 
-void print_opcode_structure(FILE *stream, acasm_opcode *insn)
+void print_opcode_structure(FILE *stream, unsigned int indent, acasm_opcode *insn)
 {
-  fprintf(stream, "Mnemonic: \"%s\"\n", insn->mnemonic);
-  fprintf(stream, "Args    : \"%s\"\n", insn->args);
-  fprintf(stream, "Image   : 0x%lX\n", insn->image);
-  fprintf(stream, "Format  : %lu\n", insn->format_id);
-  fprintf(stream, "Pseudo  : %lu\n", insn->pseudo_idx);
-  fprintf(stream, "Counter : %lu\n", insn->counter);
-  fprintf(stream, "Dmask   : 0x%lX\n", insn->dmask);
+  fprintf(stream, "%*s<\"%s\", \"%s\", 0x%08lX, %lu, %lu, %lu, 0x%08lX>\n",
+                   indent, "",
+                   insn->mnemonic,
+                   insn->args,
+                   insn->image,
+                   insn->format_id,
+                   insn->pseudo_idx,
+                   insn->counter,
+                   insn->dmask);
 }
 
-void print_operand_info(FILE *stream, unsigned int opid)
+void print_operand_info(FILE *stream, unsigned int indent, unsigned int opid)
 {
-  fprintf(stream, "Name   :\"%s\"\n", operands[opid].name);
-  fprintf(stream, "Type   : ");
+  fprintf(stream, "%*s<\"%s\", ", indent, "", operands[opid].name);
+  
   switch (operands[opid].type) {
-    case op_exp: fprintf(stream, "exp\n");
+    case op_exp: fprintf(stream, "exp, ");
       break; 
-    case op_imm: fprintf(stream, "imm\n");
+    case op_imm: fprintf(stream, "imm, ");
       break;
-    case op_addr: fprintf(stream, "addr\n");
+    case op_addr: fprintf(stream, "addr, ");
       break;
-    case op_userdef: fprintf(stream, "userdef\n");
+    case op_userdef: fprintf(stream, "userdef, ");
       break;
   }
-  fprintf(stream, "ModType : ");
+
   switch (operands[opid].mod_type) {
-    case mod_default: fprintf(stream, "mod_default\n");
+    case mod_default: fprintf(stream, "mod_default, ");
       break;
-    case mod_low: fprintf(stream, "mod_low\n");
+    case mod_low: fprintf(stream, "mod_low, ");
       break;
-    case mod_high: fprintf(stream, "mod_high\n");
+    case mod_high: fprintf(stream, "mod_high, ");
       break;
-    case mod_aligned: fprintf(stream, "mod_aligned\n");
+    case mod_aligned: fprintf(stream, "mod_aligned, ");
       break;
-    case mod_pcrel: fprintf(stream, "mod_pcrel\n");
+    case mod_pcrel: fprintf(stream, "mod_pcrel, ");
       break;
-    case mod_carry: fprintf(stream, "mod_carry\n");
+    case mod_carry: fprintf(stream, "mod_carry, ");
       break;
   }
-  fprintf(stream, "Fields: 0x%X\n", operands[opid].fields);
+  fprintf(stream, "0x%08X:", operands[opid].fields);
+
   unsigned int numf = get_num_fields(operands[opid].fields);
-  fprintf(stream, "  Num Fields: %d\n", numf);
-  fprintf(stream, "  Fields id: ");
+  fprintf(stream, "%d:[ ", numf);
+
   unsigned int count;
   for (count=0; count < numf; count++) {
     fprintf(stream, "%d ", get_field_id(operands[opid].fields, count));
   }
-  fprintf(stream, "\n");
+  fprintf(stream, "], ");
 
-  fprintf(stream, "reloc id: %d\n", operands[opid].reloc_id);
+  fprintf(stream, "%d>\n", operands[opid].reloc_id);
 }
 
 

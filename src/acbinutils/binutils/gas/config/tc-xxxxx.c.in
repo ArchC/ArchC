@@ -41,20 +41,28 @@
 
 #ifdef DEBUG_ON
 #  include <stdio.h>
-#  define dbg_printf(il, args...) fprintf(stderr, "%*s+ ", il*4, ""); \
-                                  fprintf(stderr, args)
-#  define dbg_print_insn(insn)  print_opcode_structure(stderr, insn)
-#  define dbg_print_operand_info(opid) print_operand_info(stderr, opid)
-#  define dbg_print_fixup(fixup) print_internal_fixup(stderr, fixup)
-#  define dbg_print_expression(exp) print_expr(exp) 
-#  define dbg_print_gasfixup(fixP) print_fixup(fixP);
+   extern int indent_level;
+
+#  define dbg_printf(il, args...) {fprintf(stderr, "%*s+ ", il*4, ""); \
+                                  fprintf(stderr, args);}
+#  define dbg_print_insn(il, insn)  print_opcode_structure(stderr, il*4, insn)
+#  define dbg_print_operand_info(il, opid) print_operand_info(stderr, il*4, opid)
+#  define dbg_print_fixup(il, fixup) print_internal_fixup(stderr, il, fixup)
+#  define dbg_print_expression(il, exp) {indent_level = il; \
+                                     print_expr_1(stderr, exp); \
+                                     fprintf(stderr, "\n");}
+#  define dbg_print_gasfixup(il, fixP) print_fixup(stderr, il, fixP)
+#  define dbg_print_symbolS(il, sym) {indent_level = il; \
+                                     print_symbol_value_1(stderr, sym); \
+                                     fprintf(stderr, "\n");}
 #else 
 #  define dbg_printf(il, args...)
-#  define dbg_print_insn(insn) 
-#  define dbg_print_operand_info(opid)
-#  define dbg_print_fixup(fixup)
-#  define dbg_print_expression(exp)
-#  define dbg_print_gasfixup(fixP)
+#  define dbg_print_insn(il, insn) 
+#  define dbg_print_operand_info(il, opid)
+#  define dbg_print_fixup(il, fixup)
+#  define dbg_print_expression(il, exp)
+#  define dbg_print_gasfixup(il, fixP)
+#  define dbg_print_symbolS(il, sym)
 #endif
 
 
@@ -100,7 +108,8 @@ static void encode_cons_field(unsigned long val_const, unsigned int oper_id);
 static void strtolower(char *str);
 static void clean_out_insn(void);
 static void free_all_fixups(acfixuptype *fix);
-static void print_internal_fixup(FILE *stream, acfixuptype *fix);
+static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
+static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
 
 
 /*
@@ -330,8 +339,8 @@ md_assemble(char *str)
 
   /* main encoding loop */
   for (;;) {
-    dbg_printf(1, "Parsing using the following structure:\n");
-    dbg_print_insn(insn);
+    dbg_printf(1, "opcode = ");
+    dbg_print_insn(0, insn);
 
     strcpy(buffer, insn->args);
 
@@ -347,7 +356,7 @@ md_assemble(char *str)
       strtolower(buffer);
     }
 
-    dbg_printf(2, "Parsing operand \"%s\" using format \"%s\"\n", s_pos, buffer);  
+    dbg_printf(1, "Parsing \"%s\" with \"%s\"\n", s_pos, buffer);  
     
     int go_next = ac_parse_operands(s_pos, buffer); /* parse the operands */
 
@@ -358,7 +367,9 @@ md_assemble(char *str)
     if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
         (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
       insn++;
-      dbg_printf(1, "Quitting encoding current insn, error: %s\n", insn_error);
+      dbg_printf(1, "\n");
+      dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
+      dbg_printf(1, "\n");
     }
     else break;
   } 
@@ -458,8 +469,10 @@ int ac_parse_operands(char *s_pos, char *args)
 
       unsigned int operand_id = atoi(op_buf);
 
-      dbg_printf(2, "Processing input \"%s\" with operand type ( %d ) :\n", s_pos, operand_id);
-      dbg_print_operand_info(operand_id);
+      dbg_printf(2, "Using operand[%d] to parse \"%s\"\n", operand_id, s_pos);
+      dbg_printf(3, "operand[%d] = ", operand_id);
+      dbg_print_operand_info(0, operand_id);
+
 
       if (operand_id >= num_oper_id)
         INTERNAL_ERROR();
@@ -472,8 +485,6 @@ int ac_parse_operands(char *s_pos, char *args)
 
           if (!get_expression(&ref_expr, &s_pos)) 
             return KEEP_GOING;
-
-          dbg_print_expression(&ref_expr);
 
           switch (ref_expr.X_op) {
             case O_symbol:  /* X_add_symbol + X_add_number */
@@ -516,7 +527,7 @@ int ac_parse_operands(char *s_pos, char *args)
           }
           in_imm_mode = 0;
 
-          dbg_printf(2, "Immediate value: %ld\n", ref_expr.X_add_number);
+          dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
 
           encode_cons_field(ref_expr.X_add_number, operand_id);
 
@@ -525,8 +536,6 @@ int ac_parse_operands(char *s_pos, char *args)
         case op_addr:
 
           if (!get_address(&ref_expr, &s_pos)) return KEEP_GOING;
-
-          dbg_print_expression(&ref_expr);
 
           if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
             insn_error = "invalid operand, expected a symbolic address";
@@ -663,11 +672,10 @@ static void emit_insn()
 
   md_number_to_chars(frag_address, out_insn.image, get_insn_size(out_insn.format)/8);
 
-  dbg_printf(1, "Frag info: addr = %ld, fix = %ld, var = %ld\n", 
-                frag_now->fr_address,
-                frag_now->fr_fix,
-                frag_now->fr_var);
-
+  dbg_printf(2, "Frag info: addr = %ld, fix = %ld, var = %ld\n", 
+                  frag_now->fr_address,
+                  frag_now->fr_fix,
+                  frag_now->fr_var);
 
   while (out_insn.fixup != NULL) {
 
@@ -697,12 +705,7 @@ static void emit_insn()
     free(p); 
 
     dbg_printf(1, "gas fixS created:\n");
-    dbg_print_gasfixup(fixP);
-    dbg_printf(1, "md: format %u, fields %u, addend %d, relid %d\n", 
-                  fixP->tc_fix_data.format_id,
-                  fixP->tc_fix_data.fields,
-                  fixP->tc_fix_data.addend,
-                  fixP->tc_fix_data.mod_id);
+    dbg_print_gasfixup(2, fixP);
   }
 
 }
@@ -748,12 +751,16 @@ md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 int
 ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg ATTRIBUTE_UNUSED)
 {
+  dbg_printf(0, "Validating fix\n");
+  dbg_print_gasfixup(1, fixP);
 
   if (fixP->fx_addsy == NULL)
     INTERNAL_ERROR();
- 
-  if (!S_IS_LOCAL(fixP->fx_addsy))
+
+  if (!S_IS_LOCAL(fixP->fx_addsy)) {
     fixP->fx_done = FALSE;
+    symbol_mark_used_in_reloc (fixP->fx_addsy);
+  }
   else {
 
     INTERNAL_ERROR();
@@ -768,6 +775,8 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
 void
 ___arch_name___`_adjust_reloc_count'(struct fix *fixP, long seg_reloc_count)
 {
+  return;
+
   /* NOTE: seg_reloc_count is actually not used in BFD_ASSEMBLER mode */
   for (; fixP; fixP = fixP->fx_next) {
 
@@ -847,6 +856,16 @@ the bfd alignment, and return the next aligned address. I've not tested that tho
  */
 }
 
+void
+___arch_name___`_symbol_new_hook' (symbolS *sym)
+{
+  dbg_printf(0, "Symbol Created!!!\n%*s", 4, "");
+  dbg_print_symbolS(1, sym);
+}
+
+
+
+
 
 /*
    Called (by emit_expr()) when symbols might get their values taken like:
@@ -918,7 +937,8 @@ get_expression (expressionS *ep, char **str)
   char save_char = *input_line_pointer;
   *input_line_pointer = '\0';
 #endif
-  dbg_printf(2, "Expression string: \"%s\"\n", *str);
+  dbg_printf(3, "Expression string: \"%s\"\n%*s", *str, 4*4, "");
+  dbg_print_expression(4, ep);
 #ifdef DEBUG_ON
   *input_line_pointer = save_char;
 #endif
@@ -948,7 +968,7 @@ get_immediate (expressionS *ep, char **str)
   char save_char = *input_line_pointer;
   *input_line_pointer = '\0';
 #endif
-  dbg_printf(2, "Immediate string: \"%s\"\n", *str);
+  dbg_printf(3, "Immediate string: \"%s\"\n", *str);
 #ifdef DEBUG_ON
   *input_line_pointer = save_char;
 #endif
@@ -975,7 +995,8 @@ get_address (expressionS *ep, char **str)
   char save_char = *input_line_pointer;
   *input_line_pointer = '\0';
 #endif
-  dbg_printf(2, "Expression string: \"%s\"\n", *str);
+  dbg_printf(3, "Address string: \"%s\"\n%*s", *str, 4*4, "");
+  dbg_print_expression(4, ep);
 #ifdef DEBUG_ON
   *input_line_pointer = save_char;
 #endif
@@ -1024,15 +1045,13 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
     char save_c = *s_pos;
     *s_pos = '\0';
  
-    dbg_printf(2, "User def string: \"%s\"\n", *str);
- 
     if (!ac_valid_symbol(opclass, *str, val)) {
       insn_error = "unrecognized operand symbol";
       *s_pos = save_c;
       return 0;
     }
- 
-    dbg_printf(2, "User def value: %u\n", *val);
+
+    dbg_printf(3, "\"%s = %u\"\n", *str, *val);
  
     *s_pos = save_c;
     *str = s_pos;
@@ -1264,6 +1283,9 @@ void ___arch_name___`_frob_label'(symbolS *sym) {
 
   unsigned int dummy;
 
+  dbg_printf(0, "Label Created!!!\n%*s", 4, "");
+  dbg_print_symbolS(1, sym);
+
   if (ac_valid_symbol("",  (char *)S_GET_NAME(sym), &dummy))  /* symbol found as label -.- */
     as_bad(_("invalid label name: '%s'"), S_GET_NAME(sym));
   
@@ -1348,8 +1370,8 @@ create_fixup(unsigned int oper_id)
   fixups->mod_id   = operands[oper_id].mod_type;
   fixups->reloc_id = operands[oper_id].reloc_id;
   
-  dbg_printf(3,"Fixup created:\n");
-  dbg_print_fixup(fixups);
+  dbg_printf(3,"Fixup = ");
+  dbg_print_fixup(0, fixups);
 
 }
 
@@ -1397,9 +1419,9 @@ encode_cons_field(unsigned long val_const, unsigned int oper_id)
   for (lt=0; lt < nf; lt++) {
     unsigned int fid = get_field_id(operands[oper_id].fields, lt);
 
-    dbg_printf(3, "Encoding value %u in field %u : ", operand_buffer[fid], fid);
+    dbg_printf(3, "image 0x%08lX with field[%u] = %u ==> ", out_insn.image, fid, operand_buffer[fid]);
     out_insn.image |= ac_encode_insn(out_insn.format, fid, operand_buffer[fid]);
-    dbg_printf(3, "parcial image: 0x%08lX\n", out_insn.image);
+    dbg_printf(0, "0x%08lX\n", out_insn.image);
   }
 
 }
@@ -1438,16 +1460,59 @@ static void free_all_fixups(acfixuptype *fix)
   }
 }
 
-
-static void print_internal_fixup(FILE *stream, acfixuptype *fix)
+static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix)
 {
 //  expressions ref_expr_fix; /* symbol in which the relocation points to */
-  fprintf(stream, "Addend  : %d\n", fix->addend);
-  fprintf(stream, "Fields  : 0x%X\n", fix->fields);
-  fprintf(stream, "Mod_id  : %u\n", fix->mod_id);
-  fprintf(stream, "reloc_id: %u\n", fix->reloc_id);
+  fprintf(stream, "%*s<(Addend) %d, (fields) 0x%X, (mod) %u, (reloc) %u>\n", 
+                    il*4, "",
+                    fix->addend,
+                    fix->fields,
+                    fix->mod_id,
+                    fix->reloc_id);
 }
 
+
+static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
+{
+  fprintf(stream, "%*s%lu - [%s,%u] - pcrel %d, done %d, rel %u\n", 
+                  il*4, "",
+                  (unsigned long) fixP,
+                  fixP->fx_file, fixP->fx_line,
+                  fixP->fx_pcrel,
+                  fixP->fx_done,
+                  (unsigned int) fixP->fx_r_type);
+
+  fprintf(stream, "%*ssize %u, where %ld, offset %ld, dot %lu, addnumber %ld\n", 
+                  il*4, "",
+                  fixP->fx_size, 
+                  fixP->fx_where,
+                  fixP->fx_offset,
+                  fixP->fx_dot_value,
+                  fixP->fx_addnumber);
+
+
+  extern int indent_level;
+  indent_level = il+1;
+ 
+  if (fixP->fx_addsy) {
+    fprintf(stream, "%*s", (il+1)*4, "");
+    print_symbol_value_1(stderr, fixP->fx_addsy); 
+    fprintf(stderr, "\n");
+  }
+
+  if (fixP->fx_subsy) {
+    fprintf(stream, "%*s", (il+1)*4, "");
+    print_symbol_value_1(stderr, fixP->fx_subsy); 
+    fprintf(stderr, "\n");
+  }
+
+  fprintf(stream, "%*smd: format %u, fields %u, addend %d, modid %d\n", 
+                il*4, "",
+                fixP->tc_fix_data.format_id,
+                fixP->tc_fix_data.fields,
+                fixP->tc_fix_data.addend,
+                fixP->tc_fix_data.mod_id);
+}
 
 
 static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value)

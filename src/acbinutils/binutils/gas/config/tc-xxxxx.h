@@ -60,6 +60,9 @@ extern int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c);
 extern void ___arch_name___`_frob_label'(symbolS *sym);
 #define tc_frob_label(x) ___arch_name___`_frob_label'(x)
 
+extern void ___arch_name___`_symbol_new_hook'(symbolS *sym);
+#define tc_symbol_new_hook(x) ___arch_name___`_symbol_new_hook'(x)
+
 extern void ___arch_name___`_handle_align'(struct frag *);
 #define HANDLE_ALIGN(fragp) ___arch_name___`_handle_align'(fragp)
 
