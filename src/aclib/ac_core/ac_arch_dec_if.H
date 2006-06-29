@@ -8,7 +8,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Fri Nov 18 19:53:16 2005
  * 
  * @brief     Defines an ac_arch specialization that contains GetBits()

@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Tue Sep 13 19:05:35 2005
  *
  * @brief     Defines a convenience union for pointers to integer types.

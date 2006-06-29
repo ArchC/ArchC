@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Tue Sep 13 17:16:51 2005
  *
  * @brief     Defines a class modeling a basic storage device (memory).

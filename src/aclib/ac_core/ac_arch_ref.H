@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Thu May 12 14:01:01 2005
  * 
  * @brief     Defines a class that contains references to the ac_arch fields.

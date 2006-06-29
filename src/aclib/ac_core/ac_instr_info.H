@@ -8,7 +8,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Thu May 12 13:54:55 2005
  * 
  * @brief     Defines a struct containing information about an instruction.

@@ -11,7 +11,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Wed, 19 Mar 2003 08:07:46 -0200
  * 
  * @brief     The ArchC pre-processor for compiled simulation.

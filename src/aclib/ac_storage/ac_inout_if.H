@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Mon Sep 12 20:45:27 2005
  *
  * @brief     Defines an interface class with input/output methods.
