@@ -1,3 +1,14 @@
+KNOWN BUGS IN ARCHC 2.0 BETA3
+-----------------------------
+
+ ** actsim
+     - GDB integration (option -gdb) does not work (not yet supported for cycle-
+         accurate models)
+     - Options -g (debug) does not do much, it only makes simulators generate
+         a trace file with the program counter
+     - Option -vb (verbose) does not work (model does not compile)
+     - Memory hierarchy is not supported
+
 KNOWN BUGS IN ARCHC 2.0 BETA2
 -----------------------------
 

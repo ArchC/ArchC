@@ -1436,6 +1436,8 @@ void CreateISAHeader(void)
   fprintf(output, "\n");
   fprintf(output, "%sinline const bool belongs_to_%s(unsigned id)\n%s{\n",
           INDENT[3], pgroup->name, INDENT[3]);
+  fprintf(output, "%sif (id >= AC_DEC_INSTR_NUMBER)\n", INDENT[4]);
+  fprintf(output, "%sreturn false; // Instruction does not exist.\n", INDENT[5]);
   fprintf(output, "%sreturn group_%s[id];\n%s}\n", INDENT[4], pgroup->name, INDENT[3]);
   fprintf(output, "\n");
  }

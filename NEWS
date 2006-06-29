@@ -1,5 +1,26 @@
 -*- text -*-
 
+Changes in version 2.0beta3:
+----------------------------
+
+* ac_group added to the parser and support for it added to acsim and actsim
+(see doc/adl_news.txt for further details)
+
+* ac_helper added to the parser and support for it added to acsim and actsim
+(see doc/adl_news.txt for further details)
+
+* The parser does not silently ignore name clashes within the following groups:
+ - storage names, pipeline names and stage names in the form pipename_stagename
+ - register formats
+ - instruction formats
+ - instruction groups
+(instruction names are still checked, like they were in previous versions)
+
+* actsim now allows multiple instantiation of generated simulators
+
+* actsim is using the SystemC scheduler now
+
+
 Changes in version 2.0beta2:
 ----------------------------
 
@@ -46,3 +67,4 @@ script (assembler and linker generation)
    initiator ports on your processor, as well as interrupt ports
 
 * preliminary interrupt handling mechanism support
+
