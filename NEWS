@@ -3,6 +3,8 @@
 Changes in version 2.0beta3:
 ----------------------------
 
+* keyword '#include' added to the language (it works pretty much the same as the one in C)
+
 * ac_group added to the parser and support for it added to acsim and actsim
 (see doc/adl_news.txt for further details)
 
@@ -19,6 +21,12 @@ Changes in version 2.0beta3:
 * actsim now allows multiple instantiation of generated simulators
 
 * actsim is using the SystemC scheduler now
+
+* disassembler (objdump) is automatically retargeted by acbingen (no additional changes in the models are necessary)
+
+* added '-s' option to the generated assembler. It turns off case sensitivity for mnemonics
+
+* models, language and tools with GPL license (public release). The version on SVN uses a special license
 
 
 Changes in version 2.0beta2:
