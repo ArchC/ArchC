@@ -18,6 +18,22 @@ Changes in version 2.0beta3:
  - instruction groups
 (instruction names are still checked, like they were in previous versions)
 
+* acsim-generated simulators now have coarser context-switching:
+ - the default now is to call wait() in the execution thread once for each 500
+   instructions, instead of once per instruction)
+ - this leads to a huge (around 5~7 times compared to beta2) speedup but may
+   cause problems in models with multiple processors or processors and TLM IPs
+   should the processor need the assumption of context switching at each
+   instruction (for instance, when it relies on instant response from
+   non-blocking methods). In that case you need the...
+ - set_instr_batch_size(sz) method: avaliable on acsim-generated simulators.
+   sz is an integer that determines the number of instructions to execute
+   before switching context. Set it to 1 if you need beta2-like behavior.
+ - if you want a standalone simulator (eg. just to run benchmark programs),
+   acsim now offers a -nw (--no-wait) flag that generates a simulator which
+   *never* switches context, thus allowing for very fast simulation (around
+   8 times faster than beta2)
+
 * actsim now allows multiple instantiation of generated simulators
 
 * actsim is using the SystemC scheduler now

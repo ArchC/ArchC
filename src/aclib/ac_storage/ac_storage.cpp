@@ -51,15 +51,15 @@ void ac_storage::read(ac_ptr buf, uint32_t address,
     break;
   }
   case 16: { // unsigned short
-    *(buf.ptr16) = (data.ptr16)[address / 2];
+    *(buf.ptr16) = *((uint16_t*) (data.ptr8 + address));
     break;
   }
   case 32: { // unsigned int
-    *(buf.ptr32) = (data.ptr32)[address / 4];
+    *(buf.ptr32) = *((uint32_t*) (data.ptr8 + address));
     break;
   }
   case 64: { // unsigned long long
-    *(buf.ptr64) = (data.ptr64)[address / 8];
+    *(buf.ptr64) = *((uint64_t*) (data.ptr8 + address));
     break;
   }
   default: // weird size
@@ -103,15 +103,15 @@ void ac_storage::write(ac_ptr buf, uint32_t address,
     break;
   }
   case 16: { // unsigned short
-    (data.ptr16)[address / 2] = *(buf.ptr16);
+    *((uint16_t*) (data.ptr8 + address)) = *(buf.ptr16);
     break;
   }
   case 32: { // unsigned int
-    (data.ptr32)[address / 4] = *(buf.ptr32);
+    *((uint32_t*) (data.ptr8 + address)) = *(buf.ptr32);
     break;
   }
   case 64: { // unsigned long long
-    (data.ptr64)[address / 8] = *(buf.ptr64);
+    *((uint64_t*) (data.ptr8 + address)) = *(buf.ptr64);
     break;
   }
   default: // weird size
@@ -162,3 +162,4 @@ void ac_storage::unlock()
 {} // empty == there's no point locking the internal storage
 
 //////////////////////////////////////////////////////////////////////////////
+
