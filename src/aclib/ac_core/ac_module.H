@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Thu May 12 10:15:27 2005
  * 
  * @brief     Defines the abstract class for an ArchC module.

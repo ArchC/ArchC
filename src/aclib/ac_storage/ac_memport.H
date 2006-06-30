@@ -9,7 +9,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Thu Sep 22 11:47:36 2005
  *
  * @brief     Defines a wrapper template class for memory access.

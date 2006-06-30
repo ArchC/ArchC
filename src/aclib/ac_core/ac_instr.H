@@ -10,7 +10,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Thu May 19 11:26:09 2005
  * 
  * @brief     Defines a container for instruction signals.

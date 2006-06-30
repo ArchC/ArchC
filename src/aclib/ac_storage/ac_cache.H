@@ -9,7 +9,7 @@
  *
  *            CIn - UFPE
  *
- * @version   version?
+ * @version   1.0
  * @date      Thu Sep 22 11:47:36 2005
  *
  * @brief     The ArchC cache simulation class.

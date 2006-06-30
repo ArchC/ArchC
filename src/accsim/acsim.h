@@ -11,7 +11,7 @@
  *            IC-UNICAMP
  *            http://www.lsc.ic.unicamp.br/
  *
- * @version   version?
+ * @version   1.0
  * @date      Wed, 17 Jul 2002 08:07:46 -0200
  * 
  * @brief     The ArchC simulator generator.
