@@ -10,6 +10,7 @@ Alexandro Baldassin <alebal@ic.unicamp.br> - ArchC Master, binary utilities
 Thiago Sigrist <ra002560@ic.unicamp.br> - interpreted simulator (ArchC 2.x)
 Marilia Chiozo <ra030038@ic.unicamp.br> - cycle-accurate simulator (Archc 2.x)
 Daniel Casarotto <casaroto@inf.ufsc.br> - binary utilities (linker)
+Max Schultz  <max@inf.ufsc.br> - binary utilities (disassembler - objdump)
 Cristiano Coelho de Araújo <> - platform development
 Pablo Viana da Silva <> - cache implementation
 Bruno Albertini <balbertini@gmail.com> - language application (ARP) and demos
