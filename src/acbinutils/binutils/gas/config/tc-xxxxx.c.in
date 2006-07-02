@@ -757,18 +757,30 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
   if (fixP->fx_addsy == NULL)
     INTERNAL_ERROR();
 
-  if (!S_IS_LOCAL(fixP->fx_addsy)) {
-    fixP->fx_done = FALSE;
-    symbol_mark_used_in_reloc (fixP->fx_addsy);
-  }
-  else {
+  resolve_symbol_value(fixP->fx_addsy);
+  symbol_mark_used_in_reloc(fixP->fx_addsy);
 
-    INTERNAL_ERROR();
+  if (fixP->fx_subsy != NULL) {
+    resolve_symbol_value(fixP->fx_subsy);
+    symbol_mark_used_in_reloc(fixP->fx_subsy);
+  }
+
+  fixP->fx_done = FALSE;
+
+
+//  if (!S_IS_LOCAL(fixP->fx_addsy)) {
+//    fixP->fx_done = FALSE;
+//    symbol_mark_used_in_reloc (fixP->fx_addsy);
+//  }
+//  else {
+
+//    INTERNAL_ERROR();
 //    encode_cons_field();
  
-  }
+//  }
 
   return 0;
+
 }
 
 
