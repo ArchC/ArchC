@@ -257,6 +257,17 @@ void modifier_R (unsigned int input, unsigned int address, int addend, unsigned 
 
 }
 
+
+void modifier_C (unsigned int input, unsigned int address, int addend, unsigned int *imm)
+{
+
+  /* user written code */
+  *imm = (input + 0x00008000) >> 16;
+
+}
+
+
+
 /* will be automatically generated */
 unsigned int operand_buffer[32];
 

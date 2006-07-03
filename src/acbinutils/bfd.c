@@ -222,6 +222,56 @@ int CreateRelocMap(const char *relocmap_filename)
 }
 
 
+int CreateGetFieldValueFunc(const char *filename)
+{ 
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+  
+  /* instruction format type switch */
+  fprintf(output, "%sswitch(insn_type) {\n", IND1);
+ 
+  ac_dec_format *pfrm = format_ins_list;
+  ac_dec_field *pf = NULL;
+
+  int i=0;
+  while (pfrm != NULL) {
+    fprintf(output, "%scase %i:\n", IND2, i);
+
+    /* field number switch */
+    fprintf(output, "%sswitch (field_id) {\n", IND3);
+   
+    pf = pfrm->fields;
+    int j=0;
+    while (pf != NULL) {
+      fprintf(output, "%scase %i:\n", IND4, j);
+
+      unsigned int mask = 0;
+      int k;
+      for (k=0; k < pf->size; k++)
+        mask |= 1 << k;
+
+      fprintf(output, "%sreturn (value >> %d) & 0x%X;\n", IND5, (pfrm->size - (pf->first_bit+1)), mask);
+
+      pf = pf->next;
+      j++;
+    }
+    fprintf(output, "%s}\n", IND3);
+ 
+    fprintf(output, "\n%sbreak;\n", IND3);
+    pfrm = pfrm->next;
+    i++;
+  }
+  fprintf(output, "\n%s}\n", IND1);
+ 
+  fprintf(output, "%sreturn 0;", IND1);
+
+  fclose(output);
+  return 1;
+}
+
+
 
 static ac_relocation_type* find_relocation_by_id(unsigned id) 
 {

@@ -54,16 +54,17 @@ static int Createm4File();
 /*
  * File names definition
  */
-#define OPCODE_TABLE_FILE  "opcode.table"
-#define SYMBOL_TABLE_FILE  "symbol.table"
-#define PSEUDO_TABLE_FILE  "pseudo.table"
-#define OPERAND_TABLE_FILE "operand.table"
-#define RELOC_IDS_FILE     "reloc.ids"
-#define RELOC_HOWTO_FILE   "reloc.howto"
-#define RELOC_MAP_FILE     "reloc.map"
-#define ENCODING_FN_FILE   "encoding.fn"
-#define FIELD_SIZE_FN_FILE "fieldsize.fn"
-#define INSN_SIZE_FN_FILE  "insnsize.fn"
+#define OPCODE_TABLE_FILE   "opcode.table"
+#define SYMBOL_TABLE_FILE   "symbol.table"
+#define PSEUDO_TABLE_FILE   "pseudo.table"
+#define OPERAND_TABLE_FILE  "operand.table"
+#define RELOC_IDS_FILE      "reloc.ids"
+#define RELOC_HOWTO_FILE    "reloc.howto"
+#define RELOC_MAP_FILE      "reloc.map"
+#define FIELD_VALUE_FN_FILE "fieldvalue.fn"
+#define ENCODING_FN_FILE    "encoding.fn"
+#define FIELD_SIZE_FN_FILE  "fieldsize.fn"
+#define INSN_SIZE_FN_FILE   "insnsize.fn"
 
 #define GEN_DIR "acbingenbuilddir/"
 
@@ -266,6 +267,13 @@ int main(int argc, char **argv)
   }
 
   strcpy(buffer, GEN_DIR);
+  strcat(buffer, FIELD_VALUE_FN_FILE);
+  if (!CreateGetFieldValueFunc(buffer)) {
+    fprintf(stderr, "Error creating field value function.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
   strcat(buffer, ENCODING_FN_FILE);
   if (!CreateEncodingFunc(buffer)) {
     fprintf(stderr, "Error creating encoding function.\n");
@@ -320,6 +328,7 @@ static int Createm4File()
   fprintf(output, "m4_define(`___reloc_ids___', `m4_include(%s)')m4_dnl\n", RELOC_IDS_FILE);
   fprintf(output, "m4_define(`___reloc_howto___', `m4_include(%s)')m4_dnl\n", RELOC_HOWTO_FILE);
   fprintf(output, "m4_define(`___reloc_map___', `m4_include(%s)')m4_dnl\n", RELOC_MAP_FILE);
+  fprintf(output, "m4_define(`___fieldvalue_function___', `m4_include(%s)')m4_dnl\n", FIELD_VALUE_FN_FILE);
 
 
   fprintf(output, "m4_define(`___encoding_function___', `m4_include(%s)')m4_dnl\n", ENCODING_FN_FILE);

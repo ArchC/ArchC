@@ -43,10 +43,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
    / bfd_octets_per_byte (bfd))
 #endif
 
+
+/* will be automatically generated */
+typedef enum {mod_default, mod_low, mod_high, mod_aligned, mod_pcrel, mod_carry} operand_modifier;
+static unsigned int operand_buffer[32];
+
+static void modifier_R (unsigned int input, unsigned int address, int addend, unsigned int *imm);
+static void modifier_C (unsigned int input, unsigned int address, int addend, unsigned int *imm);
+/* --- */
+
+
 static reloc_howto_type* ___arch_name___`_reloc_type_lookup' (bfd *, bfd_reloc_code_real_type);
 static void ___arch_name___`_elf_info_to_howto' (bfd *, arelent *, Elf_Internal_Rela *);
 static long long getbits(unsigned int bitsize, char *location, int endian); 
 static void putbits(unsigned int bitsize, char *location, long long value, int endian);
+static unsigned int ac_get_field_value(unsigned int insn_type, int field_id, unsigned int value);
 
 
 /* ArchC generic relocation routine prototype*/
@@ -253,6 +264,41 @@ bfd_elf_archc_reloc (bfd *abfd,
   
   return bfd_reloc_ok;
 }
+
+
+static unsigned int ac_get_field_value(unsigned int insn_type, int field_id, unsigned int value)
+{
+___fieldvalue_function___
+}
+
+
+/*
+ * Modifiers
+ * NOTE: This will be generated
+ */
+static void modifier_R (unsigned int input, unsigned int address, int addend, unsigned int *imm)
+{
+
+  /* user written code */
+  *imm = input - address + addend;
+
+
+}
+
+
+static void modifier_C (unsigned int input, unsigned int address, int addend, unsigned int *imm)
+{
+
+  /* user written code */
+  *imm = (input + 0x00008000) >> 16;
+
+}
+
+
+
+
+
+
 
 /*
  * 1 = big, 0 = little
