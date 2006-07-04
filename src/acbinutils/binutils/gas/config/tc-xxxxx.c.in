@@ -767,20 +767,24 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
 
   fixP->fx_done = FALSE;
 
+  /* encode modifier addend in the instruction field 
+   * note that the relocation addend will hold the expression addend
+   */
+  if (fixP->tc_fix_data.addend != 0) {
+    char *location = (char *) (fixP->fx_frag->fr_literal + fixP->fx_where);
+    long long insn_image;
+    insn_image = getbits(get_insn_size(fixP->tc_fix_data.format_id), location, ___endian_val___);
 
-//  if (!S_IS_LOCAL(fixP->fx_addsy)) {
-//    fixP->fx_done = FALSE;
-//    symbol_mark_used_in_reloc (fixP->fx_addsy);
-//  }
-//  else {
+    /* TODO: what if multiple fields are involved? How to restore the 
+       value at linking time? 
+     */
+    unsigned int fid = get_field_id(fixP->tc_fix_data.fields, 0 /* FIXME */);
+    insn_image |= ac_encode_insn(fixP->tc_fix_data.format_id, fid, fixP->tc_fix_data.addend);
 
-//    INTERNAL_ERROR();
-//    encode_cons_field();
- 
-//  }
+    putbits(get_insn_size(fixP->tc_fix_data.format_id), location, insn_image, ___endian_val___);
+  }
 
   return 0;
-
 }
 
 
@@ -829,8 +833,8 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
 
   r_type = fixp->fx_r_type;
   //rel->addend = fixp->fx_addnumber;
-  //rel->addend = fixp->fx_offset;
-  rel->addend = fixp->tc_fix_data.addend;
+  rel->addend = fixp->fx_offset;
+//  rel->addend = fixp->tc_fix_data.addend;
   rel->howto = bfd_reloc_type_lookup (stdoutput, r_type);
 
   if (rel->howto == NULL)
