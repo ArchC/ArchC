@@ -55,9 +55,31 @@ static void modifier_C (unsigned int input, unsigned int address, int addend, un
 
 static reloc_howto_type* ___arch_name___`_reloc_type_lookup' (bfd *, bfd_reloc_code_real_type);
 static void ___arch_name___`_elf_info_to_howto' (bfd *, arelent *, Elf_Internal_Rela *);
+
+/* shared with opcodes */
+static unsigned long get_insn_size(unsigned long insn_fmt);
+static unsigned int get_field_id(unsigned int encoded_field, unsigned int pos);
+static unsigned int get_num_fields(unsigned int encoded_field);
+static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value);
 static long long getbits(unsigned int bitsize, char *location, int endian); 
 static void putbits(unsigned int bitsize, char *location, long long value, int endian);
 static unsigned int ac_get_field_value(unsigned int insn_type, int field_id, unsigned int value);
+static void encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int address, unsigned int oper_id);
+
+typedef struct {
+//  unsigned int id;   /* operand id */
+  const char *name;  /* operand type name */
+  int type;
+  operand_modifier mod_type;
+  unsigned int mod_addend;
+  unsigned int fields;
+  unsigned int format_id;
+  unsigned int reloc_id;
+} acasm_operand;
+
+static const acasm_operand operands[] = {
+___operand_table___
+};
 
 
 /* ArchC generic relocation routine prototype*/
@@ -158,12 +180,11 @@ bfd_elf_archc_reloc (bfd *abfd,
              bfd *output_bfd,
              char **error_message ATTRIBUTE_UNUSED)
 {
-  bfd_vma relocation;
+  unsigned int relocation;
   bfd_size_type octets = reloc_entry->address * bfd_octets_per_byte (abfd); 
   bfd_vma output_base = 0;
   reloc_howto_type *howto = reloc_entry->howto;
   asection *reloc_target_output_section;
-//  asymbol *symbol = *(reloc_entry->sym_ptr_ptr);
         
    
   /*
@@ -174,17 +195,18 @@ bfd_elf_archc_reloc (bfd *abfd,
    */
   if (output_bfd != NULL
       && (symbol->flags & BSF_SECTION_SYM) == 0
-      && (! reloc_entry->howto->partial_inplace
-      || reloc_entry->addend == 0))
-     {
-       reloc_entry->address += input_section->output_offset;
-       return bfd_reloc_ok;
-     }
+      && (! howto->partial_inplace
+      || reloc_entry->addend == 0)) {
+    reloc_entry->address += input_section->output_offset;
+    return bfd_reloc_ok;
+  }
   
   /*
    * This part is mainly copied from bfd_perform_relocation, but
-   * here we use generic get/put bits
-   * Field 'size' of HOWTO structure now indicates the -bit size-
+   * here we use our own specific method to apply th relocation
+   * Fields of HOWTO structure and their specific mappings
+   *   type          --> id
+   *   rightshift    --> operand_id
    */
 
   /* Is the address of the relocation really within the section?  */
@@ -215,17 +237,12 @@ bfd_elf_archc_reloc (bfd *abfd,
   relocation += reloc_entry->addend;
 
   /* Here the variable relocation holds the final address of the
-   * symbol we are relocating against, plus any addend.  
+   * symbol we are relocating against, plus any addend. 
+   * relocation => input variable in our scheme 
    */
+  unsigned int address = (unsigned int) (input_section->output_section->vma + input_section->output_offset + reloc_entry->address);
 
 
-  if (howto->pc_relative) {
-    relocation -= input_section->output_section->vma + input_section->output_offset;
-     
-    if (howto->pcrel_offset)
-      relocation -= reloc_entry->address;
-  }
-     
   if (output_bfd != NULL) {
     /* TODO: deal with relocatable output?!? */
   }
@@ -237,33 +254,16 @@ bfd_elf_archc_reloc (bfd *abfd,
   */
 
 
+  unsigned int insn_image = (unsigned int) getbits(get_insn_size(howto->bitsize), (char *) data + octets, ___endian_val___);
 
-  relocation >>= (bfd_vma) howto->rightshift;
+  encode_cons_field(&insn_image, relocation, address, howto->rightshift);
 
-  /* Shift everything up to where it's going to be used.  */
-  relocation <<= (bfd_vma) howto->bitpos;
+  putbits(get_insn_size(howto->bitsize), (char *) data + octets, insn_image, ___endian_val___); 
 
-  /*  
-   * Now the real stuff... get, apply and put back the relocation from/into 
-   * object file image
-   */
-
-  
-#define DOIT(x) \
-     x = ( (x & ~howto->dst_mask) | (((x & howto->src_mask) +  relocation) & howto->dst_mask))
-  
-  long long x;
-
-  x = getbits(howto->size, (char *) data + octets , ___endian_val___);
-
-  DOIT (x);
-
-  putbits(howto->size, (char *) data + octets, x, ___endian_val___); 
-
-  
   
   return bfd_reloc_ok;
 }
+
 
 
 static unsigned int ac_get_field_value(unsigned int insn_type, int field_id, unsigned int value)
@@ -280,7 +280,7 @@ static void modifier_R (unsigned int input, unsigned int address, int addend, un
 {
 
   /* user written code */
-  *imm = input - address + addend;
+  *imm = (input - (address + addend)) >> 2;
 
 
 }
@@ -296,6 +296,105 @@ static void modifier_C (unsigned int input, unsigned int address, int addend, un
 
 
 
+
+/*
+ * These must be shared with opcodes module
+ *
+ */
+
+static unsigned long get_insn_size(unsigned long insn_fmt)
+{
+___insnsize_function___
+}
+
+
+static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value)
+{
+___encoding_function___
+}
+
+
+static void 
+encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int address, unsigned int oper_id)
+{
+  unsigned int nf = get_num_fields(operands[oper_id].fields);
+  unsigned int lt;
+ 
+
+  /* this will be automatically generated */
+  unsigned int fid = 0;
+
+  switch (nf) {
+
+    case 1: /* 1 operand */
+    /* list all possible calling to 1-operand modifier */
+      fid = get_field_id(operands[oper_id].fields, 0);
+//      if (fid > 32) INTERNAL_ERROR();
+
+      switch (operands[oper_id].mod_type) {
+ 
+        case mod_default:
+          operand_buffer[fid] = val_const;
+  
+          break;
+ 
+        case mod_pcrel:
+          modifier_R(val_const, address, operands[oper_id].mod_addend, &operand_buffer[fid]);
+          break;
+
+        case mod_carry:
+          modifier_C(val_const, address, operands[oper_id].mod_addend, &operand_buffer[fid]);
+          break;
+ 
+//        default: INTERNAL_ERROR();
+      }
+     
+      break;
+
+//    default: INTERNAL_ERROR();
+  }
+    /* ***** */
+
+
+  for (lt=0; lt < nf; lt++) {
+    unsigned int fid = get_field_id(operands[oper_id].fields, lt);
+
+    *image |= ac_encode_insn(operands[oper_id].format_id, fid, operand_buffer[fid]);
+  }
+
+}
+
+
+static unsigned int get_num_fields(unsigned int encoded_field)
+{
+  /* count the number of 1's in the bit field */
+  unsigned numf = 0;
+  unsigned int shift = 1;
+
+  for (; shift; shift <<= 1) {
+    if (encoded_field & shift)
+      numf++;
+  }
+
+  return numf;
+}
+
+static unsigned int get_field_id(unsigned int encoded_field, unsigned int pos)
+{
+  unsigned int id = 999;
+  unsigned int counter = 0;
+  unsigned int shift = 1;
+
+  for (; shift; shift <<= 1) {
+    if (encoded_field & shift) {
+      if (pos == 0) return counter;
+      pos--;
+    }
+    counter++;
+  }
+
+  return id;
+}
 
 
 

@@ -38,16 +38,8 @@
 typedef struct _ac_relocation_type {
   char *name;
   unsigned int id;
-  unsigned int fields;
-  unsigned int format_id;
-  operand_modifier mod_id;
-//  unsigned rightshift;
-//  unsigned reloc_size;
-//  unsigned bitsize;
-//  unsigned bitpos;
-//  unsigned mask;
-//  unsigned pc_relative;
-//  unsigned uses_carry;
+  unsigned int operand_id;
+
   struct _ac_relocation_type *next;
 } ac_relocation_type;
 
@@ -130,10 +122,8 @@ int CreateRelocIds(const char *relocid_filename)
 
   Mapping from 'ac_relocation_type' to 'reloc_howto_struct'
 
-  id        --> type
-  fields    --> rightshift
-  format_id --> bitsize
-  mod_id    --> bitpos
+  id         --> type
+  operand_id --> rightshift
 
 */
 int CreateRelocHowto(const char *reloc_howto_filename) 
@@ -148,20 +138,15 @@ int CreateRelocHowto(const char *reloc_howto_filename)
   unsigned reloc_id = 1;
   ac_relocation_type *relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
-//    char relocation_function[256];
-//    sprintf(relocation_function, "_bfd_%s_elf_carry_reloc", get_arch_name());
     
     fprintf (output, "%sHOWTO (%s, %d, %d, %d, %s, %d, %s, %s, \"%s\", %s, 0x%x, 0x%x, %s),\n",
       IND1,
       relocation->name,       /* type */
-      relocation->fields,     /* rightshift */
-//      relocation->rightshift,
+      relocation->operand_id, /* rightshift */
       0, /* not used */       /* size */
-      relocation->format_id,  /* bitsize */
-//      relocation->bitsize,
+      0, /* not used */       /* bitsize */
       "FALSE", /* not used */ /* pc-relative */
-      relocation->mod_id,     /* bitpos */
-//      relocation->bitpos,
+      0, /* not used */       /* bitpos */
       "complain_overflow_dont", /* not used */
       "bfd_elf_archc_reloc",    /* always this one */
       relocation->name,       /* name */
@@ -286,6 +271,8 @@ static ac_relocation_type* find_relocation_by_id(unsigned id)
 }
 
 
+/* Pre-cond: create_operand_list() must have already been called */
+/* it fills reloc_id field of operand type structure */
 static void process_instruction_relocation(ac_asm_insn *asml)
 {
   ac_operand_list *opP = asml->operands;
@@ -300,21 +287,14 @@ static void process_instruction_relocation(ac_asm_insn *asml)
     ac_asm_insn_field *fieldP = opP->fields;
     ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
 
-
-    reloc->fields = encode_fields(fieldP);
-
-    reloc->format_id = get_format_id(asml->insn->format);
-
-    reloc->mod_id = opP->modifier.type;
-
-
+    reloc->operand_id = opP->oper_id; 
 
     ac_relocation_type* reloc_found = find_relocation(reloc);
 
     if (reloc_found == NULL) {
       reloc->id = relocation_types_list ? relocation_types_list->id + 1 : 1;
       reloc->name = (char*) malloc(sizeof(char)*128);
-      sprintf(reloc->name, "R_%s_ID%d_F%XFt%uM%d", get_arch_name(), reloc->id, reloc->fields, reloc->format_id, reloc->mod_id); 
+      sprintf(reloc->name, "R_%s_ID%d_Opr%u", get_arch_name(), reloc->id, reloc->operand_id); 
       reloc->next = relocation_types_list;
       relocation_types_list = reloc;
       opP->reloc_id = reloc->id;
@@ -510,16 +490,5 @@ static ac_relocation_type* find_relocation(ac_relocation_type* reloc)
 
 static int compare_relocs(ac_relocation_type* first, ac_relocation_type* second)
 {
-  return first->fields    == second->fields &&
-         first->format_id == second->format_id &&
-         first->mod_id    == second->mod_id;
-/*
-  return first->rightshift == second->rightshift &&
-         first->reloc_size == second->reloc_size &&
-         first->bitsize == second->bitsize &&
-         first->bitpos == second->bitpos &&
-         first->mask == second->mask &&
-         first->pc_relative == second->pc_relative &&
-         first->uses_carry == second->uses_carry;
-*/
+  return (first->operand_id == second->operand_id);
 }

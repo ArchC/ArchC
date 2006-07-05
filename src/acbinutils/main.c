@@ -213,7 +213,9 @@ int main(int argc, char **argv)
   }
  
   // Create the relocation list first
+  create_operand_list();
   create_relocation_list();
+  /* FIXME: it should not call this function again */
   create_operand_list();
 
   strcpy(buffer, GEN_DIR);

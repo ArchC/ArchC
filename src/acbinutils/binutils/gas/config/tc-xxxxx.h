@@ -41,14 +41,14 @@
 #define LOCAL_LABELS_DOLLAR 1
 #define LOCAL_LABEL_PREFIX '$'
 
+/*
 typedef struct fix_addend {
   unsigned int format_id;
-  unsigned int fields;
-  int addend;
-  unsigned int mod_id;
+  unsigned int operand_id;
 } archc_fix_addend;
+*/
 
-#define TC_FIX_TYPE archc_fix_addend
+#define TC_FIX_TYPE unsigned int
 #define TC_INIT_FIX_DATA(fixP)
 
 extern char *___arch_name___`_canonicalize_symbol_name'(char *c);

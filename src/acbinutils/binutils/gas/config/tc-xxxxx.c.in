@@ -75,12 +75,8 @@
 typedef struct _acfixuptype
 {
   expressionS ref_expr_fix; /* symbol in which the relocation points to */
-  
-  int addend;
-  unsigned int fields;
-  unsigned int mod_id;
+  unsigned int operand_id;
 
-  unsigned int reloc_id;
   struct _acfixuptype *next;
 } acfixuptype;
 
@@ -687,15 +683,12 @@ static void emit_insn()
       INTERNAL_ERROR();
     
     fixP = fix_new_exp (frag_now, frag_address - frag_now->fr_literal /* where */, get_insn_size(out_insn.format)/8 /* size */,
-    &ref_expr, 0 /* pcrel -> always FALSE */, out_insn.fixup->reloc_id);
+    &ref_expr, 0 /* pcrel -> always FALSE */, operands[out_insn.fixup->operand_id].reloc_id);
     
     if (!fixP)
       INTERNAL_ERROR();
 
-    fixP->tc_fix_data.format_id = out_insn.format;
-    fixP->tc_fix_data.fields    = out_insn.fixup->fields;
-    fixP->tc_fix_data.addend    = out_insn.fixup->addend;
-    fixP->tc_fix_data.mod_id    = out_insn.fixup->mod_id;
+    fixP->tc_fix_data = out_insn.fixup->operand_id;
 
     /* don't let GAS core mess with our fixup (adjust_reloc_syms) */
     fixP->fx_done = TRUE;
@@ -767,22 +760,6 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
 
   fixP->fx_done = FALSE;
 
-  /* encode modifier addend in the instruction field 
-   * note that the relocation addend will hold the expression addend
-   */
-  if (fixP->tc_fix_data.addend != 0) {
-    char *location = (char *) (fixP->fx_frag->fr_literal + fixP->fx_where);
-    long long insn_image;
-    insn_image = getbits(get_insn_size(fixP->tc_fix_data.format_id), location, ___endian_val___);
-
-    /* TODO: what if multiple fields are involved? How to restore the 
-       value at linking time? 
-     */
-    unsigned int fid = get_field_id(fixP->tc_fix_data.fields, 0 /* FIXME */);
-    insn_image |= ac_encode_insn(fixP->tc_fix_data.format_id, fid, fixP->tc_fix_data.addend);
-
-    putbits(get_insn_size(fixP->tc_fix_data.format_id), location, insn_image, ___endian_val___);
-  }
 
   return 0;
 }
@@ -907,8 +884,8 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
       INTERNAL_ERROR();
   }
 
-  fixP->tc_fix_data.format_id = (unsigned int) -1;  /* -1 is for data items */
-  fixP->tc_fix_data.fields = (unsigned int) -1;
+//  fixP->tc_fix_data.format_id = (unsigned int) -1;  /* -1 is for data items */
+//  fixP->tc_fix_data.fields = (unsigned int) -1;
 //  fixP->tc_fix_data.field_size = AC_WORD_SIZE;//nbytes*8;
  
   fixP->fx_done = FALSE;
@@ -1381,14 +1358,10 @@ create_fixup(unsigned int oper_id)
   }
 
   fixups->ref_expr_fix = ref_expr;
-  fixups->addend   = operands[oper_id].mod_addend;
-  fixups->fields   = operands[oper_id].fields;
-  fixups->mod_id   = operands[oper_id].mod_type;
-  fixups->reloc_id = operands[oper_id].reloc_id;
+  fixups->operand_id = oper_id;
   
   dbg_printf(3,"Fixup = ");
   dbg_print_fixup(0, fixups);
-
 }
 
 
@@ -1485,10 +1458,10 @@ static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix
 //  expressions ref_expr_fix; /* symbol in which the relocation points to */
   fprintf(stream, "%*s<(Addend) %d, (fields) 0x%X, (mod) %u, (reloc) %u>\n", 
                     il*4, "",
-                    fix->addend,
-                    fix->fields,
-                    fix->mod_id,
-                    fix->reloc_id);
+                    operands[fix->operand_id].mod_addend,
+                    operands[fix->operand_id].fields,
+                    operands[fix->operand_id].mod_type,
+                    operands[fix->operand_id].reloc_id);
 }
 
 
@@ -1526,12 +1499,9 @@ static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
     fprintf(stderr, "\n");
   }
 
-  fprintf(stream, "%*smd: format %u, fields %u, addend %d, modid %d\n", 
+  fprintf(stream, "%*smd: operand type %u\n", 
                 il*4, "",
-                fixP->tc_fix_data.format_id,
-                fixP->tc_fix_data.fields,
-                fixP->tc_fix_data.addend,
-                fixP->tc_fix_data.mod_id);
+                fixP->tc_fix_data);
 }
 
 

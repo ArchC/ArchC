@@ -44,6 +44,7 @@ typedef struct _oper_list {
   operand_modifier mod_type;
   int mod_addend;
   unsigned int fields;
+  unsigned int format_id;
   unsigned int reloc_id;
   struct _oper_list *next;
 } oper_list;
@@ -54,7 +55,7 @@ static oper_list *operand_list = NULL;
 /*
  * module function prototypes
  */
-static int find_operand(oper_list *opl);
+static oper_list *find_operand(oper_list *opl);
 static void create_operand_string(ac_asm_insn *insn, char **output);
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize);
 static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
@@ -67,6 +68,11 @@ void create_operand_list()
 
   /* for every instruction */
   while (asml != NULL) {
+    if (asml->insn == NULL) { /* check only native insn */
+      asml = asml->next;
+      continue;
+    }
+
     ac_operand_list *opP = asml->operands;
 
     /* for every operand */
@@ -84,13 +90,14 @@ void create_operand_list()
 
       oper->fields = encode_fields(opP->fields);
 
-      oper->reloc_id = opP->reloc_id;
+//      oper->reloc_id = opP->reloc_id;
+      oper->format_id = get_format_id(asml->insn->format);
    
       oper->next = NULL;
 
-      int opid = find_operand(oper);
+      oper_list *opfound = find_operand(oper);
 
-      if (opid == -1) { /* operand not defined yet */
+      if (opfound == NULL) { /* operand not defined yet */
         if (operand_list == NULL) {
           oper->id = 0;
           opP->oper_id = 0;
@@ -107,7 +114,9 @@ void create_operand_list()
         }
       }
       else {
-        opP->oper_id = opid;
+        opP->oper_id = opfound->id;
+        /* this must be filled in on the second pass */
+        opfound->reloc_id = opP->reloc_id;
         
         free(oper->name);
         free(oper);
@@ -363,6 +372,7 @@ int CreateOperandTable(const char *optable_filename)
     fprintf(output, "%d,\t", opL->mod_type);
     fprintf(output, "%d,\t", opL->mod_addend);
     fprintf(output, "%u,\t", opL->fields);
+    fprintf(output, "%u,\t", opL->format_id);
     fprintf(output, "%u ", opL->reloc_id);
 
     fprintf(output, "},\n"); 
@@ -530,7 +540,7 @@ static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsign
 
 
 /* -1 -> not found  */
-static int find_operand(oper_list *opl)
+static oper_list *find_operand(oper_list *opl)
 {
   oper_list *otmp = operand_list;
 
@@ -540,12 +550,13 @@ static int find_operand(oper_list *opl)
          otmp->mod_type == opl->mod_type &&
          otmp->mod_addend == opl->mod_addend &&
          otmp->fields == opl->fields &&
-         otmp->reloc_id == opl->reloc_id)
-      return otmp->id;
+         otmp->format_id == opl->format_id)
+//         otmp->reloc_id == opl->reloc_id)
+      return otmp;
 
     otmp = otmp->next;
   }
 
-  return -1;
+  return NULL;
 }
 

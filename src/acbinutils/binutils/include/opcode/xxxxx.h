@@ -42,6 +42,7 @@ typedef struct {
   operand_modifier mod_type;
   unsigned int mod_addend;
   unsigned int fields;
+  unsigned int format_id;
   unsigned int reloc_id;
 } acasm_operand;
 
