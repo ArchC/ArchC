@@ -84,7 +84,7 @@ void ac_init_app( int ac, char* av[]);
 
 // byte_swap functions, with special assembly-language optimizations for the
 // i486 or greater processors.
-#ifdef __i486__
+#if __i486__ && __i586__ && __i686__
 inline uint16_t byte_swap(uint16_t value) {
   asm ("rol $8, %0"
        : "=r" (value)
@@ -100,14 +100,14 @@ inline uint32_t byte_swap(uint32_t value) {
       );
   return value;
 }
-#endif // __i486__
+#endif // __i486__ && __i586__ && __i686__
 
 template <typename T>
 inline T byte_swap(T value) {
-  unsigned char aux;
+  unsigned int aux;
   T result = 0;
-  for (int i = 0; i < sizeof(T); i++) {
-    aux = value;
+  for (unsigned int i = 0; i < sizeof(T); i++) {
+    aux = value & 0xff;
     value  >>= 8;
     result <<= 8;
     result |=  aux;
@@ -131,7 +131,7 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
 
   //Open application
   if (!filename || ((fd = open(filename, 0)) == -1)) {
-    AC_ERROR("Openning application file '" << filename << "': " << strerror(errno) << endl);
+    AC_ERROR("Opening application file '" << filename << "': " << strerror(errno) << endl);
     exit(EXIT_FAILURE);
   }
 
