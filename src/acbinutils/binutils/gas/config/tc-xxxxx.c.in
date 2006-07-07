@@ -891,7 +891,7 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
   fixP->fx_done = FALSE;
 
   /* FIXME */ 
-  INTERNAL_ERROR();
+//  INTERNAL_ERROR();
 
   if (!fixP) INTERNAL_ERROR();
 }
@@ -1398,6 +1398,11 @@ encode_cons_field(unsigned long val_const, unsigned int oper_id)
         case mod_carry:
           modifier_C(val_const, frag_now_fix(), operands[oper_id].mod_addend, &operand_buffer[fid]);
           break;
+ 
+        case mod_aligned:
+          modifier_A(val_const, frag_now_fix(), operands[oper_id].mod_addend, &operand_buffer[fid]);
+          break;
+          
  
         default: INTERNAL_ERROR();
       }

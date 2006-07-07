@@ -59,6 +59,7 @@ static oper_list *find_operand(oper_list *opl);
 static void create_operand_string(ac_asm_insn *insn, char **output);
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize);
 static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
+static int get_compatible_oper_id(operand_type opt);
 
 
 void create_operand_list()
@@ -391,8 +392,6 @@ int CreateOperandTable(const char *optable_filename)
  */
 
 /*
- * format:
- *   %<op_id>:<mod_id>:<addend>:<fid1+fid2+fid3...>:rel_id:
  *
  */
 static void create_operand_string(ac_asm_insn *insn, char **output) 
@@ -411,71 +410,15 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       s++;
       lit++;
 
+      if (opP->oper_id == -1) { /* pseudo operand */
+        opP->oper_id = get_compatible_oper_id(opP->type);
+      } 
+ 
       sprintf(s, "%d", opP->oper_id);
       while (*s >= '0' && *s <= '9') s++;
 
       *s = ':';
       s++;
-
-/*
-      char *ls = opP->str;
-      while (*ls != '\0') {
-        *s = *ls;
-        s++;
-        ls++;          
-      }
-
-      *s = ':';
-      s++;
-
-      // mod_id 
-
-      sprintf(s, "%d", opP->modifier.type);
-      while (*s >= '0' && *s <= '9') s++;
-
-      *s = ':';
-      s++;
-
-
-      // addend
-      // TODO: check for negative addends 
-      sprintf(s, "%d", opP->modifier.addend);
-      while (*s >= '0' && *s <= '9') s++;
-
-      *s = ':';
-
-
-      // fields 
-
-      ac_asm_insn_field *fP = opP->fields;
-      while (fP != NULL) {
-         
-        s++;
-        sprintf(s, "%d", fP->id);
-        while (*s >= '0' && *s <= '9') s++;
-
-//        *s = ':'; 
-
-//        s++;
-//        sprintf(s, "%d", fP->reloc_id);
-//        while (*s >= '0' && *s <= '9') s++;
-        
-        fP = fP->next;
-        if (fP != NULL) 
-          *s = '+';
-      }
-
-      *s = ':';
-      s++;
-
-      // reloc id 
-
-      sprintf(s, "%d", opP->reloc_id);
-      while (*s >= '0' && *s <= '9') s++;
-      
-      *s = ':';
-      s++;
-*/
 
       opP = opP->next;
       /* TODO: check for NULL pointer */
@@ -505,6 +448,8 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
   }
   *s = '\0';  
 }
+
+
 
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize) {
 
@@ -560,3 +505,18 @@ static oper_list *find_operand(oper_list *opl)
   return NULL;
 }
 
+/* returns -1 in case no one is found */
+static int get_compatible_oper_id(operand_type opt)
+{
+  oper_list *opP = operand_list;
+  int retvalue = -1;
+  
+  while (opP != NULL) {
+    if (opP->type == opt) 
+      return (int) opP->id;
+
+    opP = opP->next;
+  }
+
+  return retvalue;
+}

@@ -159,13 +159,13 @@ int CreateRelocHowto(const char *reloc_howto_filename)
     relocation = find_relocation_by_id(reloc_id);
   }
   // Generic data relocations
-  fprintf(output, "%sHOWTO (R_%s_8,  0, 8,  8, FALSE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_16, 0, 16, 16, FALSE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_32, 0, 32, 32, FALSE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_8,  0, 0,  8, FALSE, 0, complain_overflow_bitfield, NULL,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield, NULL,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield, NULL,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
 
-  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 8,  8, TRUE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 16, 16, TRUE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 32, 32, TRUE, 0, complain_overflow_bitfield, bfd_elf_archc_reloc,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 0,  8, TRUE, 0, complain_overflow_bitfield, NULL,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield, NULL,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, NULL,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
 
   fclose(output);
   return 1;

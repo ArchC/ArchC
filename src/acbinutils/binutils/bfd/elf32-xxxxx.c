@@ -50,6 +50,7 @@ static unsigned int operand_buffer[32];
 
 static void modifier_R (unsigned int input, unsigned int address, int addend, unsigned int *imm);
 static void modifier_C (unsigned int input, unsigned int address, int addend, unsigned int *imm);
+static void modifier_A (unsigned int input, unsigned int address, int addend, unsigned int *imm);
 /* --- */
 
 
@@ -295,6 +296,12 @@ static void modifier_C (unsigned int input, unsigned int address, int addend, un
 }
 
 
+static void modifier_A (unsigned int input, unsigned int address, int addend, unsigned int *imm)
+{
+  /* user written code */
+  *imm = input >> 2;
+}
+
 
 
 /*
@@ -344,6 +351,10 @@ encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int add
 
         case mod_carry:
           modifier_C(val_const, address, operands[oper_id].mod_addend, &operand_buffer[fid]);
+          break;
+
+        case mod_aligned:
+          modifier_A(val_const, address, operands[oper_id].mod_addend, &operand_buffer[fid]);
           break;
  
 //        default: INTERNAL_ERROR();

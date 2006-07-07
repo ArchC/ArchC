@@ -71,6 +71,7 @@ extern void putbits(unsigned int bitsize, char *location, long long value, int e
 /* this will be generated */
 extern void modifier_R(unsigned int input, unsigned int address, int addend, unsigned int *imm);
 extern void modifier_C(unsigned int input, unsigned int address, int addend, unsigned int *imm);
+extern void modifier_A(unsigned int input, unsigned int address, int addend, unsigned int *imm);
 extern unsigned int get_num_fields(unsigned int encoded_field);
 extern unsigned int get_field_id(unsigned int encoded_field, unsigned int pos);
 
