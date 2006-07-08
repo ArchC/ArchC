@@ -39,9 +39,6 @@ int CreateEncodingFunc(const char *encfunc_filename)
   if ((output = fopen(encfunc_filename, "w")) == NULL) 
     return 0;
   
-  fprintf(output, "%sunsigned long mask1 = 0xffffffff;\n", IND1);
-  fprintf(output, "%sunsigned long mask2 = 0xffffffff;\n\n", IND1);
-
   /* instruction format type switch */
   fprintf(output, "%sswitch(insn_type) {\n", IND1);
  
@@ -51,7 +48,6 @@ int CreateEncodingFunc(const char *encfunc_filename)
   int i=0;
   while (pfrm != NULL) {
     fprintf(output, "%scase %i:\n", IND2, i);
-    fprintf(output, "%smask2 >>= 32-%d;\n", IND3, pfrm->size);
 
     /* field number switch */
     fprintf(output, "%sswitch (field_id) {\n", IND3);
@@ -59,10 +55,16 @@ int CreateEncodingFunc(const char *encfunc_filename)
     pf = pfrm->fields;
     int j=0;
     while (pf != NULL) {
+      unsigned long mask = 
+              (0xffffffff >> 
+                 (32 - pfrm->size + pf->first_bit+1 - pf->size)) 
+            & (0xffffffff << 
+                 (pfrm->size - (pf->first_bit+1))); 
+
       fprintf(output, "%scase %i:\n", IND4, j);
-      fprintf(output, "%smask1 <<= %i;\n", IND4, pfrm->size - (pf->first_bit+1));
-      fprintf(output, "%smask2 >>= %i;\n", IND4, pf->first_bit+1 - pf->size);
-      fprintf(output, "%sreturn (value << (%i)) & (mask1 & mask2);\n\n", IND4, pfrm->size - (pf->first_bit+1));
+      fprintf(output, "%s*image &= 0x%lx;\n", IND5, ~mask); 
+      fprintf(output, "%s*image |= ((value << %i) & 0x%lx);\n", IND5, pfrm->size - (pf->first_bit+1), mask);
+      fprintf(output, "%sbreak;\n", IND5);
       
       pf = pf->next;
       j++;

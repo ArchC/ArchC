@@ -158,14 +158,22 @@ int CreateRelocHowto(const char *reloc_howto_filename)
     reloc_id++;
     relocation = find_relocation_by_id(reloc_id);
   }
-  // Generic data relocations
-  fprintf(output, "%sHOWTO (R_%s_8,  0, 0,  8, FALSE, 0, complain_overflow_bitfield, NULL,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield, NULL,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield, NULL,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
 
-  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 0,  8, TRUE, 0, complain_overflow_bitfield, NULL,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield, NULL,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, NULL,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  /* Generic data relocations
+    FIXME: this should depend on the target machine!
+  */
+  fprintf(output, "%sHOWTO (R_%s_8,  0, 0,  8, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+
+  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 0,  8, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
 
   fclose(output);
   return 1;
@@ -193,14 +201,16 @@ int CreateRelocMap(const char *relocmap_filename)
     relocation = next_relocation;
   }
 
-  // Generic data relocations
-  fprintf(output,"%s{ BFD_GENERIC_8,  R_%s_8  },\n",IND1, get_arch_name());  
-  fprintf(output,"%s{ BFD_GENERIC_16, R_%s_16 },\n",IND1, get_arch_name());  
-  fprintf(output,"%s{ BFD_GENERIC_32, R_%s_32 },\n",IND1, get_arch_name());
+  /* Generic data relocations
+    FIXME: this should depend on the target machine!
+   */
+  fprintf(output,"%s{ %d, R_%s_8  },\n", IND1, reloc_id++, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_16 },\n", IND1, reloc_id++, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_32 },\n", IND1, reloc_id++, get_arch_name());
 
-  fprintf(output,"%s{ BFD_GENERIC_REL8,  R_%s_REL8  },\n",IND1, get_arch_name());  
-  fprintf(output,"%s{ BFD_GENERIC_REL16, R_%s_REL16 },\n",IND1, get_arch_name());  
-  fprintf(output,"%s{ BFD_GENERIC_REL32, R_%s_REL32 }\n", IND1, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL8  },\n", IND1, reloc_id++, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL16 },\n", IND1, reloc_id++, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL32 }\n",  IND1, reloc_id++, get_arch_name());  
 
   fclose(output);
   return 1;

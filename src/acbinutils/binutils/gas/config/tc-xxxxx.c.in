@@ -37,7 +37,7 @@
 #include `"opcode/'___arch_name___`.h"'
 
 
-#define DEBUG_ON
+//#define DEBUG_ON
 
 #ifdef DEBUG_ON
 #  include <stdio.h>
@@ -81,7 +81,7 @@ typedef struct _acfixuptype
 } acfixuptype;
 
 
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value);
+static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value, unsigned int *image);
 static unsigned long get_field_size(unsigned long insn_fmt, int field_id);
 static unsigned long get_insn_size(unsigned long insn_fmt);
 static void s_cons(int byte_size);
@@ -199,8 +199,8 @@ static expressionS ref_expr;
 /* out_insn is the current instruction being assembled */
 static struct insn_encoding
 {
-  unsigned long image;
-  unsigned long format;
+  unsigned int image;
+  unsigned int format;
 
   unsigned int is_pseudo;
   unsigned int op_num;
@@ -872,13 +872,13 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
 
   switch (nbytes) {
     case 1:
-      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, BFD_GENERIC_8);
+      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, `R_'___arch_name___`_8');
       break;
     case 2:
-      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, BFD_GENERIC_16);
+      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, `R_'___arch_name___`_16');
       break;
     case 4:
-      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, BFD_GENERIC_32);
+      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, `R_'___arch_name___`_32');
       break;
     default:
       INTERNAL_ERROR();
@@ -1418,7 +1418,7 @@ encode_cons_field(unsigned long val_const, unsigned int oper_id)
     unsigned int fid = get_field_id(operands[oper_id].fields, lt);
 
     dbg_printf(3, "image 0x%08lX with field[%u] = %u ==> ", out_insn.image, fid, operand_buffer[fid]);
-    out_insn.image |= ac_encode_insn(out_insn.format, fid, operand_buffer[fid]);
+    ac_encode_insn(out_insn.format, fid, operand_buffer[fid], &out_insn.image);
     dbg_printf(0, "0x%08lX\n", out_insn.image);
   }
 
@@ -1510,7 +1510,7 @@ static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
 }
 
 
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value)
+static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value, unsigned int *image)
 {
 ___encoding_function___
 }

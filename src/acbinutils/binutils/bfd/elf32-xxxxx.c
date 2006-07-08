@@ -61,7 +61,7 @@ static void ___arch_name___`_elf_info_to_howto' (bfd *, arelent *, Elf_Internal_
 static unsigned long get_insn_size(unsigned long insn_fmt);
 static unsigned int get_field_id(unsigned int encoded_field, unsigned int pos);
 static unsigned int get_num_fields(unsigned int encoded_field);
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value);
+static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value, unsigned int *image);
 static long long getbits(unsigned int bitsize, char *location, int endian); 
 static void putbits(unsigned int bitsize, char *location, long long value, int endian);
 static unsigned int ac_get_field_value(unsigned int insn_type, int field_id, unsigned int value);
@@ -93,11 +93,16 @@ bfd_elf_archc_reloc (bfd *abfd,
              bfd *output_bfd,
              char **error_message ATTRIBUTE_UNUSED);
 
+static bfd_reloc_status_type
+generic_data_reloc (bfd *abfd,
+             arelent *reloc_entry,
+             asymbol *symbol,
+             void *data,
+             asection *input_section,
+             bfd *output_bfd,
+             char **error_message ATTRIBUTE_UNUSED);
 
-/* carry relocation function prototype */
-bfd_reloc_status_type
-`_bfd_'___arch_name___`_elf_carry_reloc' (bfd *abfd, arelent *reloc_entry, asymbol *symbol,
-           void *data, asection *input_section, bfd *output_bfd, char **error_message);
+
 
 /* Local label (those who starts with $ are recognized as well) */
 static bfd_boolean
@@ -150,25 +155,33 @@ static void ___arch_name___`_elf_info_to_howto' (abfd, cache_ptr, dst)
   cache_ptr->howto = &`elf_'___arch_name___`_howto_table'[r];
 }
 
-bfd_reloc_status_type
-`_bfd_'___arch_name___`_elf_carry_reloc' (bfd *abfd, arelent *reloc_entry, asymbol *symbol,
-           void *data, asection *input_section, bfd *output_bfd, char **error_message)
+
+static bfd_reloc_status_type
+generic_data_reloc (bfd *abfd,
+             arelent *reloc_entry,
+             asymbol *symbol,
+             void *data,
+             asection *input_section,
+             bfd *output_bfd,
+             char **error_message ATTRIBUTE_UNUSED)
 {
-  if (output_bfd == NULL) { // If it's the final link, apply the carry
-    bfd_vma vallo;
-    bfd_byte *location = (bfd_byte *) data + reloc_entry->address;
-    vallo = bfd_get_32 (abfd, location);
+  unsigned int relocation;
+  asection *reloc_target_output_section;
+  bfd_size_type octets = reloc_entry->address * bfd_octets_per_byte (abfd); 
+  reloc_howto_type *howto = reloc_entry->howto;
 
-    unsigned long mask1 = 1 << (32 - reloc_entry->howto->bitsize - 1);
-    unsigned long mask2 = 0;
-    unsigned i;
-    for (i = 0; i < (32 - reloc_entry->howto->bitsize); i++)
-      mask2 = mask2 | 1 << i;
 
-    reloc_entry->addend += (vallo + mask1) & mask2;
-  }
+  reloc_target_output_section = symbol->section->output_section;
 
-  return bfd_elf_archc_reloc (abfd, reloc_entry, symbol, data, input_section, output_bfd, error_message);
+  relocation = symbol->value;
+  relocation += reloc_target_output_section->vma + symbol->section->output_offset;
+  relocation += reloc_entry->addend;
+
+
+  putbits(howto->bitsize, (char *) data + octets, relocation, ___endian_val___); 
+
+
+  return bfd_reloc_ok;
 }
 
 
@@ -255,11 +268,11 @@ bfd_elf_archc_reloc (bfd *abfd,
   */
 
 
-  unsigned int insn_image = (unsigned int) getbits(get_insn_size(howto->bitsize), (char *) data + octets, ___endian_val___);
+  unsigned int insn_image = (unsigned int) getbits(get_insn_size(operands[howto->rightshift].format_id), (char *) data + octets, ___endian_val___);
 
   encode_cons_field(&insn_image, relocation, address, howto->rightshift);
 
-  putbits(get_insn_size(howto->bitsize), (char *) data + octets, insn_image, ___endian_val___); 
+  putbits(get_insn_size(operands[howto->rightshift].format_id), (char *) data + octets, insn_image, ___endian_val___); 
 
   
   return bfd_reloc_ok;
@@ -315,7 +328,7 @@ ___insnsize_function___
 }
 
 
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value)
+static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value, unsigned int *image)
 {
 ___encoding_function___
 }
@@ -370,7 +383,7 @@ encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int add
   for (lt=0; lt < nf; lt++) {
     unsigned int fid = get_field_id(operands[oper_id].fields, lt);
 
-    *image |= ac_encode_insn(operands[oper_id].format_id, fid, operand_buffer[fid]);
+    ac_encode_insn(operands[oper_id].format_id, fid, operand_buffer[fid], image);
   }
 
 }
