@@ -1227,7 +1227,7 @@ int main(int argc, char** argv) {
       if( pfield->sign )
 	fprintf(output, "int %s", pfield->name);
       else
-	fprintf(output, "unsigned %s", pfield->name);
+	fprintf(output, "unsigned int %s", pfield->name);
       if (pfield->next != NULL)
 	fprintf(output, ", ");
     }
@@ -1305,7 +1305,7 @@ int main(int argc, char** argv) {
       if( pfield->sign )
 	fprintf(output, "int %s", pfield->name);
       else
-	fprintf(output, "unsigned %s", pfield->name);
+	fprintf(output, "unsigned int %s", pfield->name);
       if (pfield->next != NULL)
 	fprintf(output, ", ");
     }
@@ -4055,17 +4055,17 @@ void EmitInstrExec( FILE *output, int base_indent){
 
   fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
 
-  fprintf(output, "%sif (!ac_annul_sig) {\n", INDENT[base_indent++]);
-  fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent++]);
+  fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
+  fprintf(output, "%sif (!ac_annul_sig) ", INDENT[base_indent]);
 
   //Pipelined archs can annul an instruction through pipelining flushing.
   if(stage_list || pipe_list ){
-    fprintf( output, "%sISA._behavior_instruction( (ac_stage_list) id );\n", INDENT[base_indent]);
+    fprintf( output, "ISA._behavior_instruction( (ac_stage_list) id );\n");
 /*     fprintf( output, "%s(ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_type_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name, project_name); */
 /*     fprintf( output, "%s(ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name, project_name); */
   }
   else{
-    fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
+    fprintf(output, "ISA._behavior_instruction(");
     /* common_instr_field_list has the list of fields for the generic instruction. */
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
       fprintf(output, "instr_vec->get(%d)", pfield->id);
@@ -4087,7 +4087,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     for (pformat = format_ins_list;
          (pformat != NULL) && strcmp(pinstr->format, pformat->name);
          pformat = pformat->next);
-    fprintf(output, "%sISA._behavior_%s_%s(", INDENT[base_indent + 1],
+    fprintf(output, "%sif (!ac_annul_sig) ISA._behavior_%s_%s(", INDENT[base_indent + 1],
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       fprintf(output, "instr_vec->get(%d)", pfield->id);
@@ -4096,7 +4096,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     }
     fprintf(output, ");\n");
     /* emits instruction behavior method call */
-    fprintf(output, "%sISA.behavior_%s(", INDENT[base_indent + 1],
+    fprintf(output, "%sif (!ac_annul_sig) ISA.behavior_%s(", INDENT[base_indent + 1],
             pinstr->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       fprintf(output, "instr_vec->get(%d)", pfield->id);
@@ -4106,8 +4106,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf(output, ");\n");
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
-  fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent--]);
-  fprintf(output, "%s} // if (!ac_annul_sig)\n\n", INDENT[base_indent]);
+  fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent]);
 
   if( ACStatsFlag ){
     fprintf( output, "%sif((!ac_annul_sig) && (!ac_wait_sig)) {\n", INDENT[base_indent]);
