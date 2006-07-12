@@ -1,14 +1,38 @@
+KNOWN BUGS IN ARCHC 2.0 BETA3
+-----------------------------
+
+ ** acsim:
+     - Option -g (debug) does not do much, it only makes simulators generate
+         a trace file with the program counter
+     - Option -vb (verbose) does not work (model doesn't compile)
+     - Memory hierarchy does not work (it's not supported)
+     - acsim runs on a cycle-accurate model without warnings or errors, and
+         produces garbage instead of the required errors (since acsim should
+         not generate cycle-accurate simulators)
+
+ ** actsim
+     - GDB integration (option -gdb) does not work (not yet supported for cycle-
+         accurate models)
+     - Options -g (debug) does not do much, it only makes simulators generate
+         a trace file with the program counter
+     - Option -vb (verbose) does not work (model does not compile)
+     - Memory hierarchy is not supported
+
+ ** sourceforge acknowledged bugs:
+     - 1473565 - problem while loading application files on a big-endian host
+
+
 KNOWN BUGS IN ARCHC 2.0 BETA2
 -----------------------------
 
  ** acsim:
-      - Option -g (debug) does not do much, it only makes simulators generate
-          a trace file with the program counter
-      - Option -vb (verbose) does not work (model doesn't compile)
-      - Memory hierarchy does not work (it's not supported)
-      - acsim runs on a cycle-accurate model without warnings or errors, and
-          produces garbage instead of the required errors (since acsim should
-          not generate cycle-accurate simulators)
+     - Option -g (debug) does not do much, it only makes simulators generate
+         a trace file with the program counter
+     - Option -vb (verbose) does not work (model doesn't compile)
+     - Memory hierarchy does not work (it's not supported)
+     - acsim runs on a cycle-accurate model without warnings or errors, and
+         produces garbage instead of the required errors (since acsim should
+         not generate cycle-accurate simulators)
 
  ** actsim:
      - Instantiation of multiple processors does not work properly
@@ -20,24 +44,24 @@ KNOWN BUGS IN ARCHC 2.0 BETA2
      - Memory hierarchy is not supported
 
  ** general:
-      - accsim tool is not working
+     - accsim tool is not working
 
  ** sourceforge acknowledged bugs:
-      - 1473565 - problem while loading application files on a big-endian host
+     - 1473565 - problem while loading application files on a big-endian host
 
 
 KNOWN BUGS IN ARCHC 2.0 BETA1
 -----------------------------
 
  ** acsim:
-      - Option -g (debug) does not do much, it only makes simulators generate
-          a trace file with the program counter
-      - Option -s (stats) does not work (model doesn't compile)
-      - Option -vb (verbose) does not work (model doesn't compile)
-      - Memory hierarchy does not work (it's not supported)
-      - acsim runs on a cycle-accurate model without warnings or errors, and
-          produces garbage instead of the required errors (since acsim should
-          not generate cycle-accurate simulators)
+     - Option -g (debug) does not do much, it only makes simulators generate
+         a trace file with the program counter
+     - Option -s (stats) does not work (model doesn't compile)
+     - Option -vb (verbose) does not work (model doesn't compile)
+     - Memory hierarchy does not work (it's not supported)
+     - acsim runs on a cycle-accurate model without warnings or errors, and
+         produces garbage instead of the required errors (since acsim should
+         not generate cycle-accurate simulators)
 
  ** general:
-      - accsim tool is not working
+     - accsim tool is not working

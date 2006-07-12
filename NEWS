@@ -1,5 +1,50 @@
 -*- text -*-
 
+Changes in version 2.0beta3:
+----------------------------
+
+* keyword '#include' added to the language (it works pretty much the same as the one in C)
+
+* ac_group added to the parser and support for it added to acsim and actsim
+(see doc/adl_news.txt for further details)
+
+* ac_helper added to the parser and support for it added to acsim and actsim
+(see doc/adl_news.txt for further details)
+
+* The parser does not silently ignore name clashes within the following groups:
+ - storage names, pipeline names and stage names in the form pipename_stagename
+ - register formats
+ - instruction formats
+ - instruction groups
+(instruction names are still checked, like they were in previous versions)
+
+* acsim-generated simulators now have coarser context-switching:
+ - the default now is to call wait() in the execution thread once for each 500
+   instructions, instead of once per instruction)
+ - this leads to a huge (around 5~7 times compared to beta2) speedup but may
+   cause problems in models with multiple processors or processors and TLM IPs
+   should the processor need the assumption of context switching at each
+   instruction (for instance, when it relies on instant response from
+   non-blocking methods). In that case you need the...
+ - set_instr_batch_size(sz) method: avaliable on acsim-generated simulators.
+   sz is an integer that determines the number of instructions to execute
+   before switching context. Set it to 1 if you need beta2-like behavior.
+ - if you want a standalone simulator (eg. just to run benchmark programs),
+   acsim now offers a -nw (--no-wait) flag that generates a simulator which
+   *never* switches context, thus allowing for very fast simulation (around
+   8 times faster than beta2)
+
+* actsim now allows multiple instantiation of generated simulators
+
+* actsim is using the SystemC scheduler now
+
+* disassembler (objdump) is automatically retargeted by acbingen (no additional changes in the models are necessary)
+
+* added '-s' option to the generated assembler. It turns off case sensitivity for mnemonics
+
+* models, language and tools with GPL license (public release). The version on SVN uses a special license
+
+
 Changes in version 2.0beta2:
 ----------------------------
 
@@ -46,3 +91,4 @@ script (assembler and linker generation)
    initiator ports on your processor, as well as interrupt ports
 
 * preliminary interrupt handling mechanism support
+

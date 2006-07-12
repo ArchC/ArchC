@@ -15,7 +15,7 @@
  *
  */
 
- It is a simple main function that uses signed and unsigned long long int Bubble Sort.
+/* It is a simple main function that uses signed and unsigned long long int Bubble Sort.*/
 
 /* The file begin.h is included if compiler flag -DBEGINCODE is used */
 #ifdef BEGINCODE

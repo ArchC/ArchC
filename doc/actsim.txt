@@ -23,7 +23,7 @@ Assume that ID_EX is the name of a formatted register for this code example:
 
  Chained assignments should be done very carefully, since the value assigned to
 a synchronous register is not readily avaliable, and thus reading from a
-register that was just assigned to will wield the old value.
+register that was just assigned to will yield the old value.
 
  In addition to fields of formatted registers, anything declared with ac_reg in
 the architecture description file and also ac_pc are synchronous registers.
@@ -102,7 +102,6 @@ related to true data dependencies.
 7. Features not yet working
 
 - TLM
-- multiple instances of simulators
 - multiple pipelines
 
 All the best,

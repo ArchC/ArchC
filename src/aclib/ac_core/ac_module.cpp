@@ -22,6 +22,7 @@
 
 // Standard includes
 #include <iostream>
+#include <unistd.h>
 
 // SystemC includes
 

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([archc], [2.0beta2])
+AC_INIT([archc], [2.0beta3])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
