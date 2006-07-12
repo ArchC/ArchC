@@ -236,6 +236,7 @@ int add_format(ac_dec_format** head, ac_dec_format** tail, char* name, char* str
   ac_dec_field* ppf;
   ac_dec_format* pformat;
   int sum_size = parse_format(&str, 0, -1, &field_list, &field_list_tail, error_msg);
+  int cur_id = 1; //!< Used to attribute sequential IDs to the commons list
 
   if (sum_size == -1) return 0;
 
@@ -310,6 +311,8 @@ int add_format(ac_dec_format** head, ac_dec_format** tail, char* name, char* str
         pf = (ac_dec_field*) malloc(sizeof(ac_dec_field));
         pf = memcpy(pf, pfield, sizeof(ac_dec_field));
 
+        pf->id = cur_id++; // Attribute sequential ID to field.
+        
         if (common_instr_field_list_tail) { /* commons list already has fields */
           common_instr_field_list_tail->next = pf;
           common_instr_field_list_tail = pf;
