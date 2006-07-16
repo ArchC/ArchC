@@ -40,10 +40,15 @@
 #define _OPCODES_H_
 
 extern void create_operand_list();
+extern void update_oper_list(int oper_id, unsigned int reloc_id);
 extern int CreateOpcodeTable(const char *table_filename);
 extern int CreateAsmSymbolTable(const char *symtab_filename);
 extern int CreatePseudoOpsTable(const char *optable_filename);
 extern int CreateOperandTable(const char *optable_filename);
+extern int CreateModifierEnum(const char *filename);
+extern int CreateModifierProt(const char *filename);
+extern int CreateFieldDef(const char *filename, int which);
+extern int CreateModifierPtr(const char *filename, int which);
 
 #endif /* _OPCODES_H_ */
 

@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #include "dis-asm.h"
 #include "opintl.h"
 #include `"opcode/'___arch_name___`.h"'
+#include `"share-'___arch_name___`.h"'
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -103,10 +105,6 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
 
 int `print_insn_'___arch_name___` (bfd_vma memaddr, struct disassemble_info * info);'
 
-static unsigned long get_field_size(unsigned long insn_fmt, int field_id);
-
-static unsigned long get_insn_size(unsigned long insn_fmt);
-
 ac_symbol* parse(char *args);
 
 static unsigned int get_builtin_marker(char *s);
@@ -145,16 +143,6 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr)
     priv->max_fetched = addr;
 
   return 1;
-}
-
-static unsigned long get_field_size(unsigned long insn_fmt, int field_id)
-{
-___fieldsize_function___
-}
-
-static unsigned long get_insn_size(unsigned long insn_fmt)
-{
-___insnsize_function___
 }
 
 

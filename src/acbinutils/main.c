@@ -65,6 +65,11 @@ static int Createm4File();
 #define ENCODING_FN_FILE    "encoding.fn"
 #define FIELD_SIZE_FN_FILE  "fieldsize.fn"
 #define INSN_SIZE_FN_FILE   "insnsize.fn"
+#define MODIFIER_ENUM_FILE  "modifier.enum"
+#define MODIFIER_PROT_FILE  "modifier.prot"
+#define MODENC_PTR_FILE     "modenc.ptr"
+#define FIELDS_DEFINE_FILE  "fields.def"
+#define FIELDS_UNDEF_FILE   "fields.und"
 
 #define GEN_DIR "acbingenbuilddir/"
 
@@ -212,11 +217,8 @@ int main(int argc, char **argv)
     exit(1);
   }
  
-  // Create the relocation list first
-  create_operand_list();
+  create_operand_list(); /* this MUST preceed create_relocation_list */
   create_relocation_list();
-  /* FIXME: it should not call this function again */
-  create_operand_list();
 
   strcpy(buffer, GEN_DIR);
   strcat(buffer, OPCODE_TABLE_FILE);
@@ -295,6 +297,41 @@ int main(int argc, char **argv)
     fprintf(stderr, "Error creating insn size function.\n");
     exit(1);
   }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODIFIER_ENUM_FILE);
+  if (!CreateModifierEnum(buffer)) {
+    fprintf(stderr, "Error creating modifier enumeration.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODIFIER_PROT_FILE);
+  if (!CreateModifierProt(buffer)) {
+    fprintf(stderr, "Error creating modifier prototypes declaration.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODENC_PTR_FILE);
+  if (!CreateModifierPtr(buffer, 0)) {
+    fprintf(stderr, "Error creating modifier pointers.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, FIELDS_DEFINE_FILE);
+  if (!CreateFieldDef(buffer, 1)) {
+    fprintf(stderr, "Error creating field definitions.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, FIELDS_UNDEF_FILE);
+  if (!CreateFieldDef(buffer, 0)) {
+    fprintf(stderr, "Error creating field definitions.\n");
+    exit(1);
+  }
   
 
   return 0;
@@ -320,6 +357,7 @@ static int Createm4File()
   fprintf(output, "m4_define(`___endian_str___', `%s')m4_dnl\n", ac_tgt_endian ? "AC_BIG_ENDIAN" : "AC_LITTLE_ENDIAN");
   fprintf(output, "m4_define(`___endian_val___', `%d')m4_dnl\n", ac_tgt_endian ? 1 : 0);
 
+  fprintf(output, "m4_define(`___max_fields___', `%u')m4_dnl\n", get_max_number_fields());
 
   fprintf(output, "m4_define(`___opcode_table___', `m4_include(%s)')m4_dnl\n", OPCODE_TABLE_FILE);
   fprintf(output, "m4_define(`___symbol_table___', `m4_include(%s)')m4_dnl\n", SYMBOL_TABLE_FILE);
@@ -336,7 +374,17 @@ static int Createm4File()
   fprintf(output, "m4_define(`___encoding_function___', `m4_include(%s)')m4_dnl\n", ENCODING_FN_FILE);
   fprintf(output, "m4_define(`___fieldsize_function___', `m4_include(%s)')m4_dnl\n", FIELD_SIZE_FN_FILE);
   fprintf(output, "m4_define(`___insnsize_function___', `m4_include(%s)')m4_dnl\n", INSN_SIZE_FN_FILE);
-  
+
+
+  fprintf(output, "m4_define(`___modifier_enum___', `m4_include(%s)')m4_dnl\n", MODIFIER_ENUM_FILE);
+  fprintf(output, "m4_define(`___modifier_prototypes___', `m4_include(%s)')m4_dnl\n", MODIFIER_PROT_FILE);
+  fprintf(output, "m4_define(`___modenc_pointers___', `m4_include(%s)')m4_dnl\n", MODENC_PTR_FILE);
+
+  fprintf(output, "m4_define(`___fields_def___', `m4_include(%s)')m4_dnl\n", FIELDS_DEFINE_FILE);
+  fprintf(output, "m4_define(`___fields_undef___', `m4_include(%s)')m4_dnl\n", FIELDS_UNDEF_FILE);
+
+  fprintf(output, "m4_define(`___modifiers___', `m4_include(%s)')m4_dnl\n", "modifiers");
+
   fclose(output);
 
   return 1;

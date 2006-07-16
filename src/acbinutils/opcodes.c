@@ -41,7 +41,7 @@ typedef struct _oper_list {
   unsigned int id;   /* operand id */
   char *name;  /* operand type name */
   operand_type type;
-  operand_modifier mod_type;
+  int mod_type;
   int mod_addend;
   unsigned int fields;
   unsigned int format_id;
@@ -51,6 +51,22 @@ typedef struct _oper_list {
 
 static oper_list *operand_list = NULL;
 
+typedef struct _mod_list {
+  int id;
+  char *name;
+  struct _mod_list *next;
+} mod_list;
+
+static mod_list *modifier_list = NULL;
+
+/* A list of unique fields, among all formats */
+typedef struct _fld_list {
+  int position;
+  char *name;
+  struct _fld_list *next;
+} fld_list;
+
+static fld_list *field_list = NULL;
 
 /*
  * module function prototypes
@@ -60,10 +76,12 @@ static void create_operand_string(ac_asm_insn *insn, char **output);
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize);
 static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
 static int get_compatible_oper_id(operand_type opt);
-
+static void create_modifier_list();
+static void create_field_list();
 
 void create_operand_list()
 {
+  create_modifier_list();
   
   ac_asm_insn *asml = ac_asm_get_asm_insn_list();
 
@@ -91,7 +109,7 @@ void create_operand_list()
 
       oper->fields = encode_fields(opP->fields);
 
-//      oper->reloc_id = opP->reloc_id;
+      oper->reloc_id = 0; /*opP->reloc_id;*/
       oper->format_id = get_format_id(asml->insn->format);
    
       oper->next = NULL;
@@ -116,8 +134,6 @@ void create_operand_list()
       }
       else {
         opP->oper_id = opfound->id;
-        /* this must be filled in on the second pass */
-        opfound->reloc_id = opP->reloc_id;
         
         free(oper->name);
         free(oper);
@@ -131,6 +147,21 @@ void create_operand_list()
 
 }
 
+void update_oper_list(int oper_id, unsigned int reloc_id)
+{
+
+  oper_list *otmp = operand_list;
+
+  while (otmp != NULL) {
+    if (otmp->id == oper_id) {
+      otmp->reloc_id = reloc_id;
+      return;
+    }
+    otmp = otmp->next;
+  }
+
+  internal_error();
+}
 
 
 /* 
@@ -385,6 +416,101 @@ int CreateOperandTable(const char *optable_filename)
   return 1; 
 }
 
+int CreateModifierEnum(const char *filename)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  mod_list *modifier = modifier_list;
+
+  fprintf(output, "typedef enum {mod_%s = %d", modifier->name, modifier->id);
+  modifier = modifier->next;
+  while (modifier != NULL) {
+    
+    fprintf(output, ", mod_%s = %d", modifier->name, modifier->id);
+
+    modifier = modifier->next;
+  }
+  fprintf(output, "} operand_modifier;\n");
+
+  fclose(output);
+  return 1; 
+}
+
+int CreateModifierProt(const char *filename)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  mod_list *modifier = modifier_list;
+
+  while (modifier != NULL) {
+    
+    fprintf(output, "extern void modifier_%s_encode(unsigned int input, unsigned int address, int addend, unsigned int *fields);\n", modifier->name);
+
+    modifier = modifier->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
+
+/* which: 1 = #define, 0 = #undef */
+int CreateFieldDef(const char *filename, int which)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  create_field_list();
+
+  fld_list *fields = field_list;
+
+  while (fields != NULL) {
+    
+    if (which)
+      fprintf(output, "#define %s (*(fields+%d)) \n", fields->name, fields->position);
+    else
+      fprintf(output, "#undef %s \n", fields->name);
+
+    fields = fields->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
+
+/* which: 0 = encode modifiers, 1 = decode modifiers */
+int CreateModifierPtr(const char *filename, int which)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  mod_list *modifier = modifier_list;
+
+  while (modifier != NULL) {
+    
+    fprintf(output, "&modifier_%s_encode,\n", modifier->name);
+
+    modifier = modifier->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
+
+
 
 /*
  * module function implementations 
@@ -496,7 +622,6 @@ static oper_list *find_operand(oper_list *opl)
          otmp->mod_addend == opl->mod_addend &&
          otmp->fields == opl->fields &&
          otmp->format_id == opl->format_id)
-//         otmp->reloc_id == opl->reloc_id)
       return otmp;
 
     otmp = otmp->next;
@@ -519,4 +644,120 @@ static int get_compatible_oper_id(operand_type opt)
   }
 
   return retvalue;
+}
+
+
+static void create_modifier_list()
+{
+  ac_asm_insn *asml = ac_asm_get_asm_insn_list();
+  mod_list *modp = NULL;
+
+  /*
+   First item -> default
+  */
+  mod_list *modifier = (mod_list *) malloc(sizeof(mod_list));
+  modifier->name = (char *) malloc (strlen("default")+1);
+  strcpy(modifier->name, "default");
+  modifier->id = 0;
+  modifier->next = NULL;
+
+  modifier_list = modifier;
+
+
+  /* for every instruction */
+  while (asml != NULL) {
+//    if (asml->insn == NULL) { /* check only native insn */
+//      asml = asml->next;
+//      continue;
+//    }
+
+    ac_operand_list *opP = asml->operands;
+
+    /* for every operand */
+    while (opP != NULL) {
+
+      if (opP->modifier.name == NULL) {
+        opP->modifier.type = 0;
+        opP = opP->next;
+        continue;
+      }
+
+      /* try finding an already-created modifier with the same name */
+      modifier = modifier_list;
+      while (modifier != NULL) {
+        if (!strcmp(modifier->name, opP->modifier.name)) break;
+     
+        modifier = modifier->next;
+      }
+
+      /* not found, create a new modifier item and insert in the list */
+      if (modifier == NULL) {
+        int last_id = 0;
+        modifier = (mod_list *) malloc(sizeof(mod_list));
+        modifier->name = (char *) malloc (strlen(opP->modifier.name)+1);
+        strcpy(modifier->name, opP->modifier.name);
+
+        /* insert at the end of the list */
+        /* NOTE: modifier_list MUST NOT be NULL */
+        for (modp=modifier_list; modp->next != NULL; modp = modp->next)
+          last_id++;
+
+        modifier->id = last_id+1;
+        modifier->next = NULL;
+        modp->next = modifier;
+      }
+ 
+      opP->modifier.type = modifier->id; 
+      opP = opP->next;
+    }
+
+    asml = asml->next;
+  }
+}
+
+
+static void create_field_list()
+{
+  ac_dec_format *pfrm = format_ins_list;
+  fld_list *pfield;
+
+  /* for every format */
+  while (pfrm != NULL) {
+    int field_counter = 0;
+    ac_dec_field *fields = pfrm->fields;
+
+    /* for every operand */
+    while (fields != NULL) {
+
+
+      /* try finding an already-created field with the same name */
+      pfield = field_list;
+      while (pfield != NULL) {
+        if (!strcmp(pfield->name, fields->name)) break;
+     
+        pfield = pfield->next;
+      }
+
+      /* not found, create a new modifier item and insert in the list */
+      if (pfield == NULL) {
+        pfield = (fld_list *) malloc(sizeof(fld_list));
+        pfield->name = (char *) malloc (strlen(fields->name)+1);
+        strcpy(pfield->name, fields->name);
+
+        pfield->position = field_counter;
+        pfield->next = NULL;
+  
+        if (field_list == NULL) field_list = pfield;
+        else {
+          pfield->next = field_list;
+          field_list = pfield;
+        }
+      }
+ 
+      field_counter++;
+      fields = fields->next;
+    }
+
+    pfrm = pfrm->next;
+  }
 }

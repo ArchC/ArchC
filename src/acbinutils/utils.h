@@ -54,6 +54,8 @@ extern unsigned int get_arch_size();
 extern unsigned int get_insn_size(ac_asm_insn *insn);
 extern unsigned int get_max_format_size();
 extern unsigned int get_variable_format_size();
+extern unsigned int get_format_number_fields(ac_dec_format *format);
+extern unsigned int get_max_number_fields();
 extern void set_arch_name(char *str);
 extern char *get_arch_name();
 extern void internal_error();

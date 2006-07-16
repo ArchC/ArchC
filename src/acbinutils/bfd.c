@@ -32,6 +32,7 @@
 
 #include "utils.h"
 #include "bfd.h"
+#include "opcodes.h"
 
 // Linker generation definitions...
 
@@ -308,178 +309,15 @@ static void process_instruction_relocation(ac_asm_insn *asml)
       reloc->next = relocation_types_list;
       relocation_types_list = reloc;
       opP->reloc_id = reloc->id;
+      update_oper_list(opP->oper_id, reloc->id);
     } 
     else { /* reloc found */
       opP->reloc_id = reloc_found->id;          
       free(reloc);
+      update_oper_list(opP->oper_id, reloc_found->id);
     }
-
     opP = opP->next;
   }
-
-
-
-     /* Get the sum of all fields in bits (from left to right)
-      */
-//    unsigned int fields_bit_size = 0;
-//    for (; fieldP != NULL; fieldP = fieldP->next) 
-//      fields_bit_size += fieldP->size; 
-    
-//    fieldP = opP->fields;
-//    while (fieldP != NULL) { /* for each field */
-
-//      fields_bit_size -= fieldP->size;
-       
-      /* fill in the relocation fields */
-
-      /*
-       * rightshift 
-       * - number of bits the reloc value will be shifted to the right
-       *
-       *   if the operand has multiple fields assigned to, then the 
-       *   left fields must be shifted to the right
-       */
-//      unsigned rightshift = 0+fields_bit_size;
-
-      /*
-       * reloc_size
-       * - size of the relocation field
-       *   it is the size of the instruction
-       *
-       *   NOTE: Since we've made our own relocation routines, this value
-       *   is being used as the bit size
-       */
-      //unsigned reloc_size = log_table[get_insn_size(asml)/8];
-//      unsigned reloc_size = get_insn_size(asml);
-
-      /*
-       * bitsize
-       * - size (in bits) of the field to be relocated
-       */
-//      unsigned bitsize = fieldP->size;
-
-
-      /*
-       * bitpos
-       * - bit position of the relocation value in the destination
-       *   the relocation is shifted left by the number of bits 
-       *   specified in this variable
-       */
-//      unsigned bitpos = get_insn_size(asml) - (fieldP->first_bit+1);
-
-      /*
-       * mask
-       * - selects which parts of the relocation field is inserted
-       *   into the binary image
-       */
-//      unsigned long mask = 0;
-//      unsigned i;
-//      for (i=0; i < get_insn_size(asml); i++)
-//        mask |= (1 << i);
-
-      
-//      mask >>= (get_insn_size(asml) - fieldP->size);
-
-       /*
-        * uses_carry
-        * - if the carry of the lower part affect the high part of
-        *   a field, then this flag should be 1
-        */
-//      unsigned uses_carry = 0;
-
-      /*
-       * is_pcrel
-       * - 1 if the field is pc-relative
-       */
-//      unsigned is_pcrel = 0;
-
-      /*
-       * has_high
-       * - 1 if the operand has a high modifier assigned
-       *
-       */
-//      unsigned has_high = 0;
-
-       /*
-        * now apply the modifiers to the relocation fields
-        */
-//      ac_modifier_list *modP = opP->modifiers;
-//      while (modP != NULL) {
-
-//        switch (modP->type) {
-//          case mod_low:
-//            if (modP->addend >= 0 && modP->addend <= fieldP->size) {
-//              mask >>= (fieldP->size - modP->addend);
-//              bitsize = modP->addend;
-//            }
-            /* signed / unsigned - not being used! */
-//            break;
-            
-//          case mod_high:
-//            if (modP->addend >= 0 && modP->addend <= fieldP->size) {
-//              rightshift += get_insn_size(asml) - modP->addend;
-//              mask >>= (fieldP->size - modP->addend);
-//              bitsize = modP->addend;
-//            }
-//            else
-//              rightshift += get_insn_size(asml) - fieldP->size;
-
-//            uses_carry = modP->carry;
-//            has_high = 1;
-            
-            /* signed / unsigned - not being used! */            
-//            break;
-            
-//          case mod_aligned:
-//              if (modP->addend == -1)
-//                 modP->addend = get_arch_size()/8;
-//              rightshift += log_table[modP->addend];
-//            break;
-            
-//          case mod_pcrel:
-//            is_pcrel = 1;
-//            break;
-            
-//          case mod_pcrelext:
-//            is_pcrel = 1;
-//            break;
-//        }
-
-//        modP = modP->next;
-//      }
-   
-//      mask <<= bitpos;
-      
-//      ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
-//      reloc->rightshift = rightshift;
-//      reloc->reloc_size = reloc_size;
-//      reloc->bitsize = bitsize;
-//      reloc->pc_relative = is_pcrel;
-//      reloc->bitpos = bitpos;
-//      reloc->mask = mask;
-//      reloc->uses_carry = uses_carry;
-
-//      ac_relocation_type* reloc_found = find_relocation(reloc);
-
-//      if (!reloc_found) {
-//        reloc->id = relocation_types_list ? relocation_types_list->id + 1 : 1;
-//        reloc->name = (char*) malloc(sizeof(char)*128);
-//        sprintf(reloc->name, "R_%s_%d_%s%s%d%s", get_arch_name(), reloc->id, (is_pcrel ? "REL" : "") , (has_high ? "HI" : "LO"), bitsize, uses_carry ? "_CARRY" : "");
-        
-//        reloc->next = relocation_types_list;
-//        relocation_types_list = reloc;
-//        fieldP->reloc_id = reloc->id;
-//      } 
-//      else {
-//        fieldP->reloc_id = reloc_found->id;          
-//        free(reloc);
-//      }
-
-//      fieldP = fieldP->next;
-//    }
-
-//    opP = opP->next;
-//  }
   
 }
 

@@ -128,6 +128,14 @@ echo "Generating machine dependent code..."
 
 cd $TEMP_DIR
 
+# copy 'modifiers' file into the directory
+cp -f ../modifiers .
+if [ $? -ne 0 ]; then
+  # TODO: check if 'modifiers' is indeed needed
+  echo "file 'modifiers' not found in model directory"
+  exit 1
+fi
+
 # change the name of template files
 m4 -P defines.m4 binutils/ld/emulparams/xxxxxelf.sh > binutils/ld/emulparams/${ARCH_NAME}elf.sh
 m4 -P defines.m4 binutils/include/opcode/xxxxx.h > binutils/include/opcode/${ARCH_NAME}.h
@@ -138,6 +146,18 @@ m4 -P defines.m4 binutils/opcodes/xxxxx-dis.c > binutils/opcodes/${ARCH_NAME}-di
 m4 -P defines.m4 binutils/include/elf/xxxxx.h > binutils/include/elf/${ARCH_NAME}.h
 m4 -P defines.m4 binutils/bfd/elf32-xxxxx.c > binutils/bfd/elf32-${ARCH_NAME}.c
 m4 -P defines.m4 binutils/gas/config/tc-xxxxx.c > binutils/gas/config/tc-${ARCH_NAME}.c
+m4 -P defines.m4 binutils/include/share-xxxxx.h > binutils/include/share-${ARCH_NAME}.h
+m4 -P defines.m4 binutils/bfd/share-xxxxx.c > binutils/bfd/share-${ARCH_NAME}.c
+
+# Check if 'modifiers' is syntatically valid
+# ATTENTION: sync with bfd/share-xxxxx.c
+cat modifier.prot fields.def > temp_mod.c
+echo "#define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(unsigned int input, unsigned int address, int addend, unsigned int *fields)" >> temp_mod.c
+echo "#define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode()" >> temp_mod.c
+echo "#include \"../modifiers\"" >> temp_mod.c
+gcc -c -otemp_mod.o temp_mod.c
+[ $? -ne 0 ] && exit $?
+rm -f temp_mod.o temp_mod.c
 
 
 if [ "$CREATE_ONLY" -ne 0 ]; then

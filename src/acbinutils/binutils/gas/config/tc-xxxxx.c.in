@@ -35,7 +35,7 @@
 #include `"tc-'___arch_name___`.h"'
 #include `"elf/'___arch_name___`.h"'
 #include `"opcode/'___arch_name___`.h"'
-
+#include `"share-'___arch_name___`.h"'
 
 //#define DEBUG_ON
 
@@ -81,9 +81,6 @@ typedef struct _acfixuptype
 } acfixuptype;
 
 
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value, unsigned int *image);
-static unsigned long get_field_size(unsigned long insn_fmt, int field_id);
-static unsigned long get_insn_size(unsigned long insn_fmt);
 static void s_cons(int byte_size);
 static void archc_show_information(void);
 static void pseudo_assemble(void);
@@ -95,17 +92,13 @@ static int get_userdefoper(unsigned int *val, const char *opclass, char **str);
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, 
                            unsigned int *value);
 static int ac_parse_operands(char *s_pos, char *args);
-static void apply_hi_operator(unsigned long *value, 
-                              unsigned long field_size);
-static void sign_extend(unsigned long *value, int bit_size, 
-                        int sign_bit);
 static void create_fixup(unsigned oper_id);
-static void encode_cons_field(unsigned long val_const, unsigned int oper_id);
 static void strtolower(char *str);
 static void clean_out_insn(void);
 static void free_all_fixups(acfixuptype *fix);
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
+static void encode_field(unsigned long val_const, unsigned int oper_id);
 
 
 /*
@@ -488,7 +481,7 @@ int ac_parse_operands(char *s_pos, char *args)
               break;
                 
             case O_constant: /* X_add_number */
-              encode_cons_field(ref_expr.X_add_number, operand_id);
+              encode_field(ref_expr.X_add_number, operand_id);
               break;
 
             case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
@@ -525,7 +518,7 @@ int ac_parse_operands(char *s_pos, char *args)
 
           dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
 
-          encode_cons_field(ref_expr.X_add_number, operand_id);
+          encode_field(ref_expr.X_add_number, operand_id);
 
           break;
 
@@ -552,7 +545,7 @@ int ac_parse_operands(char *s_pos, char *args)
         /* if (out_insn.is_pseudo) return; */
 
         /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
-          encode_cons_field(symbol_value, operand_id);
+          encode_field(symbol_value, operand_id);
 
           break;
  
@@ -1285,56 +1278,6 @@ void ___arch_name___`_frob_label'(symbolS *sym) {
 }
 
 
-/*
-  MIPS %hi operator adds the sign bit of the lower n-bits in the higher half
-  so, we need to do %hi(X) = X - %lo(X) , where %lo(X) is a signed number
-  check 'http://sources.redhat.com/ml/binutils/2004-08/msg00262.html' for further details
-  SPARC doesn't use the %hi operator this way
-*/
-static 
-void apply_hi_operator(unsigned long *value, unsigned long field_size) {
-
-  int fsize = field_size;
-  int lomask = 0xFFFFFFFF >> fsize;
-  unsigned long low_number;
-     
-  low_number = *value & lomask;
-  sign_extend(&low_number, 32, 32-field_size);
-
-  *value -= low_number;      
-
-
-}
-
-
-
-/*
-  value -> the value to be extended
-  bit_size -> size (in bits) of the final field (returned value)
-  sign_bit -> position (from right to left) of the sign bit (1-based)
-
-  Example:
-  value: 0xFFFB6
-  bit_size: 22
-  sign_bit: 20
-
-  after: value = 0x3FFFB6
-
-P.S. - considering 32-bit as the highest possible bit size
-*/
-static void
-sign_extend(unsigned long *value, int bit_size, int sign_bit) 
-{
-  if (sign_bit == 0) return;
-  sign_bit--;
-
-  if ((1 << sign_bit) & *value) {
-    *value |= ((0xFFFFFFFF >> (32-bit_size)) & (0xFFFFFFFF << sign_bit));
-  }
-
-}
-
-
 
 static void 
 create_fixup(unsigned int oper_id) 
@@ -1366,61 +1309,13 @@ create_fixup(unsigned int oper_id)
 
 
 static void 
-encode_cons_field(unsigned long val_const, unsigned int oper_id)
+encode_field(unsigned long val_const, unsigned int oper_id)
 {
   if (out_insn.is_pseudo) return;
 
-  unsigned int nf = get_num_fields(operands[oper_id].fields);
-  unsigned int lt;
- 
-
-  /* this will be automatically generated */
-  unsigned int fid = 0;
-
-  switch (nf) {
-
-    case 1: /* 1 operand */
-    /* list all possible calling to 1-operand modifier */
-      fid = get_field_id(operands[oper_id].fields, 0);
-      if (fid > 32) INTERNAL_ERROR();
-
-      switch (operands[oper_id].mod_type) {
- 
-        case mod_default:
-          operand_buffer[fid] = val_const;
-  
-          break;
- 
-        case mod_pcrel:
-          modifier_R(val_const, frag_now_fix(), operands[oper_id].mod_addend, &operand_buffer[fid]);
-          break;
-
-        case mod_carry:
-          modifier_C(val_const, frag_now_fix(), operands[oper_id].mod_addend, &operand_buffer[fid]);
-          break;
- 
-        case mod_aligned:
-          modifier_A(val_const, frag_now_fix(), operands[oper_id].mod_addend, &operand_buffer[fid]);
-          break;
-          
- 
-        default: INTERNAL_ERROR();
-      }
-     
-      break;
-
-    default: INTERNAL_ERROR();
-  }
-    /* ***** */
-
-
-  for (lt=0; lt < nf; lt++) {
-    unsigned int fid = get_field_id(operands[oper_id].fields, lt);
-
-    dbg_printf(3, "image 0x%08lX with field[%u] = %u ==> ", out_insn.image, fid, operand_buffer[fid]);
-    ac_encode_insn(out_insn.format, fid, operand_buffer[fid], &out_insn.image);
-    dbg_printf(0, "0x%08lX\n", out_insn.image);
-  }
+  dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
+  encode_cons_field(&out_insn.image, val_const, frag_now_fix(), oper_id);
+  dbg_printf(0, "0x%08lX\n", out_insn.image);
 
 }
 
@@ -1510,17 +1405,3 @@ static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
 }
 
 
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value, unsigned int *image)
-{
-___encoding_function___
-}
-
-static unsigned long get_field_size(unsigned long insn_fmt, int field_id)
-{
-___fieldsize_function___
-}
-
-static unsigned long get_insn_size(unsigned long insn_fmt)
-{
-___insnsize_function___
-}
