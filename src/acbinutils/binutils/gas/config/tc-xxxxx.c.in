@@ -1008,39 +1008,43 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
   }
  
   /* get the operand string (sync with ac_asm_map identifiers) */
+  if ( (*s_pos >= 'a' && *s_pos <= 'z') ||
+       (*s_pos >= 'A' && *s_pos <= 'Z') ||
+       (*s_pos >= '0' && *s_pos <= '9') ||
+       (*s_pos == '%' || *s_pos == '!' ||
+        *s_pos == '@' || *s_pos == '#' ||
+        *s_pos == '$' || *s_pos == '&' ||
+        *s_pos == '*' || *s_pos == '-' ||
+        *s_pos == '+' || *s_pos == '=' ||
+        *s_pos == '|' || *s_pos == ':' ||
+        *s_pos == '<' || *s_pos == '>' ||
+        *s_pos == '^' || *s_pos == '~' ||
+        *s_pos == '?' || *s_pos == '/') ||
+        *s_pos == ',' )
+    s_pos++;
+  else {
+    insn_error = "unrecognized operand symbol";
+    return 0;
+  }
+  
   while ( (*s_pos >= 'a' && *s_pos <= 'z') ||
           (*s_pos >= 'A' && *s_pos <= 'Z') ||
-          (*s_pos >= '0' && *s_pos <= '9') ||
-          (*s_pos == '%' || *s_pos == '!' ||
-           *s_pos == '@' || *s_pos == '#' ||
-           *s_pos == '$' || *s_pos == '&' ||
-           *s_pos == '*' || *s_pos == '-' ||
-           *s_pos == '+' || *s_pos == '=' ||
-           *s_pos == '|' || *s_pos == ':' ||
-           *s_pos == '<' || *s_pos == '>' ||
-           *s_pos == '^' || *s_pos == '~' ||
-           *s_pos == '?' || *s_pos == '/') )
+          (*s_pos >= '0' && *s_pos <= '9') )
     s_pos++;
- 
- 
-    if (*str == s_pos) { /* add ,$3,$2 */
-      insn_error = "operand missing";
-      return 0;
-    }
- 
-    char save_c = *s_pos;
-    *s_pos = '\0';
- 
-    if (!ac_valid_symbol(opclass, *str, val)) {
-      insn_error = "unrecognized operand symbol";
-      *s_pos = save_c;
-      return 0;
-    }
 
-    dbg_printf(3, "\"%s = %u\"\n", *str, *val);
+  char save_c = *s_pos;
+  *s_pos = '\0';
  
+  if (!ac_valid_symbol(opclass, *str, val)) {
+    insn_error = "unrecognized operand symbol";
     *s_pos = save_c;
-    *str = s_pos;
+    return 0;
+  }
+
+  dbg_printf(3, "\"%s = %u\"\n", *str, *val);
+ 
+  *s_pos = save_c;
+  *str = s_pos;
 
   return 1;
 }

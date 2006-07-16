@@ -7,6 +7,9 @@
 #include <assert.h>
 #include `"share-'___arch_name___`.h"'
 
+static unsigned int modifier_output = 0;
+
+
 /* will be automatically generated */
 unsigned int operand_buffer[___max_fields___];
 
@@ -212,21 +215,31 @@ unsigned int get_field_id(unsigned int encoded_field, unsigned int pos)
 
 void encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int address, unsigned int oper_id)
 {
-  unsigned int nf = get_num_fields(operands[oper_id].fields);
   unsigned int lt;
   unsigned int fid; 
+  int i;
+  unsigned int nf = get_num_fields(operands[oper_id].fields);
 
   assert(operands[oper_id].mod_type <= num_modencfn);
 
   if (operands[oper_id].mod_type == mod_default) {
-    fid = get_field_id(operands[oper_id].fields, 0);
-    operand_buffer[fid] = val_const;
+
+    for (i=nf-1; i >= 0; i--) {
+      fid = get_field_id(operands[oper_id].fields, i);
+      operand_buffer[fid] = val_const;
+      val_const >>= get_field_size(operands[oper_id].format_id, fid); 
+    }
   } 
   else {
+    for (i=0; i < ___max_fields___ ; i++)
+      operand_buffer[i] = 0;
+    modifier_output = 0;    
     (*modencfn[operands[oper_id].mod_type])(val_const, 
                                             address, 
                                             operands[oper_id].mod_addend, 
                                             operand_buffer);
+    if (modifier_output !=0)
+      operand_buffer[get_field_id(operands[oper_id].fields,0)] = modifier_output;
   }
 
   for (lt=0; lt < nf; lt++) {
@@ -236,7 +249,6 @@ void encode_cons_field(unsigned int *image, unsigned long val_const, unsigned in
   }
 
 }
-
 
 
 
@@ -270,6 +282,8 @@ ___fieldsize_function___
 
 ___fields_def___
 
+#define output modifier_output
+
 /* dummy modifiers */
 ac_modifier_encode(default) {}
 ac_modifier_decode(default) {}
@@ -277,3 +291,4 @@ ac_modifier_decode(default) {}
 ___modifiers___
 
 ___fields_undef___
+#undef output

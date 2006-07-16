@@ -36,8 +36,6 @@ extern const acasm_operand operands[];
 extern const unsigned int num_oper_id;
 
 
-
-
 extern void print_operand_info(FILE *stream, unsigned int indent, unsigned int opid);
 
 

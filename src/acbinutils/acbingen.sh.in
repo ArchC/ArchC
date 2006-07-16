@@ -154,6 +154,7 @@ m4 -P defines.m4 binutils/bfd/share-xxxxx.c > binutils/bfd/share-${ARCH_NAME}.c
 cat modifier.prot fields.def > temp_mod.c
 echo "#define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(unsigned int input, unsigned int address, int addend, unsigned int *fields)" >> temp_mod.c
 echo "#define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode()" >> temp_mod.c
+echo "unsigned int output;" >> temp_mod.c
 echo "#include \"../modifiers\"" >> temp_mod.c
 gcc -c -otemp_mod.o temp_mod.c
 [ $? -ne 0 ] && exit $?

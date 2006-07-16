@@ -375,19 +375,39 @@ static ac_asm_symbol *find_mapping_symbol(char *symbol) {
 cause problems with the GNU as assembler.
 
 */
-inline static int is_map_symbol_name(char *s) {
+inline static int is_map_symbol_name(char *s) 
+{
+/*
   if (isspace(*s) || *s == ';' || *s == '\''
       || (*s == '/' && *(s+1) == '*')
       || (*s == '*' && *(s+1) == '/') )
     return 0;
+*/
+  if ( (*s >= 'a' && *s <= 'z') ||
+       (*s >= 'A' && *s <= 'Z') ||
+       (*s >= '0' && *s <= '9') )
+    return 1;
 
-  return 1;
+  return 0;
 }
 
 /* empty symbols ("") are valid! */
-inline static int is_map_symbol_begin(char *s) {
-  if (*s != '\0') return is_map_symbol_name(s);
-  return 1;
+inline static int is_map_symbol_begin(char *s) 
+{
+  if ( *s == '\0' || is_map_symbol_name(s) ||
+       *s == '%' || *s == '!' ||
+       *s == '@' || *s == '#' ||
+       *s == '$' || *s == '&' ||
+       *s == '*' || *s == '-' ||
+       *s == '+' || *s == '=' ||
+       *s == '|' || *s == ':' ||
+       *s == '<' || *s == '>' ||
+       *s == '^' || *s == '~' ||
+       *s == '?' || *s == '/' ||
+       *s == ',' )
+    return 1;
+
+  return 0;
 }
 
 inline static int is_map_symbol_end(char *s) {
