@@ -748,11 +748,26 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
 
   if (fixP->fx_subsy != NULL) {
     resolve_symbol_value(fixP->fx_subsy);
-    symbol_mark_used_in_reloc(fixP->fx_subsy);
+
+    fixP->fx_offset -= S_GET_VALUE(fixP->fx_subsy);
+
+    switch (fixP->fx_r_type) {
+      case `R_'___arch_name___`_8:'
+        fixP->fx_r_type = `R_'___arch_name___`_REL8;' 
+        break;
+      case `R_'___arch_name___`_16:'
+        fixP->fx_r_type = `R_'___arch_name___`_REL16;' 
+        break;
+      case `R_'___arch_name___`_32:'
+        fixP->fx_r_type = `R_'___arch_name___`_REL32;' 
+        break;
+
+      default:
+        INTERNAL_ERROR();
+    }
   }
 
   fixP->fx_done = FALSE;
-
 
   return 0;
 }
@@ -877,14 +892,9 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
       INTERNAL_ERROR();
   }
 
-//  fixP->tc_fix_data.format_id = (unsigned int) -1;  /* -1 is for data items */
-//  fixP->tc_fix_data.fields = (unsigned int) -1;
-//  fixP->tc_fix_data.field_size = AC_WORD_SIZE;//nbytes*8;
  
   fixP->fx_done = FALSE;
 
-  /* FIXME */ 
-//  INTERNAL_ERROR();
 
   if (!fixP) INTERNAL_ERROR();
 }

@@ -143,6 +143,9 @@ generic_data_reloc (bfd *abfd,
   relocation += reloc_target_output_section->vma + symbol->section->output_offset;
   relocation += reloc_entry->addend;
 
+  if (howto->pc_relative)
+    relocation -= input_section->output_section->vma + input_section->output_offset;
+
 
   putbits(howto->bitsize, (char *) data + octets, relocation, ___endian_val___); 
 
