@@ -1030,7 +1030,7 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
         *s_pos == '<' || *s_pos == '>' ||
         *s_pos == '^' || *s_pos == '~' ||
         *s_pos == '?' || *s_pos == '/') ||
-        *s_pos == ',' )
+        *s_pos == ',' || *s_pos == '_')
     s_pos++;
   else {
     insn_error = "unrecognized operand symbol";
@@ -1039,7 +1039,8 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
   
   while ( (*s_pos >= 'a' && *s_pos <= 'z') ||
           (*s_pos >= 'A' && *s_pos <= 'Z') ||
-          (*s_pos >= '0' && *s_pos <= '9') )
+          (*s_pos >= '0' && *s_pos <= '9') ||
+           *s_pos == '.' || *s_pos == '_' )
     s_pos++;
 
   char save_c = *s_pos;
@@ -1325,10 +1326,17 @@ create_fixup(unsigned int oper_id)
 static void 
 encode_field(unsigned long val_const, unsigned int oper_id)
 {
+  mod_parms mp;
+  char secname[] = "no symbol";
+
   if (out_insn.is_pseudo) return;
 
+  mp.input   = val_const;
+  mp.address = frag_now_fix();
+  mp.section = secname; 
+
   dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
-  encode_cons_field(&out_insn.image, val_const, frag_now_fix(), oper_id);
+  encode_cons_field(&out_insn.image, &mp, oper_id);
   dbg_printf(0, "0x%08lX\n", out_insn.image);
 
 }

@@ -385,7 +385,8 @@ inline static int is_map_symbol_name(char *s)
 */
   if ( (*s >= 'a' && *s <= 'z') ||
        (*s >= 'A' && *s <= 'Z') ||
-       (*s >= '0' && *s <= '9') )
+       (*s >= '0' && *s <= '9') ||
+        *s == '.' || *s == '_' )
     return 1;
 
   return 0;
@@ -404,7 +405,7 @@ inline static int is_map_symbol_begin(char *s)
        *s == '<' || *s == '>' ||
        *s == '^' || *s == '~' ||
        *s == '?' || *s == '/' ||
-       *s == ',' )
+       *s == ',' || *s == '_')
     return 1;
 
   return 0;

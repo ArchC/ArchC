@@ -452,7 +452,7 @@ int CreateModifierProt(const char *filename)
 
   while (modifier != NULL) {
     
-    fprintf(output, "extern void modifier_%s_encode(unsigned int input, unsigned int address, int addend, unsigned int *fields);\n", modifier->name);
+    fprintf(output, "extern void modifier_%s_encode(mod_parms *reloc);\n", modifier->name);
 
     modifier = modifier->next;
   }
@@ -477,7 +477,7 @@ int CreateFieldDef(const char *filename, int which)
   while (fields != NULL) {
     
     if (which)
-      fprintf(output, "#define %s (*(fields+%d)) \n", fields->name, fields->position);
+      fprintf(output, "#define %s %d\n", fields->name, fields->position);
     else
       fprintf(output, "#undef %s \n", fields->name);
 

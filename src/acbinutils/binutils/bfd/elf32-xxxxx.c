@@ -168,7 +168,8 @@ bfd_elf_archc_reloc (bfd *abfd,
   bfd_vma output_base = 0;
   reloc_howto_type *howto = reloc_entry->howto;
   asection *reloc_target_output_section;
-        
+  mod_parms modifier_parms;
+      
    
   /*
    * Taken from bfd_elf_generic_reloc
@@ -213,6 +214,7 @@ bfd_elf_archc_reloc (bfd *abfd,
     output_base = 0;
   else
     output_base = reloc_target_output_section->vma;
+
    
   relocation += output_base + symbol->section->output_offset;
 
@@ -236,10 +238,14 @@ bfd_elf_archc_reloc (bfd *abfd,
   * Overflow checking is NOT being done!!! 
   */
 
-
   unsigned int insn_image = (unsigned int) getbits(get_insn_size(operands[howto->rightshift].format_id), (char *) data + octets, ___endian_val___);
 
-  encode_cons_field(&insn_image, relocation, address, howto->rightshift);
+
+  modifier_parms.input   = relocation;
+  modifier_parms.address = address;
+  modifier_parms.section = symbol->section->name;
+
+  encode_cons_field(&insn_image, &modifier_parms, howto->rightshift);
 
   putbits(get_insn_size(operands[howto->rightshift].format_id), (char *) data + octets, insn_image, ___endian_val___); 
 

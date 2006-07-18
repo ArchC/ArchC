@@ -8,8 +8,19 @@
 /* This enum must be synced with acpp */
 typedef enum {op_userdef, op_exp, op_imm, op_addr} operand_type;
 
-/* Pointer to modifier encoder functions */
-typedef void (*mod_enc_fnptr)(unsigned int, unsigned int, int, unsigned int *);
+
+typedef struct {
+  int addend;
+  unsigned input;
+  unsigned address;
+  unsigned output;
+  const char *section;  /* not a copy, just a pointer */
+  unsigned int field[___max_fields___];
+} mod_parms;
+
+
+/* Pointer to modifier functions */
+typedef void (*mod_fnptr)(mod_parms *);
 
 
 /* operand_modifier enum typedef */ 
@@ -28,10 +39,8 @@ typedef struct {
 } acasm_operand;
 
 
-
-extern unsigned int operand_buffer[___max_fields___];
-extern const mod_enc_fnptr modencfn[];
-extern const unsigned int num_modencfn;
+extern const mod_fnptr modfn[];
+extern const unsigned int num_modfn;
 extern const acasm_operand operands[];
 extern const unsigned int num_oper_id;
 
@@ -45,7 +54,10 @@ extern void putbits(unsigned int bitsize, char *location, long long value, int e
 extern unsigned int get_num_fields(unsigned int encoded_field);
 extern unsigned int get_field_id(unsigned int encoded_field, unsigned int pos);
 
-extern void encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int address, unsigned int oper_id);
+/* fields (of mod_parms) that must be filled in by the caller: 
+   input, address, section
+ */
+extern void encode_cons_field(unsigned int *image, mod_parms *mp, unsigned int oper_id);
 
 
 extern unsigned long get_insn_size(unsigned long insn_fmt);

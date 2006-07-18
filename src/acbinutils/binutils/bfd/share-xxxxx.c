@@ -7,17 +7,11 @@
 #include <assert.h>
 #include `"share-'___arch_name___`.h"'
 
-static unsigned int modifier_output = 0;
-
-
-/* will be automatically generated */
-unsigned int operand_buffer[___max_fields___];
-
-const mod_enc_fnptr modencfn[] = {
+const mod_fnptr modfn[] = {
 ___modenc_pointers___
 };
 
-const unsigned int num_modencfn = ((sizeof modencfn) / (sizeof(modencfn[0])));
+const unsigned int num_modfn = ((sizeof modfn) / (sizeof(modfn[0])));
 
 
 const acasm_operand operands[] = {
@@ -213,39 +207,38 @@ unsigned int get_field_id(unsigned int encoded_field, unsigned int pos)
 }
 
 
-void encode_cons_field(unsigned int *image, unsigned long val_const, unsigned int address, unsigned int oper_id)
+void encode_cons_field(unsigned int *image, mod_parms *mp, unsigned int oper_id)
 {
   unsigned int lt;
   unsigned int fid; 
   int i;
   unsigned int nf = get_num_fields(operands[oper_id].fields);
 
-  assert(operands[oper_id].mod_type <= num_modencfn);
+  assert(operands[oper_id].mod_type <= num_modfn);
+
+  mp->addend = operands[oper_id].mod_addend;
 
   if (operands[oper_id].mod_type == mod_default) {
 
     for (i=nf-1; i >= 0; i--) {
       fid = get_field_id(operands[oper_id].fields, i);
-      operand_buffer[fid] = val_const;
-      val_const >>= get_field_size(operands[oper_id].format_id, fid); 
+      mp->field[fid] = mp->input;
+      mp->input >>= get_field_size(operands[oper_id].format_id, fid); 
     }
   } 
   else {
     for (i=0; i < ___max_fields___ ; i++)
-      operand_buffer[i] = 0;
-    modifier_output = 0;    
-    (*modencfn[operands[oper_id].mod_type])(val_const, 
-                                            address, 
-                                            operands[oper_id].mod_addend, 
-                                            operand_buffer);
-    if (modifier_output !=0)
-      operand_buffer[get_field_id(operands[oper_id].fields,0)] = modifier_output;
+      mp->field[i] = 0;
+    mp->output = 0;    
+    (*modfn[operands[oper_id].mod_type])(mp);
+    if (mp->output !=0)
+      mp->field[get_field_id(operands[oper_id].fields,0)] = mp->output;
   }
 
   for (lt=0; lt < nf; lt++) {
     fid = get_field_id(operands[oper_id].fields, lt);
 
-    ac_encode_insn(operands[oper_id].format_id, fid, operand_buffer[fid], image);
+    ac_encode_insn(operands[oper_id].format_id, fid, mp->field[fid], image);
   }
 
 }
@@ -276,13 +269,11 @@ ___fieldsize_function___
 }
 
 
-
-#define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(unsigned int input, unsigned int address, int addend, unsigned int *fields)
+#define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(mod_parms *reloc)
 #define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode()
 
 ___fields_def___
 
-#define output modifier_output
 
 /* dummy modifiers */
 ac_modifier_encode(default) {}
@@ -291,4 +282,4 @@ ac_modifier_decode(default) {}
 ___modifiers___
 
 ___fields_undef___
-#undef output
+
