@@ -272,14 +272,10 @@ ___fieldsize_function___
 #define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(mod_parms *reloc)
 #define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode()
 
-___fields_def___
-
 
 /* dummy modifiers */
 ac_modifier_encode(default) {}
 ac_modifier_decode(default) {}
 
 ___modifiers___
-
-___fields_undef___
 

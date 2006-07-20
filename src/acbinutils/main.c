@@ -68,8 +68,7 @@ static int Createm4File();
 #define MODIFIER_ENUM_FILE  "modifier.enum"
 #define MODIFIER_PROT_FILE  "modifier.prot"
 #define MODENC_PTR_FILE     "modenc.ptr"
-#define FIELDS_DEFINE_FILE  "fields.def"
-#define FIELDS_UNDEF_FILE   "fields.und"
+#define FORMAT_STRUCT_FILE  "format.struct"
 
 #define GEN_DIR "acbingenbuilddir/"
 
@@ -320,19 +319,11 @@ int main(int argc, char **argv)
   }
 
   strcpy(buffer, GEN_DIR);
-  strcat(buffer, FIELDS_DEFINE_FILE);
-  if (!CreateFieldDef(buffer, 1)) {
+  strcat(buffer, FORMAT_STRUCT_FILE);
+  if (!CreateFormatStruct(buffer)) {
     fprintf(stderr, "Error creating field definitions.\n");
     exit(1);
   }
-
-  strcpy(buffer, GEN_DIR);
-  strcat(buffer, FIELDS_UNDEF_FILE);
-  if (!CreateFieldDef(buffer, 0)) {
-    fprintf(stderr, "Error creating field definitions.\n");
-    exit(1);
-  }
-  
 
   return 0;
 }
@@ -380,10 +371,9 @@ static int Createm4File()
   fprintf(output, "m4_define(`___modifier_prototypes___', `m4_include(%s)')m4_dnl\n", MODIFIER_PROT_FILE);
   fprintf(output, "m4_define(`___modenc_pointers___', `m4_include(%s)')m4_dnl\n", MODENC_PTR_FILE);
 
-  fprintf(output, "m4_define(`___fields_def___', `m4_include(%s)')m4_dnl\n", FIELDS_DEFINE_FILE);
-  fprintf(output, "m4_define(`___fields_undef___', `m4_include(%s)')m4_dnl\n", FIELDS_UNDEF_FILE);
-
   fprintf(output, "m4_define(`___modifiers___', `m4_include(%s)')m4_dnl\n", "modifiers");
+
+  fprintf(output, "m4_define(`___format_structures___', `m4_include(%s)')m4_dnl\n", FORMAT_STRUCT_FILE);
 
   fclose(output);
 

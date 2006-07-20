@@ -59,15 +59,6 @@ typedef struct _mod_list {
 
 static mod_list *modifier_list = NULL;
 
-/* A list of unique fields, among all formats */
-typedef struct _fld_list {
-  int position;
-  char *name;
-  struct _fld_list *next;
-} fld_list;
-
-static fld_list *field_list = NULL;
-
 /*
  * module function prototypes
  */
@@ -77,7 +68,6 @@ static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_si
 static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
 static int get_compatible_oper_id(operand_type opt);
 static void create_modifier_list();
-static void create_field_list();
 
 void create_operand_list()
 {
@@ -461,8 +451,7 @@ int CreateModifierProt(const char *filename)
   return 1; 
 }
 
-/* which: 1 = #define, 0 = #undef */
-int CreateFieldDef(const char *filename, int which)
+int CreateFormatStruct(const char *filename)
 {
   char *strP;
   FILE *output;
@@ -470,19 +459,23 @@ int CreateFieldDef(const char *filename, int which)
   if ((output = fopen(filename, "w")) == NULL) 
     return 0;
 
-  create_field_list();
+  ac_dec_format *pfrm = format_ins_list;
 
-  fld_list *fields = field_list;
+  /* for every format */
+  while (pfrm != NULL) {
+    ac_dec_field *fields = pfrm->fields;
+    fprintf(output, "%sstruct {\n", IND2);
 
-  while (fields != NULL) {
-    
-    if (which)
-      fprintf(output, "#define %s %d\n", fields->name, fields->position);
-    else
-      fprintf(output, "#undef %s \n", fields->name);
+    while (fields != NULL) {
+      fprintf(output, "%s unsigned int %s;\n", IND3, fields->name);
+      fields = fields->next;
+    }
+ 
+    fprintf(output, "%s} %s;\n", IND2, pfrm->name);
 
-    fields = fields->next;
+    pfrm = pfrm->next;
   }
+
 
   fclose(output);
   return 1; 
@@ -715,49 +708,3 @@ static void create_modifier_list()
   }
 }
 
-
-static void create_field_list()
-{
-  ac_dec_format *pfrm = format_ins_list;
-  fld_list *pfield;
-
-  /* for every format */
-  while (pfrm != NULL) {
-    int field_counter = 0;
-    ac_dec_field *fields = pfrm->fields;
-
-    /* for every operand */
-    while (fields != NULL) {
-
-
-      /* try finding an already-created field with the same name */
-      pfield = field_list;
-      while (pfield != NULL) {
-        if (!strcmp(pfield->name, fields->name)) break;
-     
-        pfield = pfield->next;
-      }
-
-      /* not found, create a new modifier item and insert in the list */
-      if (pfield == NULL) {
-        pfield = (fld_list *) malloc(sizeof(fld_list));
-        pfield->name = (char *) malloc (strlen(fields->name)+1);
-        strcpy(pfield->name, fields->name);
-
-        pfield->position = field_counter;
-        pfield->next = NULL;
-  
-        if (field_list == NULL) field_list = pfield;
-        else {
-          pfield->next = field_list;
-          field_list = pfield;
-        }
-      }
- 
-      field_counter++;
-      fields = fields->next;
-    }
-
-    pfrm = pfrm->next;
-  }
-}

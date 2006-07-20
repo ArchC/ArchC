@@ -15,7 +15,10 @@ typedef struct {
   unsigned address;
   unsigned output;
   const char *section;  /* not a copy, just a pointer */
-  unsigned int field[___max_fields___];
+  union {
+___format_structures___
+    unsigned int field[___max_fields___];
+  };
 } mod_parms;
 
 

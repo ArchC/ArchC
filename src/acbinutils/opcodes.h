@@ -47,7 +47,7 @@ extern int CreatePseudoOpsTable(const char *optable_filename);
 extern int CreateOperandTable(const char *optable_filename);
 extern int CreateModifierEnum(const char *filename);
 extern int CreateModifierProt(const char *filename);
-extern int CreateFieldDef(const char *filename, int which);
+extern int CreateFormatStruct(const char *filename);
 extern int CreateModifierPtr(const char *filename, int which);
 
 #endif /* _OPCODES_H_ */
