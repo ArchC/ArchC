@@ -255,8 +255,8 @@ bfd_elf_archc_reloc (bfd *abfd,
 
 
 
-#define TARGET_BIG_SYM                    `bfd_elf32_'___arch_name___`_vec'
-#define TARGET_BIG_NAME                   `"elf32-'___arch_name___`"'
+#define `TARGET_'___endian_str___`_SYM'   `bfd_elf32_'___arch_name___`_vec'
+#define `TARGET_'___endian_str___`_NAME'  `"elf32-'___arch_name___`"'
 #define ELF_ARCH                          `bfd_arch_'___arch_name___
 #define ELF_MACHINE_CODE                  EM_NONE
 #define ELF_MAXPAGESIZE                   0x1

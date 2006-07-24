@@ -31,7 +31,7 @@
 #ifndef `_TC_'___arch_name___`_H_FILE_'
 #define `_TC_'___arch_name___`_H_FILE_'
 
-#define ___endian_str___
+#define `AC_'___endian_str___`_ENDIAN'
 #define AC_WORD_SIZE ___word_size___
 #define TARGET_BYTES_BIG_ENDIAN ___endian_val___
 #define TARGET_ARCH `bfd_arch_'___arch_name___
