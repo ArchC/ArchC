@@ -217,6 +217,7 @@ void encode_cons_field(unsigned int *image, mod_parms *mp, unsigned int oper_id)
   assert(operands[oper_id].mod_type <= num_modfn);
 
   mp->addend = operands[oper_id].mod_addend;
+  mp->error = 0;
 
   if (operands[oper_id].mod_type == mod_default) {
 

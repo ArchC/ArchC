@@ -247,6 +247,10 @@ bfd_elf_archc_reloc (bfd *abfd,
 
   encode_cons_field(&insn_image, &modifier_parms, howto->rightshift);
 
+  if (modifier_parms.error) {
+    _bfd_error_handler (_("Invalid relocation operation"));
+  }
+
   putbits(get_insn_size(operands[howto->rightshift].format_id), (char *) data + octets, insn_image, ___endian_val___); 
 
   

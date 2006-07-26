@@ -98,7 +98,7 @@ static void clean_out_insn(void);
 static void free_all_fixups(acfixuptype *fix);
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
-static void encode_field(unsigned long val_const, unsigned int oper_id);
+static void encode_field(unsigned int val_const, unsigned int oper_id);
 
 
 /*
@@ -1324,7 +1324,7 @@ create_fixup(unsigned int oper_id)
 
 
 static void 
-encode_field(unsigned long val_const, unsigned int oper_id)
+encode_field(unsigned int val_const, unsigned int oper_id)
 {
   mod_parms mp;
   char secname[] = "no symbol";
@@ -1338,6 +1338,9 @@ encode_field(unsigned long val_const, unsigned int oper_id)
   dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
   encode_cons_field(&out_insn.image, &mp, oper_id);
   dbg_printf(0, "0x%08lX\n", out_insn.image);
+
+  if (mp.error) 
+    as_bad(_("invalid operand value: '%u'"), val_const);
 
 }
 

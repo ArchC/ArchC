@@ -15,6 +15,7 @@ typedef struct {
   unsigned address;
   unsigned output;
   const char *section;  /* not a copy, just a pointer */
+  unsigned error; /* 0 = no error */
   union {
 ___format_structures___
     unsigned int field[___max_fields___];
