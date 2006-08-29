@@ -68,6 +68,7 @@ static int Createm4File();
 #define MODIFIER_ENUM_FILE  "modifier.enum"
 #define MODIFIER_PROT_FILE  "modifier.prot"
 #define MODENC_PTR_FILE     "modenc.ptr"
+#define MODDEC_PTR_FILE     "moddec.ptr"
 #define FORMAT_STRUCT_FILE  "format.struct"
 
 #define GEN_DIR "acbingenbuilddir/"
@@ -319,6 +320,13 @@ int main(int argc, char **argv)
   }
 
   strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODDEC_PTR_FILE);
+  if (!CreateModifierPtr(buffer, 1)) {
+    fprintf(stderr, "Error creating decode modifier pointers.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
   strcat(buffer, FORMAT_STRUCT_FILE);
   if (!CreateFormatStruct(buffer)) {
     fprintf(stderr, "Error creating field definitions.\n");
@@ -370,6 +378,7 @@ static int Createm4File()
   fprintf(output, "m4_define(`___modifier_enum___', `m4_include(%s)')m4_dnl\n", MODIFIER_ENUM_FILE);
   fprintf(output, "m4_define(`___modifier_prototypes___', `m4_include(%s)')m4_dnl\n", MODIFIER_PROT_FILE);
   fprintf(output, "m4_define(`___modenc_pointers___', `m4_include(%s)')m4_dnl\n", MODENC_PTR_FILE);
+  fprintf(output, "m4_define(`___moddec_pointers___', `m4_include(%s)')m4_dnl\n", MODDEC_PTR_FILE);
 
   fprintf(output, "m4_define(`___modifiers___', `m4_include(%s)')m4_dnl\n", "modifiers");
 

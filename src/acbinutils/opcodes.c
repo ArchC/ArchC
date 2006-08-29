@@ -443,6 +443,7 @@ int CreateModifierProt(const char *filename)
   while (modifier != NULL) {
     
     fprintf(output, "extern void modifier_%s_encode(mod_parms *reloc);\n", modifier->name);
+    fprintf(output, "extern void modifier_%s_decode(mod_parms *reloc);\n", modifier->name);
 
     modifier = modifier->next;
   }
@@ -493,8 +494,10 @@ int CreateModifierPtr(const char *filename, int which)
   mod_list *modifier = modifier_list;
 
   while (modifier != NULL) {
-    
-    fprintf(output, "&modifier_%s_encode,\n", modifier->name);
+    if (which == 0) 
+      fprintf(output, "&modifier_%s_encode,\n", modifier->name);
+    else
+      fprintf(output, "&modifier_%s_decode,\n", modifier->name); 
 
     modifier = modifier->next;
   }

@@ -44,7 +44,9 @@ typedef struct {
 
 
 extern const mod_fnptr modfn[];
+extern const mod_fnptr modfndec[];
 extern const unsigned int num_modfn;
+extern const unsigned int num_modfndec;
 extern const acasm_operand operands[];
 extern const unsigned int num_oper_id;
 

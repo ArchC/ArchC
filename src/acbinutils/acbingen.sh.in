@@ -153,7 +153,7 @@ m4 -P defines.m4 binutils/bfd/share-xxxxx.c > binutils/bfd/share-${ARCH_NAME}.c
 if [ -f ../modifiers ]; then
   echo "#include \"binutils/include/share-"${ARCH_NAME}".h\"" > temp_mod.c
   echo "#define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(mod_parms *reloc)" >> temp_mod.c
-  echo "#define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode()" >> temp_mod.c
+  echo "#define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode(mod_parms *reloc)" >> temp_mod.c
   echo "#include \"../modifiers\"" >> temp_mod.c
   gcc -c -otemp_mod.o temp_mod.c
   [ $? -ne 0 ] && exit $?

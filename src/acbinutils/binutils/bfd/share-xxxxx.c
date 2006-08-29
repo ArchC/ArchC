@@ -11,7 +11,13 @@ const mod_fnptr modfn[] = {
 ___modenc_pointers___
 };
 
+const mod_fnptr modfndec[] = {
+___moddec_pointers___
+};
+
 const unsigned int num_modfn = ((sizeof modfn) / (sizeof(modfn[0])));
+
+const unsigned int num_modfndec = ((sizeof modfndec) / (sizeof(modfndec[0])));
 
 
 const acasm_operand operands[] = {
@@ -244,8 +250,6 @@ void encode_cons_field(unsigned int *image, mod_parms *mp, unsigned int oper_id)
 
 }
 
-
-
 unsigned long get_insn_size(unsigned long insn_fmt)
 {
 ___insnsize_function___
@@ -271,7 +275,7 @@ ___fieldsize_function___
 
 
 #define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(mod_parms *reloc)
-#define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode()
+#define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode(mod_parms *reloc)
 
 
 /* dummy modifiers */
