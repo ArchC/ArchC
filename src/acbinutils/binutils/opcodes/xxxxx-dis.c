@@ -183,9 +183,20 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
         for (i=0; i<size; i++)
           dmask = (dmask << 1) + 1;
 
-        dmask = dmask << (FORMAT_SIZE - begining);//operand dmask
+        //operand dmask
+        `if ('___endian_val___`) ' //big
+          dmask = dmask << (FORMAT_SIZE - begining);
+        else //little
+          dmask = dmask << (begining - size);
+
         unsigned long value = dmask & insn;
-        value = value >> (FORMAT_SIZE - begining); //dislocates masks to see it which reg ex: [0,31]
+
+        //dislocates masks to see it which reg ex: [0,31]
+        `if ('___endian_val___`) ' //big
+          value = value >> (FORMAT_SIZE - begining);
+        else //little
+          value = value >> (begining - size);
+
         int cont = 0;
         int in = 0;
         char symbolaux[50];
@@ -211,7 +222,6 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
           signed long value_aux = value;
           //verify if is a negative value - two complement
           if (value & (1<<(size-1))){
-            value_aux |= ((0xFFFFFFFF >> (32 - size)) & (0xFFFFFFFF << (size-1)));
             value_aux = (((0xFFFFFFFF >> (32 - size)) & ~value) + 1);
             value_aux = value_aux * -1;
           }
@@ -305,6 +315,8 @@ int `print_insn_'___arch_name___` (bfd_vma memaddr, struct disassemble_info * in
       op = op - j;
     }
   }
+
+  info->bytes_per_chunk = (sizeinsn / 8);
 
   return disassemble(memaddr, info, insnfound, sizeinsn);
 }
