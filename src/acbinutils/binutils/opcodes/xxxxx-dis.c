@@ -169,6 +169,7 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
         unsigned long size = 0;
         unsigned int numf = get_num_fields(operands[acs->oper_id].fields);
         unsigned int count, fid;
+        fid = 0;
         for (count=0; count < numf; count++){
           fid = get_field_id(operands[acs->oper_id].fields, count);
           size = size + get_field_size(op->format_id, fid);
@@ -340,8 +341,6 @@ ac_symbol* parse(char *args){
   while (*args != '\0'){
     char buf[50];
     char *ptr_buf = buf;
-    char buf_aux[50];
-    char *ptr_buf_aux = buf_aux;
 
     //symbol '%' indicate a initial field
     if (*args == '%'){
@@ -358,9 +357,8 @@ ac_symbol* parse(char *args){
 
       //operand_id is the index of fiels in the struct operands
       unsigned int operand_id = atoi(buf);
-      unsigned int numf = get_num_fields(operands[operand_id].fields);
-
       unsigned int count;
+
       //replace index of field the bufInitial to type of field e.g. reg, addr, immm, exp
       strcat(ptr_bufInitial, operands[operand_id].name);
       for (count=0; count < strlen(operands[operand_id].name); count++)
