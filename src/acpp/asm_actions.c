@@ -473,6 +473,7 @@ static insert_modifier(ac_modifier_list *list, ac_modifier_list *mod)
 
   if (list == NULL) {
     list = mod;
+    list->next = NULL;
   }
   else {
     ac_modifier_list *head = list;
@@ -636,6 +637,7 @@ static int create_operand(char *s, ac_operand_list **oper)
     /* insert in the list */
     if ((*oper)->modifiers == NULL) {
       (*oper)->modifiers = modifier;
+      (*oper)->modifiers->next = NULL;
     }
     else {
       ac_modifier_list *head = (*oper)->modifiers;
@@ -1454,6 +1456,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
 
   if (matching_op->fields == NULL) {
     matching_op->fields = newfield;
+    matching_op->fields->next = NULL;
   }
   else {
     ac_asm_insn_field *head = matching_op->fields;
@@ -1540,6 +1543,7 @@ int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int ic
 
   if (current_insn->const_fields == NULL) {
     current_insn->const_fields = cfield;
+    current_insn->const_fields->next = NULL;
   }
   else {
     ac_const_field_list *head = current_insn->const_fields;
@@ -1924,8 +1928,10 @@ int acpp_asm_add_pseudo_member(char *pseudo, char *error_msg)
   /* Insert the pseudo string in the list - at the tail */
   strlist *pL = pseudo_list;
 
-  if (pseudo_list == NULL)
+  if (pseudo_list == NULL) {
     pseudo_list = sl;
+    pseudo_list->next = NULL;
+  }
   else {
     while (pL->next != NULL) pL = pL->next;
     pL->next = sl;
