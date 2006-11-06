@@ -180,39 +180,39 @@ if [ -z "$GDB_PATH" ]; then
   GDB_PATH=`grep GDB_PATH @sysconfdir@/archc.conf | cut -d = -f2`
   GDB_PATH=`echo $GDB_PATH`
   
-  if [ -z "$GDB_PATH" ]; then
-    echo "GDB_PATH environment variable not set"
-    exit 1
-  fi 
+#  if [ -z "$GDB_PATH" ]; then
+#    echo "GDB_PATH environment variable not set"
+#    exit 1
+#  fi 
 fi
 
 
 # check for '/' at the end and take it out
 GDB_DIR=`echo "$GDB_PATH" | sed -e 's/\/$//'`
 
+if [ ! -z ${GDB_DIR} ]; then
+  FILES_TO_PATCH_GDB="@patchfilesgdb@" 
+  FILES_TO_COPY_GDB="@copyfilesgdb@"
 
-FILES_TO_PATCH_GDB="@patchfilesgdb@" 
-FILES_TO_COPY_GDB="@copyfilesgdb@"
-
-
-if [ "$CREATE_ONLY" -eq 0 ]; then
-# tell the user if the architecture name already exists in Gdb
-  $GDB_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    echo "==================="
-    echo "It has been detected that your Gdb distribution already uses"
-    echo "the architecture name '${ARCH_NAME}'."
-    echo
-    echo "It is not recommended to continue if you have not set it by yourself."
-#  echo "If you continue, the Gdb files will not be patched."
-    echo "==================="
-    echo
-    read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
-    echo
-    case $USER_ANSWER in 
-        y | yes | Y | YES) PATCH_GDB=0; break;;
-        * ) echo "Quitting ..."; echo; exit 1;;
-    esac
+  if [ "$CREATE_ONLY" -eq 0 ]; then
+  # tell the user if the architecture name already exists in Gdb
+    $GDB_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+      echo "==================="
+      echo "It has been detected that your Gdb distribution already uses"
+      echo "the architecture name '${ARCH_NAME}'."
+      echo
+      echo "It is not recommended to continue if you have not set it by yourself."
+  #  echo "If you continue, the Gdb files will not be patched."
+      echo "==================="
+      echo
+      read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+      echo
+      case $USER_ANSWER in 
+          y | yes | Y | YES) PATCH_GDB=0; break;;
+          * ) echo "Quitting ..."; echo; exit 1;;
+      esac
+    fi
   fi
 fi
 
@@ -300,53 +300,55 @@ do
 done
 
 
-if [ "$PATCH_GDB" -ne 0 ]; then
-# applies the patch 
-    echo "Patching... "
-    for file in $FILES_TO_PATCH_GDB
-    do
+if [ ! -z ${GDB_DIR} ]; then
+  if [ "$PATCH_GDB" -ne 0 ]; then
+  # applies the patch 
+      echo "Patching... "
+      for file in $FILES_TO_PATCH_GDB
+      do
       
-      if [ ! -f "$GDB_DIR/$file" ]; then
+        if [ ! -f "$GDB_DIR/$file" ]; then
 
-	    if [ $file = "gdb/configure.tgt" ]; then
-	      # Starting from 2.16, gdb uses configure.tgt
-	      # For compatibility with older versions, redirect to 'configure'
-	      file="gdb/configure"
-	      cp -f gdb/gdb/configure.tgt.sed gdb/gdb/configure.sed > /dev/null 2>&1
-	    else           	  
-  	      echo "Source file $file not found."
-  	      exit 1
+	      if [ $file = "gdb/configure.tgt" ]; then
+  	        # Starting from 2.16, gdb uses configure.tgt
+	        # For compatibility with older versions, redirect to 'configure'
+	        file="gdb/configure"
+	        cp -f gdb/gdb/configure.tgt.sed gdb/gdb/configure.sed > /dev/null 2>&1
+	      else           	  
+      	        echo "Source file $file not found."
+  	        exit 1
+          fi
         fi
-      fi
 
-  # creates a backup
-      mv -f $GDB_DIR/$file $GDB_DIR/$file.bkp > /dev/null 2>&1
-      if [ $? -ne 0 ]; then
-	  echo "Cannot move file $file."
-	  exit 1
-      fi
+    # creates a backup
+        mv -f $GDB_DIR/$file $GDB_DIR/$file.bkp > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+	    echo "Cannot move file $file."
+	    exit 1
+        fi
 
-      sed s/xxxxx/${ARCH_NAME}/g gdb/$file.sed > gdb/$file.sed2
-      sed -f gdb/$file.sed2 $GDB_DIR/$file.bkp > $GDB_DIR/$file
-
-    done
+        sed s/xxxxx/${ARCH_NAME}/g gdb/$file.sed > gdb/$file.sed2
+        sed -f gdb/$file.sed2 $GDB_DIR/$file.bkp > $GDB_DIR/$file
+  
+      done
    
-    chmod a+x $GDB_DIR/config.sub
-    chmod a+x $GDB_DIR/bfd/config.bfd
+      chmod a+x $GDB_DIR/config.sub
+      chmod a+x $GDB_DIR/bfd/config.bfd
 
-else
-    echo "Skipping patching..."
+  else
+      echo "Skipping patching..."
+  fi
+
+  # copies the generated files into gdb tree
+  mkdir -p $GDB_DIR/gdb/config/${ARCH_NAME}
+  echo "Copying files to gdb source tree..."
+  for file in $FILES_TO_COPY_GDB
+  do
+    cpfile=`echo "$file" | sed -e "s/xxxxx/${ARCH_NAME}/g"`
+    cp -f gdb/${cpfile} $GDB_DIR/${cpfile}
+    [ $? -ne 0 ] && exit $?
+  done
 fi
-
-# copies the generated files into gdb tree
-mkdir -p $GDB_DIR/gdb/config/${ARCH_NAME}
-echo "Copying files to gdb source tree..."
-for file in $FILES_TO_COPY_GDB
-do
-  cpfile=`echo "$file" | sed -e "s/xxxxx/${ARCH_NAME}/g"`
-  cp -f gdb/${cpfile} $GDB_DIR/${cpfile}
-  [ $? -ne 0 ] && exit $?
-done
 
 
 if [ ! -z ${BINUTILS_INST_DIR} ]; then
@@ -361,15 +363,17 @@ if [ ! -z ${BINUTILS_INST_DIR} ]; then
   make install
   [ $? -ne 0 ] && exit $?
 
-  cd ..
-  mkdir -p build_gdb
-  cd build_gdb
-  $GDB_DIR/configure --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
-  [ $? -ne 0 ] && exit $?
-  make 
-  [ $? -ne 0 ] && exit $?
-  make install
-  [ $? -ne 0 ] && exit $?
+  if [ ! -z ${GDB_DIR} ]; then
+    cd ..
+    mkdir -p build_gdb
+    cd build_gdb
+    $GDB_DIR/configure --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
+    [ $? -ne 0 ] && exit $?
+    make 
+    [ $? -ne 0 ] && exit $?
+    make install
+    [ $? -ne 0 ] && exit $?
+  fi
 
 fi
 
