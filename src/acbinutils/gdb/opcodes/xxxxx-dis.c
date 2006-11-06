@@ -142,9 +142,10 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
   acasm_opcode *op = (acasm_opcode *) opcodes;
   acasm_symbol *symbols = (acasm_symbol *) udsymbols;
   unsigned int FORMAT_SIZE=0;
+  int nInstr=0;
 
   //Find the mnemonic of instruction in opcodes table
-  while (op->mnemonic){
+  while (nInstr < num_opcodes){
     unsigned long e = insn & op->dmask;
 
     if ((e == op->image) && (op->pseudo_idx == 0) && ((unsigned)insn_size == get_insn_size(op->format_id))) {
@@ -224,7 +225,7 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
           //verify if is a negative value - two complement
           if (value & (1<<(size-1))){
             value_aux = (((0xFFFFFFFF >> (32 - size)) & ~value) + 1);
-            value_aux = value_aux * -1;
+            value_aux = (value_aux * -1);
           }
 
           //verify decode modifier
@@ -249,8 +250,16 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
       break;
     }
     op++;
+    nInstr++;
   }
  
+  //.data Section
+  if (FORMAT_SIZE == 0) {
+    FORMAT_SIZE = insn_size;
+    //Convert long to char
+    sprintf( bufFinal, "0x%01lx", insn );
+  }
+
   (*info->fprintf_func) (info->stream,"%s ",bufFinal);
   return  FORMAT_SIZE / 8;
 }
@@ -301,7 +310,7 @@ int `print_insn_'___arch_name___` (bfd_vma memaddr, struct disassemble_info * in
 
       //Find the mnemonic of instruction in opcodes table
       int j = 0;     
-      while ((op->mnemonic) && (op->dmask != 0)) {
+      while ((j < num_opcodes) && (op->dmask != 0)) {
         unsigned long e = insn & op->dmask;
 
         if ((e == op->image) && (op->pseudo_idx == 0) && (localsize == get_insn_size(op->format_id))){
