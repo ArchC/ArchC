@@ -1,7 +1,7 @@
 b main
 r
 n
-b 54
+b 66
 c
 p result
 n

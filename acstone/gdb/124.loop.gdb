@@ -1,7 +1,7 @@
 b main
 r
 n
-b 69
+b 81
 c
 p result
 n
