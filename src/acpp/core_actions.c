@@ -170,6 +170,7 @@ int add_symbol(char* name, ac_parser_type type, void* info)
  strcpy(p->name, name);
  p->type = type;
  p->info = info;
+ p->next = NULL;
  return 1;
 }
 
