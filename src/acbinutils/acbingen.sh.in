@@ -13,7 +13,7 @@ Create binary utilities source files and optionally build them.
 
 Options:
   -a<name>   sets the architecture name (if ommitted, it defaults to 
-             <model-file> without the extension
+             <model-file> without the extension)
   -i<dir>    build and install the binary utilities in directory <dir>
              NOTE: <dir> -MUST- be an absolute path
   -c         only create the files, do not copy to binutils tree
