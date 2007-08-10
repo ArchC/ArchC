@@ -48,6 +48,23 @@ void internal_error() {
 }
 
 /*
+ * Returns the format id of the string fname. (-1 if not found!)
+ */
+int get_format_id(char *fname)
+{
+  ac_dec_format *pfrm = format_ins_list;
+  unsigned int formatid = 0;
+  while ((pfrm != NULL) && strcmp(fname, pfrm->name)) {
+    formatid++;
+    pfrm = pfrm->next;
+  }
+  if (pfrm == NULL) return -1;
+  return formatid;
+}
+
+
+
+/*
  * Returns the size of the architecture word (in bits)
  * It uses the ac_wordsize currently
  * Note that it only support architectures with, at most, 32-bit words
@@ -101,7 +118,6 @@ char *get_arch_name()
  */
 unsigned int get_max_format_size() 
 {
-  extern ac_dec_format *format_ins_list;
   ac_dec_format *pfrm = format_ins_list;
   int max_size = 0;
              
@@ -119,7 +135,6 @@ unsigned int get_max_format_size()
  */
 unsigned int get_variable_format_size() 
 {
-  extern ac_dec_format *format_ins_list;
   ac_dec_format *pfrm = format_ins_list;
 
   int variable_format_size = 0;
@@ -135,3 +150,59 @@ unsigned int get_variable_format_size()
 
   return variable_format_size;
 }
+
+/*
+ * Returns the format number of fields
+ */
+unsigned int get_format_number_fields(ac_dec_format *format) 
+{
+  ac_dec_field *fields = format->fields;
+
+  unsigned int number_fields = 0;
+               
+  while (fields != NULL) {
+    number_fields++;
+
+    fields = fields->next;
+  }
+
+  return number_fields;
+}
+
+/*
+ * Returns the maximum number of fields among all the formats
+ */
+unsigned int get_max_number_fields() 
+{
+  ac_dec_format *pfrm = format_ins_list;
+  unsigned int max_number_fields = 0;
+
+  while (pfrm != NULL) {
+    unsigned int nt = get_format_number_fields(pfrm);
+    if (nt > max_number_fields) 
+      max_number_fields = nt;
+
+    pfrm = pfrm->next;
+  }  
+
+  return max_number_fields;
+}
+
+
+/* field is encoded within bits in a 32-bit variable 
+ *   field_id 0 -> ... 0000 0001
+ *   field_id 2 -> ... 0000 0100
+ *   ids 3 e 4  -> ... 0001 1000
+ */
+unsigned int encode_fields(ac_asm_insn_field *fieldP)
+{
+  unsigned int encoding = 0;
+
+  while (fieldP != NULL) { /* encode field */
+    encoding |= 1 << fieldP->id;
+
+    fieldP = fieldP->next;
+  }
+  return encoding;
+}
+

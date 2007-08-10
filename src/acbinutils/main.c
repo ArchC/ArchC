@@ -54,15 +54,22 @@ static int Createm4File();
 /*
  * File names definition
  */
-#define OPCODE_TABLE_FILE  "opcode.table"
-#define SYMBOL_TABLE_FILE  "symbol.table"
-#define PSEUDO_TABLE_FILE  "pseudo.table"
-#define RELOC_IDS_FILE     "reloc.ids"
-#define RELOC_HOWTO_FILE   "reloc.howto"
-#define RELOC_MAP_FILE     "reloc.map"
-#define ENCODING_FN_FILE   "encoding.fn"
-#define FIELD_SIZE_FN_FILE "fieldsize.fn"
-#define INSN_SIZE_FN_FILE  "insnsize.fn"
+#define OPCODE_TABLE_FILE   "opcode.table"
+#define SYMBOL_TABLE_FILE   "symbol.table"
+#define PSEUDO_TABLE_FILE   "pseudo.table"
+#define OPERAND_TABLE_FILE  "operand.table"
+#define RELOC_IDS_FILE      "reloc.ids"
+#define RELOC_HOWTO_FILE    "reloc.howto"
+#define RELOC_MAP_FILE      "reloc.map"
+#define FIELD_VALUE_FN_FILE "fieldvalue.fn"
+#define ENCODING_FN_FILE    "encoding.fn"
+#define FIELD_SIZE_FN_FILE  "fieldsize.fn"
+#define INSN_SIZE_FN_FILE   "insnsize.fn"
+#define MODIFIER_ENUM_FILE  "modifier.enum"
+#define MODIFIER_PROT_FILE  "modifier.prot"
+#define MODENC_PTR_FILE     "modenc.ptr"
+#define MODDEC_PTR_FILE     "moddec.ptr"
+#define FORMAT_STRUCT_FILE  "format.struct"
 
 #define GEN_DIR "acbingenbuilddir/"
 
@@ -210,7 +217,7 @@ int main(int argc, char **argv)
     exit(1);
   }
  
-  // Create the relocation list first
+  create_operand_list(); /* this MUST preceed create_relocation_list */
   create_relocation_list();
 
   strcpy(buffer, GEN_DIR);
@@ -233,6 +240,14 @@ int main(int argc, char **argv)
     fprintf(stderr, "Error creating pseudo table.\n");
     exit(1);
   }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, OPERAND_TABLE_FILE);
+  if (!CreateOperandTable(buffer)) {  /* write the pseudo-op table */
+    fprintf(stderr, "Error creating operand table.\n");
+    exit(1);
+  }
+
   
   strcpy(buffer, GEN_DIR);
   strcat(buffer, RELOC_IDS_FILE);
@@ -256,6 +271,13 @@ int main(int argc, char **argv)
   }
 
   strcpy(buffer, GEN_DIR);
+  strcat(buffer, FIELD_VALUE_FN_FILE);
+  if (!CreateGetFieldValueFunc(buffer)) {
+    fprintf(stderr, "Error creating field value function.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
   strcat(buffer, ENCODING_FN_FILE);
   if (!CreateEncodingFunc(buffer)) {
     fprintf(stderr, "Error creating encoding function.\n");
@@ -275,7 +297,41 @@ int main(int argc, char **argv)
     fprintf(stderr, "Error creating insn size function.\n");
     exit(1);
   }
-  
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODIFIER_ENUM_FILE);
+  if (!CreateModifierEnum(buffer)) {
+    fprintf(stderr, "Error creating modifier enumeration.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODIFIER_PROT_FILE);
+  if (!CreateModifierProt(buffer)) {
+    fprintf(stderr, "Error creating modifier prototypes declaration.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODENC_PTR_FILE);
+  if (!CreateModifierPtr(buffer, 0)) {
+    fprintf(stderr, "Error creating modifier pointers.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, MODDEC_PTR_FILE);
+  if (!CreateModifierPtr(buffer, 1)) {
+    fprintf(stderr, "Error creating decode modifier pointers.\n");
+    exit(1);
+  }
+
+  strcpy(buffer, GEN_DIR);
+  strcat(buffer, FORMAT_STRUCT_FILE);
+  if (!CreateFormatStruct(buffer)) {
+    fprintf(stderr, "Error creating field definitions.\n");
+    exit(1);
+  }
 
   return 0;
 }
@@ -297,24 +353,39 @@ static int Createm4File()
   fprintf(output, "m4_define(`___variable_format_size___', `%d')m4_dnl\n", get_variable_format_size());
 
   /* 1 = big, 0 = little */
-  fprintf(output, "m4_define(`___endian_str___', `%s')m4_dnl\n", ac_tgt_endian ? "AC_BIG_ENDIAN" : "AC_LITTLE_ENDIAN");
+  fprintf(output, "m4_define(`___endian_str___', `%s')m4_dnl\n", ac_tgt_endian ? "BIG" : "LITTLE");
   fprintf(output, "m4_define(`___endian_val___', `%d')m4_dnl\n", ac_tgt_endian ? 1 : 0);
 
+  fprintf(output, "m4_define(`___max_fields___', `%u')m4_dnl\n", get_max_number_fields());
 
   fprintf(output, "m4_define(`___opcode_table___', `m4_include(%s)')m4_dnl\n", OPCODE_TABLE_FILE);
   fprintf(output, "m4_define(`___symbol_table___', `m4_include(%s)')m4_dnl\n", SYMBOL_TABLE_FILE);
   fprintf(output, "m4_define(`___pseudo_table___', `m4_include(%s)')m4_dnl\n", PSEUDO_TABLE_FILE);
+  fprintf(output, "m4_define(`___operand_table___', `m4_include(%s)')m4_dnl\n", OPERAND_TABLE_FILE);
 
   
   fprintf(output, "m4_define(`___reloc_ids___', `m4_include(%s)')m4_dnl\n", RELOC_IDS_FILE);
   fprintf(output, "m4_define(`___reloc_howto___', `m4_include(%s)')m4_dnl\n", RELOC_HOWTO_FILE);
   fprintf(output, "m4_define(`___reloc_map___', `m4_include(%s)')m4_dnl\n", RELOC_MAP_FILE);
+  fprintf(output, "m4_define(`___fieldvalue_function___', `m4_include(%s)')m4_dnl\n", FIELD_VALUE_FN_FILE);
 
 
   fprintf(output, "m4_define(`___encoding_function___', `m4_include(%s)')m4_dnl\n", ENCODING_FN_FILE);
   fprintf(output, "m4_define(`___fieldsize_function___', `m4_include(%s)')m4_dnl\n", FIELD_SIZE_FN_FILE);
   fprintf(output, "m4_define(`___insnsize_function___', `m4_include(%s)')m4_dnl\n", INSN_SIZE_FN_FILE);
-  
+
+
+  fprintf(output, "m4_define(`___modifier_enum___', `m4_include(%s)')m4_dnl\n", MODIFIER_ENUM_FILE);
+  fprintf(output, "m4_define(`___modifier_prototypes___', `m4_include(%s)')m4_dnl\n", MODIFIER_PROT_FILE);
+  fprintf(output, "m4_define(`___modenc_pointers___', `m4_include(%s)')m4_dnl\n", MODENC_PTR_FILE);
+  fprintf(output, "m4_define(`___moddec_pointers___', `m4_include(%s)')m4_dnl\n", MODDEC_PTR_FILE);
+
+  fprintf(output, "m4_define(`___modifiers___', `m4_include(%s)')m4_dnl\n", "modifiers");
+
+  fprintf(output, "m4_define(`___format_structures___', `m4_include(%s)')m4_dnl\n", FORMAT_STRUCT_FILE);
+
+  fprintf(output, "m4_define(`___defines_gdb___', `m4_include(%s)')m4_dnl\n", "defines_gdb");
+
   fclose(output);
 
   return 1;

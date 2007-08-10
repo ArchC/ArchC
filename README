@@ -29,6 +29,7 @@ directory for use in the building process)
                                      generated 
     --with-binutils=<binutils-path> -> if you plan to generate binary 
                                        utilities
+    --with-gdb=<gdb-path> -> if you plan to generate debugger (gdb)
     --with-tlm=<tlm-path> -> if you want the new ArchC TLM communication
                              capabilities
 

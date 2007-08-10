@@ -35,33 +35,36 @@
 #include `"tc-'___arch_name___`.h"'
 #include `"elf/'___arch_name___`.h"'
 #include `"opcode/'___arch_name___`.h"'
+#include `"share-'___arch_name___`.h"'
 
+//#define DEBUG_ON
 
-/*
- Conversion specifiers masks and bit selection
- These are returned by get_builtin_marker()
-*/
-#define BI_NONE           0
-#define BI_BASE_EXP_BIT   1
-#define BI_BASE_ADDR_BIT (1 << 1)
-#define BI_BASE_IMM_BIT  (1 << 2)
-#define BI_MD_REL_BIT    (1 << 3)
-#define BI_MD_HI_BIT     (1 << 4)
-#define BI_MD_LO_BIT     (1 << 5)
-#define BI_MD_AL_BIT     (1 << 6)
-#define BI_MD_INV_BIT    (1 << 10)
-#define BI_BASE_MASK (BI_BASE_EXP_BIT | BI_BASE_ADDR_BIT | BI_BASE_IMM_BIT)
-#define BI_MD_MASK   (BI_MD_REL_BIT | BI_MD_HI_BIT | BI_MD_LO_BIT | BI_MD_AL_BIT)
+#ifdef DEBUG_ON
+#  include <stdio.h>
+   extern int indent_level;
 
-/* FLAGS used with flag field in fixups */
-#define FIX_FLAG_LO        0        /* low field */
-#define FIX_FLAG_HI        1        /* high field */
-#define FIX_FLAG_HI_CARRY (1 << 1)  /* high field with carry from lower bits */
-#define FIX_FLAG_PCREL    (1 << 2)  /* pc relative */
-#define FIX_FLAG_ALIGNED  (1 << 3)  /* aligned (power of 2) */
-#define FIX_FLAG_HL_SIGN  (1 << 4)
-#define FIX_FLAG_AL_SIGN  (1 << 5)
-#define FIX_FLAG_LO_DATA  (1 << 6)
+#  define dbg_printf(il, args...) {fprintf(stderr, "%*s+ ", il*4, ""); \
+                                  fprintf(stderr, args);}
+#  define dbg_print_insn(il, insn)  print_opcode_structure(stderr, il*4, insn)
+#  define dbg_print_operand_info(il, opid) print_operand_info(stderr, il*4, opid)
+#  define dbg_print_fixup(il, fixup) print_internal_fixup(stderr, il, fixup)
+#  define dbg_print_expression(il, exp) {indent_level = il; \
+                                     print_expr_1(stderr, exp); \
+                                     fprintf(stderr, "\n");}
+#  define dbg_print_gasfixup(il, fixP) print_fixup(stderr, il, fixP)
+#  define dbg_print_symbolS(il, sym) {indent_level = il; \
+                                     print_symbol_value_1(stderr, sym); \
+                                     fprintf(stderr, "\n");}
+#else 
+#  define dbg_printf(il, args...)
+#  define dbg_print_insn(il, insn) 
+#  define dbg_print_operand_info(il, opid)
+#  define dbg_print_fixup(il, fixup)
+#  define dbg_print_expression(il, exp)
+#  define dbg_print_gasfixup(il, fixP)
+#  define dbg_print_symbolS(il, sym)
+#endif
+
 
 #ifdef __STDC__
 #define INTERNAL_ERROR() as_fatal (_("Internal error: line %d, %s"), __LINE__, __FILE__)
@@ -69,31 +72,34 @@
 #define INTERNAL_ERROR() as_fatal (_("Internal error"));
 #endif
 
+typedef struct _acfixuptype
+{
+  expressionS ref_expr_fix; /* symbol in which the relocation points to */
+  unsigned int operand_id;
 
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value);
-static unsigned long get_field_size(unsigned long insn_fmt, int field_id);
-static unsigned long get_insn_size(unsigned long insn_fmt);
+  struct _acfixuptype *next;
+} acfixuptype;
+
+
 static void s_cons(int byte_size);
 static void archc_show_information(void);
-static unsigned int get_builtin_marker(char *s);
-static void ac_put_bits(unsigned int data, void *p, int bits);
-static unsigned int ac_get_bits(const void *p, int bits);
 static void pseudo_assemble(void);
 static void emit_insn(void);
 static int get_expression(expressionS *, char **);
-static int get_operand(expressionS *ep, char **str);
-static int ac_valid_symbol(char *ac_symbol, char *parser_symbol, 
-                           long int *value);
+static int get_immediate(expressionS *ep, char **str);
+static int get_address(expressionS *, char **);
+static int get_userdefoper(unsigned int *val, const char *opclass, char **str);
+static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, 
+                           unsigned int *value);
 static int ac_parse_operands(char *s_pos, char *args);
-static void apply_hi_operator(unsigned long *value, 
-                              unsigned long field_size);
-static void sign_extend(unsigned long *value, int bit_size, 
-                        int sign_bit);
-static void get_addend(char addend_type, char **st);
-static void create_fixup(unsigned int bi_type, long int field_id, unsigned reloc_id);
-static void encode_cons_field(unsigned long val_const, unsigned int bi_type, long int field_id);
-static unsigned get_id(char **strP);
+static void create_fixup(unsigned oper_id);
 static void strtolower(char *str);
+static void clean_out_insn(void);
+static void free_all_fixups(acfixuptype *fix);
+static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
+static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
+static void encode_field(unsigned int val_const, unsigned int oper_id);
+
 
 /*
   variables used by the core
@@ -170,17 +176,6 @@ static int log_table[] = {  0 /*invalid*/,  0, 1, 1,
                             3,              3, 3, 3,
                             4 /* log 16 */, 4, 4, 4};
 
-/* 
-   Addend variables - set only by get_addend()
-   Don't ever change these variables elsewhere!
-*/
-static int valhl = 0;  // value used to return H or L addends
-static int valr = 0;   // value used to return R addends
-static int vala = 0;   // value used to return A addends
-
-static int is_hl_signed = 0;
-static int is_alig_signed = 1; // align defaults to signed
-static int high_has_carry = 0;
 
 /* every error msg due to a parser error is stored here 
    NULL implies no error has occured  */
@@ -194,25 +189,11 @@ static int in_imm_mode = 0;
 static expressionS ref_expr;
 
 
-typedef struct _acfixuptype
-{
-  expressionS ref_expr_fix; /* symbol in which the relocation points to */
-  int fix_pcrel_add; /* PC + x */
-  int fix_al_value;
-  int fix_hl_value;
-  int fix_flag;      /* see FIX_FLAG_*  */
-  int fix_field_size;
-  int fix_field_id;  /* field to be fixed */
-  unsigned relocation_number;
-  struct _acfixuptype *next;
-} acfixuptype;
-
-
 /* out_insn is the current instruction being assembled */
 static struct insn_encoding
 {
-  unsigned long image;
-  unsigned long format;
+  unsigned int image;
+  unsigned int format;
 
   unsigned int is_pseudo;
   unsigned int op_num;
@@ -289,6 +270,8 @@ md_begin()
 void 
 md_assemble(char *str)
 {
+  dbg_printf(0, "Assembling instruction \"%s\"\n", str);
+
   static int has_pseudo = 0;
 
   /* insn we need to encode at this call */
@@ -345,13 +328,15 @@ md_assemble(char *str)
 
   /* main encoding loop */
   for (;;) {
+    dbg_printf(1, "opcode = ");
+    dbg_print_insn(0, insn);
+
     strcpy(buffer, insn->args);
+
+    clean_out_insn();
 
     out_insn.image = insn->image;
     out_insn.format = insn->format_id;
-   // TODO: Clean any allocated memory in fixup
-    out_insn.fixup = NULL;
-    out_insn.op_num = 0;    
     out_insn.is_pseudo = insn->pseudo_idx;
     insn_error = NULL;
 
@@ -359,6 +344,8 @@ md_assemble(char *str)
       strtolower(s_pos);
       strtolower(buffer);
     }
+
+    dbg_printf(1, "Parsing \"%s\" with \"%s\"\n", s_pos, buffer);  
     
     int go_next = ac_parse_operands(s_pos, buffer); /* parse the operands */
 
@@ -367,8 +354,12 @@ md_assemble(char *str)
     
     /* try the next insn (overload) if the current failed */
     if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
-        (!strcmp(insn->mnemonic, insn[1].mnemonic))) 
-      insn++;    
+        (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
+      insn++;
+      dbg_printf(1, "\n");
+      dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
+      dbg_printf(1, "\n");
+    }
     else break;
   } 
 
@@ -407,21 +398,7 @@ static
 int ac_parse_operands(char *s_pos, char *args)
 {
   /* an ArchC symbol value (gas symbols use expressionS) */
-  long int symbol_value; 
-
-  /* holds the first field id within the format for the current operand */
-  long int field_id1;
-  /* second id - TODO: make it generic? */
-  long int field_id2;
-
-  /* relocation id's - field 1 and field 2 - TODO: make it generic? */ 
-  long int reloc_id_f1;
-  long int reloc_id_f2;
- 
-  /* 1 if field 2 is needed for the same operand */
-  int need_f2;
-  
-  char save_c = 0;
+  unsigned int symbol_value; 
 
   /* a buffer to hold the current conversion specifier found in args */
   char op_buf[30]; 
@@ -466,8 +443,6 @@ int ac_parse_operands(char *s_pos, char *args)
     if (*args == '%') {    
       args++;
 
-      need_f2 = 0;
-
       /* save the start of the operand string in case a pseudo is called later */
       out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
 
@@ -479,214 +454,107 @@ int ac_parse_operands(char *s_pos, char *args)
       }
       *ob = '\0';
 
-      args++;                  /* start of the number field */
+      args++;                  /* next literal character/operand */
 
-      field_id1 = get_id(&args);
+      unsigned int operand_id = atoi(op_buf);
 
-      if (*args != ':')  /* ops, bad argument syntax - check acasm ;) */
-        INTERNAL_ERROR(); 
-
-      args++;  /* points to the next valid syntatic element (after the ':') */
-
-       /* Parse the relocation number field */
-      reloc_id_f1 = get_id(&args);
+      dbg_printf(2, "Using operand[%d] to parse \"%s\"\n", operand_id, s_pos);
+      dbg_printf(3, "operand[%d] = ", operand_id);
+      dbg_print_operand_info(0, operand_id);
 
 
-      if (*args == '+') { /* another field for the same operand is needed */
-        args++;
-        need_f2 = 1;
-        field_id2 = get_id(&args);
-
-        if (*args != ':')
-          INTERNAL_ERROR();
-
-        args++;
-
-        reloc_id_f2 = get_id(&args);
-
-        if (*args != ':')
-          INTERNAL_ERROR();
-
-      }
-      else if (*args != ':')
+      if (operand_id >= num_oper_id)
         INTERNAL_ERROR();
 
-      args++;
+    
+      switch (operands[operand_id].type) {
+ 
+      /* EXP */ 
+        case op_exp:
 
-      unsigned int bi_type = get_builtin_marker(op_buf);
+          if (!get_expression(&ref_expr, &s_pos)) 
+            return KEEP_GOING;
 
-       /*
-          main branch
-          builtin specifier or user made
-          */
-
-      if (bi_type != BI_NONE) {
-         /* builtin conversion specifier */
-
-        if (bi_type & BI_MD_INV_BIT) /* ops, bad specifier - check acasm */
-          INTERNAL_ERROR();
-
-        switch (bi_type & BI_BASE_MASK) {
-
-          /* Expression operand - 'expr' */
-          case (BI_BASE_EXP_BIT):
-                /* only suporting one symbol in an expression */
-
-            if (!get_expression(&ref_expr, &s_pos)) 
-              return KEEP_GOING;
-
-            switch (ref_expr.X_op) {
-              case O_symbol:  /* X_add_symbol + X_add_number */
-                create_fixup(bi_type, field_id1, reloc_id_f1);
-                if (need_f2) 
-                  create_fixup(bi_type, field_id2, reloc_id_f2);
-                break;
+          switch (ref_expr.X_op) {
+            case O_symbol:  /* X_add_symbol + X_add_number */
+              create_fixup(operand_id);
+              break;
                 
-              case O_constant: /* X_add_number */
-                if (need_f2) {
-                  encode_cons_field(ref_expr.X_add_number >> get_field_size(out_insn.format, field_id2), bi_type, field_id1);
-                  encode_cons_field(ref_expr.X_add_number, bi_type, field_id2);
-                }
-                else encode_cons_field(ref_expr.X_add_number, bi_type, field_id1);                
-                break;
+            case O_constant: /* X_add_number */
+              encode_field(ref_expr.X_add_number, operand_id);
+              break;
 
-              case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
-              case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
-              case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
-              case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
-              case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
-              case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
-              case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
-              case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
-              case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
-              case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
-              case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
-              case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
-                insn_error = "operation not supported with relocatable symbol";
-                return STOP_INSN;
-                break;
+            case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
+            case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
+            case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
+            case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
+            case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
+            case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
+            case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
+            case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
+            case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
+            case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
+            case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
+            case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
+              insn_error = "operation not supported with relocatable symbol";
+              return STOP_INSN;
+              break;
 
-             default:
-                insn_error = "invalid expression";
-                return KEEP_GOING;
-                
-            }
-          break;
-
-
-          /* Immediate operand - 'imm' */
-          case (BI_BASE_IMM_BIT):
-            in_imm_mode = 1;
-            if (!get_operand(&ref_expr, &s_pos)) {
-              in_imm_mode = 0;
+           default:
+              insn_error = "invalid expression";
               return KEEP_GOING;
-            }
+          }
+          break; 
+
+
+        case op_imm:
+
+          in_imm_mode = 1;
+          if (!get_immediate(&ref_expr, &s_pos)) {
             in_imm_mode = 0;
+            return KEEP_GOING;
+          }
+          in_imm_mode = 0;
 
-            if (need_f2) {
-              encode_cons_field(ref_expr.X_add_number >> get_field_size(out_insn.format, field_id2), bi_type, field_id1);
-              encode_cons_field(ref_expr.X_add_number, bi_type, field_id2);
-            }
-            else encode_cons_field(ref_expr.X_add_number, bi_type, field_id1);
-          break;
+          dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
 
-          /* Address operand - 'addr' */
-          case (BI_BASE_ADDR_BIT):
-            if (!get_expression(&ref_expr, &s_pos)) return KEEP_GOING;
-
-            if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
-              insn_error = "invalid operand, expected a symbolic address";
-              return KEEP_GOING;
-            }
-
-            create_fixup(bi_type, field_id1, reloc_id_f1);
-            if (need_f2) create_fixup(bi_type, field_id2, reloc_id_f2);
+          encode_field(ref_expr.X_add_number, operand_id);
 
           break;
 
-          default:
-            INTERNAL_ERROR();
-        }
-      }
-      else {
-        /* user made conversion specifier */
+        case op_addr:
 
-        /* First decode the symbol to get its value */
+          if (!get_address(&ref_expr, &s_pos)) return KEEP_GOING;
 
-        if (*args == '\0') { // args string has ended
-
-          /* TODO: May s have ' ' char at tail? If yes we should eliminate it before continuing. */
-
-          /*
-            Now we check if s points to a valid symbol matching the ArchC ac_symbol char.
-            In case of positive matching, arg_value will hold the symbol value as declared in the ArchC asm_symbol section.
-          */
-
-          if (!ac_valid_symbol(op_buf, s_pos, &symbol_value)) {
-            insn_error = "unrecognized operand symbol";
+          if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
+            insn_error = "invalid operand, expected a symbolic address";
             return KEEP_GOING;
           }
 
-          /* s_pos string has been recognized, so advance it till its end */
-          while (*s_pos != '\0') s_pos++;   
-        } 
-        else { 
-             /*
-                We know args is not pointing to the end of string and so we expect to find more 
-                operands at the next loop interaction. So args is pointing to a char which s_pos should 
-                have after the operand we want to extract (usually its a char which separes one 
-                operand from another, like ','). After the operand we expect to extract from s_pos, 
-                s_pos should point to this same char args points to or to a ' ' char.
-                */
+          create_fixup(operand_id);
 
-          /* save the start of the string where s_pos points to now */
-          char *s_start = s_pos;
+          break;
 
-          /* now we advance s_pos till it reaches *args or end of string or ' ' */
-          while ((*s_pos != *args) && (*s_pos != ' ') && (*s_pos != '\0')) s_pos++;
+        case op_userdef:
 
-          if (*s_start == *s_pos) { /* add ,$3,$2 */
-            insn_error = "operand missing";
+          if (!get_userdefoper(&symbol_value, operands[operand_id].name, &s_pos)) 
             return KEEP_GOING;
-          }
 
-          if (*s_pos == '\0') { /* add $2 */
-            insn_error = "operand missing";
-            return KEEP_GOING;
-          }
-
-             /* we dont need to treat the case where s == ' ' because we know s was not pointing to a ' ' 
-                before and so we can safely say that s_start points to the start of a valid string (even 
-                if it is of size 1) */
-
-          save_c = *s_pos;
-          *s_pos = '\0';
-
-          if (!ac_valid_symbol(op_buf, s_start, &symbol_value)) {
-                //      printf("-- %s --\n", op_buf);
-            insn_error = "unrecognized operand symbol";
-            *s_pos = save_c;
-            return KEEP_GOING;
-          }
-
-          *s_pos = save_c;                
-        }
 
         /* NEVER!!! discomment the line below O.O */
         /* if (out_insn.is_pseudo) return; */
 
         /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
-        if (need_f2) {
-          out_insn.image |= ac_encode_insn(out_insn.format, field_id1, symbol_value >> get_field_size(out_insn.format, field_id2));
-          out_insn.image |= ac_encode_insn(out_insn.format, field_id2, symbol_value);
-        }
-        else
-          out_insn.image |= ac_encode_insn(out_insn.format, field_id1, symbol_value);
+          encode_field(symbol_value, operand_id);
 
+          break;
+ 
+        default:
+          INTERNAL_ERROR();
 
-      } /* end of if's chain to decode operand action */
+      }
 
-       out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
+      out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
 
     } /* end of if (*args == '%') */
     else {  
@@ -779,14 +647,24 @@ static void pseudo_assemble() {
 }
 
 
-static void emit_insn() {
+static void emit_insn() 
+{
+  /* frag address where we emit the insn encoding (call frag_more() to get the address) */
+    char *frag_address;
+  
+  dbg_printf(1, "Emitting image 0x%08lX (%ld bits) at address 0x%08lX\n", 
+                out_insn.image, 
+                get_insn_size(out_insn.format), 
+                frag_now_fix());
 
-  /* frag address where we emit the instructions encoding (call frag_more() to get the address) */
-  char *frag_address;
-
-  /* Pretending we'll emit at least 32-bit */
   frag_address = frag_more(get_insn_size(out_insn.format)/8);
 
+  md_number_to_chars(frag_address, out_insn.image, get_insn_size(out_insn.format)/8);
+
+  dbg_printf(2, "Frag info: addr = %ld, fix = %ld, var = %ld\n", 
+                  frag_now->fr_address,
+                  frag_now->fr_fix,
+                  frag_now->fr_var);
 
   while (out_insn.fixup != NULL) {
 
@@ -798,37 +676,23 @@ static void emit_insn() {
       INTERNAL_ERROR();
     
     fixP = fix_new_exp (frag_now, frag_address - frag_now->fr_literal /* where */, get_insn_size(out_insn.format)/8 /* size */,
-    &ref_expr, (out_insn.fixup->fix_flag & FIX_FLAG_PCREL) ? 1 : 0, out_insn.fixup->relocation_number ? out_insn.fixup->relocation_number : BFD_RELOC_NONE);
+    &ref_expr, 0 /* pcrel -> always FALSE */, operands[out_insn.fixup->operand_id].reloc_id);
     
     if (!fixP)
       INTERNAL_ERROR();
 
-    fixP->tc_fix_data.insn_format_id = out_insn.format;
-    fixP->tc_fix_data.insn_field_id = out_insn.fixup->fix_field_id;
-    fixP->tc_fix_data.al_value = out_insn.fixup->fix_al_value;
-    fixP->tc_fix_data.hl_value = out_insn.fixup->fix_hl_value; 
-    fixP->tc_fix_data.flag = out_insn.fixup->fix_flag;
-    fixP->tc_fix_data.field_size = out_insn.fixup->fix_field_size;
-    fixP->tc_fix_data.pcrel_add = out_insn.fixup->fix_pcrel_add;
+    fixP->tc_fix_data = out_insn.fixup->operand_id;
+
+    /* don't let GAS core mess with our fixup (adjust_reloc_syms) */
+    fixP->fx_done = TRUE;
 
     acfixuptype *p = out_insn.fixup;
     out_insn.fixup = out_insn.fixup->next;
     free(p); 
+
+    dbg_printf(1, "gas fixS created:\n");
+    dbg_print_gasfixup(2, fixP);
   }
-  
-#ifdef PRINT_FIXUP
-///    printf("Symbol - %s :\n", S_GET_NAME(ref_expr.X_add_symbol));
-///    printf("field size = %x\n", out_insn.fix_field_size);
-///    printf("hl value = %x\n", out_insn.fix_hl_value);
-///    printf("pcrel add = %x\n", out_insn.fix_pcrel_add);
-///    printf("al value = %x\n", out_insn.fix_al_value);
-///    printf("fix flag = %x\n", out_insn.fix_flag);
-///    printf("field id = %x\n", out_insn.fix_field_id);
-///    printf("reloc = %x\n\n", S_GET_VALUE(ref_expr.X_add_symbol));  
-#endif
-
-
-  md_number_to_chars(frag_address, out_insn.image, get_insn_size(out_insn.format)/8);
 
 }
 
@@ -864,68 +728,73 @@ md_number_to_chars(char *buf, valueT val, int n)
 void
 md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 {
-  // If it's a relative data relocation, change the type to the corresponding generic relative one
-  if (fixP->fx_pcrel) {
-    switch (fixP->fx_r_type) {
-      case BFD_GENERIC_8:
-        fixP->fx_r_type = BFD_GENERIC_REL8;
-      break;
-      case BFD_GENERIC_16:
-        fixP->fx_r_type = BFD_GENERIC_REL16;
-      break;
-      case BFD_GENERIC_32:
-        fixP->fx_r_type = BFD_GENERIC_REL32;
-      break;
-      default:
-    /* If it still is a pcrel type (extern symbol), we add to the addend field
-     * the value of the PC offset (architecture dependent feature)
-     */ 
-        fixP->fx_offset = -fixP->tc_fix_data.pcrel_add;  
-      break;
-    }
-  }
 
-  if (fixP->fx_r_type != BFD_RELOC_NONE && fixP->fx_addsy != NULL) // If there is a relocation, let the linker fix it
-    return; 
-
-  /* Apply local PC-relative relocations */
-  /*
-  *  Note: DO NOT test fx_r_type for BFD_RELOC_NONE, since it is possible that
-  *   it is different from NONE, but even so it must be resolved locally
-  *   ie, external PC-relative type, but with local symbol
-  *   In the latter case, no relocation is generated since it was already solved here
-  *
-  *   TODO: this should call bfd_install_relocation()
-  */
-  if (fixP->fx_addsy == NULL) { /* PC-relative */
-     
-    bfd_vma x = 0;
-    bfd_byte *location = (bfd_byte *) (fixP->fx_frag->fr_literal + fixP->fx_where);
-    bfd_vma relocation = *valP; //fixP->fx_addnumber;
-        
-    x = ac_get_bits(location, get_insn_size(fixP->tc_fix_data.insn_format_id));
-    if (fixP->tc_fix_data.flag & FIX_FLAG_ALIGNED) 
-      relocation >>= fixP->tc_fix_data.al_value;
-    
-    x |= ac_encode_insn(fixP->tc_fix_data.insn_format_id, fixP->tc_fix_data.insn_field_id, 
-          relocation);  
-   
-    ac_put_bits(x, location, get_insn_size(fixP->tc_fix_data.insn_format_id));
-   
-    fixP->fx_done = TRUE; 
-  }  
-  else { /* should not reach this area */
-    INTERNAL_ERROR();  
-  }  
+  INTERNAL_ERROR(); // should never get called
+  
 }
 
 
 int
 ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg ATTRIBUTE_UNUSED)
 {
-  return 1;
+  dbg_printf(0, "Validating fix\n");
+  dbg_print_gasfixup(1, fixP);
+
+  if (fixP->fx_addsy == NULL)
+    INTERNAL_ERROR();
+
+  resolve_symbol_value(fixP->fx_addsy);
+  symbol_mark_used_in_reloc(fixP->fx_addsy);
+
+  if (fixP->fx_subsy != NULL) {
+    resolve_symbol_value(fixP->fx_subsy);
+
+    fixP->fx_offset -= S_GET_VALUE(fixP->fx_subsy);
+
+    switch (fixP->fx_r_type) {
+      case `R_'___arch_name___`_8:'
+        fixP->fx_r_type = `R_'___arch_name___`_REL8;' 
+        break;
+      case `R_'___arch_name___`_16:'
+        fixP->fx_r_type = `R_'___arch_name___`_REL16;' 
+        break;
+      case `R_'___arch_name___`_32:'
+        fixP->fx_r_type = `R_'___arch_name___`_REL32;' 
+        break;
+
+      default:
+        INTERNAL_ERROR();
+    }
+  }
+
+  fixP->fx_done = FALSE;
+
+  return 0;
 }
 
+
+void
+___arch_name___`_adjust_reloc_count'(struct fix *fixP, long seg_reloc_count)
+{
+  return;
+
+  /* NOTE: seg_reloc_count is actually not used in BFD_ASSEMBLER mode */
+  for (; fixP; fixP = fixP->fx_next) {
+
+    if (fixP->fx_done) 
+      continue;
+
+    ++seg_reloc_count;
+
+    if (fixP->fx_addsy == NULL)
+      fixP->fx_addsy = abs_section_sym;
+
+    symbol_mark_used_in_reloc (fixP->fx_addsy);
+
+    if (fixP->fx_subsy != NULL)
+      symbol_mark_used_in_reloc (fixP->fx_subsy);
+  }
+}
 
 
 
@@ -950,6 +819,7 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
   r_type = fixp->fx_r_type;
   //rel->addend = fixp->fx_addnumber;
   rel->addend = fixp->fx_offset;
+//  rel->addend = fixp->tc_fix_data.addend;
   rel->howto = bfd_reloc_type_lookup (stdoutput, r_type);
 
   if (rel->howto == NULL)
@@ -987,6 +857,16 @@ the bfd alignment, and return the next aligned address. I've not tested that tho
  */
 }
 
+void
+___arch_name___`_symbol_new_hook' (symbolS *sym)
+{
+  dbg_printf(0, "Symbol Created!!!\n%*s", 4, "");
+  dbg_print_symbolS(1, sym);
+}
+
+
+
+
 
 /*
    Called (by emit_expr()) when symbols might get their values taken like:
@@ -1000,26 +880,21 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
 
   switch (nbytes) {
     case 1:
-      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, BFD_GENERIC_8);
+      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, `R_'___arch_name___`_8');
       break;
     case 2:
-      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, BFD_GENERIC_16);
+      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, `R_'___arch_name___`_16');
       break;
     case 4:
-      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, BFD_GENERIC_32);
+      fixP = fix_new_exp (frag, where, (int) nbytes, exp, 0, `R_'___arch_name___`_32');
       break;
     default:
       INTERNAL_ERROR();
   }
 
-  fixP->tc_fix_data.insn_format_id = (unsigned int) -1;  /* -1 is for data items */
-  fixP->tc_fix_data.insn_field_id = (unsigned int) -1;
-  fixP->tc_fix_data.al_value = 0;
-  fixP->tc_fix_data.hl_value = nbytes*8;
-  fixP->tc_fix_data.flag = FIX_FLAG_LO_DATA;   
-  fixP->tc_fix_data.field_size = AC_WORD_SIZE;//nbytes*8;
-  //fixP->tc_fix_data.pcrel_add = 0;
-  fixP->tc_fix_data.pcrel_add = 0;
+ 
+  fixP->fx_done = FALSE;
+
 
   if (!fixP) INTERNAL_ERROR();
 }
@@ -1053,6 +928,17 @@ get_expression (expressionS *ep, char **str)
 
   input_line_pointer = *str;
   expression (ep);
+
+#ifdef DEBUG_ON
+  char save_char = *input_line_pointer;
+  *input_line_pointer = '\0';
+#endif
+  dbg_printf(3, "Expression string: \"%s\"\n%*s", *str, 4*4, "");
+  dbg_print_expression(4, ep);
+#ifdef DEBUG_ON
+  *input_line_pointer = save_char;
+#endif
+
   *str = input_line_pointer;
 
   input_line_pointer = save_in;
@@ -1063,7 +949,7 @@ get_expression (expressionS *ep, char **str)
 
 
 static int
-get_operand (expressionS *ep, char **str)
+get_immediate (expressionS *ep, char **str)
 {
   char *save_in;
 
@@ -1074,6 +960,15 @@ get_operand (expressionS *ep, char **str)
   ep->X_op = O_constant;
   ep->X_add_number = get_single_number();
 
+#ifdef DEBUG_ON
+  char save_char = *input_line_pointer;
+  *input_line_pointer = '\0';
+#endif
+  dbg_printf(3, "Immediate string: \"%s\"\n", *str);
+#ifdef DEBUG_ON
+  *input_line_pointer = save_char;
+#endif
+
   *str = input_line_pointer;
 
   input_line_pointer = save_in;
@@ -1082,11 +977,95 @@ get_operand (expressionS *ep, char **str)
   return 1;
 }
 
+static int
+get_address (expressionS *ep, char **str)
+{
+  char *save_in;
+ 
+  save_in = input_line_pointer;
+ 
+  input_line_pointer = *str;
+  expression (ep);
+ 
+#ifdef DEBUG_ON
+  char save_char = *input_line_pointer;
+  *input_line_pointer = '\0';
+#endif
+  dbg_printf(3, "Address string: \"%s\"\n%*s", *str, 4*4, "");
+  dbg_print_expression(4, ep);
+#ifdef DEBUG_ON
+  *input_line_pointer = save_char;
+#endif
+
+  *str = input_line_pointer;
+
+  input_line_pointer = save_in;
+  
+  if (insn_error) return 0;
+
+  return 1;
+}
+
+
+static int 
+get_userdefoper(unsigned int *val, const char *opclass, char **str)
+{
+  char *s_pos = *str;
+
+  if (*s_pos == '\0') { 
+    insn_error = "operand missing";
+    return 0;
+  }
+ 
+  /* get the operand string (sync with ac_asm_map identifiers) */
+  if ( (*s_pos >= 'a' && *s_pos <= 'z') ||
+       (*s_pos >= 'A' && *s_pos <= 'Z') ||
+       (*s_pos >= '0' && *s_pos <= '9') ||
+       (*s_pos == '%' || *s_pos == '!' ||
+        *s_pos == '@' || *s_pos == '#' ||
+        *s_pos == '$' || *s_pos == '&' ||
+        *s_pos == '*' || *s_pos == '-' ||
+        *s_pos == '+' || *s_pos == '=' ||
+        *s_pos == '|' || *s_pos == ':' ||
+        *s_pos == '<' || *s_pos == '>' ||
+        *s_pos == '^' || *s_pos == '~' ||
+        *s_pos == '?' || *s_pos == '/') ||
+        *s_pos == ',' || *s_pos == '_')
+    s_pos++;
+  else {
+    insn_error = "unrecognized operand symbol";
+    return 0;
+  }
+  
+  while ( (*s_pos >= 'a' && *s_pos <= 'z') ||
+          (*s_pos >= 'A' && *s_pos <= 'Z') ||
+          (*s_pos >= '0' && *s_pos <= '9') ||
+           *s_pos == '.' || *s_pos == '_' )
+    s_pos++;
+
+  char save_c = *s_pos;
+  *s_pos = '\0';
+ 
+  if (!ac_valid_symbol(opclass, *str, val)) {
+    insn_error = "unrecognized operand symbol";
+    *s_pos = save_c;
+    return 0;
+  }
+
+  dbg_printf(3, "\"%s = %u\"\n", *str, *val);
+ 
+  *s_pos = save_c;
+  *str = s_pos;
+
+  return 1;
+}
+
+
 
 /* 
   if ac_symbol == "" then marker is not checked
 */
-static int ac_valid_symbol(char *ac_symbol, char *parser_symbol, long int *value)
+static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, unsigned int *value)
 {
   acasm_symbol *msymb = NULL;
   
@@ -1257,10 +1236,13 @@ long
 md_pcrel_from (fixP)
      fixS *fixP;
 {
-  if (fixP->fx_addsy == NULL)
-    INTERNAL_ERROR();
+  /* should not be called */
+  INTERNAL_ERROR();
 
-  return fixP->fx_where + fixP->fx_frag->fr_address + fixP->tc_fix_data.pcrel_add;
+//  if (fixP->fx_addsy == NULL)
+//    INTERNAL_ERROR();
+
+//  return fixP->fx_where + fixP->fx_frag->fr_address + fixP->tc_fix_data.pcrel_add;
 }
 
 symbolS *md_undefined_symbol (char *name ATTRIBUTE_UNUSED)
@@ -1279,7 +1261,7 @@ void md_operand (expressionS *expressionP)
 
 int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c ATTRIBUTE_UNUSED) {
 
-  long int dummy;
+  unsigned int dummy;
 
   if (in_imm_mode) { /* no name allowed when getting an 'imm' operand */
     insn_error = "invalid operand, expected a number";
@@ -1300,7 +1282,10 @@ int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c ATTRIBUT
 
 void ___arch_name___`_frob_label'(symbolS *sym) {
 
-  long int dummy;
+  unsigned int dummy;
+
+  dbg_printf(0, "Label Created!!!\n%*s", 4, "");
+  dbg_print_symbolS(1, sym);
 
   if (ac_valid_symbol("",  (char *)S_GET_NAME(sym), &dummy))  /* symbol found as label -.- */
     as_bad(_("invalid label name: '%s'"), S_GET_NAME(sym));
@@ -1308,314 +1293,19 @@ void ___arch_name___`_frob_label'(symbolS *sym) {
 }
 
 
-/*
-  MIPS %hi operator adds the sign bit of the lower n-bits in the higher half
-  so, we need to do %hi(X) = X - %lo(X) , where %lo(X) is a signed number
-  check 'http://sources.redhat.com/ml/binutils/2004-08/msg00262.html' for further details
-  SPARC doesn't use the %hi operator this way
-*/
-static 
-void apply_hi_operator(unsigned long *value, unsigned long field_size) {
-
-  int fsize = field_size;
-  int lomask = 0xFFFFFFFF >> fsize;
-  unsigned long low_number;
-     
-  low_number = *value & lomask;
-  sign_extend(&low_number, 32, 32-field_size);
-
-  *value -= low_number;      
-
-
-}
-
-
-
-/*
-  value -> the value to be extended
-  bit_size -> size (in bits) of the final field (returned value)
-  sign_bit -> position (from right to left) of the sign bit (1-based)
-
-  Example:
-  value: 0xFFFB6
-  bit_size: 22
-  sign_bit: 20
-
-  after: value = 0x3FFFB6
-
-P.S. - considering 32-bit as the highest possible bit size
-*/
-static void
-sign_extend(unsigned long *value, int bit_size, int sign_bit) 
-{
-  if (sign_bit == 0) return;
-  sign_bit--;
-
-  if ((1 << sign_bit) & *value) {
-    *value |= ((0xFFFFFFFF >> (32-bit_size)) & (0xFFFFFFFF << sign_bit));
-  }
-
-}
-
-
-
-/*
- Bases:
-        'exp'
-  'addr'
-  'imm'
-
- Modifiers:
-        'H'[n][c][u|s] -> n -> get the n-high bit -- u or s (unsigned or unsigned) -- c - add carry from lower bits
-        'L'[n][u|s] -> get the n-low bits
-  'R'[n][b] -> backward, n -> add n to PC
-  'A'[n][u|s] -> align in a paragraph of n-bits
-
- st : null-terminated string with the conversion specifier  
-*/
-static unsigned int 
-get_builtin_marker(char *st)
-{
-
-  valhl = 0;
-  valr  = 0;
-  vala  = 0;
-  is_hl_signed = 0;
-  is_alig_signed = 1;
-  high_has_carry = 0;
-
-  unsigned int ret_val = BI_NONE;
-
-  if ( *st == 'e' && *(st+1) == 'x' && *(st+2) == 'p' ) {
-    ret_val |= BI_BASE_EXP_BIT;
-    st += 3;
-  }
-  else if ( *st == 'a' && *(st+1) == 'd' && *(st+2) == 'd' && *(st+3) == 'r' ) {
-    ret_val |= BI_BASE_ADDR_BIT;
-    st += 4;
-  }
-  else if ( *st == 'i' && *(st+1) == 'm' && *(st+2) == 'm') {
-    ret_val |= BI_BASE_IMM_BIT;
-    st += 3;
-  }
-  else return BI_NONE;
-
-  while (*st != '\0') {
-   
-    switch (*st) {
-
-    case 'H':
-    case 'h': /* because of insensitive */
-      ret_val |= BI_MD_HI_BIT;
-      get_addend('H', &st);
-      break;
-
-    case 'L':
-    case 'l': /* because of insensitive */
-      ret_val |= BI_MD_LO_BIT;
-      get_addend('L', &st);
-      break;
-
-    case 'A':
-    case 'a': /* because of insensitive */
-      ret_val |= BI_MD_AL_BIT;
-      get_addend('A', &st);
-      break;
-    
-  case 'r':
-    case 'R':
-      ret_val |= BI_MD_REL_BIT;
-      get_addend('R', &st);
-      break;
-
-    default:
-      INTERNAL_ERROR();
-      //return ret_val | BI_MD_INV_BIT;
-    }
-
-    st++;
-  }
-
-  if (!(ret_val & BI_MD_HI_BIT))
-    ret_val |= BI_MD_LO_BIT;
-
-  return ret_val;
-}
-
-
-
-/*
-  Parse and get the modifier's addend
-  Only called by get_builtin_type()
-
-  addend_type: 'H', 'L', 'A' or 'R' 
-
-  st : string pointing to the addend type. It will be set to the next char
-  after the addend
-*/
-static void 
-get_addend(char addend_type, char **st) 
-{
-  char *sl = *st;
-  sl++;
-
-  /*
-  if (addend_type == 'H' && *sl == 's') {
-    hi_signed = 1;
-    sl++;
-    (*st)++;
-  }
-  else if (addend_type == 'R' && *sl == 'b') {
-    *sl = '-';
-    sl++;
-    st++;
-  }
-  */
-
-  while (*sl >= '0' && *sl <= '9') sl++;
-      
-  if ((sl-1) != *st) {
-    char savec = *sl;
-    *sl = '\0';
-
-    if (addend_type == 'H' || addend_type == 'L')
-      valhl = atoi((*st)+1);
-    else if (addend_type == 'A')
-      vala = atoi((*st)+1); 
-    else // 'R'
-      valr = atoi((*st)+1);
-
-    *sl = savec;
-    //    *st = sl-1;
-  }
-
-  switch (addend_type) {
-
-  case 'H': // [c][u|s]
-    if (*sl == 'c') {
-      sl++;
-      high_has_carry = 1;
-    }
-    // fall through
-    /*
-    if (*sl == 's') {
-      sl++;
-      is_hl_signed = 1;
-    }
-    else if (*sl == 'u') {
-      sl++;
-      is_hl_signed = 0;
-    }
-    break;
-    */
-  case 'L': // [u|s]
-    if (*sl == 's') {
-      sl++;
-      is_hl_signed = 1;
-    }
-    else if (*sl == 'u') {
-      sl++;
-      is_hl_signed = 0;
-    }
-    break;
- 
-  case 'R': // [b]
-    if (*sl == 'b') {
-      sl++;
-      valr = valr * (-1);
-    }
-    break;
- 
-  case 'A': // [u|s]
-    if (*sl == 's') {
-      sl++;
-      is_alig_signed = 1;
-    }
-    else if (*sl == 'u') {
-      sl++;
-      is_alig_signed = 0;
-    }
-    break;
-  }
-
-  *st = sl-1;
-}
-
-
-/*
-  Put and Get bits functions are based on the versions found in libbfd.c
-
-  It's not the fastest way, but it's quite generic (8, 16, 24 and 32-bits)
-*/
-static void ac_put_bits(unsigned int data, void *p, int bits)
-{
-  bfd_byte *addr = p;
-  int i;
-  int bytes;
-
-  if (bits % 8 != 0)
-    INTERNAL_ERROR();
-
-  bytes = bits / 8;
-  for (i = 0; i < bytes; i++)
-    {
-#ifdef AC_BIG_ENDIAN
-      int index = bytes - i - 1;
-#else
-      int index = i;
-#endif
-
-      addr[index] = data & 0xff;
-      data >>= 8;
-    }
-}
-
-static unsigned int ac_get_bits(const void *p, int bits)
-{
-  const bfd_byte *addr = p;
-  bfd_uint64_t data;
-  int i;
-  int bytes;
-
-  if (bits % 8 != 0)
-    INTERNAL_ERROR();
-
-  data = 0;
-  bytes = bits / 8;
-  for (i = 0; i < bytes; i++)
-    {
-#ifdef AC_BIG_ENDIAN
-      int index = i;
-#else
-      int index = bytes - i - 1;
-#endif
-
-      data = (data << 8) | addr[index];
-    }
-
-  return data;
-}
-
-
 
 static void 
-create_fixup(unsigned int bi_type, long int field_id, unsigned reloc_id) 
+create_fixup(unsigned int oper_id) 
 {
-  int align =  (bi_type & BI_MD_AL_BIT) ? 1 : 0;
-  int high = (bi_type & BI_MD_HI_BIT) ? 1 : 0;
-  int pcrel = (bi_type & BI_MD_REL_BIT) ? 1 : 0;
-
   if (out_insn.is_pseudo) return;
 
-//  if (out_insn.need_fix)  /* only one fixup for instruction allowed */
-//    INTERNAL_ERROR();
   acfixuptype *fixups;
   
   if (out_insn.fixup == NULL)
   {
     out_insn.fixup = (acfixuptype *) malloc(sizeof(acfixuptype));
-   out_insn.fixup->next = NULL;  
-   fixups = out_insn.fixup;
+    out_insn.fixup->next = NULL;  
+    fixups = out_insn.fixup;
   }
   else {
     fixups = out_insn.fixup;
@@ -1625,76 +1315,35 @@ create_fixup(unsigned int bi_type, long int field_id, unsigned reloc_id)
     fixups->next = NULL;
   }
 
-//  out_insn.need_fix = 1;   
-  fixups->fix_flag = 0;
-
-  fixups->fix_field_size = (int)get_field_size(out_insn.format, field_id);
-  fixups->fix_hl_value = valhl ? valhl : (int)get_field_size(out_insn.format, field_id);
-  fixups->fix_pcrel_add = valr;
-  fixups->fix_al_value = align ? (vala ? log_table[vala] : log_table[AC_WORD_SIZE/8]) : 0;
-
-  // PCREL fixup settings
-  fixups->fix_flag |= pcrel ? FIX_FLAG_PCREL : 0;
-
-  // ALIGN fixup settings
-  fixups->fix_flag |= align ? FIX_FLAG_ALIGNED : 0;
-  fixups->fix_flag |= align ? (is_alig_signed ? FIX_FLAG_AL_SIGN : 0) : 0;
-
-  // HIGH/LOW fixup settings
-  fixups->fix_flag |= high ? (high_has_carry ? FIX_FLAG_HI_CARRY : FIX_FLAG_HI) : FIX_FLAG_LO;
-  fixups->fix_flag |= is_hl_signed ? FIX_FLAG_HL_SIGN : 0;
-
-  fixups->fix_field_id = field_id;
   fixups->ref_expr_fix = ref_expr;
-
-  fixups->relocation_number = reloc_id;
+  fixups->operand_id = oper_id;
+  
+  dbg_printf(3,"Fixup = ");
+  dbg_print_fixup(0, fixups);
 }
 
 
 static void 
-encode_cons_field(unsigned long val_const, unsigned int bi_type, long int field_id) 
+encode_field(unsigned int val_const, unsigned int oper_id)
 {
-  int align =  (bi_type & BI_MD_AL_BIT) ? 1 : 0;
-  int high = (bi_type & BI_MD_HI_BIT) ? 1 : 0;
-  //  int pcrel = (bi_type & BI_MD_REL_BIT) ? 1 : 0;
-      
+  mod_parms mp;
+  char secname[] = "no symbol";
+
   if (out_insn.is_pseudo) return;
 
-  /* DO NOT ADD PCREL IN EXPRESSIONS OPERANDS */
-  if (high) {
-    int high_value = valhl ? valhl : (int)get_field_size(out_insn.format, field_id);
-    if (high_has_carry)
-      apply_hi_operator(&val_const, high_value);
-    
-    val_const >>= (get_insn_size(out_insn.format) - high_value);
-  }
-  else 
-    val_const &= valhl ? 0xFFFFFFFF >> (get_insn_size(out_insn.format)-valhl) : 0xFFFFFFFF >> (get_insn_size(out_insn.format)-get_field_size(out_insn.format, field_id));
+  mp.input   = val_const;
+  mp.address = frag_now_fix();
+  mp.section = secname; 
 
-  val_const >>= align ? (vala ? log_table[vala] : log_table[AC_WORD_SIZE/8]) : 0;
-  out_insn.image |= ac_encode_insn(out_insn.format, field_id, val_const);
+  dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
+  encode_cons_field(&out_insn.image, &mp, oper_id);
+  dbg_printf(0, "0x%08lX\n", out_insn.image);
+
+  if (mp.error) 
+    as_bad(_("invalid operand value: '%u'"), val_const);
+
 }
 
-
-/*
- * strP -> pointer to the start of the buffer after ':'
- * at end -> strP : will point to the character after the number field
- */
-static unsigned get_id(char **strP) {
-  
-  /* parse the string to get the number */
-  char *arg_start = *strP;
-  while ((**strP >= '0') && (**strP <= '9')) (*strP)++;
-  if (**strP == *arg_start)  /* ops, no number */
-    INTERNAL_ERROR();
-
-  char save_c = **strP;
-  **strP = '\0';
-  unsigned field = atoi(arg_start);
-  **strP = save_c;
-
-  return field;
-}
 
 
 static void strtolower(char *str)
@@ -1705,19 +1354,79 @@ static void strtolower(char *str)
   }
 }
 
-
-
-static unsigned long ac_encode_insn(unsigned long insn_type, int field_id, unsigned long value)
+static void clean_out_insn()
 {
-___encoding_function___
+  out_insn.image = 0;
+  out_insn.format = 0;
+  out_insn.is_pseudo = 0;
+  out_insn.op_num = 0;
+  out_insn.op_pos[9*2] = 0;
+  free_all_fixups(out_insn.fixup);
+  out_insn.fixup = NULL;
 }
 
-static unsigned long get_field_size(unsigned long insn_fmt, int field_id)
+static void free_all_fixups(acfixuptype *fix)
 {
-___fieldsize_function___
+  acfixuptype *current_fixP = fix;
+  acfixuptype *last_fixP;
+
+  while (current_fixP != NULL) {
+    last_fixP = current_fixP;
+    current_fixP = current_fixP->next; 
+
+    free (last_fixP);
+  }
 }
 
-static unsigned long get_insn_size(unsigned long insn_fmt)
+static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix)
 {
-___insnsize_function___
+//  expressions ref_expr_fix; /* symbol in which the relocation points to */
+  fprintf(stream, "%*s<(Addend) %d, (fields) 0x%X, (mod) %u, (reloc) %u>\n", 
+                    il*4, "",
+                    operands[fix->operand_id].mod_addend,
+                    operands[fix->operand_id].fields,
+                    operands[fix->operand_id].mod_type,
+                    operands[fix->operand_id].reloc_id);
 }
+
+
+static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
+{
+  fprintf(stream, "%*s%lu - [%s,%u] - pcrel %d, done %d, rel %u\n", 
+                  il*4, "",
+                  (unsigned long) fixP,
+                  fixP->fx_file, fixP->fx_line,
+                  fixP->fx_pcrel,
+                  fixP->fx_done,
+                  (unsigned int) fixP->fx_r_type);
+
+  fprintf(stream, "%*ssize %u, where %ld, offset %ld, dot %lu, addnumber %ld\n", 
+                  il*4, "",
+                  fixP->fx_size, 
+                  fixP->fx_where,
+                  fixP->fx_offset,
+                  fixP->fx_dot_value,
+                  fixP->fx_addnumber);
+
+
+  extern int indent_level;
+  indent_level = il+1;
+ 
+  if (fixP->fx_addsy) {
+    fprintf(stream, "%*s", (il+1)*4, "");
+    print_symbol_value_1(stderr, fixP->fx_addsy); 
+    fprintf(stderr, "\n");
+  }
+
+  if (fixP->fx_subsy) {
+    fprintf(stream, "%*s", (il+1)*4, "");
+    print_symbol_value_1(stderr, fixP->fx_subsy); 
+    fprintf(stderr, "\n");
+  }
+
+  fprintf(stream, "%*smd: operand type %u\n", 
+                il*4, "",
+                fixP->tc_fix_data);
+}
+
+

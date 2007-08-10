@@ -391,7 +391,7 @@ ac_symbol* parse(char *args){
       else{ //first element of list
         lista = (ac_symbol *) malloc(sizeof(ac_symbol));
         t = lista;
-        lista->oper_id = operand_id;
+        lista->oper_id = operand_id;  
         lista->type = operands[operand_id].name;
         lista->next = NULL;
       }

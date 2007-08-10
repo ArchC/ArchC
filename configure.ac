@@ -35,6 +35,7 @@ AC_PROG_INSTALL
 SC_DIR=
 TLM_DIR=
 BINUTILS_DIR=
+GDB_DIR=
 
 AC_ARG_WITH(systemc,
             AC_HELP_STRING([--with-systemc=PATH],
@@ -54,9 +55,16 @@ AC_ARG_WITH(binutils,
             [BINUTILS_DIR=$withval],
             [AC_MSG_NOTICE([Binutils path not specified.])])
 
+AC_ARG_WITH(gdb,
+            AC_HELP_STRING([--with-gdb=PATH],
+                           [Sets the directory where the Gdb source files are stored.]),
+            [GDB_DIR=$withval],
+            [AC_MSG_NOTICE([Gdb path not specified.])])
+
 AC_SUBST(SC_DIR)
 AC_SUBST(TLM_DIR)
 AC_SUBST(BINUTILS_DIR)
+AC_SUBST(GDB_DIR)
 
 AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
 AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])

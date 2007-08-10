@@ -375,19 +375,40 @@ static ac_asm_symbol *find_mapping_symbol(char *symbol) {
 cause problems with the GNU as assembler.
 
 */
-inline static int is_map_symbol_name(char *s) {
+inline static int is_map_symbol_name(char *s) 
+{
+/*
   if (isspace(*s) || *s == ';' || *s == '\''
       || (*s == '/' && *(s+1) == '*')
       || (*s == '*' && *(s+1) == '/') )
     return 0;
+*/
+  if ( (*s >= 'a' && *s <= 'z') ||
+       (*s >= 'A' && *s <= 'Z') ||
+       (*s >= '0' && *s <= '9') ||
+        *s == '.' || *s == '_' )
+    return 1;
 
-  return 1;
+  return 0;
 }
 
 /* empty symbols ("") are valid! */
-inline static int is_map_symbol_begin(char *s) {
-  if (*s != '\0') return is_map_symbol_name(s);
-  return 1;
+inline static int is_map_symbol_begin(char *s) 
+{
+  if ( *s == '\0' || is_map_symbol_name(s) ||
+       *s == '%' || *s == '!' ||
+       *s == '@' || *s == '#' ||
+       *s == '$' || *s == '&' ||
+       *s == '*' || *s == '-' ||
+       *s == '+' || *s == '=' ||
+       *s == '|' || *s == ':' ||
+       *s == '<' || *s == '>' ||
+       *s == '^' || *s == '~' ||
+       *s == '?' || *s == '/' ||
+       *s == ',' || *s == '_')
+    return 1;
+
+  return 0;
 }
 
 inline static int is_map_symbol_end(char *s) {
@@ -461,102 +482,6 @@ inline static int is_group_token(char *s) {
 }
 
 
-/*
- *
- *
- *
- *
- */
-static insert_modifier(ac_modifier_list *list, ac_modifier_list *mod)
-{
-  mod->next = NULL;
-
-  if (list == NULL) {
-    list = mod;
-    list->next = NULL;
-  }
-  else {
-    ac_modifier_list *head = list;
-    while (head->next != NULL) head = head->next;
-    head->next = mod;
-  }
-}
-
-/*
- *   Parse and get the modifier's addend
- *     Only called by get_builtin_type()
- *
- *       addend_type: 'H', 'L', 'A' or 'R'
- *
- */
-static void
-get_addend(char addend_type, char **st, ac_modifier_list *modifier)
-{
-  char *sl = *st;
-  sl++;
-
-  while (*sl >= '0' && *sl <= '9') sl++;
-
-  modifier->carry = 0;
-  modifier->addend = -1; // default
-  modifier->sign = 0;
-
-  if ((sl-1) != *st) {
-    char savec = *sl;
-    *sl = '\0';
-
-    modifier->addend = atoi((*st)+1);
-
-    *sl = savec;
-  }
-
-
-  switch (addend_type) {
-
-    case 'H': // [c][u|s]
-      if (*sl == 'c') {
-        sl++;
-        modifier->carry = 1;
-      }
-      /* fall through */
-    case 'L': // [u|s]
-      if (*sl == 's') {
-        sl++;
-        modifier->sign = 1;
-      }
-      else if (*sl == 'u') {
-        sl++;
-        modifier->sign = 0;
-      }
-      break;
-
-    case 'r':
-    case 'R': // [b]
-      if (*sl == 'b') {
-        sl++;
-        if (modifier->addend != -1)
-          modifier->addend = modifier->addend * (-1);
-        else
-          modifier->addend = 0;
-      }
-      break;
-
-    case 'A': // [u|s]
-      if (*sl == 's') {
-        sl++;
-        modifier->sign = 1;
-      }
-      else if (*sl == 'u') {
-        sl++;
-        modifier->sign = 0;
-      }
-      else
-        modifier->sign = 1; // default
-      break;
-  }
-
-  *st = sl-1;
-}
 
 static int is_builtin_marker(char *s)
 {
@@ -565,88 +490,155 @@ static int is_builtin_marker(char *s)
   else return 0;
 }
 
-static int create_operand(char *s, ac_operand_list **oper)
+
+static int create_operand(char **os, ac_operand_list **oper, char *error_msg)
 {
-  char *st = s;
+  char **st = os;
+  char *stp;
+  char savechar;
+  int has_lbrack = 0;
+
+  if (**st == '[') {
+    has_lbrack = 1;
+    (*st)++;
+  }
+  
   *oper = (ac_operand_list *)malloc(sizeof(ac_operand_list));
   (*oper)->next = NULL;
   (*oper)->fields = NULL;
 
-  (*oper)->str = (char *)malloc(strlen(s)+1);
-  strcpy((*oper)->str, s);
+  (*oper)->reloc_id = 0;
+  (*oper)->oper_id = -1;
 
 
-  /* find operand type */
-  if ( *s == 'e' && *(s+1) == 'x' && *(s+2) == 'p' ) {
+  stp = *st;
+
+  /* advances till '(' or a non-char symbol */
+  while ( (**st != '(') &&
+           ((**st >= 'a' && **st <= 'z') ||
+           (**st >= 'A' && **st <= 'Z')) )
+    (*st)++;
+
+  if (stp == *st) {
+    sprintf(error_msg, "No operand specified");
+    return 0;
+  }
+
+  savechar = **st;
+  **st = '\0';
+
+  if (!strcmp(stp, "exp")) 
     (*oper)->type = op_exp;
-    st += 3;
-  }
-  else if ( *s == 'a' && *(s+1) == 'd' && *(s+2) == 'd' && *(s+3) == 'r' ) {
-    (*oper)->type = op_addr;
-    st += 4;
-  }
-  else if ( *s == 'i' && *(s+1) == 'm' && *(s+2) == 'm') {
+  else if (!strcmp(stp, "imm"))
     (*oper)->type = op_imm;
-    st += 3;
-  }
+  else if (!strcmp(stp, "addr"))
+    (*oper)->type = op_addr;
   else {
+    ac_asm_map_list *ml = find_mapping_marker(stp);
+    if (ml == NULL) {
+      sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", stp);
+      return 0;
+    }
+    ml->used_where |= 1;
     (*oper)->type = op_userdef;
-    (*oper)->modifiers = NULL;
-
-     return 1;
   }
 
-  /* get the modifiers */
-  (*oper)->modifiers = NULL;
+  (*oper)->str = (char *)malloc(strlen(stp)+1);
+  strcpy((*oper)->str, stp);
 
-  while (*st != '\0') {
+  **st = savechar;
 
-    ac_modifier_list *modifier = (ac_modifier_list *)malloc(sizeof(ac_modifier_list));
 
-    switch (*st) {
+/* MODIFIER */
 
-      case 'H':
-        modifier->type = mod_high;
-        get_addend('H', &st, modifier);
-        break;
+  (*oper)->modifier.name = NULL;
+  (*oper)->modifier.type = -1;
+  (*oper)->modifier.addend = 0;
 
-      case 'L':
-        modifier->type = mod_low;
-        get_addend('L', &st, modifier);
-        break;
 
-      case 'A':
-        modifier->type = mod_aligned;
-        get_addend('A', &st, modifier);
-        break;
+  //while (*st == ' ') st++;
+  if (**st != '(') {
 
-      case 'R':
-        modifier->type = mod_pcrel;
-        get_addend('R', &st, modifier);
-        break;
-
-      case 'r':
-        modifier->type = mod_pcrelext;
-        get_addend('R', &st, modifier);
-        break;
-
-      default:
-         return 0;
+    if (has_lbrack && **st != ']') {
+      sprintf(error_msg, "No matching ']' found");
+      return 0;
     }
-
-    /* insert in the list */
-    if ((*oper)->modifiers == NULL) {
-      (*oper)->modifiers = modifier;
-      (*oper)->modifiers->next = NULL;
-    }
-    else {
-      ac_modifier_list *head = (*oper)->modifiers;
-      while (head->next != NULL) head = head->next;
-      head->next = modifier;
-    }
-
-    st++;
+    if (has_lbrack) (*st)++;
+    return 1;
   }
+
+  (*st)++;
+  stp = *st;
+ 
+  /* identifier expected */
+  while ( (**st >= 'a' && **st <= 'z') ||
+          (**st >= 'A' && **st <= 'Z') ) 
+    (*st)++;
+
+
+  if (stp == *st) {  /* no identifier */
+    sprintf(error_msg, "No modifier identifier specified");
+    return 0;
+  }
+
+  savechar = **st;
+  **st = '\0';
+
+  (*oper)->modifier.name = (char *) malloc(strlen(stp)+1);
+  strcpy((*oper)->modifier.name, stp);
+
+  **st = savechar;
+
+  while (**st == ' ') (*st)++;
+
+  /* an optional comma + ADDEND */
+  if (**st == ')') { 
+    (*st)++;
+    if (has_lbrack && **st != ']') {
+      sprintf(error_msg, "No matching ']' found");
+      return 0;
+    }
+    if (has_lbrack) (*st)++;
+     
+    return 1;
+  }
+  if (**st != ',') {
+    sprintf(error_msg, "Comma expected but not found");
+    return 0;
+  }
+
+  (*st)++;
+
+  while (**st == ' ') (*st)++;
+  stp = *st;
+
+  while (**st >= '0' && **st <= '9') (*st)++;
+
+  if (stp == *st) {
+    sprintf(error_msg, "No addend specified");
+    return 0;
+  }
+
+  savechar = **st;
+  **st = '\0';
+
+  (*oper)->modifier.addend = atoi(stp);
+
+  **st = savechar;
+
+  while (**st == ' ') (*st)++;
+  if (**st != ')') { 
+    sprintf(error_msg, "No closing ')' found");
+    return 0;
+  }
+  (*st)++;
+
+  if (has_lbrack && **st != ']') {
+    sprintf(error_msg, "No matching ']' found");
+    return 0;
+  }
+  if (has_lbrack) (*st)++;
+
   return 1;
 }
 
@@ -994,6 +986,7 @@ static int validate_marker(char **str, char *marker, char *error_msg) {
     (*str)++;
   }
 
+
   if (has_lbrack && **str != ']') {
     sprintf(error_msg, "No matching ']' found");
     return 0;
@@ -1245,6 +1238,7 @@ arguments one pseudo member may have.
         s_out++;
         s++;
       }
+      
 
       /* eats all spaces; leaves one if next token is another group token */
       if (isspace(*s)) {
@@ -1285,29 +1279,10 @@ arguments one pseudo member may have.
       }
       else {
 
-        if (!validate_marker(&s, s_out, error_msg)) {
-          in_error = 1;
-          return 0;
-        }
-
         ac_operand_list *operand = NULL;
-        if (!create_operand(s_out, &operand)) {
-          sprintf(error_msg, "Invalid modifier used with built-in conversion specifier");
+        if (!create_operand(&s, &operand, error_msg)) {
           in_error = 1;
           return 0;
-        }
-        else if (operand->type == op_userdef){ /* check for a user-defined marker */
-
-          ac_asm_map_list *ml = find_mapping_marker(s_out);
-          if (ml == NULL) {
-            /* the following sequence of %'s are saved as %% and then to % when displaying.
-            Do not try to optimize it ^^ */
-            sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", s_out);
-
-            in_error = 1;
-            return 0;
-          }
-          ml->used_where |= 1;
         }
 
         num_args_expected++;
@@ -1322,10 +1297,6 @@ arguments one pseudo member may have.
            head->next = operand;
            operand->next = NULL;
         }
-//        while (*s_out != '\0') s_out++;
-//        *s_out = ':';
-//        s_out++;
-
       }
     }
     else if (*s == '\\') {
@@ -1377,7 +1348,7 @@ be encoded by the assembler generated.  It validates the field (check if it
 exists in the insn format) and create an internal string representation
 (formatted_arg_str) which is used by the assembler generated by the acasm
 tool. The format of this string is a number describing the field within the
-format (from the left to the right of the insn format) followed by ':'.
+format (from left to right of the insn format) followed by ':'.
 
 
  pf  -> pointer to the format associated with this insn field
@@ -1430,7 +1401,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   newfield->size = pfield->size;
   newfield->first_bit = pfield->first_bit;
   newfield->id = f_id;
-  newfield->reloc_id = 0;
+//  newfield->reloc_id = 0;
   newfield->next = NULL;
 
   unsigned counter = num_args_found - (mnemonic_marker ? 2: 1);
@@ -1456,7 +1427,6 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
 
   if (matching_op->fields == NULL) {
     matching_op->fields = newfield;
-    matching_op->fields->next = NULL;
   }
   else {
     ac_asm_insn_field *head = matching_op->fields;
@@ -1543,7 +1513,6 @@ int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int ic
 
   if (current_insn->const_fields == NULL) {
     current_insn->const_fields = cfield;
-    current_insn->const_fields->next = NULL;
   }
   else {
     ac_const_field_list *head = current_insn->const_fields;
@@ -1606,28 +1575,12 @@ static void print_asm_insn(ac_asm_insn *insn)
       default:      printf("error");
     }
 
-    printf("  modifiers:\n\n");
-    ac_modifier_list *modlist = ops->modifiers;
-    while (modlist != NULL) {
-      printf("    type: ");
+    printf("\n  modifier:\n");
+    printf("    name: %s \n", ops->modifier.name);
+    printf("    addend: %d", ops->modifier.addend);
 
-      switch (modlist->type) {
-        case mod_low: printf("low\n"); break;
-        case mod_high: printf("high\n"); break;
-        case mod_aligned: printf("aligned\n"); break;
-        case mod_pcrel: printf("pcrel\n"); break;
-        case mod_pcrelext: printf("pcrelext\n"); break;
-        default: printf("error\n");
-      }
 
-      printf("    addend: %d", modlist->addend);
-      printf("    sign: %d", modlist->sign);
-      printf("    carry: %d\n", modlist->carry);
-
-      modlist = modlist->next;
-    }
-
-    printf("\n  fields:\n\n");
+    printf("\n\n  fields:\n");
     ac_asm_insn_field *flist = ops->fields;
     while (flist != NULL) {
        printf("    name: %s (id = %d)\n", flist->name, flist->id);
@@ -1706,7 +1659,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
       newfield->size = 0;
       newfield->first_bit = 0;
       newfield->id = 0;
-      newfield->reloc_id = 0;
+//      newfield->reloc_id = 0;
       newfield->next = NULL;
 
       opP->fields = newfield;
@@ -1826,7 +1779,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     }
 
 
-//    print_asm_insn(insn);
+    //print_asm_insn(insn);
 
 
     /* Insert the new ac_asm_insn into the asm_insn_list
@@ -1928,10 +1881,8 @@ int acpp_asm_add_pseudo_member(char *pseudo, char *error_msg)
   /* Insert the pseudo string in the list - at the tail */
   strlist *pL = pseudo_list;
 
-  if (pseudo_list == NULL) {
+  if (pseudo_list == NULL)
     pseudo_list = sl;
-    pseudo_list->next = NULL;
-  }
   else {
     while (pL->next != NULL) pL = pL->next;
     pL->next = sl;

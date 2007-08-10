@@ -31,7 +31,7 @@
 #ifndef `_TC_'___arch_name___`_H_FILE_'
 #define `_TC_'___arch_name___`_H_FILE_'
 
-#define ___endian_str___
+#define `AC_'___endian_str___`_ENDIAN'
 #define AC_WORD_SIZE ___word_size___
 #define TARGET_BYTES_BIG_ENDIAN ___endian_val___
 #define TARGET_ARCH `bfd_arch_'___arch_name___
@@ -41,17 +41,14 @@
 #define LOCAL_LABELS_DOLLAR 1
 #define LOCAL_LABEL_PREFIX '$'
 
+/*
 typedef struct fix_addend {
-  unsigned long insn_format_id;
-  unsigned long insn_field_id;
-  int al_value;
-  int hl_value;
-  int flag;
-  int field_size;
-  int pcrel_add;
+  unsigned int format_id;
+  unsigned int operand_id;
 } archc_fix_addend;
+*/
 
-#define TC_FIX_TYPE archc_fix_addend
+#define TC_FIX_TYPE unsigned int
 #define TC_INIT_FIX_DATA(fixP)
 
 extern char *___arch_name___`_canonicalize_symbol_name'(char *c);
@@ -62,6 +59,9 @@ extern int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c);
 
 extern void ___arch_name___`_frob_label'(symbolS *sym);
 #define tc_frob_label(x) ___arch_name___`_frob_label'(x)
+
+extern void ___arch_name___`_symbol_new_hook'(symbolS *sym);
+#define tc_symbol_new_hook(x) ___arch_name___`_symbol_new_hook'(x)
 
 extern void ___arch_name___`_handle_align'(struct frag *);
 #define HANDLE_ALIGN(fragp) ___arch_name___`_handle_align'(fragp)
@@ -75,6 +75,10 @@ extern void ___arch_name___`_cons_fix_new'(struct frag *, int, unsigned int, str
       goto skip_label; \
   while (0)
 extern int ___arch_name___`_validate_fix'(struct fix *, asection *);
+
+extern void ___arch_name___`_adjust_reloc_count'(struct fix *, long);
+#define TC_ADJUST_RELOC_COUNT(fixP, seg_reloc_count) ___arch_name___`_adjust_reloc_count'(fixP, seg_reloc_count)
+
 
 #define DIFF_EXPR_OK            /* foo-. gets turned into PC relative relocs */
 #endif

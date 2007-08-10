@@ -18,7 +18,7 @@ SUBDIRS = src
 ## Special ArchC configuration file installation
 sysconf_DATA = archc.conf
 archc.conf: archc.conf.m4 Makefile
-	m4 -P -Dsystemc_path=${SC_DIR} -Dcompiler=${CXX} -Dsystemc_target=${TARGET_ARCH} -Dtlm_path=${TLM_DIR} -Dbinutils_path=${BINUTILS_DIR} $< > $@
+	m4 -P -Dsystemc_path=${SC_DIR} -Dcompiler=${CXX} -Dsystemc_target=${TARGET_ARCH} -Dtlm_path=${TLM_DIR} -Dbinutils_path=${BINUTILS_DIR} -Dgdb_path=${GDB_DIR} $< > $@
 
 dist-hook:
 	rm -rf `find $(distdir) -name .svn`

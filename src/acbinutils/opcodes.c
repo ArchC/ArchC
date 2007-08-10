@@ -34,13 +34,124 @@
 #include "utils.h"
 #include "opcodes.h"
 
+/* This is almost the same structure in /include/opcode/xxxxx.h (acasm_operand)
+ TODO: find a way to unify the structures in a single file
+ */
+typedef struct _oper_list {
+  unsigned int id;   /* operand id */
+  char *name;  /* operand type name */
+  operand_type type;
+  int mod_type;
+  int mod_addend;
+  unsigned int fields;
+  unsigned int format_id;
+  unsigned int reloc_id;
+  struct _oper_list *next;
+} oper_list;
+
+static oper_list *operand_list = NULL;
+
+typedef struct _mod_list {
+  int id;
+  char *name;
+  struct _mod_list *next;
+} mod_list;
+
+static mod_list *modifier_list = NULL;
+
 /*
  * module function prototypes
  */
+static oper_list *find_operand(oper_list *opl);
 static void create_operand_string(ac_asm_insn *insn, char **output);
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize);
 static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsigned fsize);
+static int get_compatible_oper_id(operand_type opt);
+static void create_modifier_list();
 
+void create_operand_list()
+{
+  create_modifier_list();
+  
+  ac_asm_insn *asml = ac_asm_get_asm_insn_list();
+
+  /* for every instruction */
+  while (asml != NULL) {
+    if (asml->insn == NULL) { /* check only native insn */
+      asml = asml->next;
+      continue;
+    }
+
+    ac_operand_list *opP = asml->operands;
+
+    /* for every operand */
+    while (opP != NULL) {
+ 
+      oper_list *oper = (oper_list *) malloc (sizeof(oper_list));
+
+      oper->name = (char *) malloc(sizeof(opP->str)+1);
+      strcpy(oper->name, opP->str);
+
+      oper->type = opP->type;
+    
+      oper->mod_type = opP->modifier.type;
+      oper->mod_addend = opP->modifier.addend;
+
+      oper->fields = encode_fields(opP->fields);
+
+      oper->reloc_id = 0; /*opP->reloc_id;*/
+      oper->format_id = get_format_id(asml->insn->format);
+   
+      oper->next = NULL;
+
+      oper_list *opfound = find_operand(oper);
+
+      if (opfound == NULL) { /* operand not defined yet */
+        if (operand_list == NULL) {
+          oper->id = 0;
+          opP->oper_id = 0;
+          operand_list = oper;
+        }
+        else {
+          oper_list *otmp = operand_list;
+          while (otmp->next != NULL) 
+            otmp = otmp->next;
+
+          oper->id = otmp->id+1; 
+          opP->oper_id = oper->id;
+          otmp->next = oper;
+        }
+      }
+      else {
+        opP->oper_id = opfound->id;
+        
+        free(oper->name);
+        free(oper);
+      }
+      
+      opP = opP->next;
+    }
+
+    asml = asml->next;
+  }
+
+}
+
+void update_oper_list(int oper_id, unsigned int reloc_id)
+{
+
+  oper_list *otmp = operand_list;
+
+  while (otmp != NULL) {
+    if (otmp->id == oper_id) {
+      otmp->reloc_id = reloc_id;
+      return;
+    }
+    otmp = otmp->next;
+  }
+
+  internal_error();
+}
 
 
 /* 
@@ -267,12 +378,144 @@ int CreatePseudoOpsTable(const char *optable_filename)
 }
 
 
+int CreateOperandTable(const char *optable_filename) 
+{
+  FILE *output;
+
+  if ((output = fopen(optable_filename, "w")) == NULL) 
+    return 0;
+
+  oper_list *opL = operand_list;
+
+  while (opL != NULL) {
+
+    fprintf(output, "%s{\"%s\",\t // (%d)\n\t", IND1, opL->name, opL->id);
+    fprintf(output, "%d,\t", opL->type);
+    fprintf(output, "%d,\t", opL->mod_type);
+    fprintf(output, "%d,\t", opL->mod_addend);
+    fprintf(output, "%u,\t", opL->fields);
+    fprintf(output, "%u,\t", opL->format_id);
+    fprintf(output, "%u ", opL->reloc_id);
+
+    fprintf(output, "},\n"); 
+
+    opL = opL->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
+
+int CreateModifierEnum(const char *filename)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  mod_list *modifier = modifier_list;
+
+  fprintf(output, "typedef enum {mod_%s = %d", modifier->name, modifier->id);
+  modifier = modifier->next;
+  while (modifier != NULL) {
+    
+    fprintf(output, ", mod_%s = %d", modifier->name, modifier->id);
+
+    modifier = modifier->next;
+  }
+  fprintf(output, "} operand_modifier;\n");
+
+  fclose(output);
+  return 1; 
+}
+
+int CreateModifierProt(const char *filename)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  mod_list *modifier = modifier_list;
+
+  while (modifier != NULL) {
+    
+    fprintf(output, "extern void modifier_%s_encode(mod_parms *reloc);\n", modifier->name);
+    fprintf(output, "extern void modifier_%s_decode(mod_parms *reloc);\n", modifier->name);
+
+    modifier = modifier->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
+
+int CreateFormatStruct(const char *filename)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  ac_dec_format *pfrm = format_ins_list;
+
+  /* for every format */
+  while (pfrm != NULL) {
+    ac_dec_field *fields = pfrm->fields;
+    fprintf(output, "%sstruct {\n", IND2);
+
+    while (fields != NULL) {
+      fprintf(output, "%s unsigned int %s;\n", IND3, fields->name);
+      fields = fields->next;
+    }
+ 
+    fprintf(output, "%s} %s;\n", IND2, pfrm->name);
+
+    pfrm = pfrm->next;
+  }
+
+
+  fclose(output);
+  return 1; 
+}
+
+/* which: 0 = encode modifiers, 1 = decode modifiers */
+int CreateModifierPtr(const char *filename, int which)
+{
+  char *strP;
+  FILE *output;
+
+  if ((output = fopen(filename, "w")) == NULL) 
+    return 0;
+
+  mod_list *modifier = modifier_list;
+
+  while (modifier != NULL) {
+    if (which == 0) 
+      fprintf(output, "&modifier_%s_encode,\n", modifier->name);
+    else
+      fprintf(output, "&modifier_%s_decode,\n", modifier->name); 
+
+    modifier = modifier->next;
+  }
+
+  fclose(output);
+  return 1; 
+}
+
 
 
 /*
  * module function implementations 
+ *
  */
 
+/*
+ *
+ */
 static void create_operand_string(ac_asm_insn *insn, char **output) 
 {
   char *s = *output;
@@ -289,32 +532,12 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
       s++;
       lit++;
 
-      char *ls = opP->str;
-      while (*ls != '\0') {
-        *s = *ls;
-        s++;
-        ls++;          
-      }
-
-      *s = ':';
-
-      ac_asm_insn_field *fP = opP->fields;
-      while (fP != NULL) {
-         
-        s++;
-        sprintf(s, "%d", fP->id);
-        while (*s >= '0' && *s <= '9') s++;
-
-        *s = ':'; 
-
-        s++;
-        sprintf(s, "%d", fP->reloc_id);
-        while (*s >= '0' && *s <= '9') s++;
-        
-        fP = fP->next;
-        if (fP != NULL) 
-          *s = '+';
-      }
+      if (opP->oper_id == -1) { /* pseudo operand */
+        opP->oper_id = get_compatible_oper_id(opP->type);
+      } 
+ 
+      sprintf(s, "%d", opP->oper_id);
+      while (*s >= '0' && *s <= '9') s++;
 
       *s = ':';
       s++;
@@ -348,6 +571,8 @@ static void create_operand_string(ac_asm_insn *insn, char **output)
   *s = '\0';  
 }
 
+
+
 static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_size, unsigned fbit, unsigned fsize) {
 
   // TODO: see if the 'val' field can accept constant values (this is not being checked atm)
@@ -356,10 +581,17 @@ static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_si
   unsigned int mask2 = 0xffffffff;
   unsigned int return_value;
 
-  mask1 <<= (insn_size-(fbit+1));
-  mask2 >>= fbit+1-fsize;
-  return_value = ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
-
+  //big endian
+  if (ac_tgt_endian == 1) { 
+    mask1 <<= (insn_size-(fbit+1));
+    mask2 >>= fbit+1-fsize;
+    return_value = ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
+  }
+  else { //little endian
+    mask1 >>= (insn_size-(fbit+1));
+    mask2 <<= fbit+1-fsize;
+    return_value = ((field_value << ((fbit+1)-fsize) & (mask1 & mask2)));
+  }
   return return_value;
 }
 
@@ -375,8 +607,122 @@ static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsign
     field_value = (field_value<<1) + 1;
   }
 
-  mask1 <<= (insn_size-(fbit+1));
-  mask2 >>= fbit+1-fsize;
-  return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
+  //big endian
+  if (ac_tgt_endian == 1) { 
+    mask1 <<= (insn_size-(fbit+1));
+    mask2 >>= fbit+1-fsize;
+    return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
+  }
+  else { //little endian
+    mask1 >>= (insn_size-(fbit+1));
+    mask2 <<= fbit+1-fsize;
+    return ((field_value << ((fbit+1)-fsize) & (mask1 & mask2)));
+  }
+}
+
+
+/* -1 -> not found  */
+static oper_list *find_operand(oper_list *opl)
+{
+  oper_list *otmp = operand_list;
+
+  while (otmp != NULL) {
+    if (!strcmp(otmp->name, opl->name) &&
+         otmp->type == opl->type &&
+         otmp->mod_type == opl->mod_type &&
+         otmp->mod_addend == opl->mod_addend &&
+         otmp->fields == opl->fields &&
+         otmp->format_id == opl->format_id)
+      return otmp;
+
+    otmp = otmp->next;
+  }
+
+  return NULL;
+}
+
+/* returns -1 in case no one is found */
+static int get_compatible_oper_id(operand_type opt)
+{
+  oper_list *opP = operand_list;
+  int retvalue = -1;
+  
+  while (opP != NULL) {
+    if (opP->type == opt) 
+      return (int) opP->id;
+
+    opP = opP->next;
+  }
+
+  return retvalue;
+}
+
+
+static void create_modifier_list()
+{
+  ac_asm_insn *asml = ac_asm_get_asm_insn_list();
+  mod_list *modp = NULL;
+
+  /*
+   First item -> default
+  */
+  mod_list *modifier = (mod_list *) malloc(sizeof(mod_list));
+  modifier->name = (char *) malloc (strlen("default")+1);
+  strcpy(modifier->name, "default");
+  modifier->id = 0;
+  modifier->next = NULL;
+
+  modifier_list = modifier;
+
+
+  /* for every instruction */
+  while (asml != NULL) {
+//    if (asml->insn == NULL) { /* check only native insn */
+//      asml = asml->next;
+//      continue;
+//    }
+
+    ac_operand_list *opP = asml->operands;
+
+    /* for every operand */
+    while (opP != NULL) {
+
+      if (opP->modifier.name == NULL) {
+        opP->modifier.type = 0;
+        opP = opP->next;
+        continue;
+      }
+
+      /* try finding an already-created modifier with the same name */
+      modifier = modifier_list;
+      while (modifier != NULL) {
+        if (!strcmp(modifier->name, opP->modifier.name)) break;
+     
+        modifier = modifier->next;
+      }
+
+      /* not found, create a new modifier item and insert in the list */
+      if (modifier == NULL) {
+        int last_id = 0;
+        modifier = (mod_list *) malloc(sizeof(mod_list));
+        modifier->name = (char *) malloc (strlen(opP->modifier.name)+1);
+        strcpy(modifier->name, opP->modifier.name);
+
+        /* insert at the end of the list */
+        /* NOTE: modifier_list MUST NOT be NULL */
+        for (modp=modifier_list; modp->next != NULL; modp = modp->next)
+          last_id++;
+
+        modifier->id = last_id+1;
+        modifier->next = NULL;
+        modp->next = modifier;
+      }
+ 
+      opP->modifier.type = modifier->id; 
+      opP = opP->next;
+    }
+
+    asml = asml->next;
+  }
 }
 
