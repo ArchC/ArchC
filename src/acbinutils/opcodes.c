@@ -581,17 +581,9 @@ static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_si
   unsigned int mask2 = 0xffffffff;
   unsigned int return_value;
 
-  //big endian
-  if (ac_tgt_endian == 1) { 
-    mask1 <<= (insn_size-(fbit+1));
-    mask2 >>= fbit+1-fsize;
-    return_value = ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
-  }
-  else { //little endian
-    mask1 >>= (insn_size-(fbit+1));
-    mask2 <<= fbit+1-fsize;
-    return_value = ((field_value << ((fbit+1)-fsize) & (mask1 & mask2)));
-  }
+  mask1 <<= (insn_size-(fbit+1));
+  mask2 >>= fbit+1-fsize;
+  return_value = ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
   return return_value;
 }
 
@@ -607,17 +599,9 @@ static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsign
     field_value = (field_value<<1) + 1;
   }
 
-  //big endian
-  if (ac_tgt_endian == 1) { 
-    mask1 <<= (insn_size-(fbit+1));
-    mask2 >>= fbit+1-fsize;
-    return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
-  }
-  else { //little endian
-    mask1 >>= (insn_size-(fbit+1));
-    mask2 <<= fbit+1-fsize;
-    return ((field_value << ((fbit+1)-fsize) & (mask1 & mask2)));
-  }
+  mask1 <<= (insn_size-(fbit+1));
+  mask2 >>= fbit+1-fsize;
+  return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
 }
 
 

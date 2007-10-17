@@ -25,6 +25,7 @@
 /*
  * written by:
  *   Alexandro Baldassin            
+ *   Rafael Auler
  */
 
 
@@ -36,6 +37,16 @@
 #include `"elf/'___arch_name___`.h"'
 #include `"opcode/'___arch_name___`.h"'
 #include `"share-'___arch_name___`.h"'
+
+/*
+ * The gas source in binutils 2.15 signals fatal error
+ * when unclosed parenthesis is found, and would not generate output file 
+ * even when assembly is finished successful.
+ * When trying to parse an invalid syntax while finding the correct one,
+ * our parser may call gas's expression() (expr.c) which will halt with an
+ * unexpected fatal error.
+ */
+#define FIX_GASEXPERR
 
 //#define DEBUG_ON
 
@@ -89,9 +100,11 @@ static int get_expression(expressionS *, char **);
 static int get_immediate(expressionS *ep, char **str);
 static int get_address(expressionS *, char **);
 static int get_userdefoper(unsigned int *val, const char *opclass, char **str);
+static int ac_symbol_dispensable(const char *ac_symbol, unsigned int *value);
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, 
                            unsigned int *value);
 static int ac_parse_operands(char *s_pos, char *args);
+static int ac_parse_mnemonic_suffixes(char **s_pos, char **args);
 static void create_fixup(unsigned oper_id);
 static void strtolower(char *str);
 static void clean_out_insn(void);
@@ -202,6 +215,9 @@ static struct insn_encoding
   acfixuptype *fixup;
 } out_insn;
 
+#ifdef FIX_GASEXPERR
+static char save_expr = 0;
+#endif
 
 
 
@@ -273,7 +289,12 @@ md_assemble(char *str)
   dbg_printf(0, "Assembling instruction \"%s\"\n", str);
 
   static int has_pseudo = 0;
-
+  /* saves the last error ocurried with operands parsing. the algorithm
+    will try to reduce the mnemonic size, and if fail, instead of reporting
+    "unrecognized mnemonic", it must report the last error ocurried since
+    a succesful mnemonic hash find */
+  char *last_error = NULL;
+  
   /* insn we need to encode at this call */
   acasm_opcode *insn = NULL;
 
@@ -297,76 +318,142 @@ md_assemble(char *str)
 
   /* buffer used to store ArchC argument string and a pointer to scan it */
   char buffer[200];
+  char *pbuffer = (char *) buffer;
+  char *saved_pos;
 
   /* advance till first space (this indicates we should have got a mnemonic) 
      or end of string (maybe a mnemonic with no operands) */
   while (*s_pos != '\0' && !ISSPACE (*s_pos)) s_pos++;
 
-  /* save the char at s_pos (it might get lost) */
-  save_c = *s_pos;
+  insn_error = ""; 
 
-  /* If we stopped on whitespace then replace the whitespace with null for
-     the call to hash_find. Note that if we didn't stop on whitespace then
-     *s_pos is already '\0': it doesn't hurt, does it? ;)  */
-  *s_pos = '\0';
+  /* outer loop stop condition       : -parsing was succesful (no errors) (happy end)
+                                       -no more mnemonic possibilities (s_pos == str) 
+                                            (condition implemented in the inner loop)
+     outer loop step: s_pos--
+     remember: s_pos points to the end of the mnemonic identification substring (without suffixes)
+     in other words: "if there is an error and we are not trying to find a null-sized
+      mnemonic, try to solve decrementing the end of the mnemonic substring and fetching
+      a new mnemonic entry"
 
-  /* try finding the opcode in the hash table */
-  insn = (acasm_opcode *) hash_find (op_hash, p_mnemonic);
+      note: rarely the outer loop will step more than once. its role is to support instruction
+        sets whose mnenonics may match with a substring of the combination of other mnemonic
+        plus its suffixes, causing the mnemonic finding algorithm to wrongly point the bigger
+        one as the true mnemonic. this step (reducing mnemonic size) will correctly find the
+        correct one, but may slow the conclusion of a bad instruction error. 
+  */
+  while (insn_error) {
 
-  /* if the instruction was not found then abort this insn encoding (it won't
-     abort the assembler though, just move to the next one) */
-  if (insn == NULL) {
-    as_bad (_("unrecognized mnemonic: %s"), p_mnemonic);
-    return;
-  }
+    insn = NULL;
+    /* loops in order to find the mnemonic as a substring among its suffixes */
+    /* inner loop stop condition 1 of 2 (opcode found)
+       inner loop step: s_pos-- */
+    while (insn == NULL) {      
+      /* inner loop stop condition 2 of 2 (reached substring size = 0, no more mnemonic possibilities) */
+      /* comforming to the algorithm, any errors will end up here.
+        (exausted all mnemonic possibilities) */
+      if (s_pos == str)
+        {
+          if (last_error == NULL) {
+            /* so we had never reached a succesful mnemonic hash, and we have no idea what is that
+              mnemonic */
+	          as_bad (_("unrecognized mnemonic: %s"), p_mnemonic);
+	          return;
+          } else {
+            /* report the error when parsing the operands of the last succesful mnemonic substring */
+            as_bad(_("%s in insn: '%s'"), last_error, p_mnemonic);
+            return;
+          }
+        }
+      /* Prepares to mark the end of the opcode name with \0 in order to call hash_find */
+      save_c = *s_pos;
+      *s_pos = '\0';
 
-  /* restore original string */
-  *s_pos = save_c;
+      /* try finding the opcode in the hash table */
+      insn = (acasm_opcode *) hash_find (op_hash, p_mnemonic);
 
-  /* makes s_pos points to the start of the argument string (if there is one) */
-  while (ISSPACE(*s_pos)) s_pos++;
-
-  /* main encoding loop */
-  for (;;) {
-    dbg_printf(1, "opcode = ");
-    dbg_print_insn(0, insn);
-
-    strcpy(buffer, insn->args);
-
-    clean_out_insn();
-
-    out_insn.image = insn->image;
-    out_insn.format = insn->format_id;
-    out_insn.is_pseudo = insn->pseudo_idx;
-    insn_error = NULL;
-
-    if (insensitive_symbols) {
-      strtolower(s_pos);
-      strtolower(buffer);
+      /* done, so restore the original character */
+      *s_pos = save_c;
+      /* decrement the pointer indicating the character where the opcode name ends 
+       (trying to find the original opcode without suffixes appended to it) */
+      s_pos--; // next step
     }
+  
+    /* reverting innerloop step */
+    s_pos++;
+  
+    /* saves end of mnemonic - parsing start position */
+    saved_pos = s_pos;
+  
+    /* main encoding loop */
+    for (;;) {     
+      dbg_printf(1, "opcode = ");
+      dbg_print_insn(0, insn);
+  
+      /* starts insn encoding */
+      strcpy(buffer, insn->args);
+      s_pos = saved_pos;
+      pbuffer = (char *) buffer;
+      clean_out_insn();
+      out_insn.image = insn->image;
+      out_insn.format = insn->format_id;
+      out_insn.is_pseudo = insn->pseudo_idx;
+      insn_error = NULL;
+  
+      /* no support for mnemonic suffixes in pseudo instructions */
+      if (!insn->pseudo_idx) {
+        dbg_printf(1, "Parsing (mnemonic suffixes) \"%s\" with \"%s\"\n", s_pos, pbuffer);  
+  
+        if (insensitive_symbols) {
+          strtolower(s_pos);
+          strtolower(buffer);
+        }    
+        ac_parse_mnemonic_suffixes(&s_pos, &pbuffer); /* parse the mnemonic suffixes */
+        /* try the next insn (overload) if the current failed */
+        if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
+            (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
+          insn++;
+          dbg_printf(1, "\n");
+          dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
+          dbg_printf(1, "\n");
+          continue;
+        }
+        else if (insn_error) break;
 
-    dbg_printf(1, "Parsing \"%s\" with \"%s\"\n", s_pos, buffer);  
+        insn_error = NULL;  
+      
+        /* if mnemonic suffix parsing was succesful and there are remaining operands to parse,
+         remaining whitespaces in both pbuffer and s_pos exists. */
+        if (*pbuffer != '\0') pbuffer++; // eats whitespace
+      }
+      while (ISSPACE(*s_pos)) s_pos++;
+
+      dbg_printf(1, "Parsing (operands) \"%s\" with \"%s\"\n", s_pos, pbuffer);  
     
-    int go_next = ac_parse_operands(s_pos, buffer); /* parse the operands */
-
-    if (go_next == STOP_INSN)
-      break;
+      int go_next = ac_parse_operands(s_pos, pbuffer); /* parse the operands */
+  
+      if (go_next == STOP_INSN)
+        break;
     
-    /* try the next insn (overload) if the current failed */
-    if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
-        (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
-      insn++;
-      dbg_printf(1, "\n");
-      dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
-      dbg_printf(1, "\n");
-    }
-    else break;
-  } 
+      /* try the next insn (overload) if the current failed */
+      if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
+          (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
+        insn++;
+        dbg_printf(1, "\n");
+        dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
+        dbg_printf(1, "\n");
+      }
+      else break;
+    } /* main encoding loop end */
 
-  if (insn_error) {
-    as_bad(_("%s in insn: '%s'"), insn_error, p_mnemonic);
-    return;
-  }
+    /* in the outer loop step, we'll try another mnemonic size. if this search fails, we must
+      report the last error since a succesful mnemonic hash find (correct mnemonic size) */
+    last_error = insn_error;
+    /* outer loop next step */
+    s_pos = saved_pos;
+    s_pos--;
+
+  } /* outer loop end */
 
   if (insn->pseudo_idx) {
     if (has_pseudo != 0) {
@@ -584,6 +671,151 @@ int ac_parse_operands(char *s_pos, char *args)
   return KEEP_GOING;
 }
 
+/* 
+  Similar to ac_parse_operands (Operands parser), but this version is limited to
+  user defined operands (the only ones permitted as mnemonic suffixes) without
+  ignoring whitespaces, like the operands parser.
+
+  In fact, the mnemonic suffix must not contain any whitespace, and a recursive
+  algorithm is used (splitting the suffix) in order to try to guess a valid parse.
+ */
+static 
+int ac_parse_mnemonic_suffixes(char **s_pos, char **args)
+{
+  /* an ArchC symbol value (gas symbols use expressionS) */
+  unsigned int symbol_value; 
+
+  /* a buffer to hold the current conversion specifier found in args */
+  char op_buf[30]; 
+  char *ob = op_buf;
+
+  insn_error = NULL;
+
+  /* while mnemonic suffix list is not empty, try parsing the operands */
+  while (**args != '\0' && !ISSPACE(**args)) { 
+
+    /*      '%' is the start of a well-formed sentence.    */
+    if (**args == '%') {    
+      (*args)++;
+
+      /* ob points to the conversion specifier buffer - null terminated */
+      ob = op_buf;
+      while (**args != ':') { 
+        *ob = **args;
+        ob++; (*args)++;
+      }
+      *ob = '\0';
+
+      (*args)++;                  /* next literal character/operand */
+
+      unsigned int operand_id = atoi(op_buf);
+
+      dbg_printf(2, "Using operand[%d] to parse mnemonic suffix \"%s\"\n", operand_id, *s_pos);
+      dbg_printf(3, "operand[%d] = ", operand_id);
+      dbg_print_operand_info(0, operand_id);
+
+
+      /* As mnemonic suffixes, exp addr and imm aren't permitted */
+      if (operand_id >= num_oper_id ||
+          operands[operand_id].type == op_exp ||
+          operands[operand_id].type == op_addr ||
+          operands[operand_id].type == op_imm)
+        INTERNAL_ERROR();
+
+      if (operands[operand_id].type == op_userdef)
+      {
+        char saved_char = '\0';
+        char *saved_s_pos = NULL;
+        char *saved_args = NULL;
+        char *suffix_split = *s_pos;
+        char *s_pos_begin = *s_pos;
+
+        /* suffix_split = end of mnemonic suffix (first space or end of string) 
+          s_pos_begin to suffix_split will be parsed here
+          suffix_split until the end will be parsed in a recursive call */
+        while (!ISSPACE(*suffix_split) && *suffix_split != '\0')
+          suffix_split++;
+  
+        /* loop stop condition: suffix_split == s_pos_begin (could not parse without discarding current arg) */
+        while (suffix_split != s_pos_begin) {  
+          saved_char = *suffix_split;
+          *suffix_split = '\0';
+          saved_s_pos = *s_pos;
+          get_userdefoper(&symbol_value, operands[operand_id].name, s_pos);
+          if (saved_char != '\0')
+            *suffix_split = saved_char;
+          if (saved_s_pos == *s_pos) {            
+            suffix_split--;
+            continue;
+          }
+          saved_args = *args;
+          ac_parse_mnemonic_suffixes(s_pos, args);
+          if (!insn_error)
+            break;
+          insn_error = NULL;
+          *s_pos = saved_s_pos;
+          *args = saved_args;
+          suffix_split--;
+        }
+        
+        /* if couldn't parse considering current arg, check if it is a mandatory field (hasn't "" value entry) */
+        if (suffix_split == s_pos_begin) {
+          if (!get_userdefoper(&symbol_value, operands[operand_id].name, s_pos)) {
+            insn_error = "unrecognized mnemonic";
+            return KEEP_GOING; //failed
+          }
+          /* if field is not mandatory, try to parse the rest with remaining args */
+          saved_s_pos = *s_pos;
+          saved_args = *args;                    
+          ac_parse_mnemonic_suffixes(s_pos, args);
+          if (insn_error){
+            *s_pos = saved_s_pos;
+            *args = saved_args;
+            return KEEP_GOING; //failed
+          }
+        }
+
+        /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
+        encode_field(symbol_value, operand_id);
+      }
+      else
+          INTERNAL_ERROR();
+
+      out_insn.op_pos[out_insn.op_num++] = (int)*s_pos;
+
+    } /* end of if (*args == '%') */
+    else {  
+      /* args string must equal s_pos string in case its not a '%' */    
+
+      /* scape */
+      if (**args == '\\') {
+        (*args)++;   
+      }
+
+      if (**s_pos != **args) {  
+        insn_error = "unrecognized mnemonic";
+        return KEEP_GOING;
+      }
+      (*args)++;
+      (*s_pos)++;
+
+    }
+    
+  } /*end while */
+
+  /* algorithm stop condition: a whitespace in the args string means that there are no more
+      suffixes to parse */
+  if (ISSPACE(**args)){
+    /* if the suffixes in string are fully parsed, it must contain a whitespace too */
+    if (!ISSPACE(**s_pos)) {
+      insn_error = "unrecognized mnemonic";
+      return KEEP_GOING;
+    }
+    return KEEP_GOING; // job finished!
+  }
+
+  return KEEP_GOING;
+}
 
 
 static void pseudo_assemble() {
@@ -927,6 +1159,9 @@ get_expression (expressionS *ep, char **str)
   save_in = input_line_pointer;
 
   input_line_pointer = *str;
+#ifdef FIX_GASEXPERR
+  save_expr = **str;
+#endif
   expression (ep);
 
 #ifdef DEBUG_ON
@@ -1006,15 +1241,20 @@ get_address (expressionS *ep, char **str)
   return 1;
 }
 
-
 static int 
 get_userdefoper(unsigned int *val, const char *opclass, char **str)
 {
   char *s_pos = *str;
 
   if (*s_pos == '\0') { 
-    insn_error = "operand missing";
-    return 0;
+    /* Verifies if opclass can be ignored (can assume "") */
+    if (!ac_symbol_dispensable(opclass, val)) {
+      insn_error = "operand missing";
+      return 0;
+    } else {
+      dbg_printf(3, "\"\" = %u\n", *val);
+      return 1; // Operand ignored, exit without update str
+    }
   }
  
   /* get the operand string (sync with ac_asm_map identifiers) */
@@ -1033,8 +1273,14 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
         *s_pos == ',' || *s_pos == '_')
     s_pos++;
   else {
-    insn_error = "unrecognized operand symbol";
-    return 0;
+    /* Verifies if opclass can be ignored (can assume "") */
+    if (!ac_symbol_dispensable(opclass, val)) {
+      insn_error = "unrecognized operand symbol";
+      return 0;
+    } else {
+      dbg_printf(3, "\"\" = %u\n", *val);
+      return 1; // Operand ignored, exit without update str
+    }
   }
   
   while ( (*s_pos >= 'a' && *s_pos <= 'z') ||
@@ -1047,9 +1293,16 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
   *s_pos = '\0';
  
   if (!ac_valid_symbol(opclass, *str, val)) {
-    insn_error = "unrecognized operand symbol";
-    *s_pos = save_c;
-    return 0;
+    /* Verifies if opclass can be ignored (can assume "") */
+    if (!ac_symbol_dispensable(opclass, val)) {
+      insn_error = "unrecognized operand symbol";
+      *s_pos = save_c;
+      return 0;
+    } else {
+      dbg_printf(3, "\"\" = %u\n", *val);
+      *s_pos = save_c;
+      return 1; // Operand ignored, exit without update str
+    }
   }
 
   dbg_printf(3, "\"%s = %u\"\n", *str, *val);
@@ -1060,6 +1313,29 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
   return 1;
 }
 
+
+/* 
+  Checks if parser_symbol "" is valid with a specified ac_symbol
+*/
+static int ac_symbol_dispensable(const char *ac_symbol, unsigned int *value)
+{
+  acasm_symbol *msymb = NULL;
+
+  msymb = (acasm_symbol *) hash_find (sym_hash, "");
+
+  if (msymb == NULL) {
+    return 0;
+  }
+
+  if (ac_symbol != "")
+    if (strcmp(msymb->cspec, ac_symbol)) {
+      return 0;
+    }
+
+  *value = msymb->value;
+
+  return 1;
+}
 
 
 /* 
@@ -1272,6 +1548,32 @@ int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c ATTRIBUT
   }
 
   if (ac_valid_symbol("", name, &dummy)) { /* symbol found */
+#ifdef FIX_GASEXPERR
+    if (save_expr == '[' || save_expr == '(')
+      {
+	*input_line_pointer = *c;
+	char *str_p = input_line_pointer;
+	while (*str_p != '\0')
+	  {
+	    if ((save_expr == '[' && *str_p == ']')
+		|| (save_expr == '(' && *str_p == ')'))
+	      break;
+	    str_p++;
+	  }
+	if (*str_p == '\0')
+	 {
+	   insn_error = "invalid symbol in expression";
+	   return 1;
+	 }
+	else 
+	 {
+	    input_line_pointer = str_p;
+	    *c = *str_p;	    
+	    insn_error = "invalid symbol in expression";
+	    return 1;
+	 }
+      }
+#endif
     expP->X_op = O_absent;
     insn_error = "invalid symbol in expression";
     return 1;

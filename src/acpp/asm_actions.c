@@ -245,10 +245,6 @@ static int in_error;
 /* list of insn asm syntax - Acasm tool uses this list to generate its assembler */
 static ac_asm_insn *asm_insn_list = NULL;
 
-/* Keeps track of mnemonic's marker */
-static ac_asm_map_list *mnemonic_marker = NULL;
-static ac_dec_field *mnemonic_marker_field = NULL;
-
 /* when const fields are used, this variable will store their encoding for the current insn */
 static long int c_image;
 
@@ -490,8 +486,7 @@ static int is_builtin_marker(char *s)
   else return 0;
 }
 
-
-static int create_operand(char **os, ac_operand_list **oper, char *error_msg)
+static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char *error_msg)
 {
   char **st = os;
   char *stp;
@@ -528,11 +523,29 @@ static int create_operand(char **os, ac_operand_list **oper, char *error_msg)
   **st = '\0';
 
   if (!strcmp(stp, "exp")) 
-    (*oper)->type = op_exp;
+    {
+      if (mne_mode){
+        sprintf(error_msg, "Cannot define a mnemonic suffix as type \"exp\"");
+        return 0;
+      }
+      (*oper)->type = op_exp;
+    }
   else if (!strcmp(stp, "imm"))
-    (*oper)->type = op_imm;
+    {
+      if (mne_mode){
+        sprintf(error_msg, "Cannot define a mnemonic suffix as type \"imm\"");
+        return 0;
+      }
+      (*oper)->type = op_imm;
+    }
   else if (!strcmp(stp, "addr"))
-    (*oper)->type = op_addr;
+    {
+      if (mne_mode){
+        sprintf(error_msg, "Cannot define a mnemonic suffix as type \"addr\"");
+        return 0;
+      }
+      (*oper)->type = op_addr;
+    }
   else {
     ac_asm_map_list *ml = find_mapping_marker(stp);
     if (ml == NULL) {
@@ -1074,6 +1087,11 @@ int acpp_asm_parse_asm_string(char *asm_str, int is_pseudo, char *error_msg) {
 
   char *s = asm_str;        /* s     -> pointer to input asm string */
   char *s_out;              /* s_out -> pointer to formatted asm string (module local storage) */
+  int mne_mode = 1;         /* mne_mode = 1 if parsing mnemonic suffixes (only userdef symbols, no whitespaces)
+                               mne_mode = 0 if parsing ordinary operands
+                               mne_mode is set to 0 when the first whitespace is found (mnemonic - operand delimiter) */
+
+  
 
   /*
    In case of a pseudo member insn, we should not clear the numbers of operands
@@ -1087,9 +1105,6 @@ arguments one pseudo member may have.
   else s_out = formatted_asm_str;
 
   *s_out = '\0';
-
-  mnemonic_marker = NULL;
-
 
   /************ mnemonic parsing **************/
 
@@ -1109,7 +1124,7 @@ arguments one pseudo member may have.
   }
 
 
-  /* The mnemonic is parsed till we have found the first whitespace */
+  /* The mnemonic is parsed till we have found the first whitespace or an identifier (continues with operand parsing) */
   while (*s != '\0' && !isspace(*s)) {
 
 
@@ -1124,44 +1139,9 @@ arguments one pseudo member may have.
       return 0;
     }
 
-    /* mnemonic formatting identifier */
+    /* mnemonic suffix (finalize and transfer to operand parsing) */
     if (*s == '%' && !is_pseudo) {
-
-      /* only the '%' remains in the string... the type of the marker is saved in mnemonic_marker */
-
-      if (mnemonic_marker != NULL) { /* already has 1 marker attached to this mnemonic */
-        sprintf(error_msg, "Maximum number of conversion specifiers is 1");
-        in_error = 1;
-        return 0;
-      }
-
-      s++;
-
-      if (!validate_marker(&s, s_out, error_msg)) {
-        in_error = 1;
-        return 0;
-      }
-
-      if (is_builtin_marker(s_out)) {
-        sprintf(error_msg, "Built-in markers cannot be used with mnemonic");
-        in_error = 1;
-        return 0;
-      }
-
-      ac_asm_map_list *ml = find_mapping_marker(s_out);
-      if (ml == NULL) {
-        sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", s_out);
-        in_error = 1;
-        return 0;
-      }
-
-      *s_out = '%';
-      s_out++;
-
-      mnemonic_marker = ml;
-      ml->used_where |= 2;
-      num_args_expected++;
-
+       break;
     }
     else if (*s == '\\') {
 
@@ -1204,9 +1184,19 @@ arguments one pseudo member may have.
 
   ac_operand_list *operands = NULL;
 
-  while (isspace(*s)) s++;
+  /* (1) if it isn't a mnemonic suffix, appends a whitespace to the output and
+     ignores subsequent whitespaces */ 
+  if (isspace(*s)) {
+    *s_out = ' ';
+    mne_mode = 0; /* now parsing operands instead of mnemonic suffixes */
+    s_out++;
+    s++;
+    while (isspace(*s)) s++;
+  }
 
   if (*s == '\0') { /* no operand found */
+    if (!mne_mode)
+      s_out--; /* Ignores the previously appended whitespace */
     *s_out = '\0';
 
     if (!is_pseudo) {
@@ -1216,13 +1206,20 @@ arguments one pseudo member may have.
     return 1;
   }
 
-  if (is_pseudo) {
+  // (!) Verificar se este trecho é necessário após introducao de (1)
+  /*if (is_pseudo) {
     *s_out = ' ';
     s_out++;
-  }
+  }*/
 
   while (*s != '\0') {
-
+    /* Checks for whitespaces, ending mnemonic suffixes parsing mode */
+    if (mne_mode && isspace(*s)) { /* First whitespace found */
+       *s_out = ' ';
+       mne_mode = 0; /* Now parsing operands instead of mnemonic suffixes */
+       s_out++;
+       s++;
+    }
     while (isspace(*s)) s++;
 
     if (!is_operand_string(s)) {
@@ -1241,7 +1238,7 @@ arguments one pseudo member may have.
       
 
       /* eats all spaces; leaves one if next token is another group token */
-      if (isspace(*s)) {
+      if (isspace(*s) && !mne_mode) {
         while (isspace(*s)) s++;
 
         if (is_group_token(s)) {
@@ -1280,7 +1277,7 @@ arguments one pseudo member may have.
       else {
 
         ac_operand_list *operand = NULL;
-        if (!create_operand(&s, &operand, error_msg)) {
+        if (!create_operand(&s, &operand, mne_mode, error_msg)) {
           in_error = 1;
           return 0;
         }
@@ -1355,8 +1352,6 @@ format (from left to right of the insn format) followed by ':'.
  field_str -> an argument string as found in the ArchC source file
  (for constant arguments, use const version of this function)
 
- Note:
-   For mnemonics arguments, 'formatted_arg_str' is not changed.
 
  example:
 
@@ -1386,13 +1381,6 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   if (!is_concatenated)
     num_args_found++;
 
-  /* if it's a mnemonic argument (always and only the first argument can be) then saves the
-     field in 'mnemonic_marker_field. No internal string is saved */
-  if (mnemonic_marker != NULL && num_args_found == 1) {
-    mnemonic_marker_field = pfield;
-    return 1;
-  }
-
   ac_asm_insn_field *newfield = (ac_asm_insn_field *)malloc(sizeof(ac_asm_insn_field));
 
   newfield->name = (char *)malloc(strlen(pfield->name)+1);
@@ -1404,7 +1392,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
 //  newfield->reloc_id = 0;
   newfield->next = NULL;
 
-  unsigned counter = num_args_found - (mnemonic_marker ? 2: 1);
+  unsigned counter = num_args_found - 1;
   ac_operand_list *matching_op = current_insn->operands;
 
   if (matching_op == NULL) {
@@ -1618,8 +1606,7 @@ static void print_asm_insn(ac_asm_insn *insn)
   This should be called after the syntax string and argument field are
   processed.
   Strings 'formatted_asm_str' and 'formatted_arg_str' are merged
-  and a new acpp_asm_insn is inserted in the insn list. In case a mnemonic
-  marker exists, its expansion is done here also.
+  and a new acpp_asm_insn is inserted in the insn list. 
 
   p -> pointer to the relative ac_dec_insn
 
@@ -1670,146 +1657,58 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
 
 
   /**********
-   Creates the mnemonic (expand it if needed, and creates the ac_asm_insn)
+   Creates the mnemonic (creates the ac_asm_insn)
   ***********/
 
-  ac_asm_symbol *sl = NULL;
+  
+  /* creates a new ac_asm_insn  */
 
-  if (mnemonic_marker != NULL)
-    sl = mnemonic_marker->symbol_list;
+  ac_asm_insn *insn = (ac_asm_insn *) malloc(sizeof(ac_asm_insn));
 
-  int exit_loop = 0;
-  while (!exit_loop) {
+  insn->op_literal = (char *)malloc(strlen(current_insn->op_literal)+1);
+  strcpy(insn->op_literal, current_insn->op_literal);
 
-    /* creates a new ac_asm_insn for each mnemonic */
+  insn->operands = current_insn->operands;
+  insn->insn = p;
+  insn->const_fields = clone_const_fields(current_insn->const_fields);
+  insn->pseudolist = pseudo_list;
+  insn->num_pseudo = num_pseudo_insn;
+  insn->next = NULL;
 
-    ac_asm_insn *insn = (ac_asm_insn *) malloc(sizeof(ac_asm_insn));
-
-    insn->op_literal = (char *)malloc(strlen(current_insn->op_literal)+1);
-    strcpy(insn->op_literal, current_insn->op_literal);
-
-    insn->operands = current_insn->operands;
-    insn->insn = p;
-    insn->const_fields = clone_const_fields(current_insn->const_fields);
-    insn->pseudolist = pseudo_list;
-    insn->num_pseudo = num_pseudo_insn;
-    insn->next = NULL;
-
-    /* if there's a mnemonic marker, expand it */
-    if (mnemonic_marker != NULL)
-    {
-      if (sl == NULL) break;   /* last symbol, get out */
-
-      /* -1 because of the '%' we are deleting */
-      insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+strlen(sl->symbol)+1-1);
-      char *mnem = insn->mnemonic;
-      char *mt = current_insn->mnemonic;
-
-      /* find the first %, where we must concatenate the symbol */
-      while (*mt != '%') {
-
-      /* we don't need to save scape character in the mnemonic string, since the only
-        valid scape sequence is '%'. Note that the memory allocated to insn->mnemonic
-        may not be complety used because of this.
-      */
-      if (*mt == '\\')
-        mt++;
-        *mnem = *mt;
-        mnem++;
-        mt++;
-      }
-      mt++;
-
-      /* concatenate symbol name */
-      strcpy(mnem, sl->symbol);
-      mnem += strlen(sl->symbol);
-
-      /* concatenate the rest of the string */
-      while (*mt != '\0') {
-
-        if (*mt == '\\')
-          mt++;
-
-        *mnem = *mt;
-        mnem++;
-        mt++;
-      }
-      *mnem = '\0';
-
-      /* now encode the information relative to the mnemonic */
-      ac_dec_format *pf = format_ins_list;
-
-      /* find the format */
-      for(; pf != NULL && strcmp(insn->insn->format, pf->name); pf = pf->next);
-      if( pf == NULL ) {
-        sprintf(error_msg, "Internal Error"); /* this should never happen */
-        return 0;
-      }
-      ac_dec_field *pfield = mnemonic_marker_field;
-
-      /* add a constant field */
-      ac_const_field_list *cfield = (ac_const_field_list *)malloc(sizeof(ac_const_field_list));
-      cfield->next = NULL;
-
-      cfield->value = sl->value;
-
-      cfield->field.name = (char *)malloc(strlen(pfield->name)+1);
-      strcpy(cfield->field.name, pfield->name);
-      cfield->field.size = pfield->size;
-      cfield->field.first_bit = pfield->first_bit;
-      cfield->field.id = 0; /* not used */
+  insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+1);
+  strcpy(insn->mnemonic, current_insn->mnemonic);
+  
+  //print_asm_insn(insn);
 
 
-      if (insn->const_fields == NULL) {
-        insn->const_fields = cfield;
-      }
-      else { /* add at the head */
-        cfield->next = insn->const_fields;
-        insn->const_fields = cfield;
-      }
+  /* Insert the new ac_asm_insn into the asm_insn_list
+     It's inserted in alphabetical ordering. In case there are two or more
+     insns with the same mnemonic, its order in the list is the same as they
+     appear in the ArchC source file */
 
-      sl = sl->next;
-    }
-    else { /* only one mnemonic */
+  if (asm_insn_list == NULL) {
+    asm_insn_list = insn;
+  } else {
 
-      insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+1);
-      strcpy(insn->mnemonic, current_insn->mnemonic);
+    ac_asm_insn *t = asm_insn_list;
+    ac_asm_insn *last = asm_insn_list;
 
-      exit_loop = 1;
-    }
-
-
-    //print_asm_insn(insn);
-
-
-    /* Insert the new ac_asm_insn into the asm_insn_list
-       It's inserted in alphabetical ordering. In case there are two or more
-       insns with the same mnemonic, its order in the list is the same as they
-       appear in the ArchC source file */
-
-    if (asm_insn_list == NULL) {
+    if (strcmp(insn->mnemonic, t->mnemonic) < 0) { /* insert in the head */
+      insn->next = asm_insn_list;
       asm_insn_list = insn;
-    } else {
-
-      ac_asm_insn *t = asm_insn_list;
-      ac_asm_insn *last = asm_insn_list;
-
-      if (strcmp(insn->mnemonic, t->mnemonic) < 0) { /* insert in the head */
-        insn->next = asm_insn_list;
-        asm_insn_list = insn;
-      }
-      else {
+    }
+    else {
+      t = t->next;
+      /* keep the order in the source file */
+      while ((t != NULL) && (strcmp(insn->mnemonic, t->mnemonic) >= 0)) {
         t = t->next;
-        /* keep the order in the source file */
-        while ((t != NULL) && (strcmp(insn->mnemonic, t->mnemonic) >= 0)) {
-          t = t->next;
-          last = last->next;
-        }
-        insn->next = t;
-        last->next = insn;
+        last = last->next;
       }
+      insn->next = t;
+      last->next = insn;
     }
   }
+  
 //  exit(-1);
 
   return 1;
