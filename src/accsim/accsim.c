@@ -44,6 +44,9 @@
 #include <elf.h>
 #endif /* __CYGWIN__ */
 
+#include <errno.h>
+#include "eval.h"
+
 char *data_mem=0;
 unsigned int data_mem_size=0;
 unsigned int data_mem_start=0;

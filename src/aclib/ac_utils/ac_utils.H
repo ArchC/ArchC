@@ -43,6 +43,11 @@
 #include <elf.h>
 #endif /* __CYGWIN__ */
 
+#include <list>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
+
 
 // Forward declarations of ac_arch and ac_arch_ref.
 template<class ac_word, class ac_Hword> class ac_arch;
