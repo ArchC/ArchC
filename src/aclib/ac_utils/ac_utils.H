@@ -37,16 +37,12 @@
 #include <stdint.h>
 
 //Fix for Cygwin users, that do not have elf.h
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__APPLE__)
 #include "elf32-tiny.h"
 #else
 #include <elf.h>
 #endif /* __CYGWIN__ */
 
-#include <list>
-#include <iomanip>
-#include <iostream>
-#include <fstream>
 
 // Forward declarations of ac_arch and ac_arch_ref.
 template<class ac_word, class ac_Hword> class ac_arch;

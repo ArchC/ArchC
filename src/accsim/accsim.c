@@ -38,14 +38,11 @@
 #include "ac_decoder.h"
 
 //Fix for Cygwin users, that do not have elf.h
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__APPLE__)
 #include "elf32-tiny.h"
 #else
 #include <elf.h>
 #endif /* __CYGWIN__ */
-
-#include <errno.h>
-#include "eval.h"
 
 char *data_mem=0;
 unsigned int data_mem_size=0;
