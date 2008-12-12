@@ -55,7 +55,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
   type -> type of field e.g. reg, addr, immm, exp
 */
 typedef struct _ac_symbol {
-  char *type;
+  const char *type;
+  int is_list;
   unsigned int oper_id;
   struct _ac_symbol *next;
 } ac_symbol;
@@ -76,8 +77,8 @@ struct private
    bufInitial variable - set only by parse()
    Don't ever change these variables elsewhere!
 */
-char bufInitial[50];
-char bufFinal[50];
+char bufInitial[100];
+char bufFinal[100];
 
 /*-----------------------------------------------------------------------------------*/
 
@@ -87,7 +88,7 @@ int `print_insn_'___arch_name___` (bfd_vma memaddr, struct disassemble_info * in
 
 ac_symbol* parse(char *args);
 
-void replace(char *str, char *old, char *new);
+void replace(char *str, const char *old, char *new);
 
 void decode_modifier(mod_parms *mp, unsigned int oper_id);
 
@@ -143,6 +144,7 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
   acasm_symbol *symbols = (acasm_symbol *) udsymbols;
   unsigned int FORMAT_SIZE=0;
   int nInstr=0;
+  unsigned addr_value = 0;
 
   //Find the mnemonic of instruction in opcodes table
   while (nInstr < num_opcodes){
@@ -153,23 +155,25 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
       FORMAT_SIZE = get_insn_size(op->format_id);
 
       //Print instruction mnemonic
-      (*info->fprintf_func) (info->stream,"%s\t",op->mnemonic);
+      (*info->fprintf_func) (info->stream,"%s",op->mnemonic);
 
-      //Now Look for Registers and address
+      //Now look for operands
       char *args = malloc(sizeof(char)*50);
       strcpy(args, op->args);
       ac_symbol* acs = parse(args);
 
-      char *ptInitial = malloc(sizeof(char)*50);
-      char *ptFinal = malloc(sizeof(char)*50);
-      ptInitial = bufInitial;
-      ptFinal = bufFinal;
+      char *ptInitial = bufInitial;
+      char *ptFinal = bufFinal;      
       strcpy(ptFinal,ptInitial);
 
       while (acs){
         unsigned long size = 0;
         unsigned int numf = get_num_fields(operands[acs->oper_id].fields);
         unsigned int count, fid;
+	symbols = (acasm_symbol *) udsymbols;
+	int cont = 0;
+	int in = 0;
+	char symbolaux[100];
         fid = 0;
         for (count=0; count < numf; count++){
           fid = get_field_id(operands[acs->oper_id].fields, count);
@@ -186,65 +190,110 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
           dmask = (dmask << 1) + 1;
 
         //operand dmask
-        `if ('___endian_val___`) ' //big
-          dmask = dmask << (FORMAT_SIZE - begining);
-        else //little
-          dmask = dmask << (begining - size);
+        dmask = dmask << (FORMAT_SIZE - begining);
 
         unsigned long value = dmask & insn;
 
-        //dislocates masks to see it which reg ex: [0,31]
-        `if ('___endian_val___`) ' //big
-          value = value >> (FORMAT_SIZE - begining);
-        else //little
-          value = value >> (begining - size);
+        // Align bits to the least significant position, in
+	// order to use its value
+        value = value >> (FORMAT_SIZE - begining);
+	
+	if (acs->is_list){
+	  node_list_op_results *p_list;
+	  
+	  //verify list decode modifier
+	  mod_parms mp;
+	  mp.input = value;
+	  mp.address = memaddr;
+	  mp.addend = operands[acs->oper_id].mod_addend;
+	  mp.list_results = NULL;
+	  decode_modifier(&mp, acs->oper_id);
+	  if (mp.list_results != NULL) {
+	    p_list = mp.list_results;	    
+	    int leng = 0;
+	    while (p_list) {	 	      
+	      cont = 0;
+	      in = 0;
+	      symbols = (acasm_symbol *) udsymbols;
+	      while (cont < num_symbols){
+		if ((strcmp(acs->type, symbols->cspec) == 0) && (p_list->result == symbols->value)){//operand find
+		  in = 1;
+		  strcpy(&(symbolaux[leng]), symbols->symbol);		  
+		  leng += strlen(&(symbolaux[leng]));
+		  if (p_list->next != NULL)
+		  {
+		    symbolaux[leng] = ',';
+		    symbolaux[leng+1] = '\0';
+		    leng++;
+		  }
+		  break;
+		}
+		symbols++;
+		cont++;
+	      }
+	      if (!in) {
+		sprintf(symbolaux, "0x%x", p_list->result);
+	      }	      	      
+	      p_list = p_list->next;
+	    }// fim while (p_list)
+	    replace(bufFinal, acs->type, symbolaux);
+	    free_list_results(&(mp.list_results));
+	  }// if (mp.list_results != NULL)
+	  else {
+	    sprintf(symbolaux, "0x%lx", value);
+	    replace(bufFinal, acs->type, symbolaux);
+	  }// fim if
+        // if (acs->is_list)
+	} else {	  
 
-        int cont = 0;
-        int in = 0;
-        char symbolaux[50];
-
-        /* Search the register table, looking value (taken from the dmask) is a register and finds the name of the register and prints it as operating of instruction, if not found, will be an immediate field or another thing it prints the value directly,*/
-
-        while (cont < num_symbols){
-          if ((strcmp(acs->type, symbols->cspec) == 0) && (value == symbols->value)){//operand find
-            in = 1;
-            strcpy(symbolaux, symbols->symbol);
-          }
-          symbols++;
-          cont++;
-        }
-
-        if (in){
-          char *ptr2;
-          ptr2 = bufFinal;
-          replace(ptr2, acs->type, symbolaux);
-        }
-        else{//not operand find, it can be: exp, immm, addr
-
-          signed long value_aux = value;
-          //verify if is a negative value - two complement
-          if (value & (1<<(size-1))){
-            value_aux = (((0xFFFFFFFF >> (32 - size)) & ~value) + 1);
-            value_aux = (value_aux * -1);
-          }
-
-          //verify decode modifier
-          mod_parms mp;
-          mp.input = value_aux;
-          mp.address = memaddr;
-          mp.addend = operands[acs->oper_id].mod_addend;
-          decode_modifier(&mp, acs->oper_id);
-          if (mp.output != 0)
-            value = mp.output;
-
-          char *ptr3;
-          ptr3 = bufFinal;
-          char new[50];
-          //Convert long to char
-          sprintf( new, "0x%01lx", value );
-          replace(ptr3,acs->type,new);
-        }
-        symbols = symbols - cont;//Return table symbol pointer
+	  if (strcmp(acs->type, "exp") && strcmp(acs->type, "imm") && strcmp(acs->type, "addr"))
+	  {
+	    /* Search the register table, looking value (taken from the dmask) is a register and finds the
+	    name of the register and prints it as operating of instruction, if not found, will be an
+	    immediate field or another thing it prints the value directly,*/
+    
+	    while (cont < num_symbols){
+	      if ((strcmp(acs->type, symbols->cspec) == 0) && (value == symbols->value)){//operand find
+		in = 1;
+		strcpy(symbolaux, symbols->symbol);
+	      }
+	      symbols++;
+	      cont++;
+	    }
+    
+	    if (in){
+	      replace(bufFinal, acs->type, symbolaux);
+	    } else{
+	      // Could not find operand symbol
+	      sprintf(symbolaux, "0x%lx", value);
+	      replace(bufFinal, acs->type, symbolaux);
+	    }
+	  } else {
+            //operand type is: exp, imm or addr
+  
+	    //verify decode modifier
+	    mod_parms mp;
+	    mp.input = value;
+	    mp.address = memaddr;
+	    mp.addend = operands[acs->oper_id].mod_addend;
+	    mp.list_results = NULL;
+	    decode_modifier(&mp, acs->oper_id);
+	    if (mp.output != 0)
+	      value = mp.output;	    
+  
+	    char *ptr3;
+	    ptr3 = bufFinal;
+	    char new[50];
+	    //Convert long to char
+	    sprintf( new, "0x%01lx", value );
+	    replace(ptr3,acs->type,new);
+	    
+	    // if type is exp or addr, save its value. it can reference a symbol, and
+	    // we want to print it as comment, eg. mov    r0, 0x10203    ; 10203 <.helloword>
+	    if (! (strcmp(acs->type, "exp") && strcmp(acs->type, "addr")) )
+	      addr_value = value;
+	  }// end if (strcmp(acs->type, "exp") && strcmp(acs->type, "imm") && strcmp(acs->type, "addr"))
+	}//end if (acs->is_list)
         acs = acs->next;
       }
       break;
@@ -260,7 +309,11 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
     sprintf( bufFinal, "0x%01lx", insn );
   }
 
-  (*info->fprintf_func) (info->stream,"%s ",bufFinal);
+  (*info->fprintf_func) (info->stream,"%s",bufFinal);
+  if (addr_value) {
+    (*info->fprintf_func) (info->stream,"\t; ", addr_value);
+    info->print_address_func (addr_value, info);
+  }
   return  FORMAT_SIZE / 8;
 }
 /*------------------------------------------------------------------------------------*/
@@ -344,6 +397,7 @@ ac_symbol* parse(char *args){
   ac_symbol *t;
   t = NULL;
   temp = NULL;
+  int is_mnemonic_suffix = 1;
   int i = 0;
 
   //loop in the chars of args
@@ -383,6 +437,7 @@ ac_symbol* parse(char *args){
       if (i > 0){ //more elements of list
         temp = (ac_symbol *) malloc(sizeof(ac_symbol));
         temp->oper_id = operand_id;
+	temp->is_list = operands[operand_id].is_list;
         temp->type = operands[operand_id].name;
         temp->next = NULL;
         lista->next = temp;
@@ -391,7 +446,8 @@ ac_symbol* parse(char *args){
       else{ //first element of list
         lista = (ac_symbol *) malloc(sizeof(ac_symbol));
         t = lista;
-        lista->oper_id = operand_id;  
+        lista->oper_id = operand_id;
+	lista->is_list = operands[operand_id].is_list;
         lista->type = operands[operand_id].name;
         lista->next = NULL;
       }
@@ -406,9 +462,19 @@ ac_symbol* parse(char *args){
           args++;
       }
       else{
-        *ptr_bufInitial = *args;
-        args++;
-        ptr_bufInitial++;
+	if (*args == ' ' && is_mnemonic_suffix)
+	{
+	  is_mnemonic_suffix = 0;
+	  *ptr_bufInitial = '\t';
+	  args++;
+	  ptr_bufInitial++;
+	}
+	else
+	{
+          *ptr_bufInitial = *args;
+          args++;
+          ptr_bufInitial++;
+	}
       }
     }
   }//end of while (*args!='\0')
@@ -427,7 +493,7 @@ ac_symbol* parse(char *args){
    result:
        ptr_ret = addi $30,reg,exp
 */
-void replace(char *ptr_ret, char *old, char *new){
+void replace(char *ptr_ret, const char *old, char *new){
   char a[50];
   char *str = a;
 

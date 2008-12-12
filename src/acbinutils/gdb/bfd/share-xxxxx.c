@@ -5,6 +5,7 @@
 */
 
 #include <assert.h>
+#include <stdlib.h>
 #include `"share-'___arch_name___`.h"'
 
 const mod_fnptr modfn[] = {
@@ -224,7 +225,7 @@ void encode_cons_field(unsigned int *image, mod_parms *mp, unsigned int oper_id)
 
   mp->addend = operands[oper_id].mod_addend;
   mp->error = 0;
-
+  
   if (operands[oper_id].mod_type == mod_default) {
 
     for (i=nf-1; i >= 0; i--) {
@@ -273,6 +274,61 @@ unsigned long get_field_size(unsigned long insn_fmt, int field_id)
 ___fieldsize_function___
 }
 
+/* List-operator API functions (available to modifier functions)*/
+
+int list_results_has_data(list_op_results lr)
+{
+  return (lr != NULL);
+}
+
+char list_results_get_separator(list_op_results lr)
+{
+  return lr->separator;
+}
+
+/* The function of which main responsability is to access the data
+ of next node in the linked list presented as a parameter. It shoud do
+it in an automated fashion, to a degree such the user should not be
+ aware of pointers.
+*/
+unsigned int list_results_next(list_op_results *lr)
+{
+  unsigned int return_value = (*lr)->result;
+  *lr = (*lr)->next;
+  return return_value;
+}
+
+/* This functions should provide an easy way to add another node
+in the current linked list. Accordingly, this procedure should
+ determine itself the end of the list and insert the new information
+there, without helper ponters (tail) whose role is speedup the process. */
+void list_results_store(list_op_results *lr, const unsigned int result)
+{
+  if (*lr == NULL) { /* new list is being created */
+    *lr = (node_list_op_results *) malloc(sizeof(node_list_op_results));
+    (*lr)->result = result;
+    (*lr)->separator = 0;
+    (*lr)->next = NULL;    
+  } else { /* new node into existing list */
+    list_op_results pointer = *lr;
+    while (pointer->next != NULL) pointer = pointer->next;
+    pointer->next = (node_list_op_results *) malloc(sizeof(node_list_op_results));
+    pointer->next->result = result;
+    pointer->next->separator = 0;
+    pointer->next->next = NULL;
+  }
+}
+
+/* This one should not be used by modifier functions. It is used by the archc assembler
+ to free memory allocated by list functions. Yet, calling this function multiple times
+ with the same pointer would do no harm. */
+void free_list_results(list_op_results *lr)
+{
+  if (*lr == NULL) return;
+  free_list_results(&((*lr)->next));
+  free(*lr);
+  *lr = NULL;
+}
 
 #define ac_modifier_encode(modifier) void modifier_ ##modifier ## _encode(mod_parms *reloc)
 #define ac_modifier_decode(modifier) void modifier_ ##modifier ## _decode(mod_parms *reloc)

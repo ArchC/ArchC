@@ -2,7 +2,7 @@
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /* `tc-'___arch_name___`.c' -- Assemble code for ___arch_name___
-   Copyright 2005, 2006 --- The ArchC Team
+   Copyright 2005, 2006, 2007, 2008 --- The ArchC Team
  
    This file is automatically retargeted by ArchC binutils generation 
    tool. This file is part of GAS, the GNU Assembler.
@@ -93,6 +93,7 @@ typedef struct _acfixuptype
 
 
 static void s_cons(int byte_size);
+static void s_bss (int);
 static void archc_show_information(void);
 static void pseudo_assemble(void);
 static void emit_insn(void);
@@ -100,7 +101,7 @@ static int get_expression(expressionS *, char **);
 static int get_immediate(expressionS *ep, char **str);
 static int get_address(expressionS *, char **);
 static int get_userdefoper(unsigned int *val, const char *opclass, char **str);
-static int ac_symbol_dispensable(const char *ac_symbol, unsigned int *value);
+static int ac_symbol_dispensable(const char *marker, unsigned int *value);
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, 
                            unsigned int *value);
 static int ac_parse_operands(char *s_pos, char *args);
@@ -111,14 +112,14 @@ static void clean_out_insn(void);
 static void free_all_fixups(acfixuptype *fix);
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
-static void encode_field(unsigned int val_const, unsigned int oper_id);
+static void encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr);
 
 
 /*
   variables used by the core
 */
-const char comment_chars[] = "#!";  // # - MIPS, ! - SPARC, @ - ARM
-const char line_comment_chars[] = "#";
+const char comment_chars[] = "___comment_chars___";  // # - MIPS, ! - SPARC, @ - ARM
+const char line_comment_chars[] = "___line_comment_chars___";
 const char line_separator_chars[] = ";";
 
 const char EXP_CHARS[] = "eE";
@@ -135,6 +136,7 @@ const pseudo_typeS md_pseudo_table[] =
   {"quad",  s_cons, AC_WORD_SIZE/8 *2},  
   {"short", s_cons, AC_WORD_SIZE/8 /2},
   {"word",  s_cons, AC_WORD_SIZE/8},
+  {"bss", s_bss, 0},
   {NULL, 0, 0},
 };
 
@@ -210,7 +212,7 @@ static struct insn_encoding
 
   unsigned int is_pseudo;
   unsigned int op_num;
-  unsigned int op_pos[9*2];
+  void * op_pos[9*2];
 
   acfixuptype *fixup;
 } out_insn;
@@ -249,8 +251,6 @@ md_begin()
   }
 
   /* TODO:
-   *  . It not allowed to define the same symbol name in more than one
-   *  ac_asm_map section -> remove this restriction
    *  . Desalloc the memory allocated in case of 'insensitive'
    */
   sym_hash = hash_new();
@@ -267,18 +267,17 @@ md_begin()
       symtoadd = (char *)t_symbol;
 
     retval = hash_insert(sym_hash, (const char *)symtoadd, (PTR) &udsymbols[i]);
-
-    if (retval != NULL) {
+    
+    if (retval != NULL && strcmp("exists", retval)) {
       fprintf (stderr, _("internal error: can't hash `%s': %s\n"),
          udsymbols[i].symbol, retval);
       as_fatal (_("Broken assembler.  No assembly attempted."));
-    }
+    }    
   }
 
   record_alignment(text_section, log_table[AC_WORD_SIZE/8]);
 
 }
-
 
 #define KEEP_GOING 1
 #define STOP_INSN  0
@@ -401,7 +400,13 @@ md_assemble(char *str)
       insn_error = NULL;
   
       /* no support for mnemonic suffixes in pseudo instructions */
-      if (!insn->pseudo_idx) {
+      if (insn->pseudo_idx)
+      {
+        if (*s_pos != '\0')
+          pbuffer++;
+      }
+      else
+      {
         dbg_printf(1, "Parsing (mnemonic suffixes) \"%s\" with \"%s\"\n", s_pos, pbuffer);  
   
         if (insensitive_symbols) {
@@ -469,6 +474,31 @@ md_assemble(char *str)
 }
 
 
+/* Auxiliary function to help create nodes of the linked list list_op_results, a 
+data structure to store information about the operands parsed in case a list operator
+is specified */
+static node_list_op_results *create_list_results_node(node_list_op_results ** list,
+                                               node_list_op_results ** tail, int result)
+{
+  if (*list == NULL)
+  {
+    *list = (node_list_op_results *) malloc(sizeof(node_list_op_results));
+    *tail = *list;
+    (*list)->result = result;
+    (*list)->separator = 0;
+    (*list)->next = NULL;
+    return *list;
+  }
+  else
+  {
+    (*tail)->next = (node_list_op_results *) malloc(sizeof(node_list_op_results));
+    *tail = (*tail)->next;
+    (*tail)->result = result;
+    (*tail)->separator = 0;
+    (*tail)->next = NULL;
+    return *tail;
+  }
+}
 
 /*
   Operands Parser. Actually, it does a semantic job as well.
@@ -490,6 +520,12 @@ int ac_parse_operands(char *s_pos, char *args)
   /* a buffer to hold the current conversion specifier found in args */
   char op_buf[30]; 
   char *ob = op_buf;
+  
+  int is_list = 0; // Is our operand specified as a list of operands? (See list operator)
+  list_op_results list_results = NULL; /* Pointer to data structure carrying out parsing
+				       information about the list elements in case of list op.*/
+  list_op_results list_results_tail = NULL;
+  int listloopcontrol = 0; /* Controls wether we need to loop in order to parse more data */
 
   insn_error = NULL;
   ref_expr.X_op = O_absent;
@@ -531,7 +567,7 @@ int ac_parse_operands(char *s_pos, char *args)
       args++;
 
       /* save the start of the operand string in case a pseudo is called later */
-      out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
+      out_insn.op_pos[out_insn.op_num++] = (char *) s_pos;
 
       /* ob points to the conversion specifier buffer - null terminated */
       ob = op_buf;
@@ -553,95 +589,159 @@ int ac_parse_operands(char *s_pos, char *args)
       if (operand_id >= num_oper_id)
         INTERNAL_ERROR();
 
-    
-      switch (operands[operand_id].type) {
- 
-      /* EXP */ 
-        case op_exp:
-
-          if (!get_expression(&ref_expr, &s_pos)) 
-            return KEEP_GOING;
-
-          switch (ref_expr.X_op) {
-            case O_symbol:  /* X_add_symbol + X_add_number */
-              create_fixup(operand_id);
-              break;
-                
-            case O_constant: /* X_add_number */
-              encode_field(ref_expr.X_add_number, operand_id);
-              break;
-
-            case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
-            case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
-            case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
-            case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
-            case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
-            case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
-            case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
-            case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
-            case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
-            case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
-            case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
-            case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
-              insn_error = "operation not supported with relocatable symbol";
-              return STOP_INSN;
-              break;
-
-           default:
-              insn_error = "invalid expression";
-              return KEEP_GOING;
+      /* List operator loop. If the operand has a list operator, it will loop until
+         there is input satisfying its type. Else, it will run only once.*/
+      is_list = operands[operand_id].is_list;
+      listloopcontrol = 1;
+      
+      while (listloopcontrol)
+      {
+        if (!is_list) /* if this is not a list, parse only once */
+          listloopcontrol = 0; 
+          
+	switch (operands[operand_id].type) {
+  
+	/* EXP */ 
+	  case op_exp:
+  
+	    if (!get_expression(&ref_expr, &s_pos))
+            {
+              if (is_list)
+                free_list_results(&list_results);
+	      return KEEP_GOING;
+            }
+  
+	    switch (ref_expr.X_op) {
+	      case O_symbol:  /* X_add_symbol + X_add_number */
+		create_fixup(operand_id);
+		break;
+		  
+	      case O_constant: /* X_add_number */
+	        if (!is_list)
+		  encode_field(ref_expr.X_add_number, operand_id, NULL);
+		else
+		  create_list_results_node(&list_results, &list_results_tail,
+		                           ref_expr.X_add_number);
+		break;
+  
+	      case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
+	      case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
+	      case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
+	      case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
+	      case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
+	      case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
+	      case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
+	      case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
+	      case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
+	      case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
+	      case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
+	      case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
+		insn_error = "operation not supported with relocatable symbol";
+		if (is_list)
+                  free_list_results(&list_results);
+		return STOP_INSN;
+		break;
+  
+	    default:
+		insn_error = "invalid expression";
+		if (is_list)
+                  free_list_results(&list_results);
+		return KEEP_GOING;
+	    } /* end of switch(ref_expr.X_op) */
+	    break; 
+  
+  
+	  case op_imm:
+  
+	    in_imm_mode = 1;
+	    if (!get_immediate(&ref_expr, &s_pos)) {
+	      in_imm_mode = 0;
+	      if (is_list)
+                free_list_results(&list_results);
+	      return KEEP_GOING;
+	    }
+	    in_imm_mode = 0;
+  
+	    dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
+	    
+            if (!is_list)
+	      encode_field(ref_expr.X_add_number, operand_id, NULL);
+	    else
+	      create_list_results_node(&list_results, &list_results_tail,
+		                           ref_expr.X_add_number);
+  
+	    break;
+  
+	  case op_addr:
+  
+	    if (!get_address(&ref_expr, &s_pos)) return KEEP_GOING;
+  
+	    if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
+	      insn_error = "invalid operand, expected a symbolic address";
+	      return KEEP_GOING;
+	    }
+	    if (!is_list)
+	      create_fixup(operand_id);
+	    else {
+	      // assembler is malformed, cannot have list operator with relocatable elements!
+	      INTERNAL_ERROR();	
+            }
+  
+	    break;
+  
+	  case op_userdef:
+  
+	    if (!get_userdefoper(&symbol_value, operands[operand_id].name, &s_pos)) 
+            {
+              if (is_list)
+                free_list_results(&list_results);
+	      return KEEP_GOING;
+            }
+  
+  
+	  /* NEVER!!! discomment the line below O.O */
+	  /* if (out_insn.is_pseudo) return; */
+  
+	  /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
+	    if (!is_list)
+              encode_field(symbol_value, operand_id, NULL);
+            else
+              create_list_results_node(&list_results, &list_results_tail,
+		                           symbol_value);
+  
+	    break;
+  
+	  default:
+	    INTERNAL_ERROR();
+  
+	} /* end of switch*/
+	
+	/* processes some list-specific parsing features */
+	if (is_list)
+        {
+          while (ISSPACE(*s_pos)) s_pos++;
+          if(*s_pos == ',') {
+            list_results_tail->separator = ',';
+            s_pos++;
           }
-          break; 
-
-
-        case op_imm:
-
-          in_imm_mode = 1;
-          if (!get_immediate(&ref_expr, &s_pos)) {
-            in_imm_mode = 0;
-            return KEEP_GOING;
+          else if (*s_pos == '-') {
+            list_results_tail->separator = '-';
+            s_pos++;
           }
-          in_imm_mode = 0;
-
-          dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
-
-          encode_field(ref_expr.X_add_number, operand_id);
-
-          break;
-
-        case op_addr:
-
-          if (!get_address(&ref_expr, &s_pos)) return KEEP_GOING;
-
-          if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
-            insn_error = "invalid operand, expected a symbolic address";
-            return KEEP_GOING;
+          else 
+          {
+            listloopcontrol = 0; /* the list has ended, nothing more to parse*/
+            /* Encode the list parsed */
+            encode_field(symbol_value, operand_id, list_results);
+            free_list_results(&list_results);
+            list_results = NULL;
+            list_results_tail = NULL;
           }
+          while (ISSPACE(*s_pos)) s_pos++;
+        }
+      }/* end of while (listloopcontrol) */
 
-          create_fixup(operand_id);
-
-          break;
-
-        case op_userdef:
-
-          if (!get_userdefoper(&symbol_value, operands[operand_id].name, &s_pos)) 
-            return KEEP_GOING;
-
-
-        /* NEVER!!! discomment the line below O.O */
-        /* if (out_insn.is_pseudo) return; */
-
-        /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
-          encode_field(symbol_value, operand_id);
-
-          break;
- 
-        default:
-          INTERNAL_ERROR();
-
-      }
-
-      out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
+      out_insn.op_pos[out_insn.op_num++] = (char *)s_pos;
 
     } /* end of if (*args == '%') */
     else {  
@@ -776,12 +876,12 @@ int ac_parse_mnemonic_suffixes(char **s_pos, char **args)
         }
 
         /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
-        encode_field(symbol_value, operand_id);
+        encode_field(symbol_value, operand_id, NULL);
       }
       else
           INTERNAL_ERROR();
 
-      out_insn.op_pos[out_insn.op_num++] = (int)*s_pos;
+      out_insn.op_pos[out_insn.op_num++] = (char *)*s_pos;
 
     } /* end of if (*args == '%') */
     else {  
@@ -822,17 +922,19 @@ static void pseudo_assemble() {
 
   char op_string[9][50];
   unsigned int i;
-  int j;
+  unsigned int j;
 
   /* extract the operand strings */
   for (i=0; i<out_insn.op_num/2; i++) {
      
-    int str_count = out_insn.op_pos[i*2+1] - out_insn.op_pos[i*2];
-    if (str_count < 0 || str_count >= 50) 
+    unsigned int str_count = (((char *)out_insn.op_pos[i*2+1]) - ((char *)out_insn.op_pos[i*2]));
+    if (str_count >= 50) 
       INTERNAL_ERROR(); /* out buffer is too small */
 
     for (j=0; j<str_count; j++) 
-      op_string[i][j] = *(char *)(out_insn.op_pos[i*2]+j);
+    {      
+      op_string[i][j] = *(char *)(out_insn.op_pos[i*2]+j);      
+    }
 
     op_string[i][str_count] = '\0';
 
@@ -1149,6 +1251,14 @@ s_cons (int byte_size)
 
   cons(byte_size);
 }
+
+static void
+s_bss (ignore)
+     int ignore ATTRIBUTE_UNUSED;
+{
+  subseg_set (bss_section, 0);
+  demand_empty_rest_of_line ();
+}
  
 
 static int
@@ -1317,9 +1427,12 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
 /* 
   Checks if parser_symbol "" is valid with a specified ac_symbol
 */
-static int ac_symbol_dispensable(const char *ac_symbol, unsigned int *value)
+static int ac_symbol_dispensable(const char *marker, unsigned int *value)
 {
   acasm_symbol *msymb = NULL;
+
+  if (marker == NULL || strcmp(marker, "") == 0)
+    INTERNAL_ERROR();
 
   msymb = (acasm_symbol *) hash_find (sym_hash, "");
 
@@ -1327,38 +1440,56 @@ static int ac_symbol_dispensable(const char *ac_symbol, unsigned int *value)
     return 0;
   }
 
-  if (ac_symbol != "")
-    if (strcmp(msymb->cspec, ac_symbol)) {
-      return 0;
-    }
+  while (strcmp(msymb->cspec, marker)!=0 && (msymb+1 < &udsymbols[num_symbols]) &&
+      strcmp(msymb[1].symbol, "")==0)
+  {
+    msymb++;
+  }
+  
+  if (strcmp(msymb->cspec, marker)==0 && strcmp(msymb->symbol, "")==0)
+  {
+    *value = msymb->value;
+    return 1;
+  }
 
-  *value = msymb->value;
-
-  return 1;
+  return 0;
 }
 
 
-/* 
-  if ac_symbol == "" then marker is not checked
-*/
+
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, unsigned int *value)
 {
   acasm_symbol *msymb = NULL;
   
+  if (ac_symbol == NULL)
+    INTERNAL_ERROR();
+  
   msymb = (acasm_symbol *) hash_find (sym_hash, parser_symbol);
-
-  // TODO: handle the case when there are 2 or more symbols with same names (but different markers)
 
   // symbol not found
   if (msymb == NULL) return 0;
   
-  // marker not valid for this symbol
-  if (ac_symbol != "")    
-    if (strcmp(msymb->cspec, ac_symbol)) return 0;
-
-  *value = msymb->value;
-
-  return 1;
+  if (strcmp(ac_symbol, "")==0) // any map marker will do
+  {
+    *value = msymb->value;
+    return 1;
+  }
+  else               // specific map marker is supplied
+  {
+    while (strcmp(msymb->cspec, ac_symbol)!=0 && (msymb+1 < &udsymbols[num_symbols]) &&
+        strcmp(msymb[1].symbol, parser_symbol)==0)
+    {
+      msymb++;
+    }
+    
+    if (strcmp(msymb->cspec, ac_symbol)==0 && strcmp(msymb->symbol, parser_symbol)==0)
+    {
+      *value = msymb->value;
+      return 1;
+    }
+  
+    return 0;
+  }
 }
 
 
@@ -1624,9 +1755,8 @@ create_fixup(unsigned int oper_id)
   dbg_print_fixup(0, fixups);
 }
 
-
 static void 
-encode_field(unsigned int val_const, unsigned int oper_id)
+encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr)
 {
   mod_parms mp;
   char secname[] = "no symbol";
@@ -1636,10 +1766,11 @@ encode_field(unsigned int val_const, unsigned int oper_id)
   mp.input   = val_const;
   mp.address = frag_now_fix();
   mp.section = secname; 
+  mp.list_results = lr;
 
   dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
   encode_cons_field(&out_insn.image, &mp, oper_id);
-  dbg_printf(0, "0x%08lX\n", out_insn.image);
+  dbg_printf(0, "0x%08lX\n", out_insn.image);  
 
   if (mp.error) 
     as_bad(_("invalid operand value: '%u'"), val_const);

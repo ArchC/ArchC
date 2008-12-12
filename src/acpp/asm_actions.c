@@ -4,6 +4,7 @@
 /**
  * @file      asm_actions.c
  * @author    Alexandro Baldassin
+ *            Rafael Auler
  *
  * @author    The ArchC Team
  *            http://www.archc.org/
@@ -17,7 +18,7 @@
  *
  * @brief     ArchC assembly-related semantic actions
  *
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ * @attention Copyright (C) 2002-2008 --- The ArchC Team
  *
  */
 
@@ -204,6 +205,12 @@ Some conventions:
 #include "asm_actions.h"
 
 
+/* 
+  acasm special declarations variables
+*/
+static char *comment_chars = NULL;
+static char *line_comment_chars = NULL;
+
 /*
   ac_asm_map variables
 */
@@ -211,12 +218,12 @@ Some conventions:
 static ac_asm_map_list *mapping_list = NULL;       /* map list header pointer */
 static ac_asm_map_list *mapping_list_tail = NULL;  /* tail pointer */
 
+static char *current_map = NULL; /* current map being parsed*/
+
 /* each mapping element has a collection of symbol-value mapping.
-this variable holds the list of the symbol-value mapping being parsed for the
-current mapping element.
+this variable holds the list of the symbol-value mapping of all mapping elements
 */
-static ac_asm_symbol **map_symbol_list = NULL;
-static ac_asm_symbol *map_symbol_list_tail = NULL;  /* pointer to the tail */
+static ac_asm_symbol *symbol_list = NULL;
 
 /* a list of the symbol names being parsed by a single symbol-value mapping */
 static strlist *symbol_name_list;
@@ -268,8 +275,19 @@ extern ac_dec_format *format_ins_list;   /* list of formats declared */
 */
 
 ac_asm_insn* ac_asm_get_asm_insn_list() { return asm_insn_list; }
-ac_asm_map_list* ac_asm_get_mapping_list() { return mapping_list; }
-
+ac_asm_symbol* ac_asm_get_mapping_list() { return symbol_list; }
+char * ac_asm_get_comment_chars() 
+{
+  if (comment_chars != NULL)
+    return comment_chars;
+  return "#!";
+}
+char * ac_asm_get_line_comment_chars() 
+{
+  if (line_comment_chars != NULL)
+    return line_comment_chars;
+  return "#";
+}
 
 
 /*
@@ -277,33 +295,43 @@ ac_asm_map_list* ac_asm_get_mapping_list() { return mapping_list; }
 */
 
 
-
 /*
   This looks for the first occurence of 'symbol' in the mapping list.
 
-  Note that some symbol may be declared several times in different map blocks.
-  This function returns only the first occurence as it's found in the list.
-*/
-static int get_symbol_value(char *symbol, long int *symbol_id) {
+  This function returns only the first occurence as it's found in the list,
+  matching the given map name
 
-  long int symbol_value = -1;
-  ac_asm_map_list *ml = mapping_list;
+  map parameter can be null, in which case the search will look
+  in all maps
+*/
+static int get_symbol_value(char *symbol, char *map, long int *symbol_id) {
+
+  long int symbol_value = -1;  
 
   int found = 0;
-  while (ml != NULL && !found) {
-
-    ac_asm_symbol *sl = ml->symbol_list;
-
-    while (sl != NULL) {
-      if (!strcmp(sl->symbol, symbol)) {
-        symbol_value = sl->value;
-        found = 1;
-        break;
-      }
-      sl = sl->next;
+  ac_asm_symbol *sl = symbol_list;
+  
+  while (sl != NULL) {
+    //    if (map == NULL) // if map name is not present, search all maps
+    //{
+    //if (!strcmp(sl->symbol, symbol)) {
+    //  symbol_value = sl->value;
+    //  found = 1;
+    //  break;
+    //}
+    //}
+    //else {
+    if ((!strcmp(sl->symbol, symbol))&&( map == NULL
+					 || (!strcmp(sl->map_marker, map)))) {
+      symbol_value = sl->value;
+      found = 1;
+      break;
     }
-
-    ml = ml->next;
+      //}
+    /* remember symbol list now is alphabetically sorted */
+    if (strcmp(sl->symbol, symbol)>0)
+      break;
+    sl = sl->next;
   }
 
   *symbol_id = symbol_value;
@@ -312,8 +340,9 @@ static int get_symbol_value(char *symbol, long int *symbol_id) {
 }
 
 
+
 /*
-  Searchs for the marker string 'marker' in the mapping_list.
+  Searches for the marker string 'marker' in the mapping_list.
   If not found, NULL is returned.
 */
 static ac_asm_map_list *find_mapping_marker(char *marker) {
@@ -334,17 +363,21 @@ static ac_asm_map_list *find_mapping_marker(char *marker) {
 /*
   Searchs for a symbol definition 'symbol' in the current mapping block.
 */
+
 static ac_asm_symbol *find_mapping_symbol(char *symbol) {
 
-  ac_asm_symbol *t_sl = *map_symbol_list;
+  ac_asm_symbol *t_sl = symbol_list;
 
   while (t_sl != NULL) {
-
-    if (!strcmp(t_sl->symbol, symbol)) return t_sl;
-
+    if ((!strcmp(t_sl->symbol, symbol))&&(!strcmp(t_sl->map_marker, mapping_list_tail->marker)))
+    {
+      return t_sl;
+    }
+    /* remember symbol list is alphabetically sorted */
+    if (strcmp(t_sl->symbol, symbol)>0)
+      break;
     t_sl = t_sl->next;
   }
-
   return NULL;
 }
 
@@ -492,12 +525,13 @@ static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char 
   char *stp;
   char savechar;
   int has_lbrack = 0;
+  int has_listmod = 0;
 
   if (**st == '[') {
     has_lbrack = 1;
     (*st)++;
   }
-  
+
   *oper = (ac_operand_list *)malloc(sizeof(ac_operand_list));
   (*oper)->next = NULL;
   (*oper)->fields = NULL;
@@ -508,10 +542,9 @@ static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char 
 
   stp = *st;
 
-  /* advances till '(' or a non-char symbol */
+  /* advances till '(' or a non-identifier symbol */
   while ( (**st != '(') &&
-           ((**st >= 'a' && **st <= 'z') ||
-           (**st >= 'A' && **st <= 'Z')) )
+	  is_identifier(*st) )
     (*st)++;
 
   if (stp == *st) {
@@ -552,7 +585,6 @@ static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char 
       sprintf(error_msg, "Invalid conversion specifier: '%%%%%s'", stp);
       return 0;
     }
-    ml->used_where |= 1;
     (*oper)->type = op_userdef;
   }
 
@@ -561,16 +593,32 @@ static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char 
 
   **st = savechar;
 
+/* LISTMODIFIER */
+  if ((*st)[0] == '.' && (*st)[1] == '.' && (*st)[2] == '.')
+  {
+    has_listmod = 1;
+    (*st) += 3;
+    if ((*oper)->type == op_addr) {
+      sprintf(error_msg, "List operator cannot work with \"addr\" operands");
+      return 0;
+    }
+  }
+  
 
 /* MODIFIER */
 
   (*oper)->modifier.name = NULL;
   (*oper)->modifier.type = -1;
   (*oper)->modifier.addend = 0;
+  (*oper)->is_list = has_listmod;
 
 
   //while (*st == ' ') st++;
   if (**st != '(') {
+    if (has_listmod){
+      sprintf(error_msg, "List operator \"...\" must implement a modifier");
+      return 0;
+    }
 
     if (has_lbrack && **st != ']') {
       sprintf(error_msg, "No matching ']' found");
@@ -655,7 +703,28 @@ static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char 
   return 1;
 }
 
+/**********************************************
+  Special acasm declarations functions
+**********************************************/
+int acpp_set_assembler_comment_chars(char *input, char *error_msg)
+{
+  if (comment_chars != NULL)
+  {
+    sprintf(error_msg, "Assembler comment characters have duplicated declaration: '%s'", input);
+    return 0;
+  }
+  comment_chars = strdup(input);
+}
 
+int acpp_set_assembler_line_comment_chars(char *input, char *error_msg)
+{
+  if (line_comment_chars != NULL)
+  {
+    sprintf(error_msg, "Assembler line comment characters have duplicated declaration: '%s'", input);
+    return 0;
+  }
+  line_comment_chars = strdup(input);
+}
 
 
 /**********************************************
@@ -703,17 +772,11 @@ int acpp_asm_create_mapping_block(char *marker, char *error_msg)
     return 0;
   }
 
-  /* clear the list of symbols name */
-  symbol_name_list = NULL;
-  symbol_name_list_tail = NULL;
-
   /* creates a new ac_map_list element and inserts it in the tail of the list */
   ac_asm_map_list *t_m = (ac_asm_map_list *) malloc(sizeof(ac_asm_map_list));
 
-
   t_m->marker = (char *) malloc(strlen(marker)+1);
   strcpy(t_m->marker, marker);
-  t_m->used_where = 0;
   t_m->next = NULL;
 
   if (!mapping_list) {
@@ -724,11 +787,6 @@ int acpp_asm_create_mapping_block(char *marker, char *error_msg)
     mapping_list_tail->next = t_m;
     mapping_list_tail = t_m;
   }
-
-  /* initializes the symbol map list */
-  map_symbol_list = &t_m->symbol_list;
-  *map_symbol_list = NULL;
-  map_symbol_list_tail = NULL;
 
   return 1;
 }
@@ -871,6 +929,16 @@ int acpp_asm_add_mapping_symbol_range(char *sb, char *sa, int r1, int r2, char *
   return 1;
 }
 
+/* auxiliary recursive function for linked list freeing */
+void str_list_free (strlist *value)
+{
+  if (value == NULL)
+    return;
+  str_list_free(value->next);
+  free(value->str);
+  return;
+}
+
 
 /*
   This function should be called after adding symbols through the
@@ -922,30 +990,43 @@ int acpp_asm_add_symbol_value(int val1, int val2, char *error_msg) {
     /* creates the symbol */
     t_symbol = (ac_asm_symbol *) malloc(sizeof(ac_asm_symbol));
 
-    t_symbol->symbol = t_sl->str;
+    t_symbol->symbol = strdup(t_sl->str);
     t_symbol->value = val1;
+    t_symbol->map_marker = strdup(mapping_list_tail->marker);
+
     if (range) t_symbol->value += (i*increment_sign);
     t_symbol->next = NULL;
 
-    /* insert it in the map_symbol_list */
-    if (!*map_symbol_list) {
-      *map_symbol_list = t_symbol;
-      map_symbol_list_tail = *map_symbol_list;
+    /* insert it in the symbol_list */
+    if (!symbol_list) {
+      symbol_list = t_symbol; 
     }
     else {
-      map_symbol_list_tail->next = t_symbol;
-      map_symbol_list_tail = t_symbol;
+      ac_asm_symbol *t = symbol_list;
+      if (strcmp(t_symbol->symbol, t->symbol) < 0)
+      {
+        t_symbol->next = symbol_list;
+        symbol_list = t_symbol;
+      } else
+      {
+	while ((t->next != NULL) && (strcmp(t_symbol->symbol, t->next->symbol) >= 0)) {
+          t = t->next;
+        }
+        t_symbol->next = t->next;
+        t->next = t_symbol;
+      }
     }
 
     i++;
     t_sl = t_sl->next;
   }
+  
+  /* freeing symbol_name_list memory */
+  str_list_free(symbol_name_list);  
 
   /* done with the name list */
   symbol_name_list = NULL;
   symbol_name_list_tail = NULL;
-
-  // TODO: free symbol_name_list memory
 
   return 1;
 }
@@ -1206,12 +1287,6 @@ arguments one pseudo member may have.
     return 1;
   }
 
-  // (!) Verificar se este trecho é necessário após introducao de (1)
-  /*if (is_pseudo) {
-    *s_out = ' ';
-    s_out++;
-  }*/
-
   while (*s != '\0') {
     /* Checks for whitespaces, ending mnemonic suffixes parsing mode */
     if (mne_mode && isspace(*s)) { /* First whitespace found */
@@ -1374,7 +1449,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   }
 
 
-  /* whenever we start building a new formatted_arg_str, make a pointer to its beggining */
+  /* whenever we start building a new formatted_arg_str, make a pointer to its beginning */
 //  if (num_args_found == 0)
 //    f_arg_str_p = formatted_arg_str;
 
@@ -1445,6 +1520,7 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
   pf        -> pointer to the format of the instruction this argument is being
                set to
   field_str -> <field> field of the instruction format which will be constant
+  map -> identifies the <ac_asm_map> containing the sconst_field to be translated
   iconst_field, sconst_field -> integer and string const field. Only one must be
                valid at a time. A value of NULL in sconst_field indicates this
                constant argument is of type int. Otherwise it's a string type
@@ -1458,24 +1534,34 @@ c_image to store the const value assigned by the user in an ArchC source file.
       . 10 will be encoded in its right position within the format field 'imm'
         and saved in 'c_image'
 
-   ArchC source:  "imm = $ra"
-      . first the value of '$ra' will be found, then it'll encoded and saved
+   ArchC source:  "imm = reg.map_to("$ra")"
+      . first the value of '$ra' will be found in map "reg", then it'll encoded and saved
         in 'c_image'
 
 */
-int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, int iconst_field, char *sconst_field, char *error_msg)
+int acpp_asm_parse_const_asm_argument(ac_dec_format *pf, char *field_str, char *map, int iconst_field, char *sconst_field, char *error_msg)
 {
 
   /* if str const type, find the symbol value */
   if (sconst_field != NULL) {
     long int symbol_value;
+    if (map != NULL) { // parsing constructions like "mapname.map_to("valname")"
+      if (find_mapping_marker(map) == NULL) {
+	sprintf(error_msg, "Undefined map name '%s' in argument declaration: '%s.map_to(\"%s\")'", map, map, sconst_field);
+      }
+      if (!get_symbol_value(sconst_field, map, &symbol_value)) {
+	sprintf(error_msg, "Invalid map symbol assigned in argument declaration: '%s.%s'", map, sconst_field);
+	in_error = 1;
+	return 0;
+      }
 
-    if (!get_symbol_value(sconst_field, &symbol_value)) {
-      sprintf(error_msg, "Invalid symbol assigned in argument declaration: '%s'", sconst_field);
-      in_error = 1;
-      return 0;
+    } else { // parsing constructions like ""valname""
+      if (!get_symbol_value(sconst_field, NULL, &symbol_value)) {
+	sprintf(error_msg, "Invalid map symbol assigned in argument declaration: '%s'", sconst_field);
+	in_error = 1;
+	return 0;
+      }
     }
-
     iconst_field = symbol_value;
   }
 
@@ -1597,7 +1683,7 @@ static void print_asm_insn(ac_asm_insn *insn)
     sl = sl->next;
   }
 
-  printf("\nnumber of pseudos: %d\n\n", insn->num_pseudo);
+  printf("\nnumber of pseudos: %ld\n\n", insn->num_pseudo);
 
 }
 

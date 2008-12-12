@@ -244,6 +244,7 @@ bfd_elf_archc_reloc (bfd *abfd,
   modifier_parms.input   = relocation;
   modifier_parms.address = address;
   modifier_parms.section = symbol->section->name;
+  modifier_parms.list_results = NULL;
 
   encode_cons_field(&insn_image, &modifier_parms, howto->rightshift);
 
@@ -267,4 +268,7 @@ bfd_elf_archc_reloc (bfd *abfd,
 #define bfd_elf32_bfd_reloc_type_lookup   ___arch_name___`_reloc_type_lookup'
 #define bfd_elf32_bfd_is_local_label_name ___arch_name___`_elf_is_local_label_name'
 #define elf_info_to_howto                 ___arch_name___`_elf_info_to_howto'
+/* Uses elflink.c addsymbols function in order to handle common symbols alignment, an ELF 
+   special feature, correctly */
+#define bfd_elf32_bfd_link_add_symbols	bfd_elf_link_add_symbols
 #include "elf32-target.h"

@@ -154,6 +154,9 @@ static void yywarn(const char* format, ...)
 %token <text> CYCLE_RANGE
 %token <text> IS_JUMP IS_BRANCH COND DELAY DELAY_COND BEHAVIOR
 %token <text> AC_ASM_MAP PSEUDO_INSTR
+%token <text> AC_ASM_ASSEMBLER
+%token <text> MAP_TO
+%token <text> AC_ASM_COMMENT AC_ASM_LINE_COMMENT
 %token <text> AC_GROUP AC_HELPER
 
 /* ISA non-terminals */
@@ -162,6 +165,7 @@ static void yywarn(const char* format, ...)
 %type <text> is_jumpdec is_branchdec conddec delaydec delayconddec behaviordec
 %type <text> fieldinitlist fieldinit rangedec interval
 %type <text> asmmaplist asmmapdec mapbodylist mapbody symbollist
+%type <text> asmcomdec asmlcomdec
 %type <text> pseudodec pseudobodylist pseudobody
 %type <text> groupdeclist groupdec helperdec
 
@@ -198,7 +202,7 @@ static void yywarn(const char* format, ...)
 */
 
 /* General non-terminals */
-%type <text> commalist id_list
+%type <text> commalist id_list concatfields_list
 
 %start input
 
@@ -341,6 +345,23 @@ instrdec: AC_INSTR LT ID GT ID
       }
       ;
 
+
+/**************************************************/
+/* Rules to parse special acasm declarations      */
+/**************************************************/
+asmcomdec: AC_ASM_ASSEMBLER DOT AC_ASM_COMMENT LPAREN STR RPAREN SEMICOLON
+      {
+	if (!acpp_set_assembler_comment_chars($5, error_msg))
+	  yyerror(error_msg);
+      }
+      ;
+      
+asmlcomdec: AC_ASM_ASSEMBLER DOT AC_ASM_LINE_COMMENT LPAREN STR RPAREN SEMICOLON
+      {
+	if (!acpp_set_assembler_line_comment_chars($5, error_msg))
+	  yyerror(error_msg);
+      }
+      ;      
 /**************************************************/
 /* Rules to parse ac_asm_map declarations         */
 /**************************************************/
@@ -421,6 +442,8 @@ ctordecbody: asmdec ctordecbody
       | delayconddec ctordecbody
       | behaviordec ctordecbody
       | pseudodec ctordecbody
+      | asmcomdec ctordecbody
+      | asmlcomdec ctordecbody
       | /* empty string */ {}
       ;
 
@@ -484,38 +507,45 @@ asmdec: ID DOT SET_ASM LPAREN STR
       }
       ;
 
-id_list: COMMA ID
+id_list: COMMA ID EQ INT
       {
        force_setasm_syntax = 1;
-       if (!acpp_asm_parse_asm_argument(current_format, $2, 0, error_msg))
+       if (!acpp_asm_parse_const_asm_argument(current_format, $2, NULL, $4, NULL, error_msg))
         yyerror(error_msg);
       }
       id_list
-      | COMMA ID EQ INT
+      | COMMA ID EQ ID DOT MAP_TO LPAREN STR RPAREN
       {
        force_setasm_syntax = 1;
-       if (!acpp_asm_parse_const_asm_argument(current_format, $2, $4, NULL, error_msg))
+       if (!acpp_asm_parse_const_asm_argument(current_format, $2, $4, 0, $8, error_msg))
         yyerror(error_msg);
       }
       id_list
       | COMMA ID EQ STR
       {
        force_setasm_syntax = 1;
-       if (!acpp_asm_parse_const_asm_argument(current_format, $2, 0, $4, error_msg))
+       if (!acpp_asm_parse_const_asm_argument(current_format, $2, NULL, 0, $4, error_msg))
         yyerror(error_msg);
       }
       id_list
-      /* TODO: support more than 2 fields concatenation */
-      | COMMA ID PLUS ID
+      | COMMA concatfields_list
       {
        force_setasm_syntax = 1;
-       if (!acpp_asm_parse_asm_argument(current_format, $2, 0, error_msg))
-        yyerror(error_msg);
-       if (!acpp_asm_parse_asm_argument(current_format, $4, 1, error_msg))
-        yyerror(error_msg);
       }
       id_list
       | {}
+      ;
+      
+concatfields_list: concatfields_list PLUS ID
+      {	
+        if (!acpp_asm_parse_asm_argument(current_format, $3, 1, error_msg))
+	  yyerror(error_msg);
+      }      
+      | ID
+      {	
+        if (!acpp_asm_parse_asm_argument(current_format, $1, 0, error_msg))
+	   yyerror(error_msg);
+      }
       ;
 
 decoderdec: ID DOT SET_DECODER LPAREN ID EQ INT
