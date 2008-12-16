@@ -110,10 +110,12 @@ static void create_fixup(unsigned oper_id);
 static void strtolower(char *str);
 static void clean_out_insn(void);
 static void free_all_fixups(acfixuptype *fix);
+#ifdef DEBUG_ON
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
+#endif
 static void encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr);
-
+void md_apply_fix3 (fixS *fixP ATTRIBUTE_UNUSED, valueT *valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED);
 
 /*
   variables used by the core
@@ -1060,7 +1062,7 @@ md_number_to_chars(char *buf, valueT val, int n)
 
 */
 void
-md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
+md_apply_fix3 (fixS *fixP ATTRIBUTE_UNUSED, valueT *valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED)
 {
 
   INTERNAL_ERROR(); // should never get called
@@ -1192,7 +1194,7 @@ the bfd alignment, and return the next aligned address. I've not tested that tho
 }
 
 void
-___arch_name___`_symbol_new_hook' (symbolS *sym)
+___arch_name___`_symbol_new_hook' (symbolS *sym ATTRIBUTE_UNUSED)
 {
   dbg_printf(0, "Symbol Created!!!\n%*s", 4, "");
   dbg_print_symbolS(1, sym);
@@ -1641,7 +1643,7 @@ md_estimate_size_before_relax (fragp, segtype)
 
 long
 md_pcrel_from (fixP)
-     fixS *fixP;
+     fixS *fixP ATTRIBUTE_UNUSED;
 {
   /* should not be called */
   INTERNAL_ERROR();
@@ -1793,7 +1795,7 @@ static void clean_out_insn()
   out_insn.format = 0;
   out_insn.is_pseudo = 0;
   out_insn.op_num = 0;
-  out_insn.op_pos[9*2] = 0;
+  //out_insn.op_pos[9*2] = 0;
   free_all_fixups(out_insn.fixup);
   out_insn.fixup = NULL;
 }
@@ -1811,6 +1813,7 @@ static void free_all_fixups(acfixuptype *fix)
   }
 }
 
+#ifdef DEBUG_ON
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix)
 {
 //  expressions ref_expr_fix; /* symbol in which the relocation points to */
@@ -1821,8 +1824,9 @@ static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix
                     operands[fix->operand_id].mod_type,
                     operands[fix->operand_id].reloc_id);
 }
+#endif
 
-
+#ifdef DEBUG_ON
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
 {
   fprintf(stream, "%*s%lu - [%s,%u] - pcrel %d, done %d, rel %u\n", 
@@ -1861,5 +1865,5 @@ static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
                 il*4, "",
                 fixP->tc_fix_data);
 }
-
+#endif
 

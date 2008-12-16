@@ -121,6 +121,14 @@ static void ___arch_name___`_elf_info_to_howto' (abfd, cache_ptr, dst)
   cache_ptr->howto = &`elf_'___arch_name___`_howto_table'[r];
 }
 
+#if BFD_REQUIRES_RELOC_NAME_LOOKUP
+static reloc_howto_type *
+bfd_elf32_bfd_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
+				 const char *r_name ATTRIBUTE_UNUSED)
+{
+  return NULL;
+}
+#endif
 
 static bfd_reloc_status_type
 generic_data_reloc (bfd *abfd,
@@ -128,7 +136,7 @@ generic_data_reloc (bfd *abfd,
              asymbol *symbol,
              void *data,
              asection *input_section,
-             bfd *output_bfd,
+             bfd *output_bfd ATTRIBUTE_UNUSED,
              char **error_message ATTRIBUTE_UNUSED)
 {
   unsigned int relocation;

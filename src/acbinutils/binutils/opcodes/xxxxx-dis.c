@@ -341,7 +341,7 @@ int `print_insn_'___arch_name___` (bfd_vma memaddr, struct disassemble_info * in
   if (VARIABLE_FORMAT_SIZE == 0) {
     /*RISC - read fix length bits of the memory */
     FETCH_DATA (info, buffer + (MAX_FORMAT_SIZE / 8));
-    insn = getbits(MAX_FORMAT_SIZE, buffer, ___endian_val___);
+    insn = getbits(MAX_FORMAT_SIZE, (char *)buffer, ___endian_val___);
     insnfound = insn;
     sizeinsn = MAX_FORMAT_SIZE;
   }
@@ -359,7 +359,7 @@ int `print_insn_'___arch_name___` (bfd_vma memaddr, struct disassemble_info * in
       FETCH_DATA (info, buffer + (localsize / 8));
       for (i=3; i>=(localsize/8); i--)
         buffer[i] = 0;
-      insn = getbits(localsize, buffer, ___endian_val___);
+      insn = getbits(localsize, (char *)buffer, ___endian_val___);
 
       //Find the mnemonic of instruction in opcodes table
       int j = 0;     

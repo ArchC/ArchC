@@ -6,7 +6,7 @@
 	xxxxx-opc.lo \\\
    xxxxx-dis.lo \\
 
-/a29k-dis.lo:/ i\
+/arm-dis.lo:/ i\
 xxxxx-opc.lo: xxxxx-opc.c sysdep.h config.h $(INCDIR)/ansidecl.h \\\
   $(INCDIR)/opcode/xxxxx.h \
 xxxxx-dis.lo: xxxxx-dis.c sysdep.h config.h $(INCDIR)/ansidecl.h \\\

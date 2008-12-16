@@ -43,7 +43,7 @@ void print_operand_info(FILE *stream, unsigned int indent, unsigned int opid)
       break;
   }
 
-  printf(stream, "mod_type = %u ", operands[opid].mod_type);
+  fprintf(stream, "mod_type = %u ", operands[opid].mod_type);
 /*
   switch (operands[opid].mod_type) {
     case mod_default: fprintf(stream, "mod_default, ");
@@ -335,8 +335,8 @@ void free_list_results(list_op_results *lr)
 
 
 /* dummy modifiers */
-ac_modifier_encode(default) {}
-ac_modifier_decode(default) {}
+ac_modifier_encode(default) {reloc->error = 0; return;}
+ac_modifier_decode(default) {reloc->error = 0; return;}
 
 ___modifiers___
 

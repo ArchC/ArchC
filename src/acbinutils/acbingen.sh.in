@@ -285,7 +285,6 @@ if [ "$PATCH_BINUTILS" -ne 0 ]; then
    
     chmod a+x $BINUTILS_DIR/config.sub
     chmod a+x $BINUTILS_DIR/bfd/config.bfd
-
 else
     echo "Skipping patching..."
 fi
@@ -298,6 +297,34 @@ do
   cp -f binutils/${cpfile} $BINUTILS_DIR/${cpfile}
   [ $? -ne 0 ] && exit $?
 done
+
+# Checks for newer versions of binutils, which requires archc generated source code changes
+# Checking whether write.c uses md_apply_fix or md_apply_fix3
+grep -e "md_apply_fix3" $BINUTILS_DIR/gas/write.c > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  # Newer binutils detected, changing from md_apply_fix3 to md_apply_fix
+  sed s/md_apply_fix3/md_apply_fix/g $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2
+  mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c
+fi
+# Checking whether expr.c uses md_parse_name(x,y,z) or md_parse_name(x,y,t,z)
+grep -e 'md_parse_name *([^,]*,[^,]*,[^,]*,.*)' $BINUTILS_DIR/gas/expr.c > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  # Newer binutils detected, changing md_parse_name macro to ignore the third parameter
+  sed -e 's/define md_parse_name(x, y, z)/define md_parse_name(x, y, t, z)/g' $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h2
+  mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h
+fi
+
+# Checking if BFD requires definition of reloc_name_lookup (binutils 2.18 or higher)
+grep -re "bfd_elfNN_bfd_reloc_name_lookup" $BINUTILS_DIR/bfd/* > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  # BFD requires this definition
+  sed -e 's/BFD_REQUIRES_RELOC_NAME_LOOKUP/1/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
+  mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
+else
+  # BFD does not require this definition
+  sed -e 's/BFD_REQUIRES_RELOC_NAME_LOOKUP/0/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
+  mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
+fi
 
 
 if [ ! -z ${GDB_DIR} ]; then
