@@ -497,8 +497,7 @@ elf_archc_final_link_relocate (howto, input_bfd, output_bfd,
      into the output file to be resolved at run time. */
   if (info->shared
       && (input_section->flags & SEC_ALLOC)
-      && (((r_type == `R_'___arch_name___`_REL32' || r_type == `R_'___arch_name___`_REL16' || r_type == `R_'___arch_name___`_REL8)' && (((h->elf_link_hash_flags
-				 & ELF_LINK_HASH_DEF_REGULAR) == 0) && !SYMBOL_CALLS_LOCAL(info,h))) || r_type == `R_'___arch_name___`_32' || r_type == `R_'___arch_name___`_16' || r_type == `R_'___arch_name___`_8)'
+      && (((r_type == `R_'___arch_name___`_REL32' || r_type == `R_'___arch_name___`_REL16' || r_type == `R_'___arch_name___`_REL8)' && ((h != NULL) && ((h->elf_link_hash_flags & ELF_LINK_HASH_DEF_REGULAR) == 0) && !SYMBOL_CALLS_LOCAL(info,h))) || r_type == `R_'___arch_name___`_32' || r_type == `R_'___arch_name___`_16' || r_type == `R_'___arch_name___`_8)'
       && (h == NULL
 	  || ELF_ST_VISIBILITY (h->other) == STV_DEFAULT
 	  || h->root.type != bfd_link_hash_undefweak) )
