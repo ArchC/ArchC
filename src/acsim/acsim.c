@@ -4068,7 +4068,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf(output, "ISA._behavior_instruction(");
     /* common_instr_field_list has the list of fields for the generic instruction. */
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-      fprintf(output, "instr_vec->get(%d)", pfield->id);
+      fprintf(output, "instr_vec->get(%d)", pfield->id + 1);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }

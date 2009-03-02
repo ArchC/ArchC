@@ -36,6 +36,8 @@
 #include <fcntl.h>
 #include <stdint.h>
 
+#include <ac_rtld.H>
+
 //Fix for Cygwin users, that do not have elf.h
 #ifdef __CYGWIN__
 #include "elf32-tiny.h"
@@ -47,7 +49,6 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
-
 // Forward declarations of ac_arch and ac_arch_ref.
 template<class ac_word, class ac_Hword> class ac_arch;
 template<class ac_word, class ac_Hword> class ac_arch_ref;
@@ -128,6 +129,12 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
   Elf32_Phdr    phdr;
   int           fd;
   unsigned int  i;
+  int           is_dyn = 0;           /* If executable has INTERP segment */
+  Elf32_Addr    dynamic_address = 0;  /* DYNAMIC segment address (if present) */
+  Elf32_Word    size = 0;             /* Total size occupied by the executable file in memory */
+
+  /* Stores a reference to an instance of the ArchC runtime dynamic linker*/
+  ac_dynlink::ac_rtld *rtld = NULL; 
 
   //Open application
   if (!filename || ((fd = open(filename, 0)) == -1)) {
@@ -152,12 +159,16 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
   }
 
   if (convert_endian(2,ehdr.e_type, match_endian) == ET_EXEC) {
+    int   shoff = convert_endian(4,ehdr.e_shoff, match_endian);
+    short shsize = convert_endian(2,ehdr.e_shentsize, match_endian);
+
     //It is an ELF file
     AC_SAY("Reading ELF application file: " << filename << endl);
 
     //Get program headers and load segments
     //    lseek(fd, convert_endian(4,ehdr.e_phoff, match_endian), SEEK_SET);
     for (i=0; i<convert_endian(2,ehdr.e_phnum, match_endian); i++) {
+      unsigned int segment_type;
 
       //Get program headers and load segments
       lseek(fd, convert_endian(4,ehdr.e_phoff, match_endian) + convert_endian(2,ehdr.e_phentsize, match_endian) * i, SEEK_SET);
@@ -167,31 +178,60 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
         exit(EXIT_FAILURE);
       }
 
-      if (convert_endian(4,phdr.p_type, match_endian) == PT_LOAD) {
+      segment_type = convert_endian(4, phdr.p_type, match_endian);
+      
+      switch(segment_type) {
+      case PT_INTERP: { // Requesting program interpreter
+        unsigned char smallbuf[50];
+
+        Elf32_Off p_offset = convert_endian(4, phdr.p_offset, match_endian);
+        Elf32_Word p_filesz = convert_endian(4, phdr.p_filesz, match_endian);
+
+        lseek(fd, p_offset, SEEK_SET);
+        read(fd, smallbuf, (p_filesz > 49)? 49: p_filesz);
+        smallbuf[(p_filesz > 49)? 49 : p_filesz] = 0; /* Terminate string */
+        
+        AC_SAY("ELF executable requesting program interpreter: " << smallbuf);
+        is_dyn = 1;
+        break;
+      }
+      case PT_DYNAMIC:  // Dynamic information
+        dynamic_address = convert_endian(4, phdr.p_vaddr, match_endian);
+        /* Fall through. */
+      case PT_LOAD: { // Loadable segment type - load dynamic segments as well
         Elf32_Word j;
         Elf32_Addr p_vaddr = convert_endian(4,phdr.p_vaddr, match_endian);
         Elf32_Word p_memsz = convert_endian(4,phdr.p_memsz, match_endian);
         Elf32_Word p_filesz = convert_endian(4,phdr.p_filesz, match_endian);
         Elf32_Off  p_offset = convert_endian(4,phdr.p_offset, match_endian);
-
+        
         //Error if segment greater then memory
         if (data_mem_size < p_vaddr + p_memsz) {
           AC_ERROR("not enough memory in ArchC model to load application.\n");
           close(fd);
           exit(EXIT_FAILURE);
         }
-
+        
         //Set heap to the end of the segment
         if (ac_heap_ptr < p_vaddr + p_memsz) ac_heap_ptr = p_vaddr + p_memsz;
 
+        //Update size value
+        if (p_vaddr + p_memsz > size)
+          size = p_vaddr + p_memsz;
+
         //Load and correct endian
         lseek(fd, p_offset, SEEK_SET);
-        for (j=0; j < p_filesz; j+=sizeof(ac_fetch)) {
+        read(fd, data_mem + p_vaddr, p_filesz);
+        /*for (j=0; j < p_filesz; j+=sizeof(ac_fetch)) {
           int tmp;
           read(fd, &tmp, sizeof(ac_fetch));
           *(ac_fetch *) (data_mem + p_vaddr + j) = convert_endian(sizeof(ac_fetch), tmp, match_endian);
-        }
+          }*/
         //memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
+        break;
+      }
+      default:
+        break;
       }
 
       //next header/segment
@@ -278,6 +318,29 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
 
   //Close file
   close(fd);
+
+  if (is_dyn) {
+    if (!dynamic_address) {
+      AC_ERROR("ELF executable requests a program interpreter but does not provide a DYNAMIC segment.\
+The ArchC runtime dynamic linker cannot continue without dynamic information.");
+      exit(EXIT_FAILURE);
+    } else { // Initiates the run time dynamic linker
+      AC_SAY("This ELF executable requests dynamic linking to complete its load phase.");
+      AC_SAY("The ArchC runtime dynamic linker will act as the program interpreter.");
+      //Instantiates the run time dynamic linker and transfer control to it
+      if (rtld == NULL)
+        rtld = new ac_dynlink::ac_rtld();
+      rtld->initiate(dynamic_address, data_mem, ac_start_addr,
+                     size, sizeof(ac_fetch), match_endian, data_mem_size,
+                     ac_heap_ptr);
+      AC_SAY("All dynamic objects loaded and resolved. Simulation will start.");
+      delete rtld;
+    }
+  } else {
+    if (dynamic_address)
+      AC_WARN("This ELF executable has a DYNAMIC segment but does not requests a program interpreter\
+ such as a runtime dynamic linker to process this segment. This segment will be ignored.");
+  }
 
   return EXIT_SUCCESS;
 }

@@ -6,6 +6,7 @@
  * @author    Alexandro Baldassin (UNICAMP)
  *            Daniel Casarotto (UFSC)
  *            Max Schultz (UFSC)
+ *            Rafael Auler (UNICAMP)
  * 
  * @author    The ArchC Team
  *            http://www.archc.org/
@@ -79,22 +80,34 @@ int CreateRelocIds(const char *relocid_filename)
 
   fprintf(output, "%sRELOC_NUMBER (R_%s_NONE, 0)\n", IND1, get_arch_name());
 
+  // Dynamic relocations. Put them first, so their relocation code doesn't change 
+  // for different models.
+  fprintf(output, "%sRELOC_NUMBER (R_%s_RELATIVE,  %d)\n", IND1, get_arch_name(), 1);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_COPY, %d)\n", IND1, get_arch_name(), 2);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_JUMP_SLOT, %d)\n", IND1, get_arch_name(), 3);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_GLOB_DAT, %d)\n", IND1, get_arch_name(), 4);
+
+  // Generic data relocations
+  fprintf(output, "%sRELOC_NUMBER (R_%s_8,  %d)\n", IND1, get_arch_name(), 5);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_16, %d)\n", IND1, get_arch_name(), 6);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_32, %d)\n", IND1, get_arch_name(), 7);
+  
+  fprintf(output, "%sRELOC_NUMBER (R_%s_REL8,  %d)\n", IND1, get_arch_name(), 8);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_REL16, %d)\n", IND1, get_arch_name(), 9);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_REL32, %d)\n", IND1, get_arch_name(), 10);
+
+  // Shared-library related relocations (static)
+  fprintf(output, "%sRELOC_NUMBER (R_%s_GOT,  %d)\n", IND1, get_arch_name(), 11);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_GOTOFF, %d)\n", IND1, get_arch_name(), 12);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_PLT, %d)\n", IND1, get_arch_name(), 13);
+
   unsigned reloc_id = 1;
   ac_relocation_type* relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
-    fprintf (output, "%sRELOC_NUMBER (%s, %d)\n", IND1, relocation->name, relocation->id);
+    fprintf (output, "%sRELOC_NUMBER (%s, %d)\n", IND1, relocation->name, relocation->id + 13);
     reloc_id++;
     relocation = find_relocation_by_id(reloc_id);
   }
-  
-  // Generic data relocations
-  fprintf(output, "%sRELOC_NUMBER (R_%s_8,  %d)\n", IND1, get_arch_name(), reloc_id);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_16, %d)\n", IND1, get_arch_name(), reloc_id + 1);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_32, %d)\n", IND1, get_arch_name(), reloc_id + 2);
-  
-  fprintf(output, "%sRELOC_NUMBER (R_%s_REL8,  %d)\n", IND1, get_arch_name(), reloc_id + 3);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_REL16, %d)\n", IND1, get_arch_name(), reloc_id + 4);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_REL32, %d)", IND1, get_arch_name(), reloc_id + 5);
   
   fclose(output);
   return 1;
@@ -136,6 +149,33 @@ int CreateRelocHowto(const char *reloc_howto_filename)
 
   fprintf(output, "%sHOWTO (R_%s_NONE, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_archc_reloc, \"R_%s_NONE\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
   
+  /* Dynamic relocations */
+  fprintf(output, "%sHOWTO (R_%s_RELATIVE, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_archc_reloc, \"R_%s_RELATIVE\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
+  fprintf(output, "%sHOWTO (R_%s_COPY, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_archc_reloc, \"R_%s_COPY\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
+  fprintf(output, "%sHOWTO (R_%s_JUMP_SLOT, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_archc_reloc, \"R_%s_JUMP_SLOT\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
+  fprintf(output, "%sHOWTO (R_%s_GLOB_DAT, 0, 0, 0, FALSE, 0, complain_overflow_dont, bfd_elf_archc_reloc, \"R_%s_GLOB_DAT\", FALSE, 0, 0, FALSE),\n", IND1, get_arch_name(), get_arch_name()); 
+
+  /* Generic data relocations
+    FIXME: this should depend on the target machine!
+  */
+  fprintf(output, "%sHOWTO (R_%s_8,  0, 0,  8, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+
+  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 0,  8, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
+  // Shared-library related relocations (static)
+  fprintf(output, "%sHOWTO (R_%s_GOT, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_GOT\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_GOTOFF, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_GOTOFF\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+  fprintf(output, "%sHOWTO (R_%s_PLT, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_PLT\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
+
   unsigned reloc_id = 1;
   ac_relocation_type *relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
@@ -160,22 +200,6 @@ int CreateRelocHowto(const char *reloc_howto_filename)
     relocation = find_relocation_by_id(reloc_id);
   }
 
-  /* Generic data relocations
-    FIXME: this should depend on the target machine!
-  */
-  fprintf(output, "%sHOWTO (R_%s_8,  0, 0,  8, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-
-  fprintf(output, "%sHOWTO (R_%s_16, 0, 1, 16, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-
-  fprintf(output, "%sHOWTO (R_%s_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-
-
-  fprintf(output, "%sHOWTO (R_%s_REL8,  0, 0,  8, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL8\",    FALSE, 0, 0x000000ff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-
-  fprintf(output, "%sHOWTO (R_%s_REL16, 0, 1, 16, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL16\",   FALSE, 0, 0x0000ffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-
-  fprintf(output, "%sHOWTO (R_%s_REL32, 0, 2, 32, TRUE, 0, complain_overflow_bitfield, generic_data_reloc,  \"R_%s_REL32\",   FALSE, 0, 0xffffffff, TRUE),\n", IND1, get_arch_name(), get_arch_name());
-
   fclose(output);
   return 1;
 }
@@ -193,25 +217,36 @@ int CreateRelocMap(const char *relocmap_filename)
   
   fprintf(output,"%s{ BFD_RELOC_NONE, R_%s_NONE },\n",IND1, get_arch_name());
 
+  /* Dynamic relocations */
+  fprintf(output,"%s{ %d, R_%s_RELATIVE  },\n", IND1, 1, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_COPY  },\n", IND1, 2, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_JUMP_SLOT  },\n", IND1, 3, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_GLOB_DAT  },\n", IND1, 4, get_arch_name());  
+
+ /* Generic data relocations
+    FIXME: this should depend on the target machine!
+   */
+  fprintf(output,"%s{ %d, R_%s_8  },\n", IND1, 5, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_16 },\n", IND1, 6, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_32 },\n", IND1, 7, get_arch_name());
+
+  fprintf(output,"%s{ %d, R_%s_REL8  },\n", IND1, 8, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL16 },\n", IND1, 9, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL32 },\n",  IND1, 10, get_arch_name());  
+
+  /* Shared-lib related relocations (static) */
+  fprintf(output,"%s{ %d, R_%s_GOT  },\n", IND1, 11, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_GOTOFF },\n", IND1, 12, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_PLT },\n",  IND1, 13, get_arch_name()); 
+
   unsigned reloc_id = 1;
   ac_relocation_type *relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
     reloc_id++;
     ac_relocation_type* next_relocation = find_relocation_by_id(reloc_id);
-    fprintf(output,"%s{ %d, %s },\n", IND1, relocation->id, relocation->name);
+    fprintf(output,"%s{ %d, %s },\n", IND1, relocation->id + 13, relocation->name);
     relocation = next_relocation;
   }
-
-  /* Generic data relocations
-    FIXME: this should depend on the target machine!
-   */
-  fprintf(output,"%s{ %d, R_%s_8  },\n", IND1, reloc_id++, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_16 },\n", IND1, reloc_id++, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_32 },\n", IND1, reloc_id++, get_arch_name());
-
-  fprintf(output,"%s{ %d, R_%s_REL8  },\n", IND1, reloc_id++, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_REL16 },\n", IND1, reloc_id++, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_REL32 }\n",  IND1, reloc_id++, get_arch_name());  
 
   fclose(output);
   return 1;

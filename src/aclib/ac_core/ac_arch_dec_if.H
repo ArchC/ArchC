@@ -96,8 +96,9 @@ public:
       }
 
       //Remove bits before first
-      value >>= first%(sizeof(ac_word) * 8);
-
+      // Temporary fix for ARM Little (!) 
+      //value >>= first%(sizeof(ac_word) * 8);
+      value >>= (31 - last);
     }
 
     //Mask to the size of the field

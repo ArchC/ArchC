@@ -91,10 +91,20 @@ extern unsigned long get_field_size(unsigned long insn_fmt, int field_id);
 ___modifier_prototypes___
 
 
+/* dynamic linking macros */
 
+extern void elf_archc_patch_plt0_entry(unsigned int got_displacement, char *plt_address);
+extern void elf_archc_patch_plt_entry(unsigned int got_displacement, unsigned int plt_offset, char *plt_address);
 
+#define ac_patch_plt0_entry() void elf_archc_patch_plt0_entry(unsigned int got_displacement, char *plt_address)
+#define ac_patch_plt_entry() void elf_archc_patch_plt_entry(unsigned int got_displacement, unsigned int plt_offset, char *plt_address)
+#define ac_patch_bits(bitsize, location, value) putbits(bitsize, location, value, ___endian_val___)
+#define ac_get_bits(bitsize, location) getbits(bitsize, location, ___endian_val___)
+#define ac_plt0_entry(size) static const unsigned int elf_archc_plt0_entry[size]
+#define ac_plt_entry(size) static const unsigned int elf_archc_plt_entry[size]
 
+/* dynamic linking information provided by the model */
 
-
+___dynamic_header___
 
 #endif /* _ARCHC_H_FILE_ */

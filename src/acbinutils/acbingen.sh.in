@@ -136,6 +136,20 @@ else
   touch modifiers
 fi
 
+# copy 'dynamic_info.ac' file into the directory
+if [ -f ../dynamic_info.ac ]; then
+  cp -f ../dynamic_info.ac .
+else
+  touch dynamic_info.ac
+fi
+
+# copy 'dynamic_patch.ac' file into the directory
+if [ -f ../dynamic_patch.ac ]; then
+  cp -f ../dynamic_patch.ac .
+else
+  touch dynamic_patch.ac
+fi
+
 # copy 'defines_gdb' file into the directory
 if [ -f ../defines_gdb ]; then
   cp -f ../defines_gdb .
@@ -167,7 +181,6 @@ if [ -f ../modifiers ]; then
   [ $? -ne 0 ] && exit $?
   rm -f temp_mod.o temp_mod.c
 fi
-
 
 if [ "$CREATE_ONLY" -ne 0 ]; then
   echo "Done. No files copied."

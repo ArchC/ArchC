@@ -340,3 +340,4 @@ ac_modifier_decode(default) {reloc->error = 0; return;}
 
 ___modifiers___
 
+___dynamic_body___

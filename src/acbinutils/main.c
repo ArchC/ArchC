@@ -384,6 +384,10 @@ static int Createm4File()
 
   fprintf(output, "m4_define(`___modifiers___', `m4_include(%s)')m4_dnl\n", "modifiers");
 
+  fprintf(output, "m4_define(`___dynamic_header___', `m4_include(%s)')m4_dnl\n", "dynamic_info.ac");
+
+  fprintf(output, "m4_define(`___dynamic_body___', `m4_include(%s)')m4_dnl\n", "dynamic_patch.ac");
+
   fprintf(output, "m4_define(`___format_structures___', `m4_include(%s)')m4_dnl\n", FORMAT_STRUCT_FILE);
 
   fprintf(output, "m4_define(`___defines_gdb___', `m4_include(%s)')m4_dnl\n", "defines_gdb");

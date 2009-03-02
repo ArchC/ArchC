@@ -91,9 +91,22 @@ typedef struct _acfixuptype
   struct _acfixuptype *next;
 } acfixuptype;
 
+/* Linked list to store aliases created with .req directive */
+typedef struct _acaliastype
+{
+  char * old_name;
+  char * new_name;
 
+  struct _acaliastype *next;
+} acaliastype;
+
+static bfd_reloc_code_real_type ac_parse_reloc PARAMS((void));
+static void ac_parse_req (char *str);
 static void s_cons(int byte_size);
 static void s_bss (int);
+static void s_req (int);
+static void s_dummy (int);
+static void s_unreq (int);
 static void archc_show_information(void);
 static void pseudo_assemble(void);
 static void emit_insn(void);
@@ -113,6 +126,7 @@ static void free_all_fixups(acfixuptype *fix);
 #ifdef DEBUG_ON
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
+static void print_req_aliases PARAMS((void));
 #endif
 static void encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr);
 void md_apply_fix3 (fixS *fixP ATTRIBUTE_UNUSED, valueT *valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED);
@@ -139,6 +153,10 @@ const pseudo_typeS md_pseudo_table[] =
   {"short", s_cons, AC_WORD_SIZE/8 /2},
   {"word",  s_cons, AC_WORD_SIZE/8},
   {"bss", s_bss, 0},
+  {"unreq", s_unreq, 0},
+  {"req", s_req, 0},
+  {"arm", s_dummy, 0},
+  {"code", s_dummy, 0},
   {NULL, 0, 0},
 };
 
@@ -205,6 +223,8 @@ static int in_imm_mode = 0;
 /* if an operand is of type expr, it will be saved here */
 static expressionS ref_expr;
 
+/* linked list to store aliases created with .req directive */
+static acaliastype *req_alias = NULL;
 
 /* out_insn is the current instruction being assembled */
 static struct insn_encoding
@@ -293,7 +313,7 @@ md_assemble(char *str)
   /* saves the last error ocurried with operands parsing. the algorithm
     will try to reduce the mnemonic size, and if fail, instead of reporting
     "unrecognized mnemonic", it must report the last error ocurried since
-    a succesful mnemonic hash find */
+    a successful mnemonic hash find */
   char *last_error = NULL;
   
   /* insn we need to encode at this call */
@@ -325,6 +345,34 @@ md_assemble(char *str)
   /* advance till first space (this indicates we should have got a mnemonic) 
      or end of string (maybe a mnemonic with no operands) */
   while (*s_pos != '\0' && !ISSPACE (*s_pos)) s_pos++;
+
+ /* Checks for .req directives of the form 
+   new_register_name .req existing_register_name */
+  if (s_pos != '\0')
+    {
+      int i;
+      char id[4];
+      saved_pos = s_pos;
+
+      while(ISSPACE(*s_pos))
+	s_pos++;
+
+      for (i = 0; i < 4; i++)
+	{
+	  id[i] = TOLOWER(*s_pos);
+	  s_pos++;
+	}
+
+      if (strncmp(id, ".req", 4) == 0)
+	{
+	  /* If the second string matches ".req", then this is
+	   not an instruction, it is a .req directive and we should parse
+	  it as a pseudo-op. */
+	  ac_parse_req(str);
+	  return;
+	}
+      s_pos = saved_pos;
+    }
 
   insn_error = ""; 
 
@@ -429,7 +477,7 @@ md_assemble(char *str)
 
         insn_error = NULL;  
       
-        /* if mnemonic suffix parsing was succesful and there are remaining operands to parse,
+        /* if mnemonic suffix parsing was successful and there are remaining operands to parse,
          remaining whitespaces in both pbuffer and s_pos exists. */
         if (*pbuffer != '\0') pbuffer++; // eats whitespace
       }
@@ -439,6 +487,12 @@ md_assemble(char *str)
     
       int go_next = ac_parse_operands(s_pos, pbuffer); /* parse the operands */
   
+      if (insn_error)
+	{
+	  /* in the outer loop step, we'll try another mnemonic size. if this search fails, we must
+	     report the last error since a succesful mnemonic hash find (correct mnemonic size) */
+	  last_error = insn_error;
+	}
       if (go_next == STOP_INSN)
         break;
     
@@ -453,9 +507,6 @@ md_assemble(char *str)
       else break;
     } /* main encoding loop end */
 
-    /* in the outer loop step, we'll try another mnemonic size. if this search fails, we must
-      report the last error since a succesful mnemonic hash find (correct mnemonic size) */
-    last_error = insn_error;
     /* outer loop next step */
     s_pos = saved_pos;
     s_pos--;
@@ -614,9 +665,30 @@ int ac_parse_operands(char *s_pos, char *args)
             }
   
 	    switch (ref_expr.X_op) {
-	      case O_symbol:  /* X_add_symbol + X_add_number */
+	       case O_symbol: {  /* X_add_symbol + X_add_number */
+	      bfd_reloc_code_real_type reloc;
+	      /* ac_parse_reloc works on input_line_pointer */
+	      char *save = input_line_pointer;
+	      input_line_pointer = s_pos;
+	      if ( *s_pos == '('
+		   && (reloc = ac_parse_reloc ()) != BFD_RELOC_UNUSED) {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		if (reloc != `R_'___arch_name___`_PLT)'
+		  {
+		    insn_error = "only PLT relocations supported on instruction operand";
+		    return STOP_INSN;
+		  }
 		create_fixup(operand_id);
-		break;
+	      }
+	      else {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		create_fixup(operand_id);
+	      }
+	      }
+	      break;
+	      
 		  
 	      case O_constant: /* X_add_number */
 	        if (!is_list)
@@ -682,8 +754,27 @@ int ac_parse_operands(char *s_pos, char *args)
 	      insn_error = "invalid operand, expected a symbolic address";
 	      return KEEP_GOING;
 	    }
-	    if (!is_list)
-	      create_fixup(operand_id);
+	      if (!is_list) {
+	      bfd_reloc_code_real_type reloc;
+	      char *save = input_line_pointer;
+	      input_line_pointer = s_pos; /* ac_parse_reloc works on input_line_pointer */
+	      if ( *s_pos == '('
+		   && (reloc = ac_parse_reloc ()) != BFD_RELOC_UNUSED) {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		if (reloc != `R_'___arch_name___`_PLT)'
+		  {
+		    insn_error = "only PLT relocations supported on instruction operand";
+		    return STOP_INSN;
+		  }
+		create_fixup(operand_id);
+	      }
+	      else {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		create_fixup(operand_id);
+	      }
+	    }
 	    else {
 	      // assembler is malformed, cannot have list operator with relocatable elements!
 	      INTERNAL_ERROR();	
@@ -988,7 +1079,7 @@ static void emit_insn()
   /* frag address where we emit the insn encoding (call frag_more() to get the address) */
     char *frag_address;
   
-  dbg_printf(1, "Emitting image 0x%08lX (%ld bits) at address 0x%08lX\n", 
+  dbg_printf(1, "Emitting image 0x%08X (%ld bits) at address 0x%08lX\n", 
                 out_insn.image, 
                 get_insn_size(out_insn.format), 
                 frag_now_fix());
@@ -1086,6 +1177,7 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
     resolve_symbol_value(fixP->fx_subsy);
 
     fixP->fx_offset -= S_GET_VALUE(fixP->fx_subsy);
+    fixP->fx_offset += fixP->fx_frag->fr_address / OCTETS_PER_BYTE;
 
     switch (fixP->fx_r_type) {
       case `R_'___arch_name___`_8:'
@@ -1138,8 +1230,7 @@ ___arch_name___`_adjust_reloc_count'(struct fix *fixP, long seg_reloc_count)
 
   Called by write_relocs() (write.c) for each fixup so that a BFD arelent structure can be build
 and returned do be applied through 'bfd_install_relocation()' which in turn will call a backend
-routine to apply the fix. As we are not dealing with relocations atm, we just return NULL so that
-no bfd_install_relocation and similar functions will be called. 
+routine to apply the fix. 
 */
 arelent *
 tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
@@ -1239,19 +1330,117 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
  Static functions
 */
  
-/*
-  We created this to auto-align data section whenever a data size > 1 is found
-  (The MIPS version uses this method, so I decided to use also)
+
+/* ac_parse_reloc() is used to parse special symbol modifiers, parenthesis next to a symbol
+  name with "got", "gotoff" or "plt" markers to flag the use of a different relocation
+  for this symbol. ac_parse_reloc() uses input_line_pointer to parse these constructs
+  and returns the apropriate relocation type for this symbol.
+
+  If no special relocation marker is found, it returns BFD_RELOC_UNUSED.   
+
+  This code was based on gas/tc-arm.c, the binutils arm model.
 */
+static bfd_reloc_code_real_type
+ac_parse_reloc ()
+{
+  char         id [16];
+  char *       ip;
+  unsigned int i;
+  static struct
+  {
+    char * str;
+    int    len;
+    bfd_reloc_code_real_type reloc;
+  }
+  reloc_map[] =
+  {
+#define MAP(str,reloc) { str, sizeof (str) - 1, reloc }
+    MAP ("(got)",    `R_'___arch_name___`_GOT),'
+    MAP ("(gotoff)", `R_'___arch_name___`_GOTOFF),'
+    MAP ("(plt)",    `R_'___arch_name___`_PLT),'
+    { NULL, 0,         BFD_RELOC_UNUSED }
+#undef MAP
+  };
+
+  for (i = 0, ip = input_line_pointer;
+       i < sizeof (id) && (ISALNUM (*ip) || ISPUNCT (*ip));
+       i++, ip++)
+    id[i] = TOLOWER (*ip);
+
+  for (i = 0; reloc_map[i].str; i++)
+    if (strncmp (id, reloc_map[i].str, reloc_map[i].len) == 0)
+      break;
+
+  input_line_pointer += reloc_map[i].len;
+
+  return reloc_map[i].reloc;
+}
+
+ /* Handles pseudo-ops like .word, etc. */
+
 static void
 s_cons (int byte_size)
 {
+  expressionS exp;
+
   if (byte_size > 1) {
     frag_align(log_table[byte_size], 0, 0);
     record_alignment(now_seg, log_table[byte_size]);
   }
 
-  cons(byte_size);
+  /* Start of code similar to cons_worker() in read.c 
+     s_cons used to call it instead of replicating its code,
+     but to support GOT/PLT relocations,
+     we need to modify the expression parsing logic */
+#ifdef md_flush_pending_output
+  md_flush_pending_output ();
+#endif
+
+  /* No parameters to our constructor pseudo-operator, so we silently return */
+  if (is_it_end_of_statement ())
+    {
+      demand_empty_rest_of_line ();
+      return;
+    }
+
+#ifdef md_cons_align
+  md_cons_align (byte_size);
+#endif
+
+  /* Parameter parsing loop, iterates through each expression separated by comma */
+  do
+    {
+      bfd_reloc_code_real_type reloc;
+
+      expression (& exp);
+
+      if (exp.X_op == O_symbol
+	  && * input_line_pointer == '('
+	  && (reloc = ac_parse_reloc ()) != BFD_RELOC_UNUSED)
+	{
+	  reloc_howto_type *howto = bfd_reloc_type_lookup (stdoutput, reloc);
+	  int size = bfd_get_reloc_size (howto);
+
+	  if (size > byte_size)
+	    as_bad ("%s relocations do not fit in %d bytes",
+		    howto->name, byte_size);
+	  else
+	    {
+	      char *p = frag_more ((int) byte_size);
+	      int offset = byte_size - size;
+
+	      fix_new_exp (frag_now, p - frag_now->fr_literal + offset, size,
+			   &exp, 0, reloc);
+	    }
+	}
+      else
+	emit_expr (&exp, (unsigned int) byte_size);
+    }
+  while (*input_line_pointer++ == ',');
+
+  /* Put terminator back into stream.  */
+  input_line_pointer --;
+  demand_empty_rest_of_line ();
 }
 
 static void
@@ -1462,6 +1651,7 @@ static int ac_symbol_dispensable(const char *marker, unsigned int *value)
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, unsigned int *value)
 {
   acasm_symbol *msymb = NULL;
+  acaliastype *p;
   
   if (ac_symbol == NULL)
     INTERNAL_ERROR();
@@ -1469,7 +1659,26 @@ static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, unsigned 
   msymb = (acasm_symbol *) hash_find (sym_hash, parser_symbol);
 
   // symbol not found
-  if (msymb == NULL) return 0;
+  if (msymb == NULL)
+    {
+      /* symbol not found, check for aliases */
+      p = req_alias;
+      while (p != NULL)
+	{
+	  if (strncmp(p->new_name, parser_symbol, strlen(p->new_name))==0)
+	    break;
+	  p = p->next;
+	}
+      if (p != NULL)
+	{
+	  /* in order to avoid infinite looping here, req_alias linked list
+	     cannot contain any illegal aliases (new_name referencing to an
+	     existing symbol name). this checking is done in .req directive parsing. */
+	  dbg_printf(4, "Operand \"%s\" was not found. Trying its alias \"%s\"\n", parser_symbol, p->old_name);
+	  return ac_valid_symbol(ac_symbol, p->old_name, value);
+	}
+      return 0;
+    }
   
   if (strcmp(ac_symbol, "")==0) // any map marker will do
   {
@@ -1723,7 +1932,7 @@ void ___arch_name___`_frob_label'(symbolS *sym) {
   dbg_print_symbolS(1, sym);
 
   if (ac_valid_symbol("",  (char *)S_GET_NAME(sym), &dummy))  /* symbol found as label -.- */
-    as_bad(_("invalid label name: '%s'"), S_GET_NAME(sym));
+    as_warn(_("symbol name used as label may create lead to ambiguous code: '%s'"), S_GET_NAME(sym));
   
 }
 
@@ -1770,9 +1979,9 @@ encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr)
   mp.section = secname; 
   mp.list_results = lr;
 
-  dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
+  dbg_printf(3, "image 0x%08X + %u ==> ", out_insn.image, val_const);
   encode_cons_field(&out_insn.image, &mp, oper_id);
-  dbg_printf(0, "0x%08lX\n", out_insn.image);  
+  dbg_printf(0, "0x%08X\n", out_insn.image);  
 
   if (mp.error) 
     as_bad(_("invalid operand value: '%u'"), val_const);
@@ -1866,4 +2075,277 @@ static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
                 fixP->tc_fix_data);
 }
 #endif
+
+
+
+#ifdef DEBUG_ON
+static void print_req_aliases()
+{
+  acaliastype *p = req_alias;
+
+  unsigned int i = 1;
+
+  dbg_printf(3, "Now dumping .req aliases linked list content\n");
+  while (p != NULL)
+    {
+      dbg_printf(4, "Element #%d, new_name=\"%s\", old_name=\"%s\"\n", i, p->new_name, p->old_name);
+      p = p->next;
+      i++;
+    }
+}
+#endif
+
+/* parses .req directives of the form 
+ new_register_name .req existing_register
+
+ Creates the alias as a node of the linked list
+ req_alias of type acaliastype. When an userdef
+ symbol is queried and not found, this list
+ will be checked.
+*/
+static void ac_parse_req (char *str)
+{
+  char *s_pos = str; // Works on s_pos, avoid changing str so we have the full string
+                     // to report on error
+  char *saved_pos;
+  char *operand1; // Stores operand1 string (new symbol name)
+  char *operand2; // Stores the second operand (existing symbol name)
+  char directive[5]; // Parses .req directive for sanity check
+  unsigned int i;
+
+  dbg_printf(0, "Parsing .req directive: \"%s\"\n", str);
+
+  while (ISSPACE(*s_pos)) s_pos++;
+  if (*s_pos == '\0')
+    INTERNAL_ERROR();
+
+  /* Calculates first operand size */
+  i = 0;
+  saved_pos = s_pos;
+  while (ISALNUM(*s_pos))
+    {
+      s_pos++;
+      i++;
+    }
+  s_pos = saved_pos;
+
+  if (i > 128)
+    {
+      as_bad(".req directive first operand is too long in size");
+      return;
+    }
+  /* Allocate first operand */
+  operand1 = (char *) malloc(sizeof(char) * (i+1));
+  i = 0;
+  
+  /* Parses first operand */
+  while (ISALNUM(*s_pos))
+    {
+      operand1[i] = TOLOWER(*s_pos);
+      i++;
+      s_pos++;
+    }
+  operand1[i] = '\0';
+
+  if (!ISSPACE(*s_pos))
+    {
+      as_bad("bad character \"%c\" in .req directive: %s", *s_pos, str);
+      free(operand1);
+      return;
+    }
+
+  while (ISSPACE(*s_pos)) s_pos++;
+  
+  /* Checks for .req directive presence - sanity check */
+  i = 0;
+  while (ISALNUM(*s_pos) || ISPUNCT(*s_pos))
+    {
+      directive[i] = TOLOWER(*s_pos);
+      s_pos++;
+      i++;
+      if (i >= 5)
+	{
+	  as_bad("malformed .req directive: %s", str);
+	  free(operand1);
+	  return;
+	}
+    }
+  if (strncmp(directive, ".req", 4) || !ISSPACE(*s_pos))
+    {
+      as_bad("malformed .req directive: %s", str);
+      free(operand1);
+      return;
+    }
+
+  /* Calculates operand2 size */
+  while (ISSPACE(*s_pos)) s_pos++;
+
+  i = 0;
+  saved_pos = s_pos;
+  while (ISALNUM(*s_pos))
+    {
+      s_pos++;
+      i++;
+    }
+  s_pos = saved_pos;
+
+ if (i > 128)
+    {
+      as_bad(".req directive second operand is too long in size");
+      free(operand1);
+      return;
+    }
+  /* Allocates second operand */
+  operand2 = (char *) malloc(sizeof(char) * (i+1));
+  i = 0;
+  
+  /* Parses second operand */
+  while (ISALNUM(*s_pos))
+    {
+      operand2[i] = TOLOWER(*s_pos);
+      i++;
+      s_pos++;
+    }
+  operand2[i] = '\0';
+
+  while (ISSPACE(*s_pos)) s_pos++;
+
+  if (*s_pos != '\0')
+    {
+      as_bad("junk at end of line in .req directive: %s", str);
+      free(operand1);
+      free(operand2);
+      return;
+    } 
+
+  dbg_printf(1, ".req directive with operands new_name=\"%s\" old_name=\"%s\"\n", operand1, operand2);
+
+  /* Verify if operand2 is really an existing register(in fact any other symbol category will do) */
+  if (!ac_valid_symbol("", operand2, &i))
+    {
+      as_bad("\"%s\" in .req directive does not exists", operand2);
+      free(operand1);
+      free(operand2);
+      return;
+    }
+
+  /* Verify if operand1 does not reference an existing register */
+  if (ac_valid_symbol("", operand1, &i))
+    {
+      as_warn("ignoring redefinition of symbol alias \"%s\"", operand1);
+      free(operand1);
+      free(operand2);
+      return;
+    }
+
+  /* Create alias */
+  if (req_alias == NULL)
+    {
+      req_alias = (acaliastype *) malloc(sizeof(acaliastype));
+      req_alias->next = NULL;      
+    }
+  else
+    {
+      acaliastype *temp;
+      temp = (acaliastype *) malloc (sizeof(acaliastype));
+      temp->next = req_alias;
+      req_alias = temp;
+    }
+  req_alias->new_name = strdup(operand1);
+  req_alias->old_name = strdup(operand2);
+
+  free(operand1);
+  free(operand2);
+
+#ifdef DEBUG_ON
+  print_req_aliases();
+#endif
+}
+
+/* should not be used
+ .req directive does not start a line - prints error */
+static void s_req (int a ATTRIBUTE_UNUSED)
+{
+  as_bad("invalid syntax for .req directive");
+
+  while (!(*input_line_pointer == '\n' || *input_line_pointer == '\0'))
+    input_line_pointer++;
+  return;
+}
+
+/* .unreq directive, unregister an alias created with
+ .req directive. */
+static void s_unreq (int a ATTRIBUTE_UNUSED) 
+{
+  char *unregister_name;
+
+  char *s_pos, saved_char;
+  unsigned int i;
+
+  acaliastype *p, *ant;
+
+  s_pos = input_line_pointer;
+  while (ISSPACE(*s_pos))s_pos++;
+
+  unregister_name = s_pos;
+  i = 0;
+  while (ISALNUM(*s_pos))
+    {
+      i++;
+      s_pos++;
+    }
+  if (i > 128)
+    {
+      as_bad(".unreq operand too long");
+      while (!(*input_line_pointer == '\n' || *input_line_pointer == '\0'))
+	input_line_pointer++;
+      return;
+    }
+  saved_char = *s_pos;
+  *s_pos = '\0';
+
+  dbg_printf(0, "Parsing .unreq directive, operand: \"%s\"\n", unregister_name);
+  
+  /* Finds the alias */
+  ant = req_alias;
+  p = req_alias;
+  while (p != NULL)
+    {
+      if (strncmp(p->new_name, unregister_name, i)==0)
+	break;
+      ant = p;
+      p = p->next;
+    }
+  
+  /* if not found */
+  if (p == NULL)
+    {
+      as_bad("\"%s\" symbol in .unreq directive does not exist", unregister_name);
+      *s_pos = saved_char;
+      input_line_pointer = s_pos;
+      demand_empty_rest_of_line();
+      return;
+    }
+  /* deletes it */
+  if (p == req_alias)
+    req_alias = req_alias->next;
+  else 
+    ant->next = p->next;
+    
+  free(p->new_name);
+  free(p->old_name);
+  free(p);
+
+  *s_pos = saved_char;
+
+  input_line_pointer = s_pos;
+  demand_empty_rest_of_line();
+  
+}
+
+static void s_dummy (int a ATTRIBUTE_UNUSED){
+while (!(*input_line_pointer == '\n' || *input_line_pointer == '\0'))
+	input_line_pointer++;
+      return;
+}
 

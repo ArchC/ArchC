@@ -333,10 +333,16 @@ instrdec: AC_INSTR LT ID GT ID
        /* Add to the instruction declaration list. */
        current_type = (char*) malloc(sizeof(char) * (strlen($3) + 1));
        strcpy(current_type,$3);
-       if (!add_instr($5, current_type, &current_instr, error_msg))
-        yyerror(error_msg);
-       if (!add_symbol($5, INSTR, (void*) instr_list_tail))
-        yyerror("Internal Bug. find_instr should have caught this");
+       if (find_instr($5))
+	 yyerror("Redefinition of %s", $5);
+       else {
+	 if (!add_instr($5, current_type, &current_instr, error_msg))
+	   yyerror(error_msg);
+	 else {
+	   if (!add_symbol($5, INSTR, (void*) instr_list_tail))
+	     yyerror("Internal Bug. find_instr should have caught this");
+	 }
+       }
        list_type = INSTR_L;
       }
       commalist SEMICOLON
@@ -1183,11 +1189,17 @@ commalist: COMMA ID
        switch (list_type)
        {
         case INSTR_L:
-         if (!add_instr($2, current_type, &current_instr, error_msg)) /* Add to instruction list. */
-          yyerror(error_msg);
-         if (!add_symbol($2, INSTR, (void*) instr_list_tail))
-          yyerror("Internal Bug. find_instr should have caught this");
-         break;
+	 if (find_instr($2))
+	  yyerror("Redefinition of %s", $2);
+	 else {
+          if (!add_instr($2, current_type, &current_instr, error_msg)) /* Add to instruction list. */
+           yyerror(error_msg);
+	  else {
+           if (!add_symbol($2, INSTR, (void*) instr_list_tail))
+            yyerror("Internal Bug. find_instr should have caught this");
+          }
+	 }
+	 break;
         case STAGE_L:
          /* This case is reached when a pipe declaration like
             ac_stages ST1, ST2, ST3;

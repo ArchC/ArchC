@@ -1438,6 +1438,10 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
 
   static char *f_arg_str_p;
 
+  if (pf == NULL) {
+    sprintf(error_msg, "Ignoring undeclared instruction set_asm argument");
+    return 0;
+  }
   /* gets the field ID - from left to the right of the format */
   ac_dec_field *pfield = pf->fields;
   int f_id=0;

@@ -593,6 +593,12 @@ int add_dec_list(ac_dec_instr* pinstr, char* name, int value, char* error_msg)
   ac_dec_field *pfield;
 
   /* Find format */
+  if (pinstr == NULL)
+    {
+      sprintf(error_msg, "Ignoring undeclared instruction arguments");
+      return 0;
+    }
+
   pformat = find_format(pinstr->format);
   if( pformat == NULL ) {
     sprintf(error_msg, "Instr %s: Format not found for this instruction", pinstr->name);
