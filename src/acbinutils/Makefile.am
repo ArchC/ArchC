@@ -93,9 +93,10 @@ FILES_TO_COPY_GDB = \
 	include/share-xxxxx.h \
 	bfd/share-xxxxx.c 
 
-bin_PROGRAMS = bmdsfg 
+bin_PROGRAMS = bmdsfg acrelconvert
 bmdsfg_SOURCES = main.c utils.c utils.h opcodes.c opcodes.h bfd.c bfd.h gas.c gas.h 
 bmdsfg_LDADD = ../acpp/libacpp.la ../replace/libreplace.la
+acrelconvert_SOURCES = acrelconvert.c
 
 edit = sed \
 	-e 's,@pkgdatadir\@,$(pkgdatadir),g' \
