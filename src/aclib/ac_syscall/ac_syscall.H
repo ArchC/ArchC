@@ -139,7 +139,12 @@ void ac_syscall<ac_word, ac_Hword>::close()
 {
   DEBUG_SYSCALL("close");
   int fd = get_int(0);
-  int ret = ::close(fd);
+  int ret;
+  // Silently ignore attempts to close standard streams (newlib may try to do so when exiting)
+  if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO)
+    ret = 0;
+  else
+    ret = ::close(fd);
   if (ret == -1) {
 #if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call close (fd %d): %s\n", fd, strerror(errno));

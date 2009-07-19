@@ -108,6 +108,7 @@ void ShowDecFormat(ac_dec_format *f);
 void ShowDecodeList(ac_dec_list *l);
 void ShowDecInstr(ac_dec_instr *i);
 void ShowDecoder(ac_decoder *d, unsigned level);
+void PutCommonFieldsIds(ac_dec_field *common_fields, ac_dec_format *formats);
 ac_decoder_full *CreateDecoder(ac_dec_format *formats, ac_dec_instr *instructions);
 
 ac_dec_format *FindFormat(ac_dec_format *formats, char *name);

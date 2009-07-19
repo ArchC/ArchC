@@ -158,6 +158,7 @@ int main(int argc, char** argv) {
   // Structures to be passed to the decoder generator
   extern ac_dec_format *format_ins_list;
   extern ac_dec_instr *instr_list;
+  extern ac_dec_field *common_instr_field_list;
   // Structures to be passed to the simulator generator
   extern ac_stg_list *stage_list;
   extern ac_pipe_list *pipe_list;
@@ -350,6 +351,7 @@ int main(int argc, char** argv) {
       printf("\n\n");
     }
     decoder = CreateDecoder(format_ins_list, instr_list);
+    PutCommonFieldsIds(common_instr_field_list, format_ins_list);
 
     if( ACDDecoderFlag )
       ShowDecoder(decoder -> decoder, 0);
@@ -4068,7 +4070,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf(output, "ISA._behavior_instruction(");
     /* common_instr_field_list has the list of fields for the generic instruction. */
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-      fprintf(output, "instr_vec->get(%d)", pfield->id + 1);
+      fprintf(output, "instr_vec->get(%d)", pfield->id);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
