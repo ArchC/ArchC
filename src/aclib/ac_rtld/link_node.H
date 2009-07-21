@@ -28,7 +28,7 @@
 #define _LINK_NODE_H
 
 //Fix for Cygwin users, that do not have elf.h
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__APPLE__)
 #include "elf32-tiny.h"
 #else
 #include <elf.h>

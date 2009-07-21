@@ -192,36 +192,12 @@ ac_dec_field *FindDecField(ac_dec_field *fields, char *name)
   return NULL;
 }
 
-void PutCommonFieldsIds(ac_dec_field *common_fields, ac_dec_format *formats)
-{
-  /* Our reference fields are in the first format. These fields should have IDs
-     given by PutIDs. Now we check theses IDs and copy them to the common fields.
-     If a field is common to all formats, then it obviously must be in the first
-     format as well, so it suffices to have only the first format as reference.
-  */
-  
-  ac_dec_field *p = common_fields;
-
-  /* Iterate through all common fields, and check its ID in the reference fields list */
-  while (p) {
-    ac_dec_field *ref = formats->fields;
-    while (ref) {    
-      if (CheckFields(ref, p) == -1) {
-        p->id = ref->id;
-        break;
-      }
-      ref = ref->next;
-    }
-    p = p->next;
-  }
-}
-
 
 ac_dec_field *PutIDs(ac_dec_format *formats, unsigned nFields)
      /* TODO:
         - porque o indice e o id n� s� iguais? (poderia pegar o nome pelo id) (id 0 reservado)
         - porque n� muda o id na mesma estrutura recebida?
-        - nFields �na verdade o limit!!! (== id de maior valor) 
+        - nFields �na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
       */
 {
   ac_dec_field *fields, *tmp;

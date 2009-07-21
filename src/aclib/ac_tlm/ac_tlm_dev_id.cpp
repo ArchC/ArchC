@@ -12,7 +12,7 @@
  * @version   2.0beta2
  * @date      Fri, 05 May 2006 18:45:12 -0300
  * 
- * @brief     Skeleton file for the ac_tlm_dev_id class implementation.
+ * @brief     Defines a class that uniquely identifies a device.
  * 
  * @attention Copyright (C) 2002-2005 --- The ArchC Team
  * 

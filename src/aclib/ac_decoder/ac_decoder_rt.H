@@ -34,10 +34,10 @@ using std::ostream;
 using std::endl;
 
 // ac_dec_format forward declaration
-class ac_dec_format;
+struct ac_dec_format;
 
 // ac_decoder_full forward declaration
-class ac_decoder_full;
+struct ac_decoder_full;
 
 //! Field type used to build the decoder
 class ac_dec_field {
