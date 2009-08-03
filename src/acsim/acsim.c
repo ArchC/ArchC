@@ -122,6 +122,26 @@ unsigned long long GetBits(void *buffer, int *quant, int last, int quantity, int
   return 1;
 };
 
+/*!If target is little endian, this function inverts fields in each format. This
+  is necessary in order to the decoder works in little endian architectures.
+  \param formats The list of parsed formats containing fields to be inverted.
+ */
+void invert_fields(ac_dec_format *format)
+{
+  ac_dec_field *field;
+
+  while (format) {
+    int size = format->size;
+    field = format->fields;
+    while (field) {
+      field->first_bit = size - 2 - field->first_bit + field->size;
+      field = field->next;
+    }
+
+    format = format->next;
+  }
+}
+
 
 /**********************************************************/
 /*!Writes a standard comment at the begining of each file
@@ -339,6 +359,10 @@ int main(int argc, char** argv) {
 
     ac_match_endian = (ac_host_endian == ac_tgt_endian);
 
+    //If target is little endian, invert the order of fields in each format. This is the
+    //way the little endian decoder expects format fields.
+    if (ac_tgt_endian == 0)
+      invert_fields(format_ins_list);
 
     //Creating decoder to get Field Number info and write its static version.
     //This object will be used by some Create functions.
@@ -1189,7 +1213,7 @@ int main(int argc, char** argv) {
     /* ac_helper */
     if (helper_contents)
     {
-     fprintf(output, helper_contents);
+     fprintf(output, "%s", helper_contents);
      fprintf(output, "\n");
     }
 
@@ -1205,8 +1229,8 @@ int main(int argc, char** argv) {
     fprintf( output,"%s}\n\n", INDENT[1] );
 
     /* getter methods for current instruction */
-    fprintf(output, "%sinline char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
-    fprintf(output, "%sinline char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
+    fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
+    fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
     fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
     fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
     fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
@@ -1661,7 +1685,7 @@ int main(int argc, char** argv) {
       fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", INDENT[1]);
 
       fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
-      fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1]);
+      fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1], project_name);
     }
 
 
@@ -2107,7 +2131,8 @@ void CreateProcessorImpl() {
   }
 
   print_comment( output, "Processor Module Implementation File.");
-  fprintf( output, "#include  \"%s.H\"\n\n", project_name);
+  fprintf( output, "#include  \"%s.H\"\n", project_name);
+  fprintf( output, "#include  \"%s_isa.cpp\"\n\n", project_name);
 
   if( ACVerifyFlag ){
     fprintf( output, "#include  \"ac_msgbuf.H\"\n");
@@ -2901,10 +2926,11 @@ void CreateImplTmpl(){
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     for (pdeclist = pinstr->dec_list; pdeclist != NULL;
          pdeclist = pdeclist->next) {
-      /* fprintf char* name, int value, ac_dec_list* next  */
-      fprintf(output, "%s{\"%s\", %d, ",
+      /* fprintf char* name, int id, int value, ac_dec_list* next  */
+      fprintf(output, "%s{\"%s\", %d, %d, ",
               INDENT[1],
               pdeclist->name,
+              pdeclist->id,
               pdeclist->value);
       if (pdeclist->next)
         fprintf(output, "&(%s_parms::%s_isa::dec_list[%d])},\n", project_name, project_name, i + 1);
@@ -3375,9 +3401,10 @@ void CreateMakefile(){
   fprintf(output, "\n\n");
 
   //Declaring SRCS variable
+  //Note: Removed $(MODULE)_isa.cpp, added as include inside $(MODULE).cpp
   COMMENT_MAKE("These are the source files provided by the user + ArchC sources");
-  fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) $(MODULE)_isa.cpp %s",
-           (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":"");
+  fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) %s",
+           (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":""); 
 
   if (ACABIFlag)
     fprintf( output, " $(MODULE)_syscall.cpp");
@@ -3743,6 +3770,7 @@ void EmitDecStruct( FILE* output){
 
     for( pdeclist = pinstr->dec_list; pdeclist!= NULL; pdeclist=pdeclist->next){
       fprintf( output, "%sdec_list[%d].name      = \"%s\";\n", INDENT[2], i, pdeclist->name);
+      fprintf( output, "%sdec_list[%d].id        = %d;\n", INDENT[2], i, pdeclist->id);
       fprintf( output, "%sdec_list[%d].value     = %d;\n", INDENT[2], i, pdeclist->value);
       if(pdeclist->next)
         fprintf( output, "%sdec_list[%d].next      = &(dec_list[%d]);\n\n", INDENT[2], i, i+1);

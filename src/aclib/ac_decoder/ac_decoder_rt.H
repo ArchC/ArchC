@@ -71,7 +71,7 @@ public:
   int CheckFields(const ac_dec_field& f2) const;
 
   /// Finds fields by name
-  ac_dec_field* FindDecField(string name);
+  ac_dec_field* FindDecField(int id);
 
   /// Output operator
   friend ostream& operator << (ostream& os, ac_dec_field& adf);
@@ -95,6 +95,7 @@ struct ac_dec_format {
 //! Type used to build the decoder
 struct ac_dec_list {
   string name;                  //!< Field name to be checked
+  int id;                       //!< Field ID to be checked
   int value;                    //!< Value to find
   ac_dec_list* next;            //!< Next decode element
   
@@ -108,7 +109,7 @@ typedef struct control_flow {
   int    delay_slot;           //!< Number of delay slots
   string delay_slot_cond;      //!< Condition to execute instructions in the delay slots
   string action;               //!< Any other action to be performed (C/C++ block)
-};
+} ac_control_flow;
 
 //! Instruction type used to build the decoder
 class ac_dec_instr {
@@ -130,8 +131,6 @@ public:
 
   static ac_dec_instr* GetInstrByID(ac_dec_instr *instr, unsigned id);
 
-  static ac_dec_instr* FindInstruction(ac_decoder_full *decoder, unsigned char *buffer, int quant);
-
 };
 
 
@@ -144,7 +143,8 @@ struct ac_decoder {
 
   void ShowDecoder(unsigned level);
 
-  static ac_decoder* AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruction, ac_dec_field* fields);
+  static ac_decoder* AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruction, ac_dec_field* fields,
+                                  ac_dec_format *fmt);
 
 };
 
@@ -169,8 +169,6 @@ struct ac_decoder_full {
                                         ac_dec_prog_source* source);
 
   unsigned* Decode(unsigned char *buffer, int quant);
-
-  static unsigned* DecodeAsInstruction(ac_decoder_full * decoder, ac_dec_instr *instruction, unsigned char *buffer, int quant);
 
 };
 

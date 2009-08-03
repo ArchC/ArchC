@@ -53,6 +53,7 @@ typedef struct _ac_dec_format{
 //! Type used to build the decoder
 typedef struct _ac_dec_list{
   char *name;                   //!< Field name to be checked
+  int id;                       //!< Field ID to be checked
   int value;                    //!< Value to find
   struct _ac_dec_list *next; //!< Next decode element
 } ac_dec_list;

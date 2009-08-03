@@ -160,9 +160,7 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
   }
 
   if (convert_endian(2,ehdr.e_type, match_endian) == ET_EXEC) {
-    int   shoff = convert_endian(4,ehdr.e_shoff, match_endian);
-    short shsize = convert_endian(2,ehdr.e_shentsize, match_endian);
-
+    
     //It is an ELF file
     AC_SAY("Reading ELF application file: " << filename << endl);
 
@@ -189,7 +187,11 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
         Elf32_Word p_filesz = convert_endian(4, phdr.p_filesz, match_endian);
 
         lseek(fd, p_offset, SEEK_SET);
-        read(fd, smallbuf, (p_filesz > 49)? 49: p_filesz);
+        if (read(fd, smallbuf, (p_filesz > 49)? 49: p_filesz) != (signed)((p_filesz > 49)?49: p_filesz)) {
+          AC_ERROR("reading program interpreter segment\n");
+          close(fd);
+          exit(EXIT_FAILURE);
+        }
         smallbuf[(p_filesz > 49)? 49 : p_filesz] = 0; /* Terminate string */
         
         AC_SAY("ELF executable requesting program interpreter: " << smallbuf);
@@ -200,7 +202,6 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
         dynamic_address = convert_endian(4, phdr.p_vaddr, match_endian);
         /* Fall through. */
       case PT_LOAD: { // Loadable segment type - load dynamic segments as well
-        Elf32_Word j;
         Elf32_Addr p_vaddr = convert_endian(4,phdr.p_vaddr, match_endian);
         Elf32_Word p_memsz = convert_endian(4,phdr.p_memsz, match_endian);
         Elf32_Word p_filesz = convert_endian(4,phdr.p_filesz, match_endian);
@@ -220,15 +221,13 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
         if (p_vaddr + p_memsz > size)
           size = p_vaddr + p_memsz;
 
-        //Load and correct endian
+        //Load 
         lseek(fd, p_offset, SEEK_SET);
-        read(fd, data_mem + p_vaddr, p_filesz);
-        /*for (j=0; j < p_filesz; j+=sizeof(ac_fetch)) {
-          int tmp;
-          read(fd, &tmp, sizeof(ac_fetch));
-          *(ac_fetch *) (data_mem + p_vaddr + j) = convert_endian(sizeof(ac_fetch), tmp, match_endian);
-          }*/
-        //memset(data_mem + p_vaddr + p_filesz, 0, p_memsz - p_filesz);
+        if (read(fd, data_mem + p_vaddr, p_filesz) != (signed)p_filesz) {
+          AC_ERROR("reading ELF LOAD segment.\n");
+          close(fd);
+          exit(EXIT_FAILURE);
+        }
         break;
       }
       default:
@@ -258,8 +257,12 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
 
     string_table = (char *) malloc(convert_endian(4,shdr.sh_size, match_endian));
     lseek(fd, convert_endian(4,shdr.sh_offset, match_endian), SEEK_SET);
-    read(fd, string_table, convert_endian(4,shdr.sh_size, match_endian));
-
+    if (read(fd, string_table, convert_endian(4,shdr.sh_size, match_endian)) !=
+        (signed)convert_endian(4,shdr.sh_size, match_endian)) {
+      AC_ERROR("reading ELF string table.\n");
+      close(fd);
+      exit(EXIT_FAILURE);
+    }
     // load .text, .data and .bss sections
     for (i=0; i<convert_endian(2,ehdr.e_shnum, match_endian); i++) {
 
@@ -302,16 +305,13 @@ template <typename ac_fetch> int ac_load_elf(char* filename, unsigned char* data
           break; // .bss is supposed to be the last one
         }
 
-        //Load and correct endian
+        //Load
         lseek(fd, tshoff, SEEK_SET);
-        for (Elf32_Word j=0; j < tshsize; j+=sizeof(ac_fetch)) {
-          int tmp;
-          read(fd, &tmp, sizeof(ac_fetch));
-          *(ac_fetch *) (data_mem + tshaddr + j) = convert_endian(sizeof(ac_fetch), tmp, match_endian);
-
-          // printf("0x%08x %08x \n", tshaddr+j, *(ac_fetch *) (data_mem+tshaddr+j));
+        if (read(fd, data_mem + tshaddr, tshsize) != (signed)tshsize) {
+          AC_ERROR("reading ELF section.\n");
+          close(fd);
+          exit(EXIT_FAILURE);
         }
-        //        printf("\n");
       }
 
     }

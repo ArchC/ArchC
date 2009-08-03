@@ -90,7 +90,7 @@ void ac_decoder::ShowDecoder(unsigned level) {
   while (d) {
     printf("%sac_decoder:\n", ident);
     printf("%s Field:\n", ident);
-    printf("%s  Name: %s\n%s  Val : %d\n", ident, d -> check -> name.c_str(), ident, d -> check -> value);
+    printf("%s  Name: %s\n%s  ID : %d\n%s  Val : %d\n", ident, d -> check -> name.c_str(), ident, d->check->id, ident, d -> check -> value);
     if (d -> found) {
       printf("%s Instruction Found:\n", ident);
       printf("%s  Name    : %s\n%s  Mnemonic: %s\n", ident, d -> found -> name.c_str(), ident, d -> found -> mnemonic.c_str());
@@ -111,33 +111,23 @@ void MemoryError(char *fileName, long lineNumber, char *functionName)
   exit(1);
 }
 
-/* Fields which have the same name, should have the same position inside the instruction
-   \return 0 if fields have the same name but different position, -1 if fields are equal, 1 otherwise
+
+/* Fields which have the same position, size and sign inside the instruction are treated as equal.
+   \return 1 if fields are equal, 0 otherwise
 */
-// USEFUL?
+
 int ac_dec_field::CheckFields(const ac_dec_field& f2) const {
-  if (name == f2.name) {
-    if (name != "0") {  
-      if ((size != f2.size) || (first_bit != f2.first_bit)) {
-	cerr << "Field '" << name
-	     << "' defined in two formats but with different size or position."
-	     << endl;
-        return 0;
-      }
-    }
-    else
-      return 1;
-    
-    return -1;
-  }
-  return 1;
+  if (this->size == f2.size && this->first_bit == f2.first_bit && this->sign == f2.sign)
+    return 1;
+  
+  return 0;
 }
 
 // Turns into method
-ac_dec_field* ac_dec_field::FindDecField(string name) {
+ac_dec_field* ac_dec_field::FindDecField(int id) {
   ac_dec_field* fields = this;
   while (fields) {
-    if (fields->name == name)
+    if (fields->id == id)
       return fields;
     
     fields = fields->next;
@@ -146,13 +136,7 @@ ac_dec_field* ac_dec_field::FindDecField(string name) {
   return 0;
 }
 
-// USEFUL?
 ac_dec_field* ac_dec_field::PutIDs(ac_dec_format *formats, unsigned nFields)
-     /* TODO:
-        - porque o indice e o id n� s� iguais? (poderia pegar o nome pelo id) (id 0 reservado)
-        - porque n� muda o id na mesma estrutura recebida?
-        - nFields �na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
-      */
 {
   ac_dec_field* fields;
   ac_dec_field* tmp;
@@ -160,10 +144,8 @@ ac_dec_field* ac_dec_field::PutIDs(ac_dec_format *formats, unsigned nFields)
   unsigned limit = 0, index;
   int result;
   char found;
-  int error = 0;
 
   // Allocates memory
-//   fields = (ac_dec_field *) malloc(nFields * sizeof(ac_dec_field));
   fields = new ac_dec_field[nFields];
 
   // Creates a vector with unique occurrences of all fields
@@ -173,12 +155,11 @@ ac_dec_field* ac_dec_field::PutIDs(ac_dec_format *formats, unsigned nFields)
       found = 0;
       for (index = 0; index < limit; index ++) {
         result = fields[index].CheckFields(*tmp);
-        if (result == -1) {
+        if (result == 1) {
           found = 1;
           tmp -> id = fields[index].id;
           break;
         }
-        else if (result == 0) error++;
       }
       
       if (!found) {
@@ -197,31 +178,41 @@ ac_dec_field* ac_dec_field::PutIDs(ac_dec_format *formats, unsigned nFields)
     f = f -> next;
   }
 
-  if (error) exit(1);
-
   return fields;
 }
 
 // ac_decoder method?
-ac_decoder* ac_decoder::AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruction, ac_dec_field* fields)
+ac_decoder* ac_decoder::AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruction, ac_dec_field* fields, 
+                                     ac_dec_format *fmt)
 {
   ac_decoder *d = decoder, *base = decoder;
-  //ac_dec_field *f;
+  ac_dec_field *f;
   ac_dec_list *l = instruction -> dec_list;
-  //enum {IncludeSubCheck, IncludeNext} action;
   
   if (l == NULL) {
     fprintf(stderr, "Error: Instruction %s doesn't have a decode list.\n", instruction -> name.c_str());
     exit(1);
   }
 
+  // Assigning ac_dec_list IDs with each respective field ID 
+  while (l) {
+    f = fmt->fields;
+    while (f) {
+      if (f->name == l->name) {
+	l->id = f->id;
+	break;
+      }
+      f = f->next;
+    }
+    l = l->next;
+  }
+  l = instruction->dec_list;
+
   if (d == NULL) {
-//     base = d = (ac_decoder *) malloc(sizeof(ac_decoder));
-//     d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
-//     d -> check -> name = NewString(l -> name);
     base = d = new ac_decoder();
     d -> check = new ac_dec_list();
     d -> check -> name = l -> name;
+    d -> check -> id = l -> id;
     d -> check -> value = l -> value;
     d -> found = NULL;
     d -> subcheck = NULL;
@@ -230,7 +221,7 @@ ac_decoder* ac_decoder::AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruct
     
   while (l) {
     // Same field and same value to check
-    if ((d -> check -> name == l -> name) && (d -> check -> value == l -> value))
+    if ((d->check->id == l->id) && (d -> check -> value == l -> value))
       if (l -> next == NULL) {            // This is the last check
         d -> found = instruction;
         l = l -> next;
@@ -240,13 +231,11 @@ ac_decoder* ac_decoder::AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruct
         if (d -> subcheck != NULL)        // Include in subcheck
           d = d -> subcheck;
         else {
-//           d -> subcheck = (ac_decoder *) malloc(sizeof(ac_decoder));
           d -> subcheck = new ac_decoder();
           d = d -> subcheck;
-//           d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
-//           d -> check -> name = NewString(l -> name);
           d -> check = new ac_dec_list();
           d -> check -> name = l -> name;
+          d -> check -> id = l -> id;
           d -> check -> value = l -> value;
           d -> found = NULL;
           d -> subcheck = NULL;
@@ -257,13 +246,11 @@ ac_decoder* ac_decoder::AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruct
       if (d -> next != NULL)
         d = d -> next;
       else {
-//         d -> next = (ac_decoder *) malloc(sizeof(ac_decoder));
         d -> next = new ac_decoder();
         d = d -> next;
-//         d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
-//         d -> check -> name = NewString(l -> name);
         d -> check = new ac_dec_list();
         d -> check -> name = l -> name;
+        d -> check -> id = l -> id;
         d -> check -> value = l -> value;
         d -> found = NULL;
         d -> subcheck = NULL;
@@ -274,6 +261,34 @@ ac_decoder* ac_decoder::AddToDecoder(ac_decoder* decoder, ac_dec_instr* instruct
             
   d -> found = instruction;
   d -> subcheck = NULL;
+
+  // Now we append remaining fields, not with values to be compared, but only
+  // as a guide to the runtime decoder to know what fields need to be extracted as operands, as
+  // this instruction has already been decoded.
+  f = fmt->fields;
+  while (f) {
+    l = instruction->dec_list;
+    int extracted = 0;
+    while (l) {
+      if (l->id == f->id) {
+	extracted = 1;
+	break;
+      }
+      l = l->next;
+    }
+    if (!extracted) {
+      d -> subcheck = new ac_decoder();
+      d = d -> subcheck;
+      d -> check = new ac_dec_list();
+      d -> check -> name = f -> name;
+      d -> check -> id = f -> id;
+      d -> check -> value = -1; // not used for decoding purposes
+      d -> found = NULL;
+      d -> subcheck = NULL;
+      d -> next = NULL; // not used for decoding purposes
+    }
+    f = f->next;
+  }
 
   return base;
 }
@@ -307,8 +322,9 @@ ac_decoder_full *ac_decoder_full::CreateDecoder(ac_dec_format *formats, ac_dec_i
   // dec = new ac_decoder();
 
   while (instr) {
-    dec = ac_decoder::AddToDecoder(dec, instr, allFields);
-    instr->size = ac_dec_format::FindFormat(formats, instr->format.c_str())->size / 8;  //bits to bytes
+    ac_dec_format *fmt = ac_dec_format::FindFormat(formats, instr->format.c_str());
+    dec = ac_decoder::AddToDecoder(dec, instr, allFields, fmt);
+    instr->size = fmt->size / 8;  //bits to bytes
     instr = instr -> next;
   }
 
@@ -325,22 +341,28 @@ ac_decoder_full *ac_decoder_full::CreateDecoder(ac_dec_format *formats, ac_dec_i
   return full;
 }
 
-// ac_dec_instr method?
-ac_dec_instr* ac_dec_instr::FindInstruction(ac_decoder_full *decoder, unsigned char *buffer, int quant)
+unsigned* ac_decoder_full::Decode(unsigned char *buffer, int quant)
 {
+  ac_decoder_full *decoder = this;
   ac_decoder *d = decoder -> decoder;
-  //ac_dec_list *check;
   ac_dec_field *field = 0;
   long long field_value;
+  ac_dec_instr *instruction = NULL;
   //char byte;
+  static unsigned *fields = 0;
 
   ac_decoder *chosenPath[64]; // usar uma constante = MAX_DECODER_DEPTH
   int chosenPathPos = 0;
   chosenPath[chosenPathPos] = d;
 
+ //!Allocate the first time only
+  if (!fields) {
+    fields = new unsigned[decoder -> nFields];
+  }
+
   while (d) {
     if (!field) {
-      field = decoder->fields->FindDecField(d -> check -> name);
+      field = decoder->fields->FindDecField(d -> check -> id);
       field_value = decoder->prog_source->GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
     }
 
@@ -350,10 +372,13 @@ ac_dec_instr* ac_dec_instr::FindInstruction(ac_decoder_full *decoder, unsigned c
     if (field_value == d -> check -> value) {
       if (d -> found) {
         //fprintf(stderr, "Instruction %s has been found.\n", d -> found -> name);
-        return d -> found;
+        fields[d->check->id] = field_value;
+        instruction = d->found;
+        break;
       } else {
         //fprintf(stderr, "Following d -> subcheck branch in the decoder tree. \n");
         chosenPath[++chosenPathPos] = d -> subcheck;
+        fields[d->check->id] = field_value;
         d = d -> subcheck;
         field = 0;
       }
@@ -361,7 +386,7 @@ ac_dec_instr* ac_dec_instr::FindInstruction(ac_decoder_full *decoder, unsigned c
       //fprintf(stderr, "Following d->next branch in the decoder tree. \n");
       chosenPath[chosenPathPos] = d -> next;
       d = d -> next;
-      if (d && (d->check->name != field->name))
+      if (d && d -> check -> id != field -> id)
         field=0;
     }
 
@@ -370,9 +395,22 @@ ac_dec_instr* ac_dec_instr::FindInstruction(ac_decoder_full *decoder, unsigned c
       d = chosenPath[--chosenPathPos];
       chosenPath[chosenPathPos] = d -> next;
       d = d -> next;
-      if (d && (d -> check -> name != field -> name))
+      if (d && d -> check -> id != field -> id)
         field = 0;
     }
+  }
+
+  /* If found, extract operands from instruction */
+  if (instruction != NULL) {
+    d = d->subcheck;
+    while (d) {
+      field = decoder->fields->FindDecField(d -> check -> id);
+      field_value = decoder->prog_source->GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
+      fields[d->check->id] = field_value;
+      d = d->subcheck;
+    }
+    fields[0] = instruction->id;
+    return fields;
   }
 
   return NULL;
@@ -406,57 +444,3 @@ ac_dec_instr* ac_dec_instr::GetInstrByID(ac_dec_instr *instr, unsigned id)
   return instr;
 }
 
-// ac_decoder_full method?
-unsigned* ac_decoder_full::DecodeAsInstruction(ac_decoder_full * decoder, ac_dec_instr *instruction, unsigned char *buffer, int quant)
-{
-  static unsigned* fields = 0;
-  unsigned counter;
-  ac_dec_field *field;
-  //ac_dec_list *list = instruction -> dec_list;
-  ac_dec_field *list ;
-
-  ac_dec_format *format;
-
-  //!Allocate only the first time
-//   if (!fields) fields = (unsigned *) malloc(sizeof(unsigned) * decoder -> nFields);
-  if (!fields) {
-    fields = new unsigned[decoder -> nFields];
-  }
-
-  //!Looking for the instruction format structure.
-  format = ac_dec_format::FindFormat(decoder->formats, instruction->format.c_str());
-  
-  //!Get Format's field list
-  list = format -> fields;
-
-  for (counter = 1; counter < decoder -> nFields; counter ++)
-    fields[counter] = 0;
-
-  while (list) {
-//     field = FindDecField(decoder -> fields, list -> name.c_str());
-    field = decoder->fields->FindDecField(list->name);
-    if (!field) {
-      fprintf(stderr, "Invalid field name %s.\n", list -> name.c_str());
-      exit(1);
-    }
-    fields[field -> id] = decoder->prog_source->GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
-    list = list -> next;
-  }
-
-  fields[0] = instruction -> id;
-  return (unsigned*) fields;
-}
-
-// ac_decoder_full method?
-unsigned* ac_decoder_full::Decode(unsigned char *buffer, int quant)
-{
-  ac_dec_instr *instruction;
-  
-  instruction = ac_dec_instr::FindInstruction(this, buffer, quant);
-  
-  if (instruction != NULL) {
-    return DecodeAsInstruction(this, instruction, buffer, quant);
-  }
-
-  return NULL;
-}

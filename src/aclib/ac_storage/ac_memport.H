@@ -87,70 +87,52 @@ public:
   ///Reads a word
   inline ac_word read(uint32_t address) {
     storage->read(&aux_word, address, sizeof(ac_word) * 8);
+    if (!this->ac_mt_endian) {
+      aux_word = byte_swap(aux_word);
+    }
     return aux_word;
   }
 
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
-
-    if (!this->ac_mt_endian) {
-      uint32_t oset_addr = address % sizeof(ac_word);
-      storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
-      aux_word = byte_swap(aux_word);
-      return (uint8_t) (((uint8_t*)(&aux_word))[address % sizeof(ac_word)]);
-    }
-
-    else {
-      storage->read(&aux_byte, address, 8);
-      return aux_byte;
-    }
-
+    storage->read(&aux_byte, address, 8);
+    return aux_byte;
   }
 
   ///Reads half word
   inline ac_Hword read_half(uint32_t address) {
 
     if (!this->ac_mt_endian) {
-      uint32_t oset_addr = address % sizeof(ac_word);
-      storage->read(&aux_word, address - oset_addr, sizeof(ac_word) * 8);
-      return (ac_Hword) (((ac_Hword*)(&aux_word))[oset_addr == 0]);
+      storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
+      aux_Hword = convert_endian(sizeof(ac_Hword), aux_Hword, 0);
+      return aux_Hword;
     }
     else {
       storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
       return aux_Hword;
-    }
+    } 
 
   }
   
   //!Writing a word
   inline void write(uint32_t address, ac_word datum) {
-    storage->write(&datum, address, sizeof(ac_word) * 8);
+    aux_word = datum;
+    if (!this->ac_mt_endian) {
+      aux_word = byte_swap(datum);
+    }
+    storage->write(&aux_word, address, sizeof(ac_word) * 8);
   }
 
   //!Writing a byte 
   inline void write_byte(uint32_t address, uint8_t datum) {
-    if (!this->ac_mt_endian) {
-      uint32_t oset_addr = address % sizeof(ac_word);
-      uint32_t base_addr = address - oset_addr;
-      oset_addr = ((sizeof(ac_word) - 1) - oset_addr);
-      storage->write(&datum, (base_addr + oset_addr), 8);
-    }
-    else {
-      storage->write(&datum, address, 8);
-    }
+    storage->write(&datum, address, 8);
   }
 
   //!Writing a short int 
   inline void write_half(uint32_t address, ac_Hword datum) {
     if (!this->ac_mt_endian) {
-      uint32_t oset_addr = address % sizeof(ac_word);
-      uint32_t base_addr = address - oset_addr;
-      if (oset_addr) {
-	storage->write(&datum, base_addr, sizeof(ac_Hword) * 8);
-      }
-      else {
-	storage->write(&datum, address + sizeof(ac_Hword), sizeof(ac_Hword) * 8);
-      }
+      aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
+      storage->write(&aux_Hword, address, sizeof(ac_Hword) * 8);
     }
     else {
       storage->write(&datum, address, sizeof(ac_Hword) * 8);
@@ -160,7 +142,10 @@ public:
 #ifdef AC_DELAY
   //!Writing a word
   inline void write(uint32_t address, ac_word datum, uint32_t time) {
-    delays.push_back(change_log<ac_word>(address, datum, time));
+    if (!this->ac_mt_endian)
+      delays.push_back(change_log<ac_word>(address, byte_swap(datum), time));
+    else
+      delays.push_back(change_log<ac_word>(address, datum, time));
   }
 
   //!Writing a byte 
@@ -196,8 +181,11 @@ public:
 //       oset_addr = oset_addr ? 1 : 0;
       oset_addr = oset_addr != 0;
     }
-
-    ((ac_Hword*)(&aux_word))[oset_addr] = datum;
+    aux_Hword = datum;
+    if (!this->ac_mt_endian) {
+      aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
+    }
+    ((ac_Hword*)(&aux_word))[oset_addr] = aux_Hword;
     
     delays.push_back(change_log<ac_word>(base_addr, aux_word, time));
     
@@ -298,7 +286,6 @@ public:
       if(!this->dec_cache_size)
         this->dec_cache_size = this->ac_heap_ptr;
       storage->write(Data, 0, 8, this->ac_heap_ptr);
- //storage->write(Data, this->ac_start_addr, 8, (this->ac_heap_ptr - this->ac_start_addr));
       delete[] Data;
       return;
     }
