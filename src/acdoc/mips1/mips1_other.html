@@ -1,0 +1,47 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>mips1 ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=mips1_index.html>mips1 Architechture Description</a></div><div class='definfo'><a href=mips1_isa.html>mips1 Instruction Set and Formats</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: mips1_isa.ac</div>
+<div class='ac_asm_map'>reg (<a href='http://www.archc.org/'>ac_asm_map</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l59>[see source code]</a><div class='desc'>Maps:  $ 0 31 0 31<br/>
+Maps:  $zero 0<br/>
+Maps:  $at 1<br/>
+Maps:  $kt 0 1 26 27<br/>
+Maps:  $gp 28<br/>
+Maps:  $sp 29<br/>
+Maps:  $fp 30<br/>
+Maps:  $ra 31<br/>
+</div></div>
+<div class='pseudo_instr'>bge %reg, %reg, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l334>[see source code]</a><div class='desc'>Instructions: <br/> slt $at, %0, %1<br/>beq $at, $zero, %2<br/></div>
+</div>
+<div class='pseudo_instr'>lw %reg, %exp (%reg) (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l350>[see source code]</a><div class='desc'>Instructions: <br/> lui  %0, %1<br/>addu %0, %0, %2<br/>lw   %0, (%0)<br/></div>
+</div>
+<div class='pseudo_instr'>mul %reg, %reg, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l329>[see source code]</a><div class='desc'>Instructions: <br/> multu %1, %2<br/>mflo  %0<br/></div>
+</div>
+<div class='pseudo_instr'>ble %reg, %imm, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l324>[see source code]</a><div class='desc'>Instructions: <br/> slti $at, %0, %1+1<br/>bne  $at, $zero, %2<br/></div>
+</div>
+<div class='pseudo_instr'>ble %reg, %reg, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l319>[see source code]</a><div class='desc'>Instructions: <br/> slt $at, %1, %0<br/>beq $at, $zero, %2<br/></div>
+</div>
+<div class='pseudo_instr'>sw %reg, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l305>[see source code]</a><div class='desc'>Instructions: <br/> lui $at, \%hi(%1)<br/>sw  %0, \%lo(%1)($at)<br/></div>
+</div>
+<div class='pseudo_instr'>bgt %reg, %imm, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l339>[see source code]</a><div class='desc'>Instructions: <br/> slti $at, %0, %1+1<br/>beq  $at, $zero, %2<br/></div>
+</div>
+<div class='pseudo_instr'>la %reg, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l300>[see source code]</a><div class='desc'>Instructions: <br/> lui %0, \%hi(%1)<br/>addiu %0, %0, \%lo(%1)<br/></div>
+</div>
+<div class='pseudo_instr'>li %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l295>[see source code]</a><div class='desc'>Instructions: <br/> lui %0, \%hi(%1)<br/>ori %0, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>subu %reg, %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l315>[see source code]</a><div class='desc'>Instructions: <br/> addiu %0, %1, -%2<br/></div>
+</div>
+<div class='pseudo_instr'>sw %reg, %exp (%reg) (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l358>[see source code]</a><div class='desc'>Instructions: <br/> lui  $at, %1<br/>addu $at, $at, %2<br/>sw   %0, ($at)<br/></div>
+</div>
+<div class='pseudo_instr'>mul %reg, %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l344>[see source code]</a><div class='desc'>Instructions: <br/> addiu $at, $zero, %2<br/>mult  %1, $at<br/>mflo  %0<br/></div>
+</div>
+<div class='pseudo_instr'>lw %reg, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l310>[see source code]</a><div class='desc'>Instructions: <br/> lui %0, \%hi(%1)<br/>lw  %0, \%lo(%1)(%0)<br/></div>
+</div>
+<div class='pseudo_instr'>bne %reg, %imm, %exp (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=mips1_isa_source.html#l366>[see source code]</a><div class='desc'>Instructions: <br/> addiu $at, $zero, %1<br/>bne %0, $at, %2<br/></div>
+</div>
+</div>
+</body>
+</html>

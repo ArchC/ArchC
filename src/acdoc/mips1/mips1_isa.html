@@ -1,0 +1,386 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>mips1 ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=mips1_index.html>mips1 Architechture Description</a></div><div class='definfo'><a href=mips1_other.html>mips1 Other Properties</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: mips1_isa.ac</div>
+<div class='ac_format'>Type_R (<a name='Type_R'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 6; rs 5; rt 5; rd 5; shamt 5; func 6;<br/>
+Instructions:  <a href='#subu'>subu</a> <a href='#mflo'>mflo</a> <a href='#mfhi'>mfhi</a> <a href='#instr_or'>instr_or</a> <a href='#instr_xor'>instr_xor</a> <a href='#sll'>sll</a> <a href='#addu'>addu</a> <a href='#instr_break'>instr_break</a> <a href='#sys_call'>sys_call</a> <a href='#add'>add</a> <a href='#mult'>mult</a> <a href='#jr'>jr</a> <a href='#srav'>srav</a> <a href='#sra'>sra</a> <a href='#divu'>divu</a> <a href='#nop'>nop</a> <a href='#instr_and'>instr_and</a> <a href='#sub'>sub</a> <a href='#instr_nor'>instr_nor</a> <a href='#slt'>slt</a> <a href='#sllv'>sllv</a> <a href='#srl'>srl</a> <a href='#sltu'>sltu</a> <a href='#mthi'>mthi</a> <a href='#mtlo'>mtlo</a> <a href='#srlv'>srlv</a> <a href='#jalr'>jalr</a> <a href='#div'>div</a> <a href='#multu'>multu</a></br>
+</div></div>
+<div class='ac_format'>Type_I (<a name='Type_I'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 6; rs 5; rt 5; imm 16 s;<br/>
+Instructions:  <a href='#bltz'>bltz</a> <a href='#bgezal'>bgezal</a> <a href='#lbu'>lbu</a> <a href='#sw'>sw</a> <a href='#blez'>blez</a> <a href='#andi'>andi</a> <a href='#swl'>swl</a> <a href='#lwr'>lwr</a> <a href='#bne'>bne</a> <a href='#lh'>lh</a> <a href='#lw'>lw</a> <a href='#lwl'>lwl</a> <a href='#lui'>lui</a> <a href='#swr'>swr</a> <a href='#addi'>addi</a> <a href='#sltiu'>sltiu</a> <a href='#bgez'>bgez</a> <a href='#ori'>ori</a> <a href='#xori'>xori</a> <a href='#lb'>lb</a> <a href='#bgtz'>bgtz</a> <a href='#addiu'>addiu</a> <a href='#slti'>slti</a> <a href='#bltzal'>bltzal</a> <a href='#lhu'>lhu</a> <a href='#sh'>sh</a> <a href='#sb'>sb</a> <a href='#beq'>beq</a></br>
+</div></div>
+<div class='ac_format'>Type_J (<a name='Type_J'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 6; addr 26;<br/>
+Instructions:  <a href='#j'>j</a> <a href='#jal'>jal</a></br>
+</div></div>
+<div class='ac_instr'>bltz (<a name='bltz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=1; rt=0; <br/>
+ASM: bltz %reg, %exp(pcrel)<br/>
+ASM: rs<br/>
+ASM: imm<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: RB[rs] & 0x80000000<br/>
+</div></a></div>
+<div class='ac_instr'>bgezal (<a name='bgezal'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=1; rt=17; <br/>
+ASM: bgezal %reg, %exp(pcrel)<br/>
+ASM: rs<br/>
+ASM: imm<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: !(RB[rs] & 0x80000000)<br/>
+</div></a></div>
+<div class='ac_instr'>subu (<a name='subu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=35; <br/>
+ASM: subu %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>lbu (<a name='lbu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=36; <br/>
+ASM: [['lbu %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lbu %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lbu %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>mflo (<a name='mflo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=18; <br/>
+ASM: mflo %reg<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>sw (<a name='sw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=43; <br/>
+ASM: [['sw %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['sw %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['sw %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>j (<a name='j'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_J>Type_J</a><br/>
+Decoder: op=2; <br/>
+ASM: j %exp(align)<br/>
+ASM: addr<br/>
+Is Jump: ((ac_pc+4) & 0xF0000000) | (addr<<2)<br/>
+Delay: 1<br/>
+</div></a></div>
+<div class='ac_instr'>mfhi (<a name='mfhi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=16; <br/>
+ASM: mfhi %reg<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>blez (<a name='blez'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=6; rt=0; <br/>
+ASM: blez %reg, %exp(pcrel)<br/>
+ASM: rs<br/>
+ASM: imm<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: (RB[rs] == 0 ) || (RB[rs]&0x80000000 )<br/>
+</div></a></div>
+<div class='ac_instr'>instr_or (<a name='instr_or'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=37; <br/>
+ASM: or %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>instr_xor (<a name='instr_xor'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=38; <br/>
+ASM: xor  %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>sll (<a name='sll'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=0; <br/>
+ASM: sll %reg, %reg, %imm<br/>
+ASM: rd<br/>
+ASM: rt<br/>
+ASM: shamt<br/>
+</div></a></div>
+<div class='ac_instr'>addu (<a name='addu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=33; <br/>
+ASM: ['addu %reg, %reg, %reg', 'rd', 'rs', 'rt']<br/>
+ASM: ['move %reg, %reg', 'rd', 'rs', 'rt', '$zero']<br/>
+</div></a></div>
+<div class='ac_instr'>andi (<a name='andi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=12; <br/>
+ASM: ['andi %reg, %reg, %imm', 'rt', 'rs', 'imm']<br/>
+ASM: ['and %reg, %reg, %imm', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>swl (<a name='swl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=42; <br/>
+ASM: ['swl %reg, (%reg)', 'rt', 'rs', 'imm', '0']<br/>
+ASM: ['swl %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>instr_break (<a name='instr_break'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=13; <br/>
+ASM: ['break', 'rt', '0']<br/>
+ASM: ['break %imm', 'rt']<br/>
+</div></a></div>
+<div class='ac_instr'>lwr (<a name='lwr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=38; <br/>
+ASM: [['lwr %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lwr %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lwr %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>bne (<a name='bne'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=5; <br/>
+ASM: [['bgtu %reg, $0, %exp(pcrel)', 'rs', 'imm', 'rt', 0], ['bne  %reg, %reg, %exp(pcrel)', 'rs', 'rt', 'imm']]<br/>
+ASM: ['bnez %reg, %exp(pcrel)', 'rs', 'imm', 'rt', '0']<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: RB[rs] != RB[rt]<br/>
+</div></a></div>
+<div class='ac_instr'>sys_call (<a name='sys_call'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=12; <br/>
+ASM: syscall<br/>
+</div></a></div>
+<div class='ac_instr'>jal (<a name='jal'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_J>Type_J</a><br/>
+Decoder: op=3; <br/>
+ASM: jal %exp(align)<br/>
+ASM: addr<br/>
+Is Jump: ((ac_pc+4) & 0xF0000000) | (addr<<2)<br/>
+Delay: 1<br/>
+Behavior: RB[31] = (ac_pc+4)+4;<br/>
+</div></a></div>
+<div class='ac_instr'>lh (<a name='lh'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=33; <br/>
+ASM: [['lh %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lh %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lh %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>lw (<a name='lw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=35; <br/>
+ASM: [['lw %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lw %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lw %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>add (<a name='add'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=32; <br/>
+ASM: add %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>mult (<a name='mult'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=24; <br/>
+ASM: mult %reg, %reg<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>lwl (<a name='lwl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=34; <br/>
+ASM: [['lwl %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lwl %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lwl %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>lui (<a name='lui'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=15; rs=0; <br/>
+ASM: [['lui %reg, %exp', 'rt', 'imm'], ['lui %reg, \\%hi(%imm(carry))', 'rt', 'imm']]<br/>
+ASM: ['lui %reg, \\%hi(%exp(carry))', 'rt', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>swr (<a name='swr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=46; <br/>
+ASM: ['swr %reg, (%reg)', 'rt', 'rs', 'imm', '0']<br/>
+ASM: ['swr %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>addi (<a name='addi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=8; <br/>
+ASM: ['addi %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+ASM: ['add %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>sltiu (<a name='sltiu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=11; <br/>
+ASM: ['sltiu %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+ASM: ['sltu %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>bgez (<a name='bgez'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=1; rt=1; <br/>
+ASM: bgez %reg, %exp(pcrel)<br/>
+ASM: rs<br/>
+ASM: imm<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: !(RB[rs] & 0x80000000)<br/>
+</div></a></div>
+<div class='ac_instr'>jr (<a name='jr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=8; <br/>
+ASM: [['jr %reg', 'rs'], ['j %reg', 'rs']]<br/>
+ASM: ['ret', 'rs', '$ra']<br/>
+Is Jump: RB[rs]<br/>
+Delay: 1<br/>
+</div></a></div>
+<div class='ac_instr'>srav (<a name='srav'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=7; <br/>
+ASM: ['srav %reg, %reg, %reg', 'rd', 'rt', 'rs']<br/>
+ASM: ['sra  %reg, %reg, %reg', 'rd', 'rt', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>sra (<a name='sra'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=3; <br/>
+ASM: sra %reg, %reg, %imm<br/>
+ASM: rd<br/>
+ASM: rt<br/>
+ASM: shamt<br/>
+</div></a></div>
+<div class='ac_instr'>ori (<a name='ori'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=13; <br/>
+ASM: ['ori %reg, %reg, %imm', 'rt', 'rs', 'imm']<br/>
+ASM: ['or %reg, %reg, %imm', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>xori (<a name='xori'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=14; <br/>
+ASM: ['xori %reg, %reg, %imm', 'rt', 'rs', 'imm']<br/>
+ASM: ['xor %reg, %reg, %imm', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>lb (<a name='lb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=32; <br/>
+ASM: [['lb %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lb %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lb %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>divu (<a name='divu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=27; <br/>
+ASM: divu %reg, %reg<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>bgtz (<a name='bgtz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=7; rt=0; <br/>
+ASM: bgtz %reg, %exp(pcrel)<br/>
+ASM: rs<br/>
+ASM: imm<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: !(RB[rs] & 0x80000000) && (RB[rs]!=0)<br/>
+</div></a></div>
+<div class='ac_instr'>nop (<a name='nop'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; rd=0; func=0; <br/>
+ASM: nop<br/>
+ASM: rs<br/>
+ASM: 0<br/>
+ASM: rt<br/>
+ASM: 0<br/>
+ASM: shamt<br/>
+ASM: 0<br/>
+</div></a></div>
+<div class='ac_instr'>instr_and (<a name='instr_and'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=36; <br/>
+ASM: and %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>addiu (<a name='addiu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=9; <br/>
+ASM: [['addiu %reg, %reg, %exp', 'rt', 'rs', 'imm'], ['addiu %reg, %reg, \\%lo(%exp)', 'rt', 'rs', 'imm']]<br/>
+ASM: ['addu %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>sub (<a name='sub'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=34; <br/>
+ASM: sub %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>instr_nor (<a name='instr_nor'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=39; <br/>
+ASM: nor  %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>slt (<a name='slt'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=42; <br/>
+ASM: slt %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>sllv (<a name='sllv'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=4; <br/>
+ASM: ['sllv %reg, %reg, %reg', 'rd', 'rt', 'rs']<br/>
+ASM: ['sll  %reg, %reg, %reg', 'rd', 'rt', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>slti (<a name='slti'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=10; <br/>
+ASM: ['slti %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+ASM: ['slt %reg, %reg, %exp', 'rt', 'rs', 'imm']<br/>
+</div></a></div>
+<div class='ac_instr'>bltzal (<a name='bltzal'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=1; rt=16; <br/>
+ASM: bltzal %reg, %exp(pcrel)<br/>
+ASM: rs<br/>
+ASM: imm<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: RB[rs] & 0x80000000<br/>
+</div></a></div>
+<div class='ac_instr'>srl (<a name='srl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=2; <br/>
+ASM: srl %reg, %reg, %imm<br/>
+ASM: rd<br/>
+ASM: rt<br/>
+ASM: shamt<br/>
+</div></a></div>
+<div class='ac_instr'>sltu (<a name='sltu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=43; <br/>
+ASM: sltu %reg, %reg, %reg<br/>
+ASM: rd<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>mthi (<a name='mthi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=17; <br/>
+ASM: mthi %reg<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>lhu (<a name='lhu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=37; <br/>
+ASM: [['lhu %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['lhu %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['lhu %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>sh (<a name='sh'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=41; <br/>
+ASM: [['sh %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['sh %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['sh %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>mtlo (<a name='mtlo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=19; <br/>
+ASM: mtlo %reg<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>srlv (<a name='srlv'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=6; <br/>
+ASM: ['srlv %reg, %reg, %reg', 'rd', 'rt', 'rs']<br/>
+ASM: ['srl  %reg, %reg, %reg', 'rd', 'rt', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>jalr (<a name='jalr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=9; <br/>
+ASM: [['jalr %reg, %reg', 'rd', 'rs'], ['jalr %reg', 'rs', 'rd', '$ra']]<br/>
+ASM: ['jal  %reg', 'rs', 'rd', '$ra']<br/>
+Is Jump: RB[rs]<br/>
+Delay: 1<br/>
+Behavior: RB[(rd==0)?31:rd] = (ac_pc+4)+4;<br/>
+</div></a></div>
+<div class='ac_instr'>sb (<a name='sb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=40; <br/>
+ASM: [['sb %reg, \\%lo(%exp)(%reg)', 'rt', 'imm', 'rs'], ['sb %reg, (%reg)', 'rt', 'rs', 'imm', '0']]<br/>
+ASM: ['sb %reg, %imm (%reg)', 'rt', 'imm', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>div (<a name='div'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=26; <br/>
+ASM: div %reg, %reg<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>beq (<a name='beq'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_I>Type_I</a><br/>
+Decoder: op=4; <br/>
+ASM: [['beq %reg, %reg, %exp(pcrel)', 'rs', 'rt', 'imm'], ['b %exp(pcrel)', 'imm', 'rs', '0', 'rt', '0']]<br/>
+ASM: ['beqz %reg, %exp(pcrel)', 'rs', 'imm', 'rt', '0']<br/>
+Is Branch: (ac_pc+4) + (imm<<2)<br/>
+Delay: 1<br/>
+Condition: RB[rs] == RB[rt]<br/>
+</div></a></div>
+<div class='ac_instr'>multu (<a name='multu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_R>Type_R</a><br/>
+Decoder: op=0; func=25; <br/>
+ASM: multu %reg, %reg<br/>
+ASM: rs<br/>
+ASM: rt<br/>
+</div></a></div>
+</div>
+</body>
+</html>

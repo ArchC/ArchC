@@ -1,0 +1,409 @@
+/********************************************************/
+/* The ArchC Xscale functional model.                   */
+/* Author: Danilo Marcolin Caravana                     */
+/*         Luis Felipe Strano Moraes                    */
+/*							*/
+/* 	   Ana Carolina Merighe				*/
+/*	   Fabio Scramim Rigo		  		*/
+/*	   Marcelo de Almeida Oliveira			*/
+/*                                                      */
+/* For more information on ArchC, please visit:         */
+/* http://www.archc.org                                 */
+/*                                                      */
+/* The ArchC Team                                       */
+/* Computer Systems Laboratory (LSC)                    */
+/* IC-UNICAMP                                           */
+/* http://www.lsc.ic.unicamp.br                         */
+/********************************************************/
+
+
+AC_ISA(armv5e){
+
+  /* Instrucoes de processamento de dados - ULA */
+  ac_format Type_DPI1 = "%rm:4 %subop1:1 %shift:2 %shiftamount:5 %rd:4 %rn:4 %s:1 %func1:4 %op:3 %cond:4";
+  ac_format Type_DPI2 = "%rm:4 %subop1:1 %shift:2 %subop2:1 %rs:4 %rd:4 %rn:4 %s:1 %func1:4 %op:3 %cond:4";
+  ac_format Type_DPI3 = "%imm8:8 %rotate:4 %rd:4 %rn:4 %s:1 %func1:4 %op:3 %cond:4";
+
+  /* Instrucoes de branch - BBLT precisa de cond = 1111 - bx e blx2 sao do tipo MISC1*/
+  ac_format Type_BBL = "%offset:24 %h:1 %op:3 %cond:4";
+  ac_format Type_BBLT = "%offset:24 %h:1 %op:3 %cond:4";
+  ac_format Type_MBXBLX = "%rm:4 %subop1:1 %func2:2 %subop2:1 %one3:4 %one2:4 %one1:4 %s:1 %func1:4 %op:3 %cond:4";
+  
+  /* Instrucoes de swap e multiplicacao */
+  ac_format Type_MULT1 = "%rm:4 %subop1:1 %func2:2 %subop2:1 %rs:4 %rd:4 %rn:4 %s:1 %func1:4 %op:3 %cond:4";
+  ac_format Type_MULT2 = "%rm:4 %subop1:1 %func2:2 %subop2:1 %rs:4 %rdlo:4 %rdhi:4 %s:1 %func1:4 %op:3 %cond:4";
+
+  /* Instrucoes de load/store */
+  ac_format Type_LSI = "%imm12:12 %rd:4 %rn:4 %l:1 %w:1 %b:1 %u:1 %p:1 %op:3 %cond:4";
+  ac_format Type_LSR = "%rm:4 %subop1:1 %shift:2 %shiftamount:5 %rd:4 %rn:4 %l:1 %w:1 %b:1 %u:1 %p:1 %op:3 %cond:4";
+  ac_format Type_LSE = "%addr2:4 %subop1:1 %hh:1 %ss:1 %subop2:1 %addr1:4 %rd:4 %rn:4 %l:1 %w:1 %i:1 %u:1 %p:1 %op:3 %cond:4";
+  ac_format Type_LSM = "%rlist:16 %rn:4 %l:1 %w:1 %r:1 %u:1 %p:1 %op:3 %cond:4";
+
+  /* Instrucoes do coprocessador */
+  ac_format Type_CDP = "%crm:4 %subop1:1 %funcc3:3 %cp_num:4 %crd:4 %crn:4 %funcc1:4 %subop3:1 %op:3 %cond:4";
+  ac_format Type_CRT = "%crm:4 %subop1:1 %funcc3:3 %cp_num:4 %rd:4 %crn:4 %l:1 %funcc2:3 %subop3:1 %op:3 %cond:4";
+  ac_format Type_CLS = "%imm8:8 %cp_num:4 %crd:4 %rn:4 %l:1 %w:1 %n:1 %u:1 %p:1 %op:3 %cond:4";
+
+  /* Instrucoes especiais */
+  ac_format Type_MBKPT = "%rm:4 %subop1:1 %func2:2 %subop2:1 %immediate:12 %s:1 %func1:4 %op:3 %cond:4";
+  ac_format Type_MSWI = "%swinumber:24 %subop3:1 %op:3 %cond:4";
+  ac_format Type_MCLZ = "%rm:4 %subop1:1 %func2:2 %subop2:1 %one3:4 %rd:4 %one1:4 %s:1 %func1:4 %op:3 %cond:4";
+  ac_format Type_MMSR1 = "%rm:4 %subop1:1 %func2:2 %subop2:1 %zero3:4 %rd:4 %field:4 %func12:2 %r:1 %func11:2 %op:3 %cond:4";
+  ac_format Type_MMSR2 = "%imm8:8 %rotate:4 %one2:4 %field:4 %func12:2 %r:1 %func11:2 %op:3 %cond:4";
+
+  /* Instrucoes de multiplicacao DSP */
+  ac_format Type_DSPSM = "%rm:4 %subop1:1 %xx:1 %yy:1 %subop2:1 %rs:4 %drn:4 %drd:4 %sm:8 %cond:4";
+
+  /* Instrucoes de processamento de dados - ULA */
+  ac_instr<Type_DPI1> and1, eor1, sub1, rsb1, add1, adc1, sbc1, rsc1, tst1, teq1, cmp1, cmn1, orr1, mov1, bic1, mvn1;
+  ac_instr<Type_DPI2> and2, eor2, sub2, rsb2, add2, adc2, sbc2, rsc2, tst2, teq2, cmp2, cmn2, orr2, mov2, bic2, mvn2;
+  ac_instr<Type_DPI3> and3, eor3, sub3, rsb3, add3, adc3, sbc3, rsc3, tst3, teq3, cmp3, cmn3, orr3, mov3, bic3, mvn3;
+
+  /* Instrucoes de branch - BBLT precisa de cond = 1111 - bx e blx2 sao do tipo MISC1 */
+  ac_instr<Type_BBLT> blx1;
+  ac_instr<Type_BBL> b;
+  ac_instr<Type_MBXBLX> bx, blx2;
+
+  /* Instrucoes de swap e multiplicacao */
+  ac_instr<Type_MULT1> swp, swpb, mla, mul;
+  ac_instr<Type_MULT2> smlal, smull, umlal, umull;
+
+  /* Instrucoes de load/store */
+  ac_instr<Type_LSI> ldrt1, ldrbt1, ldr1, ldrb1, strt1, strbt1, str1, strb1;
+  ac_instr<Type_LSR> ldrt2, ldrbt2, ldr2, ldrb2, strt2, strbt2, str2, strb2;
+  ac_instr<Type_LSE> ldrh, ldrsb, ldrsh, strh, ldrd, strd; // ldrd e strd sao instrucoes DSP
+  ac_instr<Type_LSM> ldm, stm;
+
+  /* Instrucoes do coprocessador */
+  ac_instr<Type_CDP> cdp;
+  ac_instr<Type_CRT> mcr, mrc;
+  ac_instr<Type_CLS> ldc, stc;
+
+  /* Instrucoes especiais */
+  ac_instr<Type_MBKPT> bkpt;
+  ac_instr<Type_MSWI> swi;
+  ac_instr<Type_MCLZ> clz;
+  ac_instr<Type_MMSR1> mrs, msr1;
+  ac_instr<Type_MMSR2> msr2;
+  
+  /* Instrucoes DSP */
+  /* O tipo LSE de Load/Store possuie instrucoes DSP (ldrd e strd) */
+  ac_instr<Type_DSPSM> dsmla, dsmlal, dsmul, dsmlaw, dsmulw;
+
+  ISA_CTOR(armv5e){
+
+    /* Instrucoes de processamento de dados - ULA */
+    and1.set_asm("and %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    and1.set_decoder(op=0x00, subop1=0x00, func1=0x00);
+
+    and2.set_asm("and %cond %s %rd, %rn, %rm, %shift %rs ");
+    and2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x00);
+
+    and3.set_asm("and %cond %s %rd, %rn, %imm8");
+    and3.set_decoder(op=0x01, func1=0x00);
+
+    eor1.set_asm("eor %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    eor1.set_decoder(op=0x00, subop1=0x00, func1=0x01);
+
+    eor2.set_asm("eor %cond %s %rd, %rn, %rm, %shift %rs ");
+    eor2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x01);
+
+    eor3.set_asm("eor %cond %s %rd, %rn, %imm8");
+    eor3.set_decoder(op=0x01, func1=0x01);
+
+    sub1.set_asm("sub %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    sub1.set_decoder(op=0x00, subop1=0x00, func1=0x02);
+
+    sub2.set_asm("sub %cond %s %rd, %rn, %rm, %shift %rs ");
+    sub2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x02);
+
+    sub3.set_asm("sub %cond %s %rd, %rn, %imm8");
+    sub3.set_decoder(op=0x01, func1=0x02);
+
+    rsb1.set_asm("rsb %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    rsb1.set_decoder(op=0x00, subop1=0x00, func1=0x03);
+
+    rsb2.set_asm("rsb %cond %s %rd, %rn, %rm, %shift %rs ");
+    rsb2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x03);
+
+    rsb3.set_asm("rsb %cond %s %rd, %rn, %imm8");
+    rsb3.set_decoder(op=0x01, func1=0x03);
+
+    add1.set_asm("add %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    add1.set_decoder(op=0x00, subop1=0x00, func1=0x04);
+
+    add2.set_asm("add %cond %s %rd, %rn, %rm, %shift %rs ");
+    add2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x04);
+
+    add3.set_asm("add %cond %s %rd, %rn, %imm8");
+    add3.set_decoder(op=0x01, func1=0x04);
+
+    adc1.set_asm("adc %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    adc1.set_decoder(op=0x00, subop1=0x00, func1=0x05);
+
+    adc2.set_asm("adc %cond %s %rd, %rn, %rm, %shift %rs");
+    adc2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x05);
+
+    adc3.set_asm("adc %cond %s %rd, %rn, %imm8");
+    adc3.set_decoder(op=0x01, func1=0x05);
+
+    sbc1.set_asm("sbc %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    sbc1.set_decoder(op=0x00, subop1=0x00, func1=0x06);
+
+    sbc2.set_asm("sbc %cond %s %rd, %rn, %rm, %shift %rs ");
+    sbc2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x06);
+
+    sbc3.set_asm("sbc %cond %s %rd, %rn, %imm8");
+    sbc3.set_decoder(op=0x01, func1=0x06);
+
+    rsc1.set_asm("rsc %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    rsc1.set_decoder(op=0x00, subop1=0x00, func1=0x07);
+
+    rsc2.set_asm("rsc %cond %s %rd, %rn, %rm, %shift %rs ");
+    rsc2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x07);
+
+    rsc3.set_asm("rsc %cond %s %rd, %rn, %imm8");
+    rsc3.set_decoder(op=0x01, func1=0x07);
+
+    tst1.set_asm("tst %cond %rd, %rn, %rm, %shift %shiftamount");
+    tst1.set_decoder(op=0x00, subop1=0x00, func1=0x08, s=0x01);
+
+    tst2.set_asm("tst %cond %rd, %rn, %rm, %shift %rs ");
+    tst2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x08, s=0x01);
+
+    tst3.set_asm("tst %cond %rd, %rn, %imm8");
+    tst3.set_decoder(op=0x01, func1=0x08, s=0x01);
+
+    teq1.set_asm("teq %cond %rd, %rn, %rm, %shift %shiftamount");
+    teq1.set_decoder(op=0x00, subop1=0x00, func1=0x09, s=0x01);
+
+    teq2.set_asm("teq %cond %rd, %rn, %rm, %shift %rs ");
+    teq2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x09, s=0x01);
+
+    teq3.set_asm("teq %cond %rd, %rn, %imm8");
+    teq3.set_decoder(op=0x01, func1=0x09, s=0x01);
+
+    cmp1.set_asm("cmp %cond %rd, %rn, %rm, %shift %shiftamount");
+    cmp1.set_decoder(op=0x00, subop1=0x00, func1=0x0A, s=0x01);
+
+    cmp2.set_asm("cmp %cond %rd, %rn, %rm, %shift %rs ");
+    cmp2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0A, s=0x01);
+
+    cmp3.set_asm("cmp %cond %rd, %rn, %imm8");
+    cmp3.set_decoder(op=0x01, func1=0x0A, s=0x01);
+
+    cmn1.set_asm("cmn %cond %rd, %rn, %rm, %shift %shiftamount");
+    cmn1.set_decoder(op=0x00, subop1=0x00, func1=0x0B, s=0x01);
+
+    cmn2.set_asm("cmn %cond %rd, %rn, %rm, %shift %rs ");
+    cmn2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0B, s=0x01);
+
+    cmn3.set_asm("cmn %cond %rd, %rn, %imm8");
+    cmn3.set_decoder(op=0x01, func1=0x0B, s=0x01);
+
+    orr1.set_asm("orr %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    orr1.set_decoder(op=0x00, subop1=0x00, func1=0x0C);
+
+    orr2.set_asm("orr %cond %s %rd, %rn, %rm, %shift %rs ");
+    orr2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0C);
+
+    orr3.set_asm("orr %cond %s %rd, %rn, %imm8");
+    orr3.set_decoder(op=0x01, func1=0x0C);
+
+    mov1.set_asm("mov %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    mov1.set_decoder(op=0x00, subop1=0x00, func1=0x0D);
+
+    mov2.set_asm("mov %cond %s %rd, %rn, %rm, %shift %rs ");
+    mov2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0D);
+
+    mov3.set_asm("mov %cond %s %rd, %rn, %imm8");
+    mov3.set_decoder(op=0x01, func1=0x0D);
+
+    bic1.set_asm("bic %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    bic1.set_decoder(op=0x00, subop1=0x00, func1=0x0E);
+
+    bic2.set_asm("bic %cond %s %rd, %rn, %rm, %shift %rs ");
+    bic2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0E);
+
+    bic3.set_asm("bic %cond %s %rd, %rn, %imm8");
+    bic3.set_decoder(op=0x01, func1=0x0E);
+
+    mvn1.set_asm("mvn %cond %s %rd, %rn, %rm, %shift %shiftamount");
+    mvn1.set_decoder(op=0x00, subop1=0x00, func1=0x0F);
+
+    mvn2.set_asm("mvn %cond %s %rd, %rn, %rm, %shift %rs ");
+    mvn2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0F);
+
+    mvn3.set_asm("mvn %cond %s %rd, %rn, %imm8");
+    mvn3.set_decoder(op=0x01, func1=0x0F);
+
+
+    /* Instrucoes de branch - BBLT precisa de cond = 1111*/
+    blx1.set_asm("blx %offset");
+    blx1.set_decoder(op=0x05, cond=0x0F);
+
+    b.set_asm("b %h %cond %offset");
+    b.set_decoder(op=0x05);
+
+    bx.set_asm("bx %cond %rm");
+    bx.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x09, s=0x00, func2=0x00);    
+
+    blx2.set_asm("blx %cond %rm");
+    blx2.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x09, s=0x00, func2=0x01);    
+
+
+    /* Instrucoes de swap e multiplicacao */
+    swp.set_asm("swp %cond %rd, %rm, %rn");
+    swp.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x08, func2=0x00, s=0x00);
+
+    swpb.set_asm("swpb %cond %rd, %rm, %rn");
+    swpb.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x0A, func2=0x00, s=0x00);
+    
+    mul.set_asm("mul %cond %s, %rd, %rm, %rs");
+    mul.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x00, func2=0x00);
+
+    mla.set_asm("mla %cond %s, %rd, %rm, %rs, %rn");
+    mla.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x01, func2=0x00);
+
+    smlal.set_asm("smlal %cond %s %rdlo, %rdhi, %rm, %rs");
+    smlal.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x07, func2=0x00);
+    
+    smull.set_asm("smull %cond %s %rdlo, %rdhi, %rm, %rs");
+    smull.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x06, func2=0x00);
+
+    umlal.set_asm("umlal %cond %s %rdlo, %rdhi, %rm, %rs");
+    umlal.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x05, func2=0x00);
+    
+    umull.set_asm("umull %cond %s %rdlo, %rdhi, %rm, %rs");
+    umull.set_decoder(op=0x00, subop1=0x01, subop2=0x01, func1=0x04, func2=0x00);
+
+
+    /* Instrucoes de load/store */
+    ldrt1.set_asm("ldrt %cond %rd, %rn, %imm12 %w");
+    ldrt1.set_decoder(op=0x02, p=0x00, b=0x00, w=0x01, l=0x01);
+
+    ldrt2.set_asm("ldrt %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    ldrt2.set_decoder(op=0x03, subop1=0x00, p=0x00, b=0x00, w=0x01, l=0x01);
+
+    ldrbt1.set_asm("ldrbt %cond %rd, %rn, %imm12 %w");
+    ldrbt1.set_decoder(op=0x02, p=0x00, b=0x01, w=0x01, l=0x01);
+
+    ldrbt2.set_asm("ldrbt %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    ldrbt2.set_decoder(op=0x03, subop1=0x00, p=0x00, b=0x01, w=0x01, l=0x01);
+
+    ldr1.set_asm("ldr %cond %rd, %rn, %imm12 %w");
+    ldr1.set_decoder(op=0x02, b=0x00, l=0x01);
+
+    ldr2.set_asm("ldr %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    ldr2.set_decoder(op=0x03, subop1=0x00, b=0x00, l=0x01);
+
+    ldrb1.set_asm("ldrb %cond %rd, %rn, %imm12 %w");
+    ldrb1.set_decoder(op=0x02, b=0x01, l=0x01);
+
+    ldrb2.set_asm("ldrb %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    ldrb2.set_decoder(op=0x03, subop1=0x00, b=0x01, l=0x01);
+
+    ldrh.set_asm("ldrh %cond %rd, %addr1 %addr2");
+    ldrh.set_decoder(op=0x00, subop1=0x01, subop2=0x01, ss=0x00, hh=0x01, l=0x01);
+
+    ldrsb.set_asm("ldrsb %cond %rd, %addr1 %addr2");
+    ldrsb.set_decoder(op=0x00, subop1=0x01, subop2=0x01, ss=0x01, hh=0x00, l=0x01);
+
+    ldrsh.set_asm("ldrsh %cond %rd, %addr1 %addr2");
+    ldrsh.set_decoder(op=0x00, subop1=0x01, subop2=0x01, ss=0x01, hh=0x01, l=0x01);
+
+    strt1.set_asm("strt %cond %rd, %rn, %imm12 %w");
+    strt1.set_decoder(op=0x02, p=0x00, b=0x00, w=0x01, l=0x00);
+
+    strt2.set_asm("strt %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    strt2.set_decoder(op=0x03, subop1=0x00, p=0x00, b=0x00, w=0x01, l=0x00);
+
+    strbt1.set_asm("strbt %cond %rd, %rn, %imm12 %w");
+    strbt1.set_decoder(op=0x02, p=0x00, b=0x01, w=0x01, l=0x00);
+
+    strbt2.set_asm("strbt %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    strbt2.set_decoder(op=0x03, subop1=0x00, p=0x00, b=0x01, w=0x01, l=0x00);
+
+    str1.set_asm("str %cond %rd, %rn, %imm12 %w");
+    str1.set_decoder(op=0x02, b=0x00, l=0x00);
+
+    str2.set_asm("str %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    str2.set_decoder(op=0x03, subop1=0x00, b=0x00, l=0x00);
+
+    strb1.set_asm("strb %cond %rd, %rn, %imm12 %w");
+    strb1.set_decoder(op=0x02, b=0x01, l=0x00);
+
+    strb2.set_asm("strb %cond %rd, %rn, %rm, %shift %shiftamount %w");
+    strb2.set_decoder(op=0x03, subop1=0x00, b=0x01, l=0x00);
+
+    strh.set_asm("strh %cond %rd, %addr1 %addr2");
+    strh.set_decoder(op=0x00, subop1=0x01, subop2=0x01, ss=0x00, hh=0x01, l=0x00);
+
+    ldm.set_asm("ldm %cond %p %u %w %rn %w, %rlist");
+    ldm.set_decoder(op=0x04, l=0x01);
+    
+    stm.set_asm("stm %cond %p %u %w %rn %w, %rlist");
+    stm.set_decoder(op=0x04, l=0x00);
+
+
+    /* Instrucoes do coprocessador */
+    cdp.set_asm("cdp %cond %cp_num, %funcc1, %crd, %crn, %crm %funcc3");
+    cdp.set_decoder(op=0x07, subop1=0x00, subop3=0x00); 
+    
+    mcr.set_asm("mcr %cond %cp_num, %funcc2, %rd, %crn, %crm, %funcc3");
+    mcr.set_decoder(op=0x07, subop1=0x01, subop3=0x00, l=0x00); 
+  
+    mrc.set_asm("mrc %cond %cp_num, %funcc2, %rd, %crn, %crm, %funcc3");
+    mrc.set_decoder(op=0x07, subop1=0x01, subop3=0x00, l=0x01); 
+
+    ldc.set_asm("ldc %cond %l %cp_num, %crd, %imm8");
+    ldc.set_decoder(op=0x06, l=0x01);
+    
+    stc.set_asm("stc %cond %l %cp_num, %crd, %imm8 %w");
+    stc.set_decoder(op=0x06, l=0x00);
+
+
+    /* Instrucoes especiais */
+    bkpt.set_asm("bkpt %immediate");
+    bkpt.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x09, func2=0x03, s=0x00, cond=0x0E);    
+
+    swi.set_asm("swi %cond %swinumber");
+    swi.set_decoder(op=0x07, subop3=0x01);
+
+    clz.set_asm("clz %cond %rm %rd");
+    clz.set_decoder(op=0x00, subop1=0x01, subop2=0x00, func1=0x0B, func2=0x00, s=0x00);    
+
+    mrs.set_asm("mrs %cond %rn, %r");
+    mrs.set_decoder(op=0x00, subop1=0x00, subop2=0x00, func11=0x02, func12=0x00);
+    
+    msr1.set_asm("msr %cond %field, %rm");
+    msr1.set_decoder(op=0x00, subop1=0x00, subop2=0x00, func11=0x02, func12=0x02);
+
+    msr2.set_asm("msr %cond %field, %imm8");
+    msr2.set_decoder(op=0x01, func11=0x02, func12=0x02);
+    
+
+    /* Instrucoes DSP */
+    ldrd.set_asm("ldrd %cond %rd, %addr1 %addr2");
+    ldrd.set_decoder(op=0x00, subop1=0x01, subop2=0x01, ss=0x01, hh=0x00, l=0x00);
+    
+    strd.set_asm("strd %cond %rd, %addr1 %addr2");
+    strd.set_decoder(op=0x00, subop1=0x01, subop2=0x01, ss=0x01, hh=0x01, l=0x00);
+
+    dsmla.set_asm("");
+    dsmla.set_decoder(sm=0x10, subop2=1, subop1=0);
+
+    dsmlal.set_asm("");
+    dsmlal.set_decoder(sm=0x14, subop2=1, subop1=0);
+
+    dsmlaw.set_asm("");
+    dsmlaw.set_decoder(sm=0x12, subop2=1, xx=0, subop1=0);
+
+    dsmul.set_asm("");
+    dsmul.set_decoder(sm=0x16, subop2=1, subop1=0);
+
+    dsmulw.set_asm("");
+    dsmulw.set_decoder(sm=0x12, subop2=1, xx=1, subop1=0);
+    
+  };
+};

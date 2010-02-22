@@ -1,0 +1,67 @@
+/**
+ * @file      powerpc.ac
+ * @author    Bruno Corsi dos Santos
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br
+ *
+ * @version   1.0
+ * @date      Thu, 29 Jun 2006 14:49:05 -0300
+ * 
+ * @brief     The ArchC POWERPC functional model.
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ * 
+ * This program is free software; you can redistribute it and/or modify 
+ * it under the terms of the GNU General Public License as published by 
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version. 
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * GNU General Public License for more details. 
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ */
+
+AC_ARCH(powerpc) {
+
+	ac_wordsize 32;
+
+	ac_mem MEM:8M;
+	
+	ac_regbank GPR:32;
+
+	ac_reg SPRG4;
+	ac_reg SPRG5;
+	ac_reg SPRG6;
+	ac_reg SPRG7;
+	ac_reg USPRG0;
+
+	ac_reg XER;
+
+	ac_reg MSR;
+
+// sc instruction not tested/used
+	ac_reg EVPR;
+	ac_reg SRR0;
+	ac_reg SRR1;
+
+	ac_reg CR;
+	ac_reg LR;
+	ac_reg CTR;
+
+	ARCH_CTOR(powerpc) {	
+		ac_isa("powerpc_isa.ac");
+		set_endian("big");
+	};
+
+};

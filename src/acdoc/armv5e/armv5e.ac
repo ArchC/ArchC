@@ -1,0 +1,15 @@
+
+AC_ARCH(armv5e){
+
+  ac_cache   MEM:256M;
+  ac_regbank RB:31;
+  
+  ac_wordsize 32;
+  
+  ARCH_CTOR(armv5e) {
+
+    ac_isa("armv5e_isa.ac");
+    set_endian("little");
+
+  };
+};

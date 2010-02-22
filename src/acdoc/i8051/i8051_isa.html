@@ -1,0 +1,636 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>i8051 ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=i8051_index.html>i8051 Architechture Description</a></div><div class='definfo'><a href=i8051_other.html>i8051 Other Properties</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: i8051_isa.ac</div>
+<div class='ac_format'>Type_OP_R (<a name='Type_OP_R'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op1 5; reg 3;<br/>
+Instructions:  <a href='#dec_r'>dec_r</a> <a href='#mov_ra'>mov_ra</a> <a href='#subb_ar'>subb_ar</a> <a href='#orl_ar'>orl_ar</a> <a href='#xch_ar'>xch_ar</a> <a href='#anl_ar'>anl_ar</a> <a href='#mov_ar'>mov_ar</a> <a href='#addc_ar'>addc_ar</a> <a href='#inc_r'>inc_r</a> <a href='#xrl_ar'>xrl_ar</a> <a href='#add_ar'>add_ar</a></br>
+</div></div>
+<div class='ac_format'>Type_2bytes (<a name='Type_2bytes'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 8; byte2 8;<br/>
+Instructions:  <a href='#cpl_bit'>cpl_bit</a> <a href='#jnz'>jnz</a> <a href='#dec_iram'>dec_iram</a> <a href='#jnc'>jnc</a> <a href='#xrl_iram_a'>xrl_iram_a</a> <a href='#anl_iram_a'>anl_iram_a</a> <a href='#setb_bit'>setb_bit</a> <a href='#xrl_a_data'>xrl_a_data</a> <a href='#inc_iram'>inc_iram</a> <a href='#clr_bit'>clr_bit</a> <a href='#mov_a_iram'>mov_a_iram</a> <a href='#mov_arr_R1_iram'>mov_arr_R1_iram</a> <a href='#mov_iram_arr_R0'>mov_iram_arr_R0</a> <a href='#mov_iram_arr_R1'>mov_iram_arr_R1</a> <a href='#orl_a_iram'>orl_a_iram</a> <a href='#subb_a_data'>subb_a_data</a> <a href='#jz'>jz</a> <a href='#xch_a_iram'>xch_a_iram</a> <a href='#jc'>jc</a> <a href='#anl_c_bit'>anl_c_bit</a> <a href='#mov_c_bit'>mov_c_bit</a> <a href='#pop'>pop</a> <a href='#anl_a_iram'>anl_a_iram</a> <a href='#xrl_a_iram'>xrl_a_iram</a> <a href='#mov_arr_R0_iram'>mov_arr_R0_iram</a> <a href='#mov_a_data'>mov_a_data</a> <a href='#add_a_iram'>add_a_iram</a> <a href='#anl_c_nbit'>anl_c_nbit</a> <a href='#add_a_data'>add_a_data</a> <a href='#mov_arr_R0_data'>mov_arr_R0_data</a> <a href='#anl_a_data'>anl_a_data</a> <a href='#mov_arr_R1_data'>mov_arr_R1_data</a> <a href='#orl_c_nbit'>orl_c_nbit</a> <a href='#mov_iram_a'>mov_iram_a</a> <a href='#sjmp'>sjmp</a> <a href='#subb_a_iram'>subb_a_iram</a> <a href='#orl_c_bit'>orl_c_bit</a> <a href='#addc_a_iram'>addc_a_iram</a> <a href='#mov_bit_c'>mov_bit_c</a> <a href='#orl_iram_a'>orl_iram_a</a> <a href='#addc_a_data'>addc_a_data</a> <a href='#orl_a_data'>orl_a_data</a> <a href='#push'>push</a></br>
+</div></div>
+<div class='ac_format'>Type_IBRCH (<a name='Type_IBRCH'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  page 3; op2 5; addr0 8;<br/>
+Instructions:  <a href='#acall'>acall</a> <a href='#ajmp'>ajmp</a></br>
+</div></div>
+<div class='ac_format'>Type_3bytesReg (<a name='Type_3bytesReg'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op3 5; reg2 3; data 8; reladd 8;<br/>
+Instructions:  <a href='#cjne_r'>cjne_r</a></br>
+</div></div>
+<div class='ac_format'>Type_3bytes (<a name='Type_3bytes'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 8; byte2 8; byte3 8;<br/>
+Instructions:  <a href='#jnb'>jnb</a> <a href='#cjne_addr'>cjne_addr</a> <a href='#ljmp'>ljmp</a> <a href='#cjne_data'>cjne_data</a> <a href='#orl_iram_data'>orl_iram_data</a> <a href='#djnz_iram_reladd'>djnz_iram_reladd</a> <a href='#mov_iram_data'>mov_iram_data</a> <a href='#mov_dptr_data'>mov_dptr_data</a> <a href='#lcall'>lcall</a> <a href='#jb'>jb</a> <a href='#cjne_arr_R0'>cjne_arr_R0</a> <a href='#cjne_arr_R1'>cjne_arr_R1</a> <a href='#mov_iram_iram'>mov_iram_iram</a> <a href='#xrl_iram_data'>xrl_iram_data</a> <a href='#anl_iram_data'>anl_iram_data</a> <a href='#jbc'>jbc</a></br>
+</div></div>
+<div class='ac_format'>Type_1byte (<a name='Type_1byte'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  o p; 8;<br/>
+Instructions:  <a href='#dec_a'>dec_a</a> <a href='#ret'>ret</a> <a href='#inc_dptr'>inc_dptr</a> <a href='#swap'>swap</a> <a href='#subb_a_arr_R0'>subb_a_arr_R0</a> <a href='#subb_a_arr_R1'>subb_a_arr_R1</a> <a href='#da'>da</a> <a href='#inc_arr_R1'>inc_arr_R1</a> <a href='#nop'>nop</a> <a href='#movx_r0_a'>movx_r0_a</a> <a href='#div'>div</a> <a href='#mov_a_arr_R1'>mov_a_arr_R1</a> <a href='#mov_a_arr_R0'>mov_a_arr_R0</a> <a href='#addc_arr_R1'>addc_arr_R1</a> <a href='#movx_a_R0'>movx_a_R0</a> <a href='#movx_a_R1'>movx_a_R1</a> <a href='#clr_c'>clr_c</a> <a href='#xchd_R0'>xchd_R0</a> <a href='#rrc_a'>rrc_a</a> <a href='#dec_arr_R1'>dec_arr_R1</a> <a href='#dec_arr_R0'>dec_arr_R0</a> <a href='#xch_arr_R0'>xch_arr_R0</a> <a href='#xch_arr_R1'>xch_arr_R1</a> <a href='#mul'>mul</a> <a href='#rr_a'>rr_a</a> <a href='#anl_arr_R0'>anl_arr_R0</a> <a href='#anl_arr_R1'>anl_arr_R1</a> <a href='#xrl_arr_R1'>xrl_arr_R1</a> <a href='#xrl_arr_R0'>xrl_arr_R0</a> <a href='#inc_a'>inc_a</a> <a href='#movx_r1_a'>movx_r1_a</a> <a href='#mov_arr_R0_a'>mov_arr_R0_a</a> <a href='#movc_pc'>movc_pc</a> <a href='#addc_arr_R0'>addc_arr_R0</a> <a href='#orl_arr_R0'>orl_arr_R0</a> <a href='#orl_arr_R1'>orl_arr_R1</a> <a href='#jmp'>jmp</a> <a href='#add_arr_R0'>add_arr_R0</a> <a href='#add_arr_R1'>add_arr_R1</a> <a href='#inc_arr_R0'>inc_arr_R0</a> <a href='#rl_a'>rl_a</a> <a href='#movc_dptr'>movc_dptr</a> <a href='#mov_arr_R1_a'>mov_arr_R1_a</a> <a href='#rlc_a'>rlc_a</a> <a href='#cpl_c'>cpl_c</a> <a href='#cpl_a'>cpl_a</a> <a href='#reti'>reti</a> <a href='#clr_a'>clr_a</a> <a href='#setb_c'>setb_c</a> <a href='#movx_a_dptr'>movx_a_dptr</a> <a href='#movx_dptr_a'>movx_dptr_a</a> <a href='#xchd_R1'>xchd_R1</a></br>
+</div></div>
+<div class='ac_format'>Type_2bytesReg (<a name='Type_2bytesReg'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op3 5; reg2 3; addr 8;<br/>
+Instructions:  <a href='#mov_r_iram'>mov_r_iram</a> <a href='#mov_r_data'>mov_r_data</a> <a href='#djnz_r'>djnz_r</a> <a href='#mov_iram_r'>mov_iram_r</a></br>
+</div></div>
+<div class='ac_instr'>dec_a (<a name='dec_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=20; <br/>
+ASM: dec A<br/>
+</div></a></div>
+<div class='ac_instr'>cpl_bit (<a name='cpl_bit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=178; <br/>
+ASM: ['cpl %sfr', 'byte2']<br/>
+ASM: ['cpl %imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>jnz (<a name='jnz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=112; <br/>
+ASM: jnz %addr(pcrel,2)<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>dec_iram (<a name='dec_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=21; <br/>
+ASM: ['dec %sfr', 'byte2']<br/>
+ASM: ['dec %exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>jnc (<a name='jnc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=80; <br/>
+ASM: jnc %addr(pcrel,2)<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>jnb (<a name='jnb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=48; <br/>
+ASM: ['jnb %sfr,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+ASM: ['jnb %imm,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>dec_r (<a name='dec_r'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=3; <br/>
+ASM: dec %reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>ret (<a name='ret'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=34; <br/>
+ASM: ret<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_iram_a (<a name='xrl_iram_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=98; <br/>
+ASM: ['xrl %sfr,A', 'byte2']<br/>
+ASM: ['xrl %exp,A', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_ra (<a name='mov_ra'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=31; <br/>
+ASM: mov %reg,A<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>inc_dptr (<a name='inc_dptr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=163; <br/>
+ASM: inc DPTR<br/>
+</div></a></div>
+<div class='ac_instr'>anl_iram_a (<a name='anl_iram_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=82; <br/>
+ASM: ['anl %sfr,A', 'byte2']<br/>
+ASM: ['anl %exp,A', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>setb_bit (<a name='setb_bit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=210; <br/>
+ASM: ['setb %sfr', 'byte2']<br/>
+ASM: ['setb %imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>subb_ar (<a name='subb_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=19; <br/>
+ASM: subb A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_a_data (<a name='xrl_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=100; <br/>
+ASM: xrl A,#%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>swap (<a name='swap'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=196; <br/>
+ASM: swap A<br/>
+</div></a></div>
+<div class='ac_instr'>cjne_addr (<a name='cjne_addr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=181; <br/>
+ASM: ['cjne A,%sfr,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+ASM: ['cjne A,%exp,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>inc_iram (<a name='inc_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=5; <br/>
+ASM: ['inc %sfr', 'byte2']<br/>
+ASM: ['inc %exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>cjne_r (<a name='cjne_r'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytesReg>Type_3bytesReg</a><br/>
+Decoder: op3=23; <br/>
+ASM: cjne %reg,#%imm,%addr(pcrel,3)<br/>
+ASM: reg2<br/>
+ASM: data<br/>
+ASM: reladd<br/>
+</div></a></div>
+<div class='ac_instr'>clr_bit (<a name='clr_bit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=194; <br/>
+ASM: ['clr %sfr', 'byte2']<br/>
+ASM: ['clr %imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>subb_a_arr_R0 (<a name='subb_a_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=150; <br/>
+ASM: subb A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>subb_a_arr_R1 (<a name='subb_a_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=151; <br/>
+ASM: subb A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>da (<a name='da'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=212; <br/>
+ASM: da A<br/>
+</div></a></div>
+<div class='ac_instr'>inc_arr_R1 (<a name='inc_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=7; <br/>
+ASM: inc @R1<br/>
+</div></a></div>
+<div class='ac_instr'>orl_ar (<a name='orl_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=9; <br/>
+ASM: orl A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>nop (<a name='nop'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=0; <br/>
+ASM: nop<br/>
+</div></a></div>
+<div class='ac_instr'>mov_a_iram (<a name='mov_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=229; <br/>
+ASM: ['mov A,%sfr', 'byte2']<br/>
+ASM: ['mov A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>movx_r0_a (<a name='movx_r0_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=242; <br/>
+ASM: movx @R0,A<br/>
+</div></a></div>
+<div class='ac_instr'>xch_ar (<a name='xch_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=25; <br/>
+ASM: xch A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>div (<a name='div'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=132; <br/>
+ASM: div AB<br/>
+</div></a></div>
+<div class='ac_instr'>mov_a_arr_R1 (<a name='mov_a_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=231; <br/>
+ASM: mov A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>mov_a_arr_R0 (<a name='mov_a_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=230; <br/>
+ASM: mov A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>ljmp (<a name='ljmp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=2; <br/>
+ASM: ljmp %addr<br/>
+ASM: byte2<br/>
+ASM: byte3<br/>
+</div></a></div>
+<div class='ac_instr'>cjne_data (<a name='cjne_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=180; <br/>
+ASM: cjne A,#%imm,%addr(pcrel,3)<br/>
+ASM: byte2<br/>
+ASM: byte3<br/>
+</div></a></div>
+<div class='ac_instr'>addc_arr_R1 (<a name='addc_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=55; <br/>
+ASM: addc A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>orl_iram_data (<a name='orl_iram_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=67; <br/>
+ASM: ['orl %sfr,#%imm', 'byte2', 'byte3']<br/>
+ASM: ['orl %exp,#%imm', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>djnz_iram_reladd (<a name='djnz_iram_reladd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=213; <br/>
+ASM: ['djnz %sfr,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+ASM: ['djnz %exp,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_r_iram (<a name='mov_r_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytesReg>Type_2bytesReg</a><br/>
+Decoder: op3=21; <br/>
+ASM: ['mov %reg,%sfr', 'reg2', 'addr']<br/>
+ASM: ['mov %reg,%exp', 'reg2', 'addr']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_arr_R1_iram (<a name='mov_arr_R1_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=167; <br/>
+ASM: ['mov @R1,%sfr', 'byte2']<br/>
+ASM: ['mov @R1,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>movx_a_R0 (<a name='movx_a_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=226; <br/>
+ASM: movx A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>movx_a_R1 (<a name='movx_a_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=227; <br/>
+ASM: movx A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>mov_iram_arr_R0 (<a name='mov_iram_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=134; <br/>
+ASM: ['mov %sfr,@R0', 'byte2']<br/>
+ASM: ['mov %exp,@R0', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_iram_arr_R1 (<a name='mov_iram_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=135; <br/>
+ASM: ['mov %sfr,@R1', 'byte2']<br/>
+ASM: ['mov %exp,@R1', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>clr_c (<a name='clr_c'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=195; <br/>
+ASM: clr C<br/>
+</div></a></div>
+<div class='ac_instr'>anl_ar (<a name='anl_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=11; <br/>
+ASM: anl A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>orl_a_iram (<a name='orl_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=69; <br/>
+ASM: ['orl A,%sfr', 'byte2']<br/>
+ASM: ['orl A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>xchd_R0 (<a name='xchd_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=214; <br/>
+ASM: xchd A, @R0<br/>
+</div></a></div>
+<div class='ac_instr'>rrc_a (<a name='rrc_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=19; <br/>
+ASM: rrc A<br/>
+</div></a></div>
+<div class='ac_instr'>dec_arr_R1 (<a name='dec_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=23; <br/>
+ASM: dec @R1<br/>
+</div></a></div>
+<div class='ac_instr'>dec_arr_R0 (<a name='dec_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=22; <br/>
+ASM: dec @R0<br/>
+</div></a></div>
+<div class='ac_instr'>xch_arr_R0 (<a name='xch_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=198; <br/>
+ASM: xch A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>xch_arr_R1 (<a name='xch_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=199; <br/>
+ASM: xch A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>mul (<a name='mul'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=164; <br/>
+ASM: mul AB<br/>
+</div></a></div>
+<div class='ac_instr'>rr_a (<a name='rr_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=3; <br/>
+ASM: rr A<br/>
+</div></a></div>
+<div class='ac_instr'>subb_a_data (<a name='subb_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=148; <br/>
+ASM: subb A,#%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>jz (<a name='jz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=96; <br/>
+ASM: jz %addr(pcrel,2)<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>mov_ar (<a name='mov_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=29; <br/>
+ASM: mov A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>mov_iram_data (<a name='mov_iram_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=117; <br/>
+ASM: [['mov %sfr,#hi(%exp(high))', 'byte2', 'byte3'], ['mov %sfr,#%exp', 'byte2', 'byte3']]<br/>
+ASM: ['mov %exp,#%imm', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>xch_a_iram (<a name='xch_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=197; <br/>
+ASM: ['xch A,%sfr', 'byte2']<br/>
+ASM: ['xch A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>anl_arr_R0 (<a name='anl_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=86; <br/>
+ASM: anl A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>anl_arr_R1 (<a name='anl_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=87; <br/>
+ASM: anl A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_arr_R1 (<a name='xrl_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=103; <br/>
+ASM: xrl A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_arr_R0 (<a name='xrl_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=102; <br/>
+ASM: xrl A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>mov_dptr_data (<a name='mov_dptr_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=144; <br/>
+ASM: mov DPTR,#%exp<br/>
+ASM: byte2<br/>
+ASM: byte3<br/>
+</div></a></div>
+<div class='ac_instr'>lcall (<a name='lcall'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=18; <br/>
+ASM: lcall %addr<br/>
+ASM: byte2<br/>
+ASM: byte3<br/>
+</div></a></div>
+<div class='ac_instr'>jb (<a name='jb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=32; <br/>
+ASM: ['jb %sfr,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+ASM: ['jb %imm,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>jc (<a name='jc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=64; <br/>
+ASM: jc %addr(pcrel,2)<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>anl_c_bit (<a name='anl_c_bit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=130; <br/>
+ASM: ['anl C,%sfr', 'byte2']<br/>
+ASM: ['anl C,%imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>cjne_arr_R0 (<a name='cjne_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=182; <br/>
+ASM: cjne @R0,#%imm,%addr(pcrel,3)<br/>
+ASM: byte2<br/>
+ASM: byte3<br/>
+</div></a></div>
+<div class='ac_instr'>cjne_arr_R1 (<a name='cjne_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=183; <br/>
+ASM: cjne @R1,#%imm,%addr(pcrel,3)<br/>
+ASM: byte2<br/>
+ASM: byte3<br/>
+</div></a></div>
+<div class='ac_instr'>mov_r_data (<a name='mov_r_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytesReg>Type_2bytesReg</a><br/>
+Decoder: op3=15; <br/>
+ASM: mov %reg,#%exp<br/>
+ASM: reg2<br/>
+ASM: addr<br/>
+</div></a></div>
+<div class='ac_instr'>mov_c_bit (<a name='mov_c_bit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=162; <br/>
+ASM: ['mov C,%sfr', 'byte2']<br/>
+ASM: ['mov C,%imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_iram_iram (<a name='mov_iram_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=133; <br/>
+ASM: [[['mov %sfr,%sfr', 'byte3', 'byte2'], ['mov %sfr,%exp', 'byte3', 'byte2']], ['mov %exp,%sfr', 'byte3', 'byte2']]<br/>
+ASM: ['mov %exp,%exp', 'byte3', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>acall (<a name='acall'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_IBRCH>Type_IBRCH</a><br/>
+Decoder: op2=17; <br/>
+ASM: acall %addr<br/>
+ASM: page<br/>
+ASM: addr0<br/>
+</div></a></div>
+<div class='ac_instr'>inc_a (<a name='inc_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=4; <br/>
+ASM: inc A<br/>
+</div></a></div>
+<div class='ac_instr'>movx_r1_a (<a name='movx_r1_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=243; <br/>
+ASM: movx @R1,A<br/>
+</div></a></div>
+<div class='ac_instr'>pop (<a name='pop'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=208; <br/>
+ASM: ['pop %sfr', 'byte2']<br/>
+ASM: ['pop %exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_arr_R0_a (<a name='mov_arr_R0_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=246; <br/>
+ASM: mov @R0,A<br/>
+</div></a></div>
+<div class='ac_instr'>movc_pc (<a name='movc_pc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=131; <br/>
+ASM: movc A,@A+PC<br/>
+</div></a></div>
+<div class='ac_instr'>addc_ar (<a name='addc_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=7; <br/>
+ASM: addc A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>inc_r (<a name='inc_r'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=1; <br/>
+ASM: inc %reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>anl_a_iram (<a name='anl_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=85; <br/>
+ASM: ['anl A,%sfr', 'byte2']<br/>
+ASM: ['anl A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>addc_arr_R0 (<a name='addc_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=54; <br/>
+ASM: addc A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_a_iram (<a name='xrl_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=101; <br/>
+ASM: ['xrl A,%sfr', 'byte2']<br/>
+ASM: ['xrl A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_arr_R0_iram (<a name='mov_arr_R0_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=166; <br/>
+ASM: ['mov @R0,%sfr', 'byte2']<br/>
+ASM: ['mov @R0,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>djnz_r (<a name='djnz_r'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytesReg>Type_2bytesReg</a><br/>
+Decoder: op3=27; <br/>
+ASM: djnz %reg,%addr(pcrel,2)<br/>
+ASM: reg2<br/>
+ASM: addr<br/>
+</div></a></div>
+<div class='ac_instr'>mov_a_data (<a name='mov_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=116; <br/>
+ASM: mov A,#%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>add_a_iram (<a name='add_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=37; <br/>
+ASM: ['add A,%sfr', 'byte2']<br/>
+ASM: ['add A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>orl_arr_R0 (<a name='orl_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=70; <br/>
+ASM: orl A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>orl_arr_R1 (<a name='orl_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=71; <br/>
+ASM: orl A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>anl_c_nbit (<a name='anl_c_nbit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=176; <br/>
+ASM: ['anl C,/%sfr', 'byte2']<br/>
+ASM: ['anl C,/%imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>add_a_data (<a name='add_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=36; <br/>
+ASM: ['add A, #hi(%exp(high))', 'byte2']<br/>
+ASM: ['add A, #%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>jmp (<a name='jmp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=115; <br/>
+ASM: jmp @A+DPTR<br/>
+</div></a></div>
+<div class='ac_instr'>add_arr_R0 (<a name='add_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=38; <br/>
+ASM: add A,@R0<br/>
+</div></a></div>
+<div class='ac_instr'>add_arr_R1 (<a name='add_arr_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=39; <br/>
+ASM: add A,@R1<br/>
+</div></a></div>
+<div class='ac_instr'>inc_arr_R0 (<a name='inc_arr_R0'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=6; <br/>
+ASM: inc @R0<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_iram_data (<a name='xrl_iram_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=99; <br/>
+ASM: ['xrl %sfr,#%imm', 'byte2', 'byte3']<br/>
+ASM: ['xrl %exp,#%imm', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_arr_R0_data (<a name='mov_arr_R0_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=118; <br/>
+ASM: mov @R0,#%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>xrl_ar (<a name='xrl_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=13; <br/>
+ASM: xrl A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>rl_a (<a name='rl_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=35; <br/>
+ASM: rl A<br/>
+</div></a></div>
+<div class='ac_instr'>movc_dptr (<a name='movc_dptr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=147; <br/>
+ASM: movc A,@A+DPTR<br/>
+</div></a></div>
+<div class='ac_instr'>mov_arr_R1_a (<a name='mov_arr_R1_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=247; <br/>
+ASM: mov @R1,A<br/>
+</div></a></div>
+<div class='ac_instr'>rlc_a (<a name='rlc_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=51; <br/>
+ASM: rlc A<br/>
+</div></a></div>
+<div class='ac_instr'>anl_a_data (<a name='anl_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=84; <br/>
+ASM: anl A, #%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>cpl_c (<a name='cpl_c'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=179; <br/>
+ASM: cpl C<br/>
+</div></a></div>
+<div class='ac_instr'>cpl_a (<a name='cpl_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=244; <br/>
+ASM: cpl A<br/>
+</div></a></div>
+<div class='ac_instr'>reti (<a name='reti'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=50; <br/>
+ASM: reti<br/>
+</div></a></div>
+<div class='ac_instr'>mov_arr_R1_data (<a name='mov_arr_R1_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=119; <br/>
+ASM: mov @R1,#%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>orl_c_nbit (<a name='orl_c_nbit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=160; <br/>
+ASM: ['orl C,/%sfr', 'byte2']<br/>
+ASM: ['orl C,/%imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_iram_a (<a name='mov_iram_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=245; <br/>
+ASM: ['mov %sfr,A', 'byte2']<br/>
+ASM: ['mov %exp,A', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>sjmp (<a name='sjmp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=128; <br/>
+ASM: sjmp %addr(pcrel,2)<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>clr_a (<a name='clr_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=228; <br/>
+ASM: clr A<br/>
+</div></a></div>
+<div class='ac_instr'>subb_a_iram (<a name='subb_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=149; <br/>
+ASM: ['subb A,%sfr', 'byte2']<br/>
+ASM: ['subb A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>mov_iram_r (<a name='mov_iram_r'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytesReg>Type_2bytesReg</a><br/>
+Decoder: op3=17; <br/>
+ASM: ['mov %sfr,%reg', 'addr', 'reg2']<br/>
+ASM: ['mov %exp,%reg', 'addr', 'reg2']<br/>
+</div></a></div>
+<div class='ac_instr'>orl_c_bit (<a name='orl_c_bit'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=114; <br/>
+ASM: ['orl C,%sfr', 'byte2']<br/>
+ASM: ['orl C,%imm', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>addc_a_iram (<a name='addc_a_iram'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=53; <br/>
+ASM: ['addc A,%sfr', 'byte2']<br/>
+ASM: ['addc A,%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>setb_c (<a name='setb_c'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=211; <br/>
+ASM: setb C<br/>
+</div></a></div>
+<div class='ac_instr'>movx_a_dptr (<a name='movx_a_dptr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=224; <br/>
+ASM: movx A,@DPTR<br/>
+</div></a></div>
+<div class='ac_instr'>mov_bit_c (<a name='mov_bit_c'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=146; <br/>
+ASM: ['mov %sfr,C', 'byte2']<br/>
+ASM: ['mov %imm,C', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>ajmp (<a name='ajmp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_IBRCH>Type_IBRCH</a><br/>
+Decoder: op2=1; <br/>
+ASM: ajmp %addr<br/>
+ASM: page<br/>
+ASM: addr0<br/>
+</div></a></div>
+<div class='ac_instr'>orl_iram_a (<a name='orl_iram_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=66; <br/>
+ASM: ['orl %sfr,A', 'byte2']<br/>
+ASM: ['orl %exp,A', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>addc_a_data (<a name='addc_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=52; <br/>
+ASM: ['addc A, #hi(%exp(high))', 'byte2']<br/>
+ASM: ['addc A, #%exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>orl_a_data (<a name='orl_a_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=68; <br/>
+ASM: orl A,#%imm<br/>
+ASM: byte2<br/>
+</div></a></div>
+<div class='ac_instr'>anl_iram_data (<a name='anl_iram_data'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=83; <br/>
+ASM: ['anl %sfr, #%imm', 'byte2', 'byte3']<br/>
+ASM: ['anl %exp, #%imm', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>movx_dptr_a (<a name='movx_dptr_a'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=240; <br/>
+ASM: movx @DPTR,A<br/>
+</div></a></div>
+<div class='ac_instr'>jbc (<a name='jbc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_3bytes>Type_3bytes</a><br/>
+Decoder: op=16; <br/>
+ASM: ['jbc %sfr,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+ASM: ['jbc %imm,%addr(pcrel,3)', 'byte2', 'byte3']<br/>
+</div></a></div>
+<div class='ac_instr'>push (<a name='push'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_2bytes>Type_2bytes</a><br/>
+Decoder: op=192; <br/>
+ASM: ['push %sfr', 'byte2']<br/>
+ASM: ['push %exp', 'byte2']<br/>
+</div></a></div>
+<div class='ac_instr'>add_ar (<a name='add_ar'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_OP_R>Type_OP_R</a><br/>
+Decoder: op1=5; <br/>
+ASM: add A,%reg<br/>
+ASM: reg<br/>
+</div></a></div>
+<div class='ac_instr'>xchd_R1 (<a name='xchd_R1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_1byte>Type_1byte</a><br/>
+Decoder: op=215; <br/>
+ASM: xchd A, @R1<br/>
+</div></a></div>
+</div>
+</body>
+</html>

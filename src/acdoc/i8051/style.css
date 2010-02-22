@@ -1,0 +1,58 @@
+
+	.ac_arch, .definfo, .ac_isa{
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+		
+		margin: 5px;
+		
+		border: thin black solid;
+		
+		background: #C0C0C0;
+		font-size: large;
+	}
+	
+	.comment, .arch_ctor, .ac_stage, .ac_pipe, .arch_name, .ac_reg, .ac_regbank, .ac_mem, .ac_cache, .ac_wordsize, .ac_fetchsize, .ac_helper, .ac_instr, .ac_format, .ac_group, .ac_asm_map, .isa_name, .ac_icache, .ac_dcache, .pseudo_instr{
+		margin: 2px;
+		
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-top: 4px;
+		padding-bottom: 4px;
+		
+		border: thin black solid;
+		
+		background: #E0E0E0;
+		font-size: medium;
+	}
+	
+	.desc{
+		margin: 2px;
+	
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-top: 4px;
+		padding-bottom: 4px;
+		
+		border: thin black solid;
+		
+		background: #FFFFFF;
+		font-size: small;
+	}
+
+	.source {
+		margin: 5px;
+
+		background:#E0E0E0;
+		border: thin black solid;
+
+		font-size: small;
+	}
+
+	a {
+		text-decoration:none;
+		color: green;
+	} 
+
+	ul { list-style-type: none; }

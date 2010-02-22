@@ -1,0 +1,64 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>mips1.ac Source Code</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=mips1_index.html>mips1 Architechture Description</a></div><div class='definfo'><a href=mips1_isa.html>mips1 Instruction Set and Formats</a></div><div class='definfo'><a href=mips1_other.html>mips1 Other Properties</a></div><div class='source'><ul>
+<li><a name=l1>00001</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/**
+ </font></li><li><a name=l2>00002</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \file      mips1.ac
+ </font></li><li><a name=l3>00003</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \author    Sandro Rigo
+ </font></li><li><a name=l4>00004</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             Marcus Bartholomeu
+ </font></li><li><a name=l5>00005</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             Alexandro Baldassin (acasm information)
+ </font></li><li><a name=l6>00006</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > 
+ </font></li><li><a name=l7>00007</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             The ArchC Team
+ </font></li><li><a name=l8>00008</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             http://www.archc.org/
+ </font></li><li><a name=l9>00009</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > 
+ </font></li><li><a name=l10>00010</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             Computer Systems Laboratory (LSC)
+ </font></li><li><a name=l11>00011</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             IC-UNICAMP
+ </font></li><li><a name=l12>00012</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >            http://www.lsc.ic.unicamp.br/
+ </font></li><li><a name=l13>00013</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > 
+ </font></li><li><a name=l14>00014</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \version   1.0
+ </font></li><li><a name=l15>00015</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \date      Thu, 29 Jun 2006 14:49:08 -0300
+ </font></li><li><a name=l16>00016</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l17>00017</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \brief     The ArchC MIPS-I functional model.
+ </font></li><li><a name=l18>00018</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l19>00019</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \note Copyright (C) 2002-2006 --- The ArchC Team
+ </font></li><li><a name=l20>00020</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l21>00021</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \details
+ </font></li><li><a name=l22>00022</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >   This program is free software; you can redistribute it and/or modify 
+ </font></li><li><a name=l23>00023</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  it under the terms of the GNU General Public License as published by 
+ </font></li><li><a name=l24>00024</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  the Free Software Foundation; either version 2 of the License, or 
+ </font></li><li><a name=l25>00025</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  (at your option) any later version. 
+ </font></li><li><a name=l26>00026</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l27>00027</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  This program is distributed in the hope that it will be useful, 
+ </font></li><li><a name=l28>00028</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ </font></li><li><a name=l29>00029</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ </font></li><li><a name=l30>00030</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  GNU General Public License for more details. 
+ </font></li><li><a name=l31>00031</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l32>00032</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  You should have received a copy of the GNU General Public License 
+ </font></li><li><a name=l33>00033</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  along with this program; if not, write to the Free Software 
+ </font></li><li><a name=l34>00034</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ </font></li><li><a name=l35>00035</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \end
+ </font></li><li><a name=l36>00036</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > */
+ </font></li><li><a name=l37>00037</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l38>00038</a>&nbsp&nbsp&nbsp&nbsp <font color="purple" >AC_ARCH </font>(mips1){
+</li><li><a name=l39>00039</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l40>00040</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_mem </font>   DM:5M;
+</li><li><a name=l41>00041</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_regbank </font><32> RB:32;
+</li><li><a name=l42>00042</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_regbank </font> RA:32;
+</li><li><a name=l43>00043</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_reg </font> npc;
+</li><li><a name=l44>00044</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_reg </font> hi, lo;
+</li><li><a name=l45>00045</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l46>00046</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_wordsize </font> 32;
+</li><li><a name=l47>00047</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l48>00048</a>&nbsp&nbsp&nbsp&nbsp   <font color="purple" >ARCH_CTOR </font>(mips1) {
+</li><li><a name=l49>00049</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l50>00050</a>&nbsp&nbsp&nbsp&nbsp     <font color="green" >ac_isa </font>(<font color="brown" >"mips1_isa.ac" </font>);
+</li><li><a name=l51>00051</a>&nbsp&nbsp&nbsp&nbsp     <font color="green" >set_endian </font>(<font color="brown" >"big" </font>);
+</li><li><a name=l52>00052</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l53>00053</a>&nbsp&nbsp&nbsp&nbsp   };
+</li><li><a name=l54>00054</a>&nbsp&nbsp&nbsp&nbsp };
+</li></ul></div>
+</body>
+</html>
