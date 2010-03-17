@@ -5,6 +5,7 @@ AC_PREREQ([2.59])
 AC_INIT([archc], [2.0])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER(config.h)
+#AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
 AC_CONFIG_SRCDIR([src/acsim/acsim.c])
@@ -91,34 +92,34 @@ AC_FUNC_STAT
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([dup2 memset socket strchr strdup strerror strstr strtol])
 
-AC_CHECK_FUNC([getopt_long_only],, 
+AC_CHECK_FUNC([getopt_long_only],,
 [
-  AC_LIBOBJ(getopt) 
+  AC_LIBOBJ(getopt)
   AC_LIBOBJ(getopt1)
 ])
 
 # Configuration files
 AC_CONFIG_FILES(
 [
-  Makefile 
-  Doxyfile 
-  src/Makefile 
-  src/replace/Makefile 
-  src/acpp/Makefile 
-  src/aclib/Makefile 
-  src/aclib/ac_core/Makefile 
-  src/aclib/ac_decoder/Makefile 
-  src/aclib/ac_gdb/Makefile 
-  src/aclib/ac_storage/Makefile 
+  Makefile
+  Doxyfile
+  src/Makefile
+  src/replace/Makefile
+  src/acpp/Makefile
+  src/aclib/Makefile
+  src/aclib/ac_core/Makefile
+  src/aclib/ac_decoder/Makefile
+  src/aclib/ac_gdb/Makefile
+  src/aclib/ac_storage/Makefile
   src/aclib/ac_stats/Makefile
-  src/aclib/ac_syscall/Makefile 
-  src/aclib/ac_tlm/Makefile 
-  src/aclib/ac_utils/Makefile 
-  src/acsim/Makefile 
+  src/aclib/ac_syscall/Makefile
+  src/aclib/ac_tlm/Makefile
+  src/aclib/ac_utils/Makefile
+  src/acsim/Makefile
   src/actsim/Makefile
-  src/accsim/Makefile 
-  src/acbinutils/Makefile 
-  src/acbinutils/binutils/gas/config/tc-xxxxx.c 
+  src/accsim/Makefile
+  src/acbinutils/Makefile
+  src/acbinutils/binutils/gas/config/tc-xxxxx.c
 ])
 
 # Output

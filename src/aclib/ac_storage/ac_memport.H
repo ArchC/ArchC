@@ -297,7 +297,7 @@ public:
       //init decode cache and return
       if(!this->dec_cache_size)
         this->dec_cache_size = this->ac_heap_ptr;
-      storage->write(Data, this->ac_start_addr, 8, (this->ac_heap_ptr - this->ac_start_addr));
+      storage->write(Data, this->ac_start_addr, 32, (this->ac_heap_ptr - this->ac_start_addr)/4);
       delete[] Data;
       return;
     }

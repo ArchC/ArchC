@@ -11,7 +11,7 @@ EXTRA_DIST = archc.conf.m4 \
 
 ## Automake options
 AUTOMAKE_OPTIONS = foreign
-
+#ACLOCAL_AMFLAGS = -I m4
 ## Subdirectories
 SUBDIRS = src
 
