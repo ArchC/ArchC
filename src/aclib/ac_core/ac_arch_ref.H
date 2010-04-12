@@ -33,6 +33,7 @@
 // ArchC includes
 #include "ac_log.H"
 #include "ac_arch.H"
+#include "ac_rtld.H"
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -60,6 +61,7 @@ public:
   bool& ac_mt_endian;
   bool& ac_tgt_endian;
   unsigned& ac_start_addr;
+  ac_dynlink::ac_rtld& ac_dyn_loader;
   unsigned long long& ac_instr_counter;
   unsigned long long& ac_cycle_counter;
   int& ac_stop_flag;
@@ -84,6 +86,7 @@ public:
     ac_mt_endian(arch.ac_mt_endian),
     ac_tgt_endian(arch.ac_tgt_endian),
     ac_start_addr(arch.ac_start_addr),
+    ac_dyn_loader(arch.ac_dyn_loader),
     ac_instr_counter(arch.ac_instr_counter),
     ac_cycle_counter(arch.ac_cycle_counter),
     ac_stop_flag(arch.ac_stop_flag),

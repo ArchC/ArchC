@@ -27,11 +27,12 @@
 #include "ac_gdb.H"
 #endif /* USE_GDB */
 
+#include "ac_rtld.H"
 #include "ac_arch_ref.H"
 #include "ac_utils.H"
 
 template <class ac_word, class ac_Hword> class ac_syscall {
-private:
+protected:
   ac_arch<ac_word, ac_Hword>& ref;
   const unsigned int ramsize;
 
@@ -45,6 +46,8 @@ public:
 
 #undef AC_SYSC
 
+  int process_syscall(int syscall);
+
   //!Target dependent functions
   virtual void get_buffer(int argn, unsigned char* buf, unsigned int size) =0;
   virtual void set_buffer(int argn, unsigned char* buf, unsigned int size) =0;
@@ -52,6 +55,10 @@ public:
   virtual void set_int(int argn, int val) =0;
   virtual void return_from_syscall() =0;
   virtual void set_prog_args(int argc, char *argv[]) =0;
+  virtual void set_pc(unsigned val);
+  virtual void set_return(unsigned val);
+  virtual unsigned get_return();
+  virtual int *get_syscall_table();
 };
 
 #include "ac_utils.H"
@@ -71,6 +78,7 @@ public:
 #include <sys/times.h>
 #include <time.h>
 
+
 #undef AC_RUN_ERROR
 #if 0 /// Changed to iostream-type. --Marilia
 #define AC_RUN_ERROR( str, args...) \
@@ -87,6 +95,32 @@ public:
 #endif
 
 void correct_flags( int* val );
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::set_pc(unsigned val) {
+  AC_RUN_ERROR << "You must implement set_pc() in your model syscall module."
+               << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::set_return(unsigned val) {
+  AC_RUN_ERROR << "You must implement set_return() in your model syscall module."
+               << std::endl;
+  exit(EXIT_FAILURE);
+}
+ 
+template <class ac_word, class ac_Hword>
+unsigned ac_syscall<ac_word, ac_Hword>::get_return() {
+  AC_RUN_ERROR << "You must implement get_return() in your model syscall module."
+               << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+int * ac_syscall<ac_word, ac_Hword>::get_syscall_table() {
+  return NULL;
+}
 
 //! Processor independent functions (syscalls)
 
@@ -376,10 +410,10 @@ void ac_syscall<ac_word, ac_Hword>::ac_syscall_wrapper()
     /* Special cases for the fields of the "struct stat":
        to convert from glibc to newlib */
 
-#define FILL_STRUCT_STAT(x) \
-  case __AC_struct_stat_##x: \
-    DEBUG_SYSCALL("filling struct stat field: " #x); \
-    ret = buf_stat.x; \
+#define FILL_STRUCT_STAT(x)                             \
+    case __AC_struct_stat_##x:                          \
+      DEBUG_SYSCALL("filling struct stat field: " #x);  \
+    ret = buf_stat.x;                                   \
     break
 
     FILL_STRUCT_STAT(st_dev);
@@ -434,5 +468,489 @@ void ac_syscall<ac_word, ac_Hword>::ac_syscall_stat_mode()
 #endif
   exit(EXIT_FAILURE);
 }
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_forbidden()
+{
+  AC_ERROR("segmentation fault - PC at invalid address.");
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_rtld_dummy()
+{
+  set_int(0, 0);
+  return_from_syscall();
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_rtld_init()
+{  
+  unsigned ac_init_vecsz = ref.ac_dyn_loader.get_init_arraysz();
+  unsigned *ac_init_vec = ref.ac_dyn_loader.get_init_array();
+  if (ac_init_vecsz > 0) {
+    unsigned destination = ac_init_vec[0];
+    for (int i =0; i < ac_init_vecsz-1; i++)
+      ac_init_vec[i] = ac_init_vec[i+1];
+    ac_init_vecsz--;
+    ref.ac_dyn_loader.set_init_arraysz(ac_init_vecsz);
+    set_pc(destination);
+    if (ac_init_vecsz == 0) {
+      set_int(0, 0x84);
+    } else {
+      set_int(0, 0);
+    }
+    set_int(1, 0);
+    set_int(2, 0);
+    set_return(0x80);
+  } else {
+    AC_RUN_ERROR << "runtime dynamic loader: no init function.";
+    exit(EXIT_FAILURE);
+  }
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_rtld_fini()
+{
+  static unsigned returnaddr = 0;
+  unsigned ac_fini_vecsz = ref.ac_dyn_loader.get_fini_arraysz();
+  unsigned *ac_fini_vec = ref.ac_dyn_loader.get_fini_array();
+
+  if (returnaddr == 0) {
+    returnaddr = get_return();
+  }
+    
+  if (ac_fini_vecsz > 0) {
+    unsigned destination = ac_fini_vec[0];
+    for (int i =0; i < ac_fini_vecsz-1; i++)
+      ac_fini_vec[i] = ac_fini_vec[i+1];
+    ac_fini_vecsz--;
+    ref.ac_dyn_loader.set_fini_arraysz(ac_fini_vecsz);
+    set_pc(destination);
+    set_return(0x84);
+  } else {
+    set_pc(returnaddr);
+  }
+ 
+}
+
+
+#include <sys/utsname.h>
+#include <sys/uio.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#define SET_BUFFER_CORRECT_ENDIAN(reg, buf, size)                       \
+  do {                                                                  \
+    unsigned char *ptr = (unsigned char*) buf;                          \
+    for (int ndx = 0; ndx < (size); ndx += sizeof(ac_word)) {           \
+      *((ac_word *)(ptr + ndx)) = (ac_word)                             \
+        convert_endian(sizeof(ac_word), (unsigned) *((ac_word *)(ptr + ndx)), \
+                       ref.ac_mt_endian);                               \
+  }                                                                     \
+    set_buffer((reg), ptr, (size));                                     \
+  } while(0)
+
+#define CORRECT_ENDIAN(word, size) (convert_endian((size),              \
+                                                   (word), ref.ac_mt_endian))
+
+#define CORRECT_STAT_STRUCT(buf)                                           \
+  do{                                                                   \
+    buf.st_dev     = CORRECT_ENDIAN(buf.st_dev, sizeof(dev_t));         \
+    buf.st_ino     = CORRECT_ENDIAN(buf.st_ino, sizeof(ino_t));         \
+    buf.st_mode    = CORRECT_ENDIAN(buf.st_mode, sizeof(mode_t));       \
+    buf.st_nlink   = CORRECT_ENDIAN(buf.st_nlink, sizeof(nlink_t));     \
+    buf.st_uid     = CORRECT_ENDIAN(buf.st_uid, sizeof(uid_t));         \
+    buf.st_gid     = CORRECT_ENDIAN(buf.st_gid, sizeof(gid_t));         \
+    buf.st_rdev    = CORRECT_ENDIAN(buf.st_rdev, sizeof(dev_t));        \
+    buf.st_size    = CORRECT_ENDIAN(buf.st_size, sizeof(off_t));        \
+    buf.st_blksize = CORRECT_ENDIAN(buf.st_blksize, sizeof(blksize_t)); \
+    buf.st_blocks  = CORRECT_ENDIAN(buf.st_blocks, sizeof(blkcnt_t));   \
+    buf.st_atime   = CORRECT_ENDIAN(buf.st_atime, sizeof(time_t));      \
+    buf.st_mtime   = CORRECT_ENDIAN(buf.st_mtime, sizeof(time_t));      \
+    buf.st_ctime   = CORRECT_ENDIAN(buf.st_ctime, sizeof(time_t));      \
+  } while(0)
+
+/* This function should be called by the syscall instruction
+   behavior (INT, SYSCALL, SWI, etc.) of the model. It is an alternative
+   to linking with libac_sysc (which creates binaries that uses the
+   functions above. */
+/* As syscall codes varies with the target, this implementation loads
+   an array (get_syscall_table, function that should be overridden by
+   the model syscall class) that contains the specific syscall code
+   at each position (first position is reserved to "__NR_restart_syscall",
+   second to "__NR_exit", etc.) */
+template <class ac_word, class ac_Hword>
+int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
+  const int *sctbl = get_syscall_table();
+  
+  if (sctbl == NULL)
+     return -1;
+
+  if (syscall == sctbl[0]) {        // restart_syscall
+
+  } else if (syscall == sctbl[1]) { // exit
+    DEBUG_SYSCALL("exit");
+    int ac_exit_status = get_int(0);
+#ifdef USE_GDB
+    if (ref.get_gdbstub()) (ref.get_gdbstub())->exit(ac_exit_status);
+#endif /* USE_GDB */
+    ref.stop(ac_exit_status);
+    return 0;
+
+  } else if (syscall == sctbl[2]) { // fork
+
+  } else if (syscall == sctbl[3]) { // read
+    DEBUG_SYSCALL("read");
+#ifdef AC_MEM_HIERARCHY
+    if (!flush_cache()) return;
+#endif  
+    int fd = get_int(0);
+    unsigned count = get_int(2);
+    unsigned char *buf = (unsigned char*) malloc(count);
+    int ret = ::read(fd, buf, count);
+    set_buffer(1, buf, ret);
+    set_int(0, ret);
+    free(buf);
+    return 0;
+
+  } else if (syscall == sctbl[4]) { // write
+    DEBUG_SYSCALL("write");
+#ifdef AC_MEM_HIERARCHY
+    if (!flush_cache()) return;
+#endif
+    int fd = get_int(0);
+    unsigned count = get_int(2);
+    unsigned char *buf = (unsigned char*) malloc(count);
+    get_buffer(1, buf, count);
+    int ret = ::write(fd, buf, count);
+    set_int(0, ret);
+    free(buf);
+    return 0;
+
+  } else if (syscall == sctbl[5]) { // open
+    DEBUG_SYSCALL("open");
+#ifdef AC_MEM_HIERARCHY
+    if (!flush_cache()) return;
+#endif
+    unsigned char pathname[100];
+    get_buffer(0, pathname, 100);
+    int flags = get_int(1);
+    int mode = get_int(2);
+    int ret = ::open((char*)pathname, flags, mode);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[6]) { // close
+    DEBUG_SYSCALL("close");
+    int fd = get_int(0);
+    int ret;
+    // Silently ignore attempts to close standard streams (newlib may try to do so when exiting)
+    if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO)
+      ret = 0;
+    else
+      ret = ::close(fd);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[7]) { // creat
+    DEBUG_SYSCALL("creat");
+    unsigned char pathname[100];
+    get_buffer(0, pathname, 100);
+    int mode = get_int(1);
+    int ret = ::creat((char*)pathname, mode);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[8]) { // time
+    DEBUG_SYSCALL("time");
+    time_t param;
+    time_t ret = ::time(&param);
+    if (get_int(0) != 0 && ret != (time_t)-1)
+      SET_BUFFER_CORRECT_ENDIAN(0, (unsigned char *)&param,(unsigned) sizeof(time_t));
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[9]) { // lseek
+    DEBUG_SYSCALL("lseek");
+    off_t offset = get_int(1);
+    int whence = get_int(2);
+    int fd = get_int(0);
+    int ret;
+    ret = ::lseek(fd, offset, whence);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[10]) { // getpid
+    DEBUG_SYSCALL("getpid");
+    pid_t ret = getpid();
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[11]) { // access
+    DEBUG_SYSCALL("access");
+    unsigned char pathname[100];
+    get_buffer(0, pathname, 100);
+    int mode = get_int(1);
+    int ret = ::access((char*)pathname, mode);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[12]) { // kill
+    DEBUG_SYSCALL("kill");
+    set_int(0, 0); 
+    return 0;
+
+  } else if (syscall == sctbl[13]) { // dup
+    DEBUG_SYSCALL("dup");
+    int fd = get_int(0);
+    int ret = dup(fd);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[14]) { // times
+    DEBUG_SYSCALL("times");
+    struct tms buf;
+    clock_t ret = ::times(&buf);
+    if (ret != (clock_t)-1)
+      SET_BUFFER_CORRECT_ENDIAN(0, (unsigned char*)&buf, 
+                                (unsigned)sizeof(struct tms));
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[15]) { // brk
+    DEBUG_SYSCALL("brk");
+    int ptr = get_int(0);
+    set_int(0, ref.ac_dyn_loader.mem_map.brk((Elf32_Addr)ptr));
+    return 0;
+
+  } else if (syscall == sctbl[16]) { // mmap
+    DEBUG_SYSCALL("mmap");
+    // Supports only anonymous mappings
+    int flags = get_int(3);
+    Elf32_Addr addr = get_int(0);
+    Elf32_Word size = get_int(1);
+    if ((flags & 0x20) == 0) { // Not anonymous
+      set_int(0, -EINVAL);
+    } else {
+      set_int(0, ref.ac_dyn_loader.mem_map.mmap_anon(addr, size));
+    }
+    return 0;
+
+  } else if (syscall == sctbl[17]) { // munmap
+    DEBUG_SYSCALL("munmap");
+    Elf32_Addr addr = get_int(0);
+    Elf32_Word size = get_int(1);
+    if (ref.ac_dyn_loader.mem_map.munmap(addr, size))
+      set_int(0, 0);
+    else
+      set_int(0, -EINVAL);
+    return 0;
+
+  } else if (syscall == sctbl[18]) { // stat
+    DEBUG_SYSCALL("stat");
+    unsigned char pathname[256];
+    get_buffer(0, pathname, 256);
+    struct stat buf;
+    int ret = ::stat((char *)pathname, &buf);
+    if (ret >= 0) {
+      CORRECT_STAT_STRUCT(buf);
+      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+    }
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[19]) { // lstat
+    DEBUG_SYSCALL("lstat");
+    unsigned char pathname[256];
+    get_buffer(0, pathname, 256);
+    struct stat buf;
+    int ret = ::lstat((char *)pathname, &buf);
+    if (ret >= 0) {
+      CORRECT_STAT_STRUCT(buf);
+      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+    }
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[20]) { // fstat
+    DEBUG_SYSCALL("fstat");
+    int fd = get_int(0);
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    if (ret >= 0) {
+      CORRECT_STAT_STRUCT(buf);
+      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+    }
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[21]) { // uname
+    DEBUG_SYSCALL("uname");
+    struct utsname *buf = (struct utsname*) malloc(sizeof(utsname));
+    int ret = ::uname(buf);
+    set_buffer(0, (unsigned char *) buf, sizeof(utsname));
+    free(buf);
+    set_int(0, ret);
+    return 0; 
+
+  } else if (syscall == sctbl[22]) { // _llseek
+    DEBUG_SYSCALL("_llseek");
+    unsigned fd = get_int(0);
+    unsigned long offset_high = get_int(1);
+    unsigned long offset_low = get_int(2);
+    off_t ret_off;
+    int ret;
+    unsigned whence = get_int(4);
+    if (offset_high == 0) {
+      ret_off = ::lseek(fd, offset_low, whence);
+      if (ret_off >= 0) {
+	loff_t result = ret_off;
+	SET_BUFFER_CORRECT_ENDIAN(3, (unsigned char*)&result,
+                                  (unsigned) sizeof(loff_t));
+	ret = 0;
+      } else {
+	ret = -1;
+      }
+    } else {
+      ret = -1;
+    }
+    set_int(0, ret);
+    return 0; 
+
+  } else if (syscall == sctbl[23]) { // readv
+    DEBUG_SYSCALL("readv");
+    int ret;
+    int fd = get_int(0);
+    int iovcnt = get_int(2);
+    int *addresses = (int *) malloc(sizeof(int)*iovcnt);
+    struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
+    get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
+    for (int i = 0; i < iovcnt; i++) {
+      addresses[i] = (int) buf[i].iov_base;
+      unsigned char *tmp = (unsigned char *) malloc(buf[i].iov_len);
+      buf[i].iov_base = (void *)tmp;
+    }
+    ret = ::readv(fd, buf, iovcnt);
+    for (int i = 0; i < iovcnt; i++) {
+      set_int(1, addresses[i]);
+      set_buffer(1, (unsigned char *)buf[i].iov_base, buf[i].iov_len);
+      free (buf[i].iov_base);
+    }
+    free(addresses);
+    free(buf);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[24]) { // writev
+    DEBUG_SYSCALL("writev");
+    int ret;
+    int fd = get_int(0);
+    int iovcnt = get_int(2);
+    struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
+    get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
+    for (int i = 0; i < iovcnt; i++) {
+      unsigned char *tmp;
+      buf[i].iov_base = (void *) 
+        CORRECT_ENDIAN((unsigned) buf[i].iov_base, sizeof(void *));
+      buf[i].iov_len  = CORRECT_ENDIAN(buf[i].iov_len, sizeof(size_t));
+      set_int(1, (int) buf[i].iov_base);
+      tmp = (unsigned char *) malloc(buf[i].iov_len);
+      buf[i].iov_base = (void *)tmp;
+      get_buffer(1, tmp, buf[i].iov_len);
+    }
+    ret = ::writev(fd, buf, iovcnt);
+    for (int i = 0; i < iovcnt; i++) {
+      free (buf[i].iov_base);
+    }
+    free(buf);
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[25]) { // mmap2
+    return process_syscall(sctbl[16]); //redirect to mmap
+
+  } else if (syscall == sctbl[26]) { // stat64
+    DEBUG_SYSCALL("stat64");
+    unsigned char pathname[256];
+    get_buffer(0, pathname, 256);
+    struct stat64 buf;
+    int ret = ::stat64((char *)pathname, &buf);
+    if (ret >= 0) {
+      CORRECT_STAT_STRUCT(buf);
+      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+    }
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[27]) { // lstat64
+    DEBUG_SYSCALL("lstat64");
+    unsigned char pathname[256];
+    get_buffer(0, pathname, 256);
+    struct stat64 buf;
+    int ret = ::lstat64((char *)pathname, &buf);
+    if (ret >= 0) {
+      CORRECT_STAT_STRUCT(buf);
+      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+    }
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[28]) { // fstat64
+    DEBUG_SYSCALL("fstat64");
+    int fd = get_int(0);
+    struct stat64 buf;
+    int ret = ::fstat64(fd, &buf);
+    if (ret >= 0) {
+      CORRECT_STAT_STRUCT(buf);
+      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+    }
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[29]) { // getuid32
+    DEBUG_SYSCALL("getuid32");
+    uid_t ret = ::getuid();
+    set_int(0, (int)ret);
+    return 0;
+
+  } else if (syscall == sctbl[30]) { // getgid32
+    DEBUG_SYSCALL("getgid32");
+    gid_t ret = ::getgid();
+    set_int(0, (int)ret);
+    return 0;
+
+  } else if (syscall == sctbl[31]) { // geteuid32
+    DEBUG_SYSCALL("geteuid32");
+    uid_t ret = ::geteuid();
+    set_int(0, (int)ret);
+    return 0;
+
+  } else if (syscall == sctbl[32]) { // getegid32
+    DEBUG_SYSCALL("getegid32");
+    gid_t ret = ::getegid();
+    set_int(0, (int)ret);
+    return 0;
+
+  } else if (syscall == sctbl[33]) { // fcntl64
+    DEBUG_SYSCALL("fcntl64");
+    int ret = -EINVAL;
+    set_int(0, ret);
+    return 0;
+
+  } else if (syscall == sctbl[34]) { // exit_group
+    DEBUG_SYSCALL("exit_group");
+    int ret = -EINVAL;
+    set_int(0, ret);
+    return 0;
+  }
+
+  /* Default case */
+  set_int(0, -EINVAL);
+  return -1;
+}
+#undef SET_BUFFER_CORRECT_ENDIAN
+#undef CORRECT_ENDIAN
+#undef CORRECT_STAT_STRUCT
 
 #endif

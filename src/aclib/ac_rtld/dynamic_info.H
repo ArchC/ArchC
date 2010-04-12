@@ -59,15 +59,17 @@ namespace ac_dynlink {
 
     int find_library (const char *soname);
 
-    int compare_library_soname (const char *soname1, const char *soname2);
-
   public:
 
     dynamic_info();
 
     ~dynamic_info();
 
+    int compare_library_soname (const char *soname1, const char *soname2);
+
     Elf32_Word get_value(Elf32_Sword tag);
+
+    bool set_value(Elf32_Sword tag, Elf32_Word value);
 
     void load_dynamic_info (Elf32_Addr addr, unsigned char *mem, bool match_endian);
 

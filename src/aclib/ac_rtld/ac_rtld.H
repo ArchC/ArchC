@@ -35,7 +35,6 @@
  *  & Limitations                                                          *
  *   - Can't unload a library                                              *
  *   - Poor library finding/matching mechanism                             *
- *   - Can't load libraries on demand (dl_open, etc.)                      *
  ***************************************************************************/
 
 #ifndef _AC_RTLD_H
@@ -49,6 +48,7 @@
 #endif /* __CYGWIN__ */
 
 #include "memmap.H"
+#include "ac_rtld_config.H"
 
 namespace ac_dynlink {
 
@@ -59,10 +59,18 @@ namespace ac_dynlink {
      ArchC run time dynamic linker. */
   class ac_rtld {
   private:
-    memmap mem_map;               /* Linked list of contiguous regions of memory and their state */
+    ac_rtld_config rtld_config;   /* Loads relocation code translation from target to ArchC's (if needed) */
     link_node * root;             /* "Root" node of the dynamic references digraph */
     unsigned char word_size;      /* Target architecture word size */
+    bool initiated;
+    bool glibc;
+
+    bool detect_static_glibc(int fd, bool match_endian);
+
   public:
+    memmap mem_map;               /* Linked list of contiguous regions of memory and their state */
+
+
     ac_rtld();
     
     ~ac_rtld();
@@ -70,10 +78,21 @@ namespace ac_dynlink {
     void load_libraries(unsigned char *mem, Elf32_Word mem_size);
 
     void link(unsigned char *mem);
+
+    unsigned *get_init_array();
+    unsigned *get_fini_array();
+    unsigned  get_init_arraysz();
+    unsigned  get_fini_arraysz();
+    void  set_init_arraysz(unsigned value);
+    void  set_fini_arraysz(unsigned value);
     
-    void initiate(Elf32_Addr dynaddr, unsigned char *mem, Elf32_Addr start_addr, Elf32_Word size,
-		  unsigned char word_size, bool match_endian, Elf32_Word mem_size,
-                  unsigned int& ac_heap_ptr);
+    bool is_glibc();
+    
+    void initiate(Elf32_Addr start_addr, Elf32_Word size, Elf32_Word memsize, Elf32_Word brkaddr, int fd, bool match_endian);
+    
+    void loadnlink_all(Elf32_Addr dynaddr, const char *pinterp, unsigned char *mem, Elf32_Addr& start_addr, Elf32_Word size,
+                       unsigned char word_size, bool match_endian, Elf32_Word mem_size,
+                       unsigned int& ac_heap_ptr);
     
   };
   

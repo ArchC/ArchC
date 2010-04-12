@@ -63,24 +63,43 @@ namespace ac_dynlink {
 	    fd = open(apath, 0);
 	    if (fd > 0)
 	      {
-		delete apath;
+		delete [] apath;
 		return fd;
 	      }
 	    j = 0;
 	  }           
       }
-    delete apath;
+    delete [] apath;
     return -1;
   }
 
   /* Verifies if two library names references the same so */
   int dynamic_info::compare_library_soname (const char *soname1, const char *soname2)
   {
+    int ndx1, ndx2;
     if (soname1 == NULL && soname2 == NULL)
       return 0;
     else if (soname1 == NULL || soname2 == NULL)
       return 1;
-    return strcmp(soname1, soname2);
+
+    /* Remove path */
+    for (ndx1 = strlen(soname1)-1; ndx1 >=0; ndx1--) {
+      if (soname1[ndx1] == '/')
+        {
+          break;
+        }
+    }
+    ndx1++;
+    for (ndx2 = strlen(soname2)-1; ndx2 >=0; ndx2--) {
+      if (soname2[ndx2] == '/')
+        {
+          break;
+        }
+    }
+    ndx2++;
+
+    /* Compare "filenames" (without path) */
+    return strcmp(&soname1[ndx1], &soname2[ndx2]);
   }
   
   /* Public methods */
@@ -109,6 +128,26 @@ namespace ac_dynlink {
       return 0;
     else
       return entry->d_un.d_val;
+  }
+
+  /* Given a tag in the dynamic table, the first appearance of it
+     will receive a new value. If no tags are found, return false. */
+  bool dynamic_info::set_value(Elf32_Sword tag, Elf32_Word value) {
+    unsigned int i;
+    Elf32_Dyn *entry;
+    
+    for (i = 0, entry = dynamic_segment;
+	 i < dynamic_size;
+	 i++, entry++) {
+      if (entry->d_tag == tag)
+	break;
+    }
+    if (i >= dynamic_size)
+      return false;
+    else {
+      entry->d_un.d_val = value;
+      return true;
+    }
   }
 
   /* Loads the dynamic table. Needs the DYNAMIC segment address */
@@ -196,7 +235,7 @@ old and can't be used (version mismatch).\n");
     
     //Open application
     if (!soname || ((fd = find_library((char *)soname)) == -1)) {
-      AC_ERROR("Run-time dynamic linker: Could not find shared library \"" << soname << "\".");
+      AC_ERROR("Run-time dynamic linker: Could not find shared library \"" << soname << "\"." << std::endl << "Please properly configure the environment variable AC_LIBRARY_PATH.");
       exit(EXIT_FAILURE);
     }
     
@@ -214,7 +253,11 @@ old and can't be used (version mismatch).\n");
     }
     
     //It is an ELF file
-    AC_SAY("Reading ELF requested dynamic library: \"" << soname << "\"");
+#ifdef DEBUG
+    printf("ArchC: Reading ELF requested dynamic library: %s@0x%X\n", soname, load_addr);
+#else
+    AC_SAY("Reading ELF requested dynamic library: " << soname);
+#endif
     
     //Get program headers and load segments
     for (i=0; i<convert_endian(2,ehdr.e_phnum, match_endian); i++) {
@@ -263,6 +306,7 @@ old and can't be used (version mismatch).\n");
             close(fd);
             exit(EXIT_FAILURE);
           }
+        memset(mem + p_vaddr + load_addr + p_filesz, 0, p_memsz - p_filesz);
 	
 	break;
       }

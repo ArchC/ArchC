@@ -51,6 +51,7 @@ namespace ac_dynlink {
     Elf_Symndx * chain;
     Elf32_Sym * symtab;
     Elf32_Sym * last_match;
+    Elf32_Sym * weak_match;
     bool is_unique_match;
     Elf_Verndx * versym;
     version_needed * verneed;

@@ -7,7 +7,7 @@ INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_core -I$(top_srcdir)/src/aclib/ac_de
 noinst_LTLIBRARIES = libacrtld.la
 
 ## ArchC library includes
-pkginclude_HEADERS = ac_rtld.H memmap.H
+pkginclude_HEADERS = ac_rtld.H memmap.H ac_rtld_config.H
 
-libacrtld_la_SOURCES = ac_rtld.cpp dynamic_info.cpp dynamic_relocations.cpp dynamic_symbol_table.cpp link_node.cpp memmap.cpp version_definitions.cpp version_needed.cpp
+libacrtld_la_SOURCES = ac_rtld.cpp dynamic_info.cpp dynamic_relocations.cpp dynamic_symbol_table.cpp link_node.cpp memmap.cpp version_definitions.cpp version_needed.cpp ac_rtld_config.cpp
 

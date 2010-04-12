@@ -51,6 +51,8 @@ namespace ac_dynlink {
     
     memmap_status get_status();
 
+    void set_status(memmap_status value);
+
     void set_next(memmap_node *next);
   };
     
@@ -58,6 +60,11 @@ namespace ac_dynlink {
   class memmap {
   private:
     memmap_node *list;
+    long pagesize;
+    Elf32_Addr memsize;
+    Elf32_Addr brkaddr;
+    Elf32_Addr newbrkaddr;
+    bool warning_display;
   protected:
     void delete_node(memmap_node *node); 
 
@@ -69,11 +76,26 @@ namespace ac_dynlink {
 
     ~memmap();
 
+    void set_memsize(Elf32_Addr memsize);
+
+    void set_brk_addr(Elf32_Addr addr);
+
+    bool verify_region_availability(Elf32_Addr addr, Elf32_Word size,
+                                    Elf32_Addr *nextaddr);
+
     memmap_node *find_region (Elf32_Addr addr);
 
     memmap_node *add_region (Elf32_Addr start_addr, Elf32_Word size); 
 
     Elf32_Addr suggest_free_region (Elf32_Word size); 
+
+    Elf32_Addr suggest_mmap_region(Elf32_Word size);
+
+    Elf32_Addr brk(Elf32_Addr addr);
+
+    bool munmap(Elf32_Addr addr, Elf32_Word size);
+
+    Elf32_Addr mmap_anon(Elf32_Addr addr, Elf32_Word size);
 
   };
 

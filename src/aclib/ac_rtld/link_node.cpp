@@ -31,6 +31,7 @@
 #include "symbol_wrapper.H"
 #include "version_needed.H"
 #include "version_definitions.H"
+#include "ac_rtld_config.H"
 
 namespace ac_dynlink {
 
@@ -39,13 +40,146 @@ namespace ac_dynlink {
   /* Public methods */
 
   
-  link_node::link_node(link_node *r) {
+  link_node::link_node(link_node *r, ac_rtld_config *rtld_config) {
     next = NULL;
     soname = NULL;
     needed_is_loaded = 0;
     root = r;
+    startvec = NULL;
+    startvecn = 0;
+    finivec = NULL;
+    finivecn = 0;
+    mem = NULL;
+    sched_copy = NULL;
+    _rtld_global_patched = false;
+    this->rtld_config = rtld_config;
+  }
+
+  link_node::~link_node() {
+    if (finivec != NULL)
+      delete [] finivec;
+    if (startvec != NULL)
+      delete [] startvec;
+    if (next != NULL)
+      delete next;
+  }
+
+  unsigned int *link_node::get_start_vector() {
+    if (root == NULL || root == this) {
+      return startvec;
+    }
+    return root->get_start_vector();
+  }
+
+  void link_node::schedule_copy(void *dst, void *src, size_t n) {
+    scheduled_copy_node *p = new scheduled_copy_node;
+    p->dst = dst;
+    p->src = src;
+    p->n = n;
+    p->next = sched_copy;
+    sched_copy = p;
+  }
+
+  void link_node::delete_copy_list(scheduled_copy_node *p) {
+    if (p == NULL)
+      return;
+    delete_copy_list(p->next);
+    delete p;
+  }
+
+  void link_node::apply_pending_copies() {
+    scheduled_copy_node *p = sched_copy;
+
+    while (p) {
+      memcpy(p->dst, p->src, p->n);
+      p = p->next;
+    }
+
+    delete_copy_list(p);
+  }
+
+  unsigned int link_node::get_start_vector_n() {
+    if (root == NULL || root == this) {
+      return startvecn;
+    }
+    return root->get_start_vector_n();
+  }
+
+  void link_node::set_start_vector_n(unsigned value) {
+    if (root == NULL || root == this) {
+      startvecn = value;
+    } else {
+      root->set_start_vector_n(value);
+    }
+  }
+
+  void link_node::set_fini_vector_n(unsigned value) {
+    if (root == NULL || root == this) {
+      finivecn = value;
+    } else {
+      root->set_fini_vector_n(value);
+    }
+  }
+
+  void link_node::add_to_start_vector(unsigned int addr) {
+    if (root == NULL || root == this) {
+      int i;
+      unsigned *tmp = new unsigned[++startvecn];
+      for (i = 0; i < startvecn-1; i++)
+        tmp[i] = startvec[i];
+      tmp[i] = addr;
+      if (startvecn-1 > 0)
+        delete [] startvec;
+      startvec = tmp;
+      return;
+    }
+    root->add_to_start_vector(addr);
+  }
+
+  unsigned int *link_node::get_fini_vector() {
+    if (root == NULL || root == this) {
+      return finivec;
+    }
+    return root->get_fini_vector();
+  }
+
+  unsigned int link_node::get_fini_vector_n() {
+    if (root == NULL || root == this) {
+      return finivecn;
+    }
+    return root->get_fini_vector_n();
+  }
+
+  void link_node::add_to_fini_vector(unsigned int addr) {
+    if (root == NULL || root == this) {
+      int i;
+      unsigned *tmp = new unsigned[++finivecn];
+      for (i = 0; i < finivecn-1; i++)
+        tmp[i] = finivec[i];
+      tmp[i] = addr;
+      if (finivecn-1 > 0)
+        delete [] finivec;
+      finivec = tmp;
+      return;
+    }
+    root->add_to_fini_vector(addr);
   }
   
+  const char *link_node::get_program_interpreter(){
+    if (root == NULL || root == this) {
+      return pinterp;
+    }
+    return root->get_program_interpreter();
+  }
+
+  void link_node::set_program_interpreter(const char*pinterp){
+    if (root == NULL || root == this) {
+      this->pinterp = pinterp;
+      return;
+    }
+    root->set_program_interpreter(pinterp);
+  }
+
   void link_node::set_root (link_node *r) 
   {
     root = r; 
@@ -71,15 +205,19 @@ namespace ac_dynlink {
 				  Elf32_Addr l_addr, unsigned int t, unsigned char *name,
 				  version_needed *verneed, bool match_endian) {
     Elf32_Addr hashaddr = 0, symaddr= 0, straddr = 0, reladdr = 0,
-      verneed_addr = 0, verdef_addr = 0, versym_addr = 0;
+      verneed_addr = 0, verdef_addr = 0, versym_addr = 0, init_addr = 0,
+      init_addr_array = 0, init_addr_arraysz = 0, fini_addr = 0,
+      fini_addr_array = 0, fini_addr_arraysz = 0;
     Elf32_Word pltrel = 0, relsize = 0;
     unsigned int reltype = 0;
+    bool is_linux_runtime_linker = false;
     
     this->match_endian = match_endian;
     
     load_addr = l_addr;
     type = t;
     soname = name;
+    this->mem = mem;
     
     dyn_info.load_dynamic_info(dynaddr, mem, match_endian);
     
@@ -89,6 +227,17 @@ namespace ac_dynlink {
     verneed_addr = dyn_info.get_value(DT_VERNEED);
     verdef_addr = dyn_info.get_value(DT_VERDEF);
     versym_addr = dyn_info.get_value(DT_VERSYM);
+    init_addr = dyn_info.get_value(DT_INIT);
+    init_addr_array = dyn_info.get_value(DT_INIT_ARRAY);
+    init_addr_arraysz = dyn_info.get_value(DT_INIT_ARRAYSZ);
+    fini_addr = dyn_info.get_value(DT_FINI);
+    fini_addr_array = dyn_info.get_value(DT_FINI_ARRAY);
+    fini_addr_arraysz = dyn_info.get_value(DT_FINI_ARRAYSZ);
+
+    if ( dyn_info.compare_library_soname ((char *)soname, get_program_interpreter())
+         == 0) {
+      is_linux_runtime_linker = true;
+    }
     
     if (hashaddr) 
       hashaddr += l_addr;
@@ -102,6 +251,41 @@ namespace ac_dynlink {
       verdef_addr += l_addr;
     if (versym_addr) 
       versym_addr += l_addr;
+
+    /* Configure init/fini addresses (avoid including the program
+       interpreter) */
+    if (!is_linux_runtime_linker && init_addr) {
+      init_addr += l_addr;
+      add_to_start_vector(init_addr);
+    }
+    if (!is_linux_runtime_linker && init_addr_arraysz && init_addr_array) {
+      init_addr_array += l_addr;
+      for (unsigned i = 0; i < init_addr_arraysz; i+= sizeof(Elf32_Addr)) {
+        Elf32_Addr tmp = *(reinterpret_cast<Elf32_Addr *>(mem + 
+                                                        init_addr_array +
+                                                          i));
+        tmp = convert_endian(sizeof(Elf32_Addr), tmp, match_endian);
+        add_to_start_vector((unsigned) (tmp + l_addr));
+      }
+    }
+    if (!is_linux_runtime_linker && fini_addr) {
+      fini_addr += l_addr;
+      add_to_fini_vector(fini_addr);
+    }
+    if (!is_linux_runtime_linker && fini_addr_arraysz && fini_addr_array) {
+      fini_addr_array += l_addr;
+      for (unsigned i = 0; i < fini_addr_arraysz; i+= sizeof(Elf32_Addr)) {
+        Elf32_Addr tmp = *(reinterpret_cast<Elf32_Addr *>(mem + 
+                                                        fini_addr_array +
+                                                          i));
+        tmp = convert_endian(sizeof(Elf32_Addr), tmp, match_endian);
+        add_to_fini_vector((unsigned) (tmp + l_addr));
+      }
+    }
+
+    /* Set back the adjusted value because dyn_info uses it when
+       extracting needed libraries names. */
+    dyn_info.set_value(DT_STRTAB, straddr);
     
     dyn_table.setup_hash(mem, hashaddr, symaddr, straddr, verdef_addr,
 			 verneed_addr, versym_addr, match_endian);
@@ -165,7 +349,7 @@ namespace ac_dynlink {
   
   link_node * link_node::new_node() 
   {
-    link_node *new_node = new link_node(root), *p;
+    link_node *new_node = new link_node(root, rtld_config), *p;
     p = this;
     while (p->get_next() != NULL)
       p = p->get_next();
@@ -222,11 +406,12 @@ namespace ac_dynlink {
 	      {
                 Elf32_Addr sourceaddr;
                 Elf32_Word symsize;
-                /* We need to copy this value */
+                /* We need to change this symbol location. Later,
+                 after all relocations have been applied, we copy. */
                 sourceaddr = symbol->read_value();
                 sourceaddr += load_addr;
                 symsize = symbol->read_size();
-                memcpy (mem+targetaddr, mem+sourceaddr, symsize);
+                schedule_copy (mem+targetaddr, mem+sourceaddr, symsize);
 		symbol->write_value(targetaddr);
 		delete symbol;
 		continue;
@@ -239,6 +424,19 @@ namespace ac_dynlink {
 	delete symbol;
       } /* for(i=0; i<dyn_table.get_num_symbols();i++) */
   } /* adjust_symbols() */
+
+  void link_node::patch_rtld_global(symbol_wrapper *symbol) {
+    if (!_rtld_global_patched) {
+      _rtld_global_patched = true;
+
+      Elf32_Addr saddr = symbol->read_value();
+      saddr += 984;
+      (*(unsigned*)(mem + saddr)) = 0x88;
+      saddr = symbol->read_value();
+      saddr += 988;
+      (*(unsigned*)(mem + saddr)) = 0x88;
+    }
+  }
   
   /* Finds a defined version of the symbol looking through 
      all loaded libraries. If exclude_root is true, skips
@@ -249,7 +447,8 @@ namespace ac_dynlink {
   {
     link_node *p = root;
     unsigned int symhash = dyn_table.elf_hash(name);
-    Elf32_Sym *the_symbol = NULL;
+    Elf32_Sym *the_symbol = NULL, *weak_sym = NULL;
+    symbol_wrapper *symbol;
 
     if (exclude_root == true)
       p = p->get_next();
@@ -257,10 +456,34 @@ namespace ac_dynlink {
     while (p != NULL)
       {
 	the_symbol = p->lookup_local_symbol(symhash, name, vername, verhash);
+        if (the_symbol != NULL) {
+          symbol = new symbol_wrapper(the_symbol, match_endian);
+          if (ELF32_ST_BIND(symbol->read_info()) == STB_WEAK) {
+            if (weak_sym == NULL)
+              weak_sym = the_symbol;
+            the_symbol = NULL;
+          }
+          delete symbol;
+        }
 	if (the_symbol != NULL)
 	  break;
 	p = p->get_next();
       }
+
+    /* Hook for special symbols */
+    if (the_symbol != NULL) {
+      symbol = new symbol_wrapper(the_symbol, match_endian);
+
+      if(strcmp("_rtld_global", (char*)name)==0) {
+        patch_rtld_global(symbol);
+      }
+
+      delete symbol;
+    }
+
+    
+    if (the_symbol == NULL && weak_sym != NULL)
+      return weak_sym;
     return the_symbol;
   }
   
@@ -347,7 +570,17 @@ namespace ac_dynlink {
 	delete symbol;
       } /* for(i=0;i<dyn_relocs.get_size();i++) */
   } /* resolve_symbols() */
-  
+
+#define FETCH_RELOC_TYPE(a,b)                                              \
+        if (rtld_config != NULL) {                                         \
+          if (rtld_config->translate(ELF32_R_TYPE(a), &b)==-1)             \
+            {                                                              \
+              b = ELF32_R_TYPE(a);                                         \
+            }                                                              \
+        } else {                                                           \
+          b = ELF32_R_TYPE(a);                                             \
+        }
+
   Elf32_Addr link_node::find_copy_relocation(unsigned char *symname)
   {
     unsigned int i;
@@ -364,8 +597,10 @@ namespace ac_dynlink {
 	 i < dyn_relocs.get_size();
 	 i++) 
       {
+        unsigned reloc_type;
 	info = dyn_relocs.read_info(i);
-	if (ELF32_R_TYPE(info) != 2) /* R_xxxxx_COPY */
+        FETCH_RELOC_TYPE(info, reloc_type);
+	if (reloc_type != 2) /* R_xxxxx_COPY */
 	  continue; /* Not a copy relocation */
 	symndx = ELF32_R_SYM(info);
 	elf_symbol = dyn_table.get_symbol(symndx);
@@ -418,6 +653,7 @@ namespace ac_dynlink {
 	 i++) 
       {
         unsigned char target_size = word_size;
+        unsigned reloc_type;
 	info = dyn_relocs.read_info(i);
 	symndx = ELF32_R_SYM(info);
 	elf_symbol = dyn_table.get_symbol(symndx);
@@ -428,18 +664,26 @@ namespace ac_dynlink {
 	target += dyn_relocs.read_addend(i);
 	location = dyn_relocs.read_offset(i);
 	location += load_addr;
+
+        FETCH_RELOC_TYPE(info, reloc_type);
 	
-	switch(ELF32_R_TYPE(info))
+	switch(reloc_type)
 	  {
 	  case 0: /* NULL */
 	    break; 
 	  case 1: /* RELATIVE */
-	    aux = convert_endian(word_size, *(mem + location), match_endian);
-	    aux += load_addr;
+            if (match_endian) {
+              for (j=0; j<target_size; j++)
+                *(((unsigned char*)(&aux))+j) = *(unsigned char *)(mem + location + j);
+            } else {
+              for (j=0; j<target_size; j++)
+                *(((unsigned char*)(&aux))+j) = *(unsigned char *)(mem + location+target_size-1-j) ;
+            }
+            aux += load_addr;
             patch_code(mem+location, aux, target_size);
 	    break;
 	  case 2: /* COPY */
-	    /* We already copied this symbol at adjust_symbols() function. */
+	    /* We copy this symbol at adjust_symbols() function. */
 	    break;
           case 5: /* ABS8 */
             target_size = 8;
@@ -469,9 +713,12 @@ namespace ac_dynlink {
             break;
 	  default:
 	    AC_ERROR("Run-time dynamic linker: Unknown relocation code \"" << 
-		     ELF32_R_TYPE(info) << "\"\
- If this dynamic object was not created with an ArchC generated linker, please \
- use a tool to convert its relocation codes to ArchC\'s relocation codes.");
+		     reloc_type << "\"." << std::endl <<"\
+ If this dynamic object was not created with an ArchC generated linker, please"
+                     << std::endl << "\
+ include a path to locate this model's conversion map ac_rtld.relmap. To do" <<
+                     std::endl << "\
+ this, set the environment variable AC_LIBRARY_PATH with the path.");
 	    exit(EXIT_FAILURE);
 	  }
 	

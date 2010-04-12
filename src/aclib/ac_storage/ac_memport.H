@@ -281,7 +281,7 @@ public:
     Data = new unsigned char[storage->get_size()];
 
     //Try to read as ELF first
-    if (ac_load_elf<ac_word>(file, Data, storage->get_size(), this->ac_heap_ptr, this->ac_start_addr, this->ac_mt_endian) == EXIT_SUCCESS) {
+    if (ac_load_elf<ac_word, ac_Hword>(*this, file, Data, storage->get_size(), this->ac_heap_ptr, this->ac_start_addr, this->ac_mt_endian) == EXIT_SUCCESS) {
       //init decode cache and return
       if(!this->dec_cache_size)
         this->dec_cache_size = this->ac_heap_ptr;

@@ -114,6 +114,11 @@ namespace ac_dynlink {
 	  
 	}
       }
+    if (ELF32_ST_BIND(sym.read_info()) == STB_WEAK) {
+      /* Weak... accept only if there is not another version */
+      weak_match = symbol;
+      return NULL;
+    }
     /* Accept the symbol */
     return symbol;
   }
@@ -176,6 +181,7 @@ namespace ac_dynlink {
     Elf_Symndx symndx;
     Elf32_Sym *symbol = NULL;
     
+    weak_match = NULL;
     last_match = NULL;
     is_unique_match = true;
     
@@ -190,6 +196,9 @@ namespace ac_dynlink {
     if (last_match != NULL &&
 	is_unique_match)
       return last_match;
+
+    if (weak_match)
+      return weak_match;
     
     return NULL;
   }
