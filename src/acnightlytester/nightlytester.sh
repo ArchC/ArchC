@@ -8,9 +8,9 @@
 # Parameters adjustable by environment variables
 
 # Internal parameters
-SCRIPTROOT=/l/home/rafael/p/archc-tester
+SCRIPTROOT=`pwd`
 TESTROOT=${SCRIPTROOT}/TEMP${RANDOM}
-LOGROOT=/mnt/home/public_html
+LOGROOT=${SCRIPTROOT}/htmllogs
 HTMLINDEX=${LOGROOT}/index.htm
 NIGHTLYVERSION=0.1
 CHECKOUTLINK=http://lampiao.lsc.ic.unicamp.br/svn/archc-prj/archc/branches/archc-newbingen-branch/
