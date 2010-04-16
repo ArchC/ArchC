@@ -279,8 +279,8 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 	cd ${BENCHROOT}/telecomm/FFT
 	compile_prog "fft"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/fft" "output_small.txt output_small.inv.txt" "yes" "$RUNSMALL" "fft-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/fft" "output_large.txt output_large.inv.txt" "yes" "$RUNLARGE" "fft-large"
+	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/FFT" "output_small.txt output_small.inv.txt" "yes" "$RUNSMALL" "fft-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/FFT" "output_large.txt output_large.inv.txt" "yes" "$RUNLARGE" "fft-large"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 

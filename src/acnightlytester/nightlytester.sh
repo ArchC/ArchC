@@ -174,6 +174,7 @@ run_tests() {
 # Initializing HTML log files
 # Discover this run's number and prefix all our HTML files with it
 HTMLPREFIX=`sed -n -e '/<tr><td>[0-9]\+/{s/<tr><td>\([0-9]\+\).*/\1/;p;q}' <${HTMLINDEX}`
+LASTHTMLPREFIX=$HTMLPREFIX
 HTMLPREFIX=$(($HTMLPREFIX + 1))
 
 HTMLLOG=${LOGROOT}/${HTMLPREFIX}-index.htm
@@ -381,7 +382,7 @@ finalize_html $HTMLLOG "</table></p>"
 
 TEMPFL=${random}.out
 HTMLLINE="<tr><td>${HTMLPREFIX}</td><td>${DATE}</td><td>${ARCHCREV}</td><td><a href=\"${HTMLPREFIX}-index.htm\">Here</a></td></tr>"
-sed -e "/<tr><td>1/i${HTMLLINE}" $HTMLINDEX > $TEMPFL
+sed -e "/<tr><td>${LASTHTMLPREFIX}/i${HTMLLINE}" $HTMLINDEX > $TEMPFL
 mv ${TEMPFL} $HTMLINDEX
 
 rm -rf $TESTROOT
