@@ -600,21 +600,25 @@ chmod u+x acasm-validation/runtest.sh
 echo -ne "<tr><td>ACASM assembling and linking Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
 # ARM
 if [ "$RUN_ARM_ACASM" != "no" ]; then
+  echo -ne "Validating binary tools generated for arm ArchC model...\n"
   run_tests_acasm "armv5e" "arm"
 fi
 
 # MIPS
 if [ "$RUN_MIPS_ACASM" != "no" ]; then
+  echo -ne "Validating binary tools generated for mips ArchC model...\n"
   run_tests_acasm "mips1" "mips"
 fi
 
 # SPARC
 if [ "$RUN_SPARC_ACASM" != "no" ]; then
+  echo -ne "Validating binary tools generated for sparc ArchC model...\n"
   run_tests_acasm "sparcv8" "sparc"
 fi
 
 # POWERPC
 if [ "$RUN_POWERPC_ACASM" != "no" ]; then
+  echo -ne "Validating binary tools generated for powerpc ArchC model...\n"
   run_tests_acasm "powerpc1" "powerpc"
 fi
 
