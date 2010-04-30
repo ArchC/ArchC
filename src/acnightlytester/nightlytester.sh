@@ -318,7 +318,7 @@ run_tests_acasm() {
   export LOG_FILE
   export FORM_FILE
   export HTML_LOG_FILE
-  ../../runtest.sh --verbose-log ../mibench.conf
+  ../../runtest.sh --verbose-log ../mibench.conf > /dev/null 2>&1
   HTMLACASMLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-log.htm
   HTMLACASMFORM=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-form.htm
   format_html_output $LOG_FILE $HTMLACASMLOG
