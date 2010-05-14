@@ -2302,8 +2302,9 @@ bfd_elf_archc_reloc (bfd *abfd,
 /* Called by the backend linker after all the linker input files have
    been seen but before the section sizes have been set. This is called
    after adjust_dynamic_symbol, but before size_dynamic_sections */
-static bfd_boolean elf_archc_always_size_sections (bfd * output_bfd, struct bfd_link_info *info ATTRIBUTE_UNUSED)
+static bfd_boolean elf_archc_always_size_sections (bfd * output_bfd ATTRIBUTE_UNUSED, struct bfd_link_info *info ATTRIBUTE_UNUSED)
 {
+  /*
   asection *sec;
   
   sec = bfd_make_section (output_bfd, ".note.archc");
@@ -2312,7 +2313,7 @@ static bfd_boolean elf_archc_always_size_sections (bfd * output_bfd, struct bfd_
 				  SEC_READONLY | SEC_LINKER_CREATED)
       )
     return FALSE;
-
+  */
 
   return TRUE;
 }
