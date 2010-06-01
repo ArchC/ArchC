@@ -1,0 +1,887 @@
+/* ex: set tabstop=2 expandtab: 
+   -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
+*/
+/**
+ * @file      i8051_isa.ac
+ * @author    Tiago Sampaio Lins
+ *            Silvio Veloso
+ *            Marcus do Nascimento (Assembly Syntax)
+ *            Alexandro (Assembly Syntax)
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br/
+ *
+ * @version   1.0
+ * @date      Fri, 30 Jun 2006 14:25:50 -0300
+ * 
+ * @brief     The ArchC i8051 functional model.
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ * 
+ * This program is free software; you can redistribute it and/or modify 
+ * it under the terms of the GNU General Public License as published by 
+ * the Free Software Foundation; either version 2 of the License, or 
+ * (at your option) any later version. 
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ * GNU General Public License for more details. 
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ */
+
+AC_ISA(i8051)
+{
+ ac_helper
+ {
+  sc_uint<17> pc;
+  int reg_indx;
+  unsigned long pc_stability;
+  unsigned long old_pc;
+  unsigned long curr_pc;
+ };
+
+ ac_format Type_3bytes = "%op:8 %byte2:8 %byte3:8";
+ ac_format Type_2bytes = "%op:8 %byte2:8";
+ ac_format Type_OP_R = "%op1:5 %reg:3";
+ ac_format Type_IBRCH = "%page:3 %op2:5 %addr0:8";
+ ac_format Type_1byte = "%op:8";
+ ac_format Type_3bytesReg = "%op3:5 %reg2:3 %data:8 %reladd:8";
+ ac_format Type_2bytesReg = "%op3:5 %reg2:3 %addr:8";
+
+
+ ac_instr<Type_OP_R> add_ar, addc_ar, anl_ar, dec_r, inc_r, mov_ar, mov_ra, orl_ar,
+                     subb_ar, xch_ar, xrl_ar;
+ ac_instr<Type_IBRCH> acall, ajmp;
+ ac_instr<Type_3bytes> anl_iram_data, cjne_addr, cjne_data, cjne_arr_R0, cjne_arr_R1,
+                       djnz_iram_reladd, jb, jbc, jnb, lcall, ljmp, mov_iram_iram,
+                       mov_iram_data, mov_dptr_data, orl_iram_data, xrl_iram_data;
+ ac_instr<Type_2bytes> add_a_data, add_a_iram, addc_a_data, addc_a_iram, anl_a_iram,
+                       anl_a_data, anl_iram_a, anl_c_bit, anl_c_nbit, clr_bit, cpl_bit,
+                       dec_iram, inc_iram, jc, jnc, jnz, jz, mov_a_iram, mov_a_data,
+                       mov_iram_a, mov_iram_arr_R0, mov_iram_arr_R1, mov_arr_R0_iram,
+                       mov_arr_R1_iram, mov_arr_R0_data, mov_arr_R1_data, mov_c_bit,
+                       mov_bit_c, orl_a_iram, orl_a_data, orl_iram_a, orl_c_bit,
+                       orl_c_nbit, pop, push, setb_bit, sjmp, subb_a_iram, subb_a_data,
+                       xch_a_iram, xrl_a_iram, xrl_a_data, xrl_iram_a;
+ ac_instr<Type_1byte> add_arr_R0, add_arr_R1, addc_arr_R0, addc_arr_R1, anl_arr_R0,
+                      anl_arr_R1, clr_a, clr_c, cpl_a, cpl_c, da, dec_a, dec_arr_R0,
+                      dec_arr_R1, div, inc_a, inc_arr_R0, inc_arr_R1, inc_dptr, jmp,
+                      mov_a_arr_R0, mov_a_arr_R1, mov_arr_R0_a, mov_arr_R1_a, movc_dptr,
+                      movc_pc, movx_a_R0, movx_a_R1, movx_a_dptr, movx_r0_a, movx_r1_a,
+                      movx_dptr_a, mul, nop, orl_arr_R0, orl_arr_R1, ret, reti, rl_a,
+                      rlc_a, rr_a, rrc_a, setb_c, subb_a_arr_R0, subb_a_arr_R1, swap,
+                      xch_arr_R0, xch_arr_R1, xchd_R0, xchd_R1, xrl_arr_R0, xrl_arr_R1;
+ ac_instr<Type_3bytesReg> cjne_r;
+ ac_instr<Type_2bytesReg> djnz_r, mov_r_iram, mov_r_data, mov_iram_r;
+
+
+/* The 8051 has a separate memory for program and data
+ * . program memory can be up to 64K bytes long (lower 4k may reside on chip)
+ * . data memory can be up to 64K bytes (external); the lower 128 bytes are on chip
+ *   RAM. Next 128 bytes are the special function registers (direct addressing only)
+ */
+
+  ac_asm_map reg {
+    "r"[0..7] = [0..7];    /* 8 registers. There are 4 register banks (32 regs).   */
+                           /* Registers are mapped into DATA memory at address     */
+                           /* 0x00 - 0x1F.                                         */
+                           /* We are only using the first reg bank                 */
+  }
+
+  /* Special function registers
+   * memory addresses 0x80-0xFF are the SFRs 
+   * (direct addressing is used to access them)
+   */
+  ac_asm_map sfr {
+  /*
+   * names based on the ones used by SDCC
+   */
+    "sp"  = 0x81;
+    "b"   = 0xF0;
+    "dpl" = 0x82;
+    "dph" = 0x83;
+    "ar"[0..7] = [0..7];
+
+    "_P0"   = 0x80;
+    "_P1"   = 0x90;
+    "_P2"   = 0xA0;
+    "_P3"   = 0xB0;
+    "_PSW"  = 0xD0;
+    "_ACC"  = 0xE0;
+    "_B"    = 0xF0; 
+    "_SP"   = 0x81;
+    "_DPL"  = 0x82;
+    "_DPH"  = 0x83;
+    "_PCON" = 0x87;
+    "_TCON" = 0x88;
+    "_TMOD" = 0x89;
+    "_TL0"  = 0x8A;
+    "_TL1"  = 0x8B;
+    "_TH0"  = 0x8C;
+    "_TH1"  = 0x8D;
+    "_AUXR" = 0x8E;
+    "_IE"   = 0xA8;
+    "_IP"   = 0xB8;
+    "_SCON" = 0x98;
+    "_SBUF" = 0x99;
+
+    /* bit addressable */
+    "_CY"  = 0xD7;
+    "_AC"  = 0xD6;
+    "_F0"  = 0xD5;
+    "_RS1" = 0xD4;
+    "_RS0" = 0xD3;
+    "_OV"  = 0xD2;
+    "_P"   = 0xD0;
+    "_TF1" = 0x8F;
+    "_TR1" = 0x8E;
+    "_TF0" = 0x8D;
+    "_TR0" = 0x8C;
+    "_IE1" = 0x8B;
+    "_IT1" = 0x8A;
+    "_IE0" = 0x89;
+    "_IT0" = 0x88;
+    "_EA"  = 0xAF;
+    "_ES"  = 0xAC;
+    "_ET1" = 0xAB;
+    "_EX1" = 0xAA;
+    "_ET0" = 0xA9;
+    "_EX0" = 0xA8;
+    "_PS"  = 0xBC;
+    "_PT1" = 0xBB;
+    "_PX1" = 0xBA;
+    "_PT0" = 0xB9;
+    "_PX0" = 0xB8;
+    "_RD"  = 0xB7;
+    "_WR"  = 0xB6;
+    "_T1"  = 0xB5;
+    "_T0"  = 0xB4;
+    "_INT1"= 0xB3;
+    "_INT0"= 0xB2;
+    "_TXD" = 0xB1;
+    "_RXD" = 0xB0;
+    "_P0."[0..7]   = [0x80..0x87];   
+    "_P1."[0..7]   = [0x90..0x97];   
+    "_SCON."[0..7] = [0x98..0x9F]; 
+    "_P2."[0..7]   = [0xA0..0xA7];   
+    "_IE."[0..7]   = [0xA8..0xAF];   
+    "_P3."[0..7]   = [0xB0..0xB7];   
+    "_IP."[0..5]   = [0xB8..0xBD];   
+    "_PSW."[0..7]  = [0xD0..0xD7];  
+    "_ACC."[0..7]  = [0xE0..0xE7];  
+    "_B."[0..7] = [0xF0..0xF7];    
+  }
+
+
+/*
+* Try not to change the order of the assembly syntax in
+* groups of instructions (due to syntax overloading, some 
+* unwanted results might appear if you do so).
+*/
+
+  ISA_CTOR(i8051){
+ 
+    /* ACALL SUBRTN */
+    acall.set_asm("acall %addr", page+addr0);
+    acall.set_decoder(op2=0x11);
+
+/*
+*
+*  ADD A,<scr-byte>
+*
+*/
+    /* ADD A, Rn */
+    add_ar.set_asm("add A,%reg", reg);
+    add_ar.set_decoder(op1=0x05);
+
+    /* ADD A, direct */
+    add_a_iram.set_asm("add A,%sfr", byte2);
+    add_a_iram.set_asm("add A,%exp", byte2);
+    add_a_iram.set_decoder(op=0x25);
+
+    /* ADD A, R0 */
+    add_arr_R0.set_asm("add A,@R0");
+    add_arr_R0.set_decoder(op=0x26);
+
+    /* ADD A, @R1 */
+    add_arr_R1.set_asm("add A,@R1");
+    add_arr_R1.set_decoder(op=0x27);
+
+    /* ADD A, #data */
+    add_a_data.set_asm("add A, #hi(%exp(high))", byte2);
+    add_a_data.set_asm("add A, #%exp", byte2);
+    add_a_data.set_decoder(op=0x24);
+
+/*
+*
+*  ADDC A,<scr-byte>
+*
+*/
+    /* ADDC A, Rn */
+    addc_ar.set_asm("addc A,%reg", reg);
+    addc_ar.set_decoder(op1=0x07);
+ 
+    /* ADDC A, direct */
+    addc_a_iram.set_asm("addc A,%sfr", byte2);
+    addc_a_iram.set_asm("addc A,%exp", byte2);
+    addc_a_iram.set_decoder(op=0x35);
+
+    /* ADDC A, R0 */
+    addc_arr_R0.set_asm("addc A,@R0");
+    addc_arr_R0.set_decoder(op=0x36);
+
+    /* ADDC A, @R1 */
+    addc_arr_R1.set_asm("addc A,@R1");
+    addc_arr_R1.set_decoder(op=0x37);
+
+    /* ADDC A, #data */
+    addc_a_data.set_asm("addc A, #hi(%exp(high))", byte2);
+    addc_a_data.set_asm("addc A, #%exp", byte2);
+    addc_a_data.set_decoder(op=0x34);
+
+
+
+    /* AJMP JMPADR */
+    ajmp.set_asm("ajmp %addr", page+addr0);
+    ajmp.set_decoder(op2=0x01);
+
+
+/*
+*
+*  ANL C,<src-bit>
+*
+*/
+    /* ANL C, bit */
+    anl_c_bit.set_asm("anl C,%sfr", byte2);
+    anl_c_bit.set_asm("anl C,%imm", byte2);
+    anl_c_bit.set_decoder(op=0x82);
+
+    /* ANL C, /bit */
+    anl_c_nbit.set_asm("anl C,/%sfr", byte2);
+    anl_c_nbit.set_asm("anl C,/%imm", byte2);
+    anl_c_nbit.set_decoder(op=0xB0);
+
+
+/*
+*
+*  ANL <dest-byte>,<scr-byte>
+*
+*/
+    /* ANL A, Rn*/
+    anl_ar.set_asm("anl A,%reg", reg);
+    anl_ar.set_decoder(op1=0x0B);
+
+    /* ANL A, #data */
+    anl_a_data.set_asm("anl A, #%imm", byte2);
+    anl_a_data.set_decoder(op=0x54);
+
+    /* ANL A, direct */
+    anl_a_iram.set_asm("anl A,%sfr", byte2);
+    anl_a_iram.set_asm("anl A,%exp", byte2);
+    anl_a_iram.set_decoder(op=0x55);
+
+    /* ANL A, @R0 */
+    anl_arr_R0.set_asm("anl A,@R0");
+    anl_arr_R0.set_decoder(op=0x56);
+
+    /* ANL A, @R1 */
+    anl_arr_R1.set_asm("anl A,@R1");
+    anl_arr_R1.set_decoder(op=0x57);
+
+    /* ANL direct, A */
+    anl_iram_a.set_asm("anl %sfr,A", byte2);
+    anl_iram_a.set_asm("anl %exp,A", byte2);
+    anl_iram_a.set_decoder(op=0x52);
+
+    /* ANL direct, #data */
+    anl_iram_data.set_asm("anl %sfr, #%imm", byte2, byte3);
+    anl_iram_data.set_asm("anl %exp, #%imm", byte2, byte3);
+    anl_iram_data.set_decoder(op=0x53);
+
+
+
+/*
+*
+*  CJNE <dest-byte>,<src-byte>,rel
+*
+*/
+    /* CJNE A, direct, rel */
+    cjne_addr.set_asm("cjne A,%sfr,%addr(pcrel,3)", byte2, byte3);
+    cjne_addr.set_asm("cjne A,%exp,%addr(pcrel,3)", byte2, byte3);
+    cjne_addr.set_decoder(op=0xB5);
+
+    /* CJNE A, #data, rel */
+    cjne_data.set_asm("cjne A,#%imm,%addr(pcrel,3)", byte2, byte3);
+    cjne_data.set_decoder(op=0xB4);
+ 
+    /* CJNE @R0, #data, rel */
+    cjne_arr_R0.set_asm("cjne @R0,#%imm,%addr(pcrel,3)", byte2, byte3);
+    cjne_arr_R0.set_decoder(op=0xB6);
+
+    /* CJNE @R1, #data, rel */
+    cjne_arr_R1.set_asm("cjne @R1,#%imm,%addr(pcrel,3)", byte2, byte3);
+    cjne_arr_R1.set_decoder(op=0xB7);
+ 
+    /* CJNE Rn, #data, rel */
+    cjne_r.set_asm("cjne %reg,#%imm,%addr(pcrel,3)", reg2, data, reladd);
+    cjne_r.set_decoder(op3=0x17);
+
+
+/*
+*
+*  Clear
+*
+*/
+    /* CLR A */
+    clr_a.set_asm("clr A");
+    clr_a.set_decoder(op=0xE4);
+
+    /* CLR C */
+    clr_c.set_asm("clr C");
+    clr_c.set_decoder(op=0xC3);
+
+    /* CLR bit */
+    clr_bit.set_asm("clr %sfr", byte2);
+    clr_bit.set_asm("clr %imm", byte2);
+    clr_bit.set_decoder(op=0xC2);
+
+
+/*
+*
+*  Complement
+*
+*/
+    /* CPL A */
+    cpl_a.set_asm("cpl A");
+    cpl_a.set_decoder(op=0xF4);
+
+    /* CPL C */
+    cpl_c.set_asm("cpl C");
+    cpl_c.set_decoder(op=0xB3);
+
+    /* CPL bit */
+    cpl_bit.set_asm("cpl %sfr", byte2);
+    cpl_bit.set_asm("cpl %imm", byte2);
+    cpl_bit.set_decoder(op=0xB2);
+
+
+    /* DA A */
+    da.set_asm("da A");
+    da.set_decoder(op=0xD4);
+
+
+/*
+*
+*  DEC <byte>
+*
+*/
+    /* DEC A */
+    dec_a.set_asm("dec A");
+    dec_a.set_decoder(op=0x14);
+
+    /* DEC Rn */
+    dec_r.set_asm("dec %reg", reg);
+    dec_r.set_decoder(op1=0x03);
+
+    /* DEC direct */
+    dec_iram.set_asm("dec %sfr", byte2);
+    dec_iram.set_asm("dec %exp", byte2);
+    dec_iram.set_decoder(op=0x15);
+
+    /* DEC @R0 */
+    dec_arr_R0.set_asm("dec @R0");
+    dec_arr_R0.set_decoder(op=0x16);
+
+    /* DEC @R1 */
+    dec_arr_R1.set_asm("dec @R1");
+    dec_arr_R1.set_decoder(op=0x17);
+
+
+    /* DIV AB */
+    div.set_asm("div AB");
+    div.set_decoder(op=0x84);
+
+
+/*
+*
+*  DJNZ <byte>,<rel-addr>
+*
+*/
+    /* DJNZ Rn, rel */
+    djnz_r.set_asm("djnz %reg,%addr(pcrel,2)", reg2, addr);
+    djnz_r.set_decoder(op3=0x1B);
+
+    /* DJNZ direct, rel */
+    djnz_iram_reladd.set_asm("djnz %sfr,%addr(pcrel,3)", byte2, byte3);
+    djnz_iram_reladd.set_asm("djnz %exp,%addr(pcrel,3)", byte2, byte3);
+    djnz_iram_reladd.set_decoder(op=0xD5);
+
+
+/*
+*
+*  INC <byte>
+*
+*/
+    /* INC A */
+    inc_a.set_asm("inc A");
+    inc_a.set_decoder(op=0x04);
+
+    /* INC DPTR */ /*Note: do not change the order of this instruction in source file */
+    inc_dptr.set_asm("inc DPTR");
+    inc_dptr.set_decoder(op=0xA3);
+
+    /* INC Rn */
+    inc_r.set_asm("inc %reg", reg);
+    inc_r.set_decoder(op1=0x01);
+
+    /* INC direct */
+    inc_iram.set_asm("inc %sfr", byte2);
+    inc_iram.set_asm("inc %exp", byte2);
+    inc_iram.set_decoder(op=0x05);
+
+    /* INC @R0 */
+    inc_arr_R0.set_asm("inc @R0");
+    inc_arr_R0.set_decoder(op=0x06);
+
+    /* INC @R1 */
+    inc_arr_R1.set_asm("inc @R1");
+    inc_arr_R1.set_decoder(op=0x07);
+
+
+/*
+*
+*  Conditional jumps
+*
+*/
+    /* JB bit, rel */
+    jb.set_asm("jb %sfr,%addr(pcrel,3)", byte2, byte3);
+    jb.set_asm("jb %imm,%addr(pcrel,3)", byte2, byte3);
+    jb.set_decoder(op=0x20);
+
+    /* JBC bit, rel */
+    jbc.set_asm("jbc %sfr,%addr(pcrel,3)", byte2, byte3);
+    jbc.set_asm("jbc %imm,%addr(pcrel,3)", byte2, byte3);
+    jbc.set_decoder(op=0x10);
+
+    /* JC rel */
+    jc.set_asm("jc %addr(pcrel,2)", byte2);
+    jc.set_decoder(op=0x40);
+
+    /* JMP @A+DPTR*/
+    jmp.set_asm("jmp @A+DPTR");
+    jmp.set_decoder(op=0x73);
+
+    /* JNB bit, rel */
+    jnb.set_asm("jnb %sfr,%addr(pcrel,3)", byte2, byte3);
+    jnb.set_asm("jnb %imm,%addr(pcrel,3)", byte2, byte3);
+    jnb.set_decoder(op=0x30);
+
+    /* JNC rel */
+    jnc.set_asm("jnc %addr(pcrel,2)", byte2);
+    jnc.set_decoder(op=0x50);
+
+    /* JNZ rel */
+    jnz.set_asm("jnz %addr(pcrel,2)", byte2);
+    jnz.set_decoder(op=0x70);
+
+    /* JZ rel */
+    jz.set_asm("jz %addr(pcrel,2)", byte2);
+    jz.set_decoder(op=0x60);
+
+
+    /* LCALL addr16 */
+    lcall.set_asm("lcall %addr", byte2+byte3);
+    lcall.set_decoder(op=0x12);
+
+    /* LJMP addr16 */
+    ljmp.set_asm("ljmp %addr", byte2+byte3);
+    ljmp.set_decoder(op=0x02);
+
+/*
+*
+*  MOV <dest-byte> <src-byte>
+*
+*/
+
+    /* MOV DPTR, #data16 */
+    /* Note: mov dptr,#data16 -MUST- come before any other MOVs 
+       if you do not want the assembler to generate mistaken code */
+    mov_dptr_data.set_asm("mov DPTR,#%exp", byte2+byte3);
+    mov_dptr_data.set_decoder(op=0x90);
+
+    /* MOV C, bit */
+    mov_c_bit.set_asm("mov C,%sfr", byte2);
+    mov_c_bit.set_asm("mov C,%imm", byte2);
+    mov_c_bit.set_decoder(op=0xA2);
+
+    /* MOV bit, C */
+    mov_bit_c.set_asm("mov %sfr,C", byte2);
+    mov_bit_c.set_asm("mov %imm,C", byte2);
+    mov_bit_c.set_decoder(op=0x92);
+
+    /* MOV A, Rn */
+    mov_ar.set_asm("mov A,%reg", reg);
+    mov_ar.set_decoder(op1=0x1D);
+
+    /* MOV A, direct */
+    mov_a_iram.set_asm("mov A,%sfr", byte2);
+    mov_a_iram.set_asm("mov A,%exp", byte2);
+    mov_a_iram.set_decoder(op=0xE5);
+
+    /* MOV A, @R0 */
+    mov_a_arr_R0.set_asm("mov A,@R0");
+    mov_a_arr_R0.set_decoder(op=0xE6);
+
+    /* MOV A, @R1 */
+    mov_a_arr_R1.set_asm("mov A,@R1");
+    mov_a_arr_R1.set_decoder(op=0xE7);
+
+    /* MOV A, #data */
+    mov_a_data.set_asm("mov A,#%imm", byte2);
+    mov_a_data.set_decoder(op=0x74);
+
+    /* MOV Rn, A */
+    mov_ra.set_asm("mov %reg,A", reg);
+    mov_ra.set_decoder(op1=0x1F);
+
+    /* MOV direct, A */
+    mov_iram_a.set_asm("mov %sfr,A", byte2);
+    mov_iram_a.set_asm("mov %exp,A", byte2);
+    mov_iram_a.set_decoder(op=0xF5);
+
+    /* MOV direct, @R0 */
+    mov_iram_arr_R0.set_asm("mov %sfr,@R0", byte2);
+    mov_iram_arr_R0.set_asm("mov %exp,@R0", byte2);
+    mov_iram_arr_R0.set_decoder(op=0x86);
+
+    /* MOV direct, @R1 */
+    mov_iram_arr_R1.set_asm("mov %sfr,@R1", byte2);
+    mov_iram_arr_R1.set_asm("mov %exp,@R1", byte2);
+    mov_iram_arr_R1.set_decoder(op=0x87);
+
+    /* MOV @R0, A */
+    mov_arr_R0_a.set_asm("mov @R0,A");
+    mov_arr_R0_a.set_decoder(op=0xF6);
+
+    /* MOV @R1, A */
+    mov_arr_R1_a.set_asm("mov @R1,A");
+    mov_arr_R1_a.set_decoder(op=0xF7);
+
+    /* MOV @R0, direct */
+    mov_arr_R0_iram.set_asm("mov @R0,%sfr", byte2);
+    mov_arr_R0_iram.set_asm("mov @R0,%exp", byte2);
+    mov_arr_R0_iram.set_decoder(op=0xA6);
+
+    /* MOV @R1, direct */
+    mov_arr_R1_iram.set_asm("mov @R1,%sfr", byte2);
+    mov_arr_R1_iram.set_asm("mov @R1,%exp", byte2);
+    mov_arr_R1_iram.set_decoder(op=0xA7);
+
+    /* MOV @R0, #data */
+    mov_arr_R0_data.set_asm("mov @R0,#%imm", byte2);
+    mov_arr_R0_data.set_decoder(op=0x76);
+
+    /* MOV @R1, #data */
+    mov_arr_R1_data.set_asm("mov @R1,#%imm", byte2);
+    mov_arr_R1_data.set_decoder(op=0x77);
+
+    /* MOV Rn, direct */
+    mov_r_iram.set_asm("mov %reg,%sfr", reg2, addr);
+    mov_r_iram.set_asm("mov %reg,%exp", reg2, addr);
+    mov_r_iram.set_decoder(op3=0x15);
+
+    /* MOV Rn, #data */
+    mov_r_data.set_asm("mov %reg,#%exp", reg2, addr);
+    mov_r_data.set_decoder(op3=0x0F);
+
+    /* MOV direct, Rn */
+    mov_iram_r.set_asm("mov %sfr,%reg", addr, reg2);
+    mov_iram_r.set_asm("mov %exp,%reg", addr, reg2);
+    mov_iram_r.set_decoder(op3=0x11);
+
+    /* MOV direct, #data */
+    mov_iram_data.set_asm("mov %sfr,#hi(%exp(high))", byte2, byte3);
+    mov_iram_data.set_asm("mov %sfr,#%exp", byte2, byte3);
+    mov_iram_data.set_asm("mov %exp,#%imm", byte2, byte3);
+    mov_iram_data.set_decoder(op=0x75);
+
+    /* MOV direct, direct */
+    mov_iram_iram.set_asm("mov %sfr,%sfr", byte3, byte2);
+    mov_iram_iram.set_asm("mov %sfr,%exp", byte3, byte2);
+    mov_iram_iram.set_asm("mov %exp,%sfr", byte3, byte2);
+    mov_iram_iram.set_asm("mov %exp,%exp", byte3, byte2);
+    mov_iram_iram.set_decoder(op=0x85);
+
+
+
+/*
+*
+*  MOVC A,@A+<base-reg>
+*
+*/
+    /* MOVC A, @A+DPTR */
+    movc_dptr.set_asm("movc A,@A+DPTR");
+    movc_dptr.set_decoder(op=0x93);
+
+    /* MOVC A, @A+PC */
+    movc_pc.set_asm("movc A,@A+PC");
+    movc_pc.set_decoder(op=0x83);
+
+
+/*
+*
+*  MOVX <dest-byte>, <scr-byte>
+*
+*/
+    /* MOVX A, @R0 */
+    movx_a_R0.set_asm("movx A,@R0");
+    movx_a_R0.set_decoder(op=0xE2);
+
+    /* MOVX A, @R1 */
+    movx_a_R1.set_asm("movx A,@R1");
+    movx_a_R1.set_decoder(op=0xE3);    
+		
+    /* MOVX A, @DPTR */
+    movx_a_dptr.set_asm("movx A,@DPTR");
+    movx_a_dptr.set_decoder(op=0xE0);
+
+    /* MOVX @R0, A */
+    movx_r0_a.set_asm("movx @R0,A");
+    movx_r0_a.set_decoder(op=0xF2);
+
+    /* MOVX @R1, A */
+    movx_r1_a.set_asm("movx @R1,A");
+    movx_r1_a.set_decoder(op=0xF3);
+
+    /* MOVX @DPTR, A */
+    movx_dptr_a.set_asm("movx @DPTR,A");
+    movx_dptr_a.set_decoder(op=0xF0);
+
+
+    /* MUL AB */
+    mul.set_asm("mul AB");
+    mul.set_decoder(op=0xA4);
+
+
+    /* NOP */
+    nop.set_asm("nop");
+    nop.set_decoder(op=0x00);
+
+
+/*
+*
+*  ORL <dest-byte>,<scr-byte>
+*
+*/
+    /* ORL C, bit */
+    orl_c_bit.set_asm("orl C,%sfr", byte2);
+    orl_c_bit.set_asm("orl C,%imm", byte2);
+    orl_c_bit.set_decoder(op=0x72);
+
+    /* ORL C, /bit */
+    orl_c_nbit.set_asm("orl C,/%sfr", byte2);
+    orl_c_nbit.set_asm("orl C,/%imm", byte2);
+    orl_c_nbit.set_decoder(op=0xA0);
+
+    /* ORL A, Rn */
+    orl_ar.set_asm("orl A,%reg", reg);
+    orl_ar.set_decoder(op1=0x09);
+
+    /* ORL A, direct */
+    orl_a_iram.set_asm("orl A,%sfr", byte2);
+    orl_a_iram.set_asm("orl A,%exp", byte2);
+    orl_a_iram.set_decoder(op=0x45);
+
+    /* ORL A, @R0 */
+    orl_arr_R0.set_asm("orl A,@R0");
+    orl_arr_R0.set_decoder(op=0x46);
+
+    /* ORL A, @R1 */
+    orl_arr_R1.set_asm("orl A,@R1");
+    orl_arr_R1.set_decoder(op=0x47);
+
+    /* ORL A, #data */
+    orl_a_data.set_asm("orl A,#%imm", byte2);
+    orl_a_data.set_decoder(op=0x44);
+
+    /* ORL direct, A */
+    orl_iram_a.set_asm("orl %sfr,A", byte2);
+    orl_iram_a.set_asm("orl %exp,A", byte2);
+    orl_iram_a.set_decoder(op=0x42);
+ 
+    /* ORL direct, #data */
+    orl_iram_data.set_asm("orl %sfr,#%imm", byte2, byte3);
+    orl_iram_data.set_asm("orl %exp,#%imm", byte2, byte3);
+    orl_iram_data.set_decoder(op=0x43);
+
+
+
+    /* POP direct */
+    pop.set_asm("pop %sfr", byte2);
+    pop.set_asm("pop %exp", byte2);
+    pop.set_decoder(op=0xD0);
+ 
+    /* PUSH direct */
+    push.set_asm("push %sfr", byte2);
+    push.set_asm("push %exp", byte2);
+    push.set_decoder(op=0xC0);
+
+
+    /* RET */
+    ret.set_asm("ret");
+    ret.set_decoder(op=0x22);
+
+    /* RETI */
+    reti.set_asm("reti");
+    reti.set_decoder(op=0x32);
+
+
+/*
+*
+*  Rotate accumulator 
+*
+*/
+    /* RL A */
+    rl_a.set_asm("rl A");
+    rl_a.set_decoder(op=0x23);
+
+    /* RLC A */
+    rlc_a.set_asm("rlc A");
+    rlc_a.set_decoder(op=0x33);
+
+    /* RR A */
+    rr_a.set_asm("rr A");
+    rr_a.set_decoder(op=0x03);
+
+    /* RRC A */
+    rrc_a.set_asm("rrc A");
+    rrc_a.set_decoder(op=0x13);
+
+
+    /* SETB C */
+    setb_c.set_asm("setb C");
+    setb_c.set_decoder(op=0xD3);
+
+    /* SETB bit */
+    setb_bit.set_asm("setb %sfr", byte2);
+    setb_bit.set_asm("setb %imm", byte2);
+    setb_bit.set_decoder(op=0xD2);
+
+ 
+    /* SJMP rel */
+    sjmp.set_asm("sjmp %addr(pcrel,2)", byte2);
+    sjmp.set_decoder(op=0x80);
+
+
+/*
+*
+*  SUBB A,<src-byte>  
+*
+*/
+    /* SUBB A, Rn */
+    subb_ar.set_asm("subb A,%reg", reg);
+    subb_ar.set_decoder(op1=0x13);
+
+    /* SUBB A, direct */
+    subb_a_iram.set_asm("subb A,%sfr", byte2);
+    subb_a_iram.set_asm("subb A,%exp", byte2);
+    subb_a_iram.set_decoder(op=0x95);
+
+    /* SUBB A, @R0 */
+    subb_a_arr_R0.set_asm("subb A,@R0");
+    subb_a_arr_R0.set_decoder(op=0x96);
+ 
+    /* SUBB A, @R1 */
+    subb_a_arr_R1.set_asm("subb A,@R1");
+    subb_a_arr_R1.set_decoder(op=0x97);
+
+    /* SUBB A, #data */
+    subb_a_data.set_asm("subb A,#%imm", byte2);
+    subb_a_data.set_decoder(op=0x94);
+
+
+    /* SWAP A */
+    swap.set_asm("swap A");
+    swap.set_decoder(op=0xC4);
+
+
+/*
+*
+*  XCH A,<byte>  
+*
+*/
+    /* XCH A, Rn */
+    xch_ar.set_asm("xch A,%reg", reg);
+    xch_ar.set_decoder(op1=0x19);
+
+    /* XCH A, direct */
+    xch_a_iram.set_asm("xch A,%sfr", byte2);
+    xch_a_iram.set_asm("xch A,%exp", byte2);
+    xch_a_iram.set_decoder(op=0xC5);
+
+    /* XCH A, @R0 */
+    xch_arr_R0.set_asm("xch A,@R0");
+    xch_arr_R0.set_decoder(op=0xC6);
+ 
+    /* XCH A, @R1 */
+    xch_arr_R1.set_asm("xch A,@R1");
+    xch_arr_R1.set_decoder(op=0xC7);
+
+
+    /* XCHD A, @R0 */
+    xchd_R0.set_asm("xchd A, @R0");
+    xchd_R0.set_decoder(op=0xD6);
+ 
+    /* XCHD A, @R1 */
+    xchd_R1.set_asm("xchd A, @R1");
+    xchd_R1.set_decoder(op=0xD7);
+
+
+/*
+*
+*  XRL <dest-byte>,<scr_byte> 
+*
+*/
+    /* XRL A, Rn */
+    xrl_ar.set_asm("xrl A,%reg", reg);
+    xrl_ar.set_decoder(op1=0x0D);
+
+    /* XRL A, direct */
+    xrl_a_iram.set_asm("xrl A,%sfr", byte2);
+    xrl_a_iram.set_asm("xrl A,%exp", byte2);
+    xrl_a_iram.set_decoder(op=0x65);
+
+    /* XRL A, @R0 */
+    xrl_arr_R0.set_asm("xrl A,@R0");
+    xrl_arr_R0.set_decoder(op=0x66);
+
+    /* XRL A, @R1 */
+    xrl_arr_R1.set_asm("xrl A,@R1");
+    xrl_arr_R1.set_decoder(op=0x67);
+
+    /* XRL A, #data */
+    xrl_a_data.set_asm("xrl A,#%imm", byte2);
+    xrl_a_data.set_decoder(op=0x64);
+
+    /* XRL direct, A */
+    xrl_iram_a.set_asm("xrl %sfr,A", byte2);
+    xrl_iram_a.set_asm("xrl %exp,A", byte2);
+    xrl_iram_a.set_decoder(op=0x62);
+ 
+    /* XRL direct, #data */
+    xrl_iram_data.set_asm("xrl %sfr,#%imm", byte2, byte3);
+    xrl_iram_data.set_asm("xrl %exp,#%imm", byte2, byte3);
+    xrl_iram_data.set_decoder(op=0x63);
+
+  };
+
+};

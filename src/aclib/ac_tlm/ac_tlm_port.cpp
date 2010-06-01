@@ -185,6 +185,8 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
 
   // It would be necessary to read 64 bits and mix the bits with the smaller
   // words that will be written
+
+  // Rodolfo: This should be not necessary. Trying with only 32 bits...
   switch (wordsize) {
   case 8:
     req.type = READ;
@@ -208,9 +210,9 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
     rsp = (*this)->transport(req);
     break;
   case 32:
-    req.type = READ;
+ //   req.type = READ;
     req.addr = address;
-    rsp = (*this)->transport(req);
+ //   rsp = (*this)->transport(req);
 
     req.type = WRITE;
     req.data = rsp.data;
@@ -218,6 +220,8 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
       *(buf.ptr32);
     rsp = (*this)->transport(req);
     break;
+
+// This is not a 64-bit operation!
   case 64:
     req.type = WRITE;
     req.addr = address;
@@ -280,18 +284,19 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
     break;
   case 32:
     for (int i = 0; i < n_words; i++) {
-      req.type = READ;
+//      req.type = READ;
       req.addr = address + (i * sizeof(uint32_t));
       req.data = 0ULL;
-      rsp = (*this)->transport(req);
+//      rsp = (*this)->transport(req);
 
       req.type = WRITE;
-      req.data = rsp.data;
+//      req.data = rsp.data;
+      req.data = buf.ptr32[i];
 
-      for (int j = 0; (i < n_words) && (j < 1); j++, i++) {
-	((uint32_t*)&req.data)[j] = (buf.ptr32)[i];
-      }
-      i--;
+//      for (int j = 0; (i < n_words) && (j < 1); j++, i++) {
+//        ((uint32_t*)&req.data)[j] = (buf.ptr32)[i];
+//      }
+//      i--;
       (*this)->transport(req);
     }
     break;

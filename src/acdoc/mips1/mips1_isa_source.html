@@ -1,0 +1,434 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>mips1_isa.ac Source Code</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=mips1_index.html>mips1 Architechture Description</a></div><div class='definfo'><a href=mips1_isa.html>mips1 Instruction Set and Formats</a></div><div class='definfo'><a href=mips1_other.html>mips1 Other Properties</a></div><div class='source'><ul>
+<li><a name=l1>00001</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/**
+ </font></li><li><a name=l2>00002</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \file      mips1_isa.ac
+ </font></li><li><a name=l3>00003</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \author    Sandro Rigo
+ </font></li><li><a name=l4>00004</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             Marcus Bartholomeu
+ </font></li><li><a name=l5>00005</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             Alexandro Baldassin (acasm information)
+ </font></li><li><a name=l6>00006</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > 
+ </font></li><li><a name=l7>00007</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             The ArchC Team
+ </font></li><li><a name=l8>00008</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             http://www.archc.org/
+ </font></li><li><a name=l9>00009</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > 
+ </font></li><li><a name=l10>00010</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             Computer Systems Laboratory (LSC)
+ </font></li><li><a name=l11>00011</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >             IC-UNICAMP
+ </font></li><li><a name=l12>00012</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >            http://www.lsc.ic.unicamp.br/
+ </font></li><li><a name=l13>00013</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > 
+ </font></li><li><a name=l14>00014</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \version   1.0
+ </font></li><li><a name=l15>00015</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \date      Thu, 29 Jun 2006 14:49:08 -0300
+ </font></li><li><a name=l16>00016</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l17>00017</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \brief     The ArchC MIPS-I functional model.
+ </font></li><li><a name=l18>00018</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l19>00019</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \note Copyright (C) 2002-2006 --- The ArchC Team
+ </font></li><li><a name=l20>00020</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l21>00021</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \details
+ </font></li><li><a name=l22>00022</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >   This program is free software; you can redistribute it and/or modify 
+ </font></li><li><a name=l23>00023</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  it under the terms of the GNU General Public License as published by 
+ </font></li><li><a name=l24>00024</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  the Free Software Foundation; either version 2 of the License, or 
+ </font></li><li><a name=l25>00025</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  (at your option) any later version. 
+ </font></li><li><a name=l26>00026</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l27>00027</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  This program is distributed in the hope that it will be useful, 
+ </font></li><li><a name=l28>00028</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ </font></li><li><a name=l29>00029</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ </font></li><li><a name=l30>00030</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  GNU General Public License for more details. 
+ </font></li><li><a name=l31>00031</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  
+ </font></li><li><a name=l32>00032</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  You should have received a copy of the GNU General Public License 
+ </font></li><li><a name=l33>00033</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  along with this program; if not, write to the Free Software 
+ </font></li><li><a name=l34>00034</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ </font></li><li><a name=l35>00035</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  \end
+ </font></li><li><a name=l36>00036</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > */
+ </font></li><li><a name=l37>00037</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l38>00038</a>&nbsp&nbsp&nbsp&nbsp <font color="purple" >AC_ISA </font>(mips1){
+</li><li><a name=l39>00039</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l40>00040</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_format </font> Type_R  = <font color="brown" >"%op:6 %rs:5 %rt:5 %rd:5 %shamt:5 %func:6" </font>;
+</li><li><a name=l41>00041</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_format </font> Type_I  = <font color="brown" >"%op:6 %rs:5 %rt:5 %imm:16:s" </font>;
+</li><li><a name=l42>00042</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_format </font> Type_J  = <font color="brown" >"%op:6 %addr:26" </font>;
+</li><li><a name=l43>00043</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l44>00044</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_I> lb, lbu, lh, lhu, lw, lwl, lwr;
+</li><li><a name=l45>00045</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_I> sb, sh, sw, swl, swr;
+</li><li><a name=l46>00046</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_I> addi, addiu, slti, sltiu, andi, ori, xori, lui;
+</li><li><a name=l47>00047</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> add, addu, sub, subu, slt, sltu;
+</li><li><a name=l48>00048</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> instr_and, instr_or, instr_xor, instr_nor;
+</li><li><a name=l49>00049</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> nop, sll, srl, sra, sllv, srlv, srav;
+</li><li><a name=l50>00050</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> mult, multu, div, divu;
+</li><li><a name=l51>00051</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> mfhi, mthi, mflo, mtlo;
+</li><li><a name=l52>00052</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_J> j, jal;
+</li><li><a name=l53>00053</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> jr, jalr;
+</li><li><a name=l54>00054</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_I> beq, bne, blez, bgtz, bltz, bgez, bltzal, bgezal;
+</li><li><a name=l55>00055</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_R> sys_call, instr_break;
+</li><li><a name=l56>00056</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l57>00057</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l58>00058</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >// gas MIPS specific register names
+ </font></li><li><a name=l59>00059</a>&nbsp&nbsp&nbsp&nbsp   <font color="purple" >ac_asm_map </font> reg {
+</li><li><a name=l60>00060</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$" </font>[0..31] = [0..31];
+</li><li><a name=l61>00061</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$zero" </font> = 0;
+</li><li><a name=l62>00062</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$at" </font> = 1;
+</li><li><a name=l63>00063</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$kt" </font>[0..1] = [26..27];
+</li><li><a name=l64>00064</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$gp" </font> = 28;
+</li><li><a name=l65>00065</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$sp" </font> = 29;
+</li><li><a name=l66>00066</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$fp" </font> = 30;
+</li><li><a name=l67>00067</a>&nbsp&nbsp&nbsp&nbsp      <font color="brown" >"$ra" </font> = 31;
+</li><li><a name=l68>00068</a>&nbsp&nbsp&nbsp&nbsp   }
+</li><li><a name=l69>00069</a>&nbsp&nbsp&nbsp&nbsp    
+</li><li><a name=l70>00070</a>&nbsp&nbsp&nbsp&nbsp   <font color="purple" >ISA_CTOR </font>(mips1){
+</li><li><a name=l71>00071</a>&nbsp&nbsp&nbsp&nbsp     
+</li><li><a name=l72>00072</a>&nbsp&nbsp&nbsp&nbsp     lb.<font color="blue" >set_asm </font>(<font color="brown" >"lb %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l73>00073</a>&nbsp&nbsp&nbsp&nbsp     lb.<font color="blue" >set_asm </font>(<font color="brown" >"lb %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l74>00074</a>&nbsp&nbsp&nbsp&nbsp     lb.<font color="blue" >set_asm </font>(<font color="brown" >"lb %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l75>00075</a>&nbsp&nbsp&nbsp&nbsp     lb.<font color="blue" >set_decoder </font>(op=0x20);
+</li><li><a name=l76>00076</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l77>00077</a>&nbsp&nbsp&nbsp&nbsp     lbu.<font color="blue" >set_asm </font>(<font color="brown" >"lbu %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l78>00078</a>&nbsp&nbsp&nbsp&nbsp     lbu.<font color="blue" >set_asm </font>(<font color="brown" >"lbu %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l79>00079</a>&nbsp&nbsp&nbsp&nbsp     lbu.<font color="blue" >set_asm </font>(<font color="brown" >"lbu %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l80>00080</a>&nbsp&nbsp&nbsp&nbsp     lbu.<font color="blue" >set_decoder </font>(op=0x24);
+</li><li><a name=l81>00081</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l82>00082</a>&nbsp&nbsp&nbsp&nbsp     lh.<font color="blue" >set_asm </font>(<font color="brown" >"lh %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l83>00083</a>&nbsp&nbsp&nbsp&nbsp     lh.<font color="blue" >set_asm </font>(<font color="brown" >"lh %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l84>00084</a>&nbsp&nbsp&nbsp&nbsp     lh.<font color="blue" >set_asm </font>(<font color="brown" >"lh %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l85>00085</a>&nbsp&nbsp&nbsp&nbsp     lh.<font color="blue" >set_decoder </font>(op=0x21);
+</li><li><a name=l86>00086</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l87>00087</a>&nbsp&nbsp&nbsp&nbsp     lhu.<font color="blue" >set_asm </font>(<font color="brown" >"lhu %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l88>00088</a>&nbsp&nbsp&nbsp&nbsp     lhu.<font color="blue" >set_asm </font>(<font color="brown" >"lhu %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l89>00089</a>&nbsp&nbsp&nbsp&nbsp     lhu.<font color="blue" >set_asm </font>(<font color="brown" >"lhu %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l90>00090</a>&nbsp&nbsp&nbsp&nbsp     lhu.<font color="blue" >set_decoder </font>(op=0x25);
+</li><li><a name=l91>00091</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l92>00092</a>&nbsp&nbsp&nbsp&nbsp     lw.<font color="blue" >set_asm </font>(<font color="brown" >"lw %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l93>00093</a>&nbsp&nbsp&nbsp&nbsp     lw.<font color="blue" >set_asm </font>(<font color="brown" >"lw %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l94>00094</a>&nbsp&nbsp&nbsp&nbsp     lw.<font color="blue" >set_asm </font>(<font color="brown" >"lw %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l95>00095</a>&nbsp&nbsp&nbsp&nbsp     lw.<font color="blue" >set_decoder </font>(op=0x23);
+</li><li><a name=l96>00096</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l97>00097</a>&nbsp&nbsp&nbsp&nbsp     lwl.<font color="blue" >set_asm </font>(<font color="brown" >"lwl %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l98>00098</a>&nbsp&nbsp&nbsp&nbsp     lwl.<font color="blue" >set_asm </font>(<font color="brown" >"lwl %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l99>00099</a>&nbsp&nbsp&nbsp&nbsp     lwl.<font color="blue" >set_asm </font>(<font color="brown" >"lwl %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l100>00100</a>&nbsp&nbsp&nbsp&nbsp     lwl.<font color="blue" >set_decoder </font>(op=0x22);
+</li><li><a name=l101>00101</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l102>00102</a>&nbsp&nbsp&nbsp&nbsp     lwr.<font color="blue" >set_asm </font>(<font color="brown" >"lwr %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l103>00103</a>&nbsp&nbsp&nbsp&nbsp     lwr.<font color="blue" >set_asm </font>(<font color="brown" >"lwr %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l104>00104</a>&nbsp&nbsp&nbsp&nbsp     lwr.<font color="blue" >set_asm </font>(<font color="brown" >"lwr %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l105>00105</a>&nbsp&nbsp&nbsp&nbsp     lwr.<font color="blue" >set_decoder </font>(op=0x26);
+</li><li><a name=l106>00106</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l107>00107</a>&nbsp&nbsp&nbsp&nbsp     sb.<font color="blue" >set_asm </font>(<font color="brown" >"sb %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l108>00108</a>&nbsp&nbsp&nbsp&nbsp     sb.<font color="blue" >set_asm </font>(<font color="brown" >"sb %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l109>00109</a>&nbsp&nbsp&nbsp&nbsp     sb.<font color="blue" >set_asm </font>(<font color="brown" >"sb %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l110>00110</a>&nbsp&nbsp&nbsp&nbsp     sb.<font color="blue" >set_decoder </font>(op=0x28);
+</li><li><a name=l111>00111</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l112>00112</a>&nbsp&nbsp&nbsp&nbsp     sh.<font color="blue" >set_asm </font>(<font color="brown" >"sh %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l113>00113</a>&nbsp&nbsp&nbsp&nbsp     sh.<font color="blue" >set_asm </font>(<font color="brown" >"sh %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l114>00114</a>&nbsp&nbsp&nbsp&nbsp     sh.<font color="blue" >set_asm </font>(<font color="brown" >"sh %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l115>00115</a>&nbsp&nbsp&nbsp&nbsp     sh.<font color="blue" >set_decoder </font>(op=0x29);
+</li><li><a name=l116>00116</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l117>00117</a>&nbsp&nbsp&nbsp&nbsp     sw.<font color="blue" >set_asm </font>(<font color="brown" >"sw %reg, \%lo(%exp)(%reg)" </font>, rt, imm, rs);
+</li><li><a name=l118>00118</a>&nbsp&nbsp&nbsp&nbsp     sw.<font color="blue" >set_asm </font>(<font color="brown" >"sw %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l119>00119</a>&nbsp&nbsp&nbsp&nbsp     sw.<font color="blue" >set_asm </font>(<font color="brown" >"sw %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l120>00120</a>&nbsp&nbsp&nbsp&nbsp     sw.<font color="blue" >set_decoder </font>(op=0x2B);
+</li><li><a name=l121>00121</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l122>00122</a>&nbsp&nbsp&nbsp&nbsp     swl.<font color="blue" >set_asm </font>(<font color="brown" >"swl %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l123>00123</a>&nbsp&nbsp&nbsp&nbsp     swl.<font color="blue" >set_asm </font>(<font color="brown" >"swl %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l124>00124</a>&nbsp&nbsp&nbsp&nbsp     swl.<font color="blue" >set_decoder </font>(op=0x2A);
+</li><li><a name=l125>00125</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l126>00126</a>&nbsp&nbsp&nbsp&nbsp     swr.<font color="blue" >set_asm </font>(<font color="brown" >"swr %reg, (%reg)" </font>, rt, rs, imm=0);
+</li><li><a name=l127>00127</a>&nbsp&nbsp&nbsp&nbsp     swr.<font color="blue" >set_asm </font>(<font color="brown" >"swr %reg, %imm (%reg)" </font>, rt, imm, rs);
+</li><li><a name=l128>00128</a>&nbsp&nbsp&nbsp&nbsp     swr.<font color="blue" >set_decoder </font>(op=0x2E);
+</li><li><a name=l129>00129</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l130>00130</a>&nbsp&nbsp&nbsp&nbsp     addi.<font color="blue" >set_asm </font>(<font color="brown" >"addi %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l131>00131</a>&nbsp&nbsp&nbsp&nbsp     addi.<font color="blue" >set_asm </font>(<font color="brown" >"add %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l132>00132</a>&nbsp&nbsp&nbsp&nbsp     addi.<font color="blue" >set_decoder </font>(op=0x08);
+</li><li><a name=l133>00133</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l134>00134</a>&nbsp&nbsp&nbsp&nbsp     addiu.<font color="blue" >set_asm </font>(<font color="brown" >"addiu %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l135>00135</a>&nbsp&nbsp&nbsp&nbsp     addiu.<font color="blue" >set_asm </font>(<font color="brown" >"addiu %reg, %reg, \%lo(%exp)" </font>, rt, rs, imm);
+</li><li><a name=l136>00136</a>&nbsp&nbsp&nbsp&nbsp     addiu.<font color="blue" >set_asm </font>(<font color="brown" >"addu %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l137>00137</a>&nbsp&nbsp&nbsp&nbsp     addiu.<font color="blue" >set_decoder </font>(op=0x09);
+</li><li><a name=l138>00138</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l139>00139</a>&nbsp&nbsp&nbsp&nbsp     slti.<font color="blue" >set_asm </font>(<font color="brown" >"slti %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l140>00140</a>&nbsp&nbsp&nbsp&nbsp     slti.<font color="blue" >set_asm </font>(<font color="brown" >"slt %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l141>00141</a>&nbsp&nbsp&nbsp&nbsp     slti.<font color="blue" >set_decoder </font>(op=0x0A);
+</li><li><a name=l142>00142</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l143>00143</a>&nbsp&nbsp&nbsp&nbsp     sltiu.<font color="blue" >set_asm </font>(<font color="brown" >"sltiu %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l144>00144</a>&nbsp&nbsp&nbsp&nbsp     sltiu.<font color="blue" >set_asm </font>(<font color="brown" >"sltu %reg, %reg, %exp" </font>, rt, rs, imm);
+</li><li><a name=l145>00145</a>&nbsp&nbsp&nbsp&nbsp     sltiu.<font color="blue" >set_decoder </font>(op=0x0B);
+</li><li><a name=l146>00146</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l147>00147</a>&nbsp&nbsp&nbsp&nbsp     andi.<font color="blue" >set_asm </font>(<font color="brown" >"andi %reg, %reg, %imm" </font>, rt, rs, imm);
+</li><li><a name=l148>00148</a>&nbsp&nbsp&nbsp&nbsp     andi.<font color="blue" >set_asm </font>(<font color="brown" >"and %reg, %reg, %imm" </font>, rt, rs, imm);
+</li><li><a name=l149>00149</a>&nbsp&nbsp&nbsp&nbsp     andi.<font color="blue" >set_decoder </font>(op=0x0C);
+</li><li><a name=l150>00150</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l151>00151</a>&nbsp&nbsp&nbsp&nbsp     ori.<font color="blue" >set_asm </font>(<font color="brown" >"ori %reg, %reg, %imm" </font>, rt, rs, imm);
+</li><li><a name=l152>00152</a>&nbsp&nbsp&nbsp&nbsp     ori.<font color="blue" >set_asm </font>(<font color="brown" >"or %reg, %reg, %imm" </font>, rt, rs, imm);
+</li><li><a name=l153>00153</a>&nbsp&nbsp&nbsp&nbsp     ori.<font color="blue" >set_decoder </font>(op=0x0D);
+</li><li><a name=l154>00154</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l155>00155</a>&nbsp&nbsp&nbsp&nbsp     xori.<font color="blue" >set_asm </font>(<font color="brown" >"xori %reg, %reg, %imm" </font>, rt, rs, imm);
+</li><li><a name=l156>00156</a>&nbsp&nbsp&nbsp&nbsp     xori.<font color="blue" >set_asm </font>(<font color="brown" >"xor %reg, %reg, %imm" </font>, rt, rs, imm);
+</li><li><a name=l157>00157</a>&nbsp&nbsp&nbsp&nbsp     xori.<font color="blue" >set_decoder </font>(op=0x0E);
+</li><li><a name=l158>00158</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l159>00159</a>&nbsp&nbsp&nbsp&nbsp     lui.<font color="blue" >set_asm </font>(<font color="brown" >"lui %reg, %exp" </font>, rt, imm);
+</li><li><a name=l160>00160</a>&nbsp&nbsp&nbsp&nbsp     lui.<font color="blue" >set_asm </font>(<font color="brown" >"lui %reg, \%hi(%imm(carry))" </font>, rt, imm);  
+</li><li><a name=l161>00161</a>&nbsp&nbsp&nbsp&nbsp     lui.<font color="blue" >set_asm </font>(<font color="brown" >"lui %reg, \%hi(%exp(carry))" </font>, rt, imm);
+</li><li><a name=l162>00162</a>&nbsp&nbsp&nbsp&nbsp     lui.<font color="blue" >set_decoder </font>(op=0x0F, rs=0x00);
+</li><li><a name=l163>00163</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l164>00164</a>&nbsp&nbsp&nbsp&nbsp     add.<font color="blue" >set_asm </font>(<font color="brown" >"add %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l165>00165</a>&nbsp&nbsp&nbsp&nbsp     add.<font color="blue" >set_decoder </font>(op=0x00, func=0x20);
+</li><li><a name=l166>00166</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l167>00167</a>&nbsp&nbsp&nbsp&nbsp     addu.<font color="blue" >set_asm </font>(<font color="brown" >"addu %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l168>00168</a>&nbsp&nbsp&nbsp&nbsp     addu.<font color="blue" >set_asm </font>(<font color="brown" >"move %reg, %reg" </font>, rd, rs, rt="$zero");
+</li><li><a name=l169>00169</a>&nbsp&nbsp&nbsp&nbsp     addu.<font color="blue" >set_decoder </font>(op=0x00, func=0x21);
+</li><li><a name=l170>00170</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l171>00171</a>&nbsp&nbsp&nbsp&nbsp     sub.<font color="blue" >set_asm </font>(<font color="brown" >"sub %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l172>00172</a>&nbsp&nbsp&nbsp&nbsp     sub.<font color="blue" >set_decoder </font>(op=0x00, func=0x22);
+</li><li><a name=l173>00173</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l174>00174</a>&nbsp&nbsp&nbsp&nbsp     subu.<font color="blue" >set_asm </font>(<font color="brown" >"subu %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l175>00175</a>&nbsp&nbsp&nbsp&nbsp     subu.<font color="blue" >set_decoder </font>(op=0x00, func=0x23);
+</li><li><a name=l176>00176</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l177>00177</a>&nbsp&nbsp&nbsp&nbsp     slt.<font color="blue" >set_asm </font>(<font color="brown" >"slt %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l178>00178</a>&nbsp&nbsp&nbsp&nbsp     slt.<font color="blue" >set_decoder </font>(op=0x00, func=0x2A);
+</li><li><a name=l179>00179</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l180>00180</a>&nbsp&nbsp&nbsp&nbsp     sltu.<font color="blue" >set_asm </font>(<font color="brown" >"sltu %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l181>00181</a>&nbsp&nbsp&nbsp&nbsp     sltu.<font color="blue" >set_decoder </font>(op=0x00, func=0x2B);
+</li><li><a name=l182>00182</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l183>00183</a>&nbsp&nbsp&nbsp&nbsp     instr_and.<font color="blue" >set_asm </font>(<font color="brown" >"and %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l184>00184</a>&nbsp&nbsp&nbsp&nbsp     instr_and.<font color="blue" >set_decoder </font>(op=0x00, func=0x24);
+</li><li><a name=l185>00185</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l186>00186</a>&nbsp&nbsp&nbsp&nbsp     instr_or.<font color="blue" >set_asm </font>(<font color="brown" >"or %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l187>00187</a>&nbsp&nbsp&nbsp&nbsp     instr_or.<font color="blue" >set_decoder </font>(op=0x00, func=0x25);
+</li><li><a name=l188>00188</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l189>00189</a>&nbsp&nbsp&nbsp&nbsp     instr_xor.<font color="blue" >set_asm </font>(<font color="brown" >"xor  %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l190>00190</a>&nbsp&nbsp&nbsp&nbsp     instr_xor.<font color="blue" >set_decoder </font>(op=0x00, func=0x26);
+</li><li><a name=l191>00191</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l192>00192</a>&nbsp&nbsp&nbsp&nbsp     instr_nor.<font color="blue" >set_asm </font>(<font color="brown" >"nor  %reg, %reg, %reg" </font>, rd, rs, rt);
+</li><li><a name=l193>00193</a>&nbsp&nbsp&nbsp&nbsp     instr_nor.<font color="blue" >set_decoder </font>(op=0x00, func=0x27);
+</li><li><a name=l194>00194</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l195>00195</a>&nbsp&nbsp&nbsp&nbsp     nop.<font color="blue" >set_asm </font>(<font color="brown" >"nop" </font>, rs=0, rt=0, shamt=0);
+</li><li><a name=l196>00196</a>&nbsp&nbsp&nbsp&nbsp     nop.<font color="blue" >set_decoder </font>(op=0x00, rd=0x00, func=0x00);
+</li><li><a name=l197>00197</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l198>00198</a>&nbsp&nbsp&nbsp&nbsp     sll.<font color="blue" >set_asm </font>(<font color="brown" >"sll %reg, %reg, %imm" </font>, rd, rt, shamt);
+</li><li><a name=l199>00199</a>&nbsp&nbsp&nbsp&nbsp     sll.<font color="blue" >set_decoder </font>(op=0x00, func= 0x00);
+</li><li><a name=l200>00200</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l201>00201</a>&nbsp&nbsp&nbsp&nbsp     srl.<font color="blue" >set_asm </font>(<font color="brown" >"srl %reg, %reg, %imm" </font>, rd, rt, shamt);
+</li><li><a name=l202>00202</a>&nbsp&nbsp&nbsp&nbsp     srl.<font color="blue" >set_decoder </font>(op=0x00, func= 0x02);
+</li><li><a name=l203>00203</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l204>00204</a>&nbsp&nbsp&nbsp&nbsp     sra.<font color="blue" >set_asm </font>(<font color="brown" >"sra %reg, %reg, %imm" </font>, rd, rt, shamt);
+</li><li><a name=l205>00205</a>&nbsp&nbsp&nbsp&nbsp     sra.<font color="blue" >set_decoder </font>(op=0x00, func= 0x03);
+</li><li><a name=l206>00206</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l207>00207</a>&nbsp&nbsp&nbsp&nbsp     sllv.<font color="blue" >set_asm </font>(<font color="brown" >"sllv %reg, %reg, %reg" </font>, rd, rt, rs);
+</li><li><a name=l208>00208</a>&nbsp&nbsp&nbsp&nbsp     sllv.<font color="blue" >set_asm </font>(<font color="brown" >"sll  %reg, %reg, %reg" </font>, rd, rt, rs);  <font color="gray" >// gas
+ </font></li><li><a name=l209>00209</a>&nbsp&nbsp&nbsp&nbsp     sllv.<font color="blue" >set_decoder </font>(op=0x00, func= 0x04);
+</li><li><a name=l210>00210</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l211>00211</a>&nbsp&nbsp&nbsp&nbsp     srlv.<font color="blue" >set_asm </font>(<font color="brown" >"srlv %reg, %reg, %reg" </font>, rd, rt, rs);
+</li><li><a name=l212>00212</a>&nbsp&nbsp&nbsp&nbsp     srlv.<font color="blue" >set_asm </font>(<font color="brown" >"srl  %reg, %reg, %reg" </font>, rd, rt, rs);  <font color="gray" >// gas
+ </font></li><li><a name=l213>00213</a>&nbsp&nbsp&nbsp&nbsp     srlv.<font color="blue" >set_decoder </font>(op=0x00, func= 0x06);
+</li><li><a name=l214>00214</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l215>00215</a>&nbsp&nbsp&nbsp&nbsp     srav.<font color="blue" >set_asm </font>(<font color="brown" >"srav %reg, %reg, %reg" </font>, rd, rt, rs);
+</li><li><a name=l216>00216</a>&nbsp&nbsp&nbsp&nbsp     srav.<font color="blue" >set_asm </font>(<font color="brown" >"sra  %reg, %reg, %reg" </font>, rd, rt, rs);  <font color="gray" >// gas
+ </font></li><li><a name=l217>00217</a>&nbsp&nbsp&nbsp&nbsp     srav.<font color="blue" >set_decoder </font>(op=0x00, func= 0x07);
+</li><li><a name=l218>00218</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l219>00219</a>&nbsp&nbsp&nbsp&nbsp     mult.<font color="blue" >set_asm </font>(<font color="brown" >"mult %reg, %reg" </font>, rs, rt);
+</li><li><a name=l220>00220</a>&nbsp&nbsp&nbsp&nbsp     mult.<font color="blue" >set_decoder </font>(op=0x00, func=0x18);
+</li><li><a name=l221>00221</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l222>00222</a>&nbsp&nbsp&nbsp&nbsp     multu.<font color="blue" >set_asm </font>(<font color="brown" >"multu %reg, %reg" </font>, rs, rt);
+</li><li><a name=l223>00223</a>&nbsp&nbsp&nbsp&nbsp     multu.<font color="blue" >set_decoder </font>(op=0x00, func=0x19);
+</li><li><a name=l224>00224</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l225>00225</a>&nbsp&nbsp&nbsp&nbsp     div.<font color="blue" >set_asm </font>(<font color="brown" >"div %reg, %reg" </font>, rs, rt);
+</li><li><a name=l226>00226</a>&nbsp&nbsp&nbsp&nbsp     div.<font color="blue" >set_decoder </font>(op=0x00, func=0x1A);
+</li><li><a name=l227>00227</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l228>00228</a>&nbsp&nbsp&nbsp&nbsp     divu.<font color="blue" >set_asm </font>(<font color="brown" >"divu %reg, %reg" </font>, rs, rt);
+</li><li><a name=l229>00229</a>&nbsp&nbsp&nbsp&nbsp     divu.<font color="blue" >set_decoder </font>(op=0x00, func=0x1B);
+</li><li><a name=l230>00230</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l231>00231</a>&nbsp&nbsp&nbsp&nbsp     mfhi.<font color="blue" >set_asm </font>(<font color="brown" >"mfhi %reg" </font>, rd);
+</li><li><a name=l232>00232</a>&nbsp&nbsp&nbsp&nbsp     mfhi.<font color="blue" >set_decoder </font>(op=0x00, func=0x10);
+</li><li><a name=l233>00233</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l234>00234</a>&nbsp&nbsp&nbsp&nbsp     mthi.<font color="blue" >set_asm </font>(<font color="brown" >"mthi %reg" </font>, rs);
+</li><li><a name=l235>00235</a>&nbsp&nbsp&nbsp&nbsp     mthi.<font color="blue" >set_decoder </font>(op=0x00, func=0x11);
+</li><li><a name=l236>00236</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l237>00237</a>&nbsp&nbsp&nbsp&nbsp     mflo.<font color="blue" >set_asm </font>(<font color="brown" >"mflo %reg" </font>, rd);
+</li><li><a name=l238>00238</a>&nbsp&nbsp&nbsp&nbsp     mflo.<font color="blue" >set_decoder </font>(op=0x00, func=0x12);
+</li><li><a name=l239>00239</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l240>00240</a>&nbsp&nbsp&nbsp&nbsp     mtlo.<font color="blue" >set_asm </font>(<font color="brown" >"mtlo %reg" </font>, rs);
+</li><li><a name=l241>00241</a>&nbsp&nbsp&nbsp&nbsp     mtlo.<font color="blue" >set_decoder </font>(op=0x00, func=0x13);
+</li><li><a name=l242>00242</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l243>00243</a>&nbsp&nbsp&nbsp&nbsp     j.<font color="blue" >set_asm </font>(<font color="brown" >"j %exp(align)" </font>, addr);
+</li><li><a name=l244>00244</a>&nbsp&nbsp&nbsp&nbsp     j.<font color="blue" >set_decoder </font>(op=0x02);
+</li><li><a name=l245>00245</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l246>00246</a>&nbsp&nbsp&nbsp&nbsp     jal.<font color="blue" >set_asm </font>(<font color="brown" >"jal %exp(align)" </font>, addr);
+</li><li><a name=l247>00247</a>&nbsp&nbsp&nbsp&nbsp     jal.<font color="blue" >set_decoder </font>(op=0x03);
+</li><li><a name=l248>00248</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l249>00249</a>&nbsp&nbsp&nbsp&nbsp     jr.<font color="blue" >set_asm </font>(<font color="brown" >"jr %reg" </font>, rs);
+</li><li><a name=l250>00250</a>&nbsp&nbsp&nbsp&nbsp     jr.<font color="blue" >set_asm </font>(<font color="brown" >"j %reg" </font>, rs);
+</li><li><a name=l251>00251</a>&nbsp&nbsp&nbsp&nbsp     jr.<font color="blue" >set_asm </font>(<font color="brown" >"ret" </font>, rs = "$ra");
+</li><li><a name=l252>00252</a>&nbsp&nbsp&nbsp&nbsp     jr.<font color="blue" >set_decoder </font>(op=0x00, func= 0x08);
+</li><li><a name=l253>00253</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l254>00254</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >set_asm </font>(<font color="brown" >"jalr %reg, %reg" </font>, rd, rs);
+</li><li><a name=l255>00255</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >set_asm </font>(<font color="brown" >"jalr %reg" </font>, rs, rd="$ra");
+</li><li><a name=l256>00256</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >set_asm </font>(<font color="brown" >"jal  %reg" </font>, rs, rd="$ra"); <font color="gray" >// gas
+ </font></li><li><a name=l257>00257</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >set_decoder </font>(op=0x00, func= 0x09);
+</li><li><a name=l258>00258</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l259>00259</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >set_asm </font>(<font color="brown" >"beq %reg, %reg, %exp(pcrel)" </font>, rs, rt, imm);
+</li><li><a name=l260>00260</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >set_asm </font>(<font color="brown" >"b %exp(pcrel)" </font>, imm, rs=0, rt=0);        <font color="gray" >// gas
+ </font></li><li><a name=l261>00261</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >set_asm </font>(<font color="brown" >"beqz %reg, %exp(pcrel)" </font>, rs, imm, rt=0); <font color="gray" >// gas
+ </font></li><li><a name=l262>00262</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >set_decoder </font>(op=0x04);
+</li><li><a name=l263>00263</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l264>00264</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >set_asm </font>(<font color="brown" >"bgtu %reg, $0, %exp(pcrel)" </font>, rs, imm, rt=0x00); <font color="gray" >// bgtu with second operand fixed in 0
+ </font></li><li><a name=l265>00265</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >set_asm </font>(<font color="brown" >"bne  %reg, %reg, %exp(pcrel)" </font>, rs, rt, imm);
+</li><li><a name=l266>00266</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >set_asm </font>(<font color="brown" >"bnez %reg, %exp(pcrel)" </font>, rs, imm, rt=0);
+</li><li><a name=l267>00267</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >set_decoder </font>(op=0x05);
+</li><li><a name=l268>00268</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l269>00269</a>&nbsp&nbsp&nbsp&nbsp     blez.<font color="blue" >set_asm </font>(<font color="brown" >"blez %reg, %exp(pcrel)" </font>, rs, imm);
+</li><li><a name=l270>00270</a>&nbsp&nbsp&nbsp&nbsp     blez.<font color="blue" >set_decoder </font>(op=0x06, rt=0x00);
+</li><li><a name=l271>00271</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l272>00272</a>&nbsp&nbsp&nbsp&nbsp     bgtz.<font color="blue" >set_asm </font>(<font color="brown" >"bgtz %reg, %exp(pcrel)" </font>, rs, imm);
+</li><li><a name=l273>00273</a>&nbsp&nbsp&nbsp&nbsp     bgtz.<font color="blue" >set_decoder </font>(op=0x07, rt=0x00); 
+</li><li><a name=l274>00274</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l275>00275</a>&nbsp&nbsp&nbsp&nbsp     bltz.<font color="blue" >set_asm </font>(<font color="brown" >"bltz %reg, %exp(pcrel)" </font>, rs, imm);
+</li><li><a name=l276>00276</a>&nbsp&nbsp&nbsp&nbsp     bltz.<font color="blue" >set_decoder </font>(op=0x01, rt=0x00);
+</li><li><a name=l277>00277</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l278>00278</a>&nbsp&nbsp&nbsp&nbsp     bgez.<font color="blue" >set_asm </font>(<font color="brown" >"bgez %reg, %exp(pcrel)" </font>, rs, imm);
+</li><li><a name=l279>00279</a>&nbsp&nbsp&nbsp&nbsp     bgez.<font color="blue" >set_decoder </font>(op=0x01, rt=0x01);
+</li><li><a name=l280>00280</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l281>00281</a>&nbsp&nbsp&nbsp&nbsp     bltzal.<font color="blue" >set_asm </font>(<font color="brown" >"bltzal %reg, %exp(pcrel)" </font>, rs, imm);
+</li><li><a name=l282>00282</a>&nbsp&nbsp&nbsp&nbsp     bltzal.<font color="blue" >set_decoder </font>(op=0x01, rt=0x10);
+</li><li><a name=l283>00283</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l284>00284</a>&nbsp&nbsp&nbsp&nbsp     bgezal.<font color="blue" >set_asm </font>(<font color="brown" >"bgezal %reg, %exp(pcrel)" </font>, rs, imm);
+</li><li><a name=l285>00285</a>&nbsp&nbsp&nbsp&nbsp     bgezal.<font color="blue" >set_decoder </font>(op=0x01, rt=0x11);
+</li><li><a name=l286>00286</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l287>00287</a>&nbsp&nbsp&nbsp&nbsp     sys_call.<font color="blue" >set_asm </font>(<font color="brown" >"syscall" </font>);
+</li><li><a name=l288>00288</a>&nbsp&nbsp&nbsp&nbsp     sys_call.<font color="blue" >set_decoder </font>(op=0x00, func=0x0C);
+</li><li><a name=l289>00289</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l290>00290</a>&nbsp&nbsp&nbsp&nbsp     instr_break.<font color="blue" >set_asm </font>(<font color="brown" >"break" </font>, rt=0);
+</li><li><a name=l291>00291</a>&nbsp&nbsp&nbsp&nbsp     instr_break.<font color="blue" >set_asm </font>(<font color="brown" >"break %imm" </font>, rt);
+</li><li><a name=l292>00292</a>&nbsp&nbsp&nbsp&nbsp     instr_break.<font color="blue" >set_decoder </font>(op=0x00, func=0x0D);
+</li><li><a name=l293>00293</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l294>00294</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l295>00295</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"li %reg, %imm" </font>) {
+</li><li><a name=l296>00296</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lui %0, \%hi(%1)" </font>;
+</li><li><a name=l297>00297</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"ori %0, %0, %1" </font>;
+</li><li><a name=l298>00298</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l299>00299</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l300>00300</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"la %reg, %addr" </font>) { 
+</li><li><a name=l301>00301</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lui %0, \%hi(%1)" </font>;	   
+</li><li><a name=l302>00302</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"addiu %0, %0, \%lo(%1)" </font>;    
+</li><li><a name=l303>00303</a>&nbsp&nbsp&nbsp&nbsp     }				  
+</li><li><a name=l304>00304</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l305>00305</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"sw %reg, %exp" </font>) {
+</li><li><a name=l306>00306</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lui $at, \%hi(%1)" </font>;
+</li><li><a name=l307>00307</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"sw  %0, \%lo(%1)($at)" </font>;
+</li><li><a name=l308>00308</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l309>00309</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l310>00310</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"lw %reg, %exp" </font>) {
+</li><li><a name=l311>00311</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lui %0, \%hi(%1)" </font>;
+</li><li><a name=l312>00312</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lw  %0, \%lo(%1)(%0)" </font>;    
+</li><li><a name=l313>00313</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l314>00314</a>&nbsp&nbsp&nbsp&nbsp     
+</li><li><a name=l315>00315</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"subu %reg, %reg, %imm" </font>) {
+</li><li><a name=l316>00316</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"addiu %0, %1, -%2" </font>;
+</li><li><a name=l317>00317</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l318>00318</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l319>00319</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"ble %reg, %reg, %exp" </font>) {
+</li><li><a name=l320>00320</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"slt $at, %1, %0" </font>;
+</li><li><a name=l321>00321</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"beq $at, $zero, %2" </font>;
+</li><li><a name=l322>00322</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l323>00323</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l324>00324</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"ble %reg, %imm, %exp" </font>) {
+</li><li><a name=l325>00325</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"slti $at, %0, %1+1" </font>;
+</li><li><a name=l326>00326</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"bne  $at, $zero, %2" </font>;
+</li><li><a name=l327>00327</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l328>00328</a>&nbsp&nbsp&nbsp&nbsp   
+</li><li><a name=l329>00329</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"mul %reg, %reg, %reg" </font>) {
+</li><li><a name=l330>00330</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"multu %1, %2" </font>;
+</li><li><a name=l331>00331</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"mflo  %0" </font>;
+</li><li><a name=l332>00332</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l333>00333</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l334>00334</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"bge %reg, %reg, %exp" </font>) {
+</li><li><a name=l335>00335</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"slt $at, %0, %1" </font>;
+</li><li><a name=l336>00336</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"beq $at, $zero, %2" </font>;
+</li><li><a name=l337>00337</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l338>00338</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l339>00339</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"bgt %reg, %imm, %exp" </font>) {
+</li><li><a name=l340>00340</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"slti $at, %0, %1+1" </font>;
+</li><li><a name=l341>00341</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"beq  $at, $zero, %2" </font>;
+</li><li><a name=l342>00342</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l343>00343</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l344>00344</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"mul %reg, %reg, %imm" </font>) {
+</li><li><a name=l345>00345</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"addiu $at, $zero, %2" </font>;
+</li><li><a name=l346>00346</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"mult  %1, $at" </font>;
+</li><li><a name=l347>00347</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"mflo  %0" </font>;
+</li><li><a name=l348>00348</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l349>00349</a>&nbsp&nbsp&nbsp&nbsp     
+</li><li><a name=l350>00350</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"lw %reg, %exp (%reg)" </font>) {
+</li><li><a name=l351>00351</a>&nbsp&nbsp&nbsp&nbsp  <font color="gray" >/* this should be 'li %0, %1', but 'li' is a conditional pseudo in gas :/ 
+ </font></li><li><a name=l352>00352</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >  - this only works when %exp < 2^16-1 - should be enough for validation */
+ </font></li><li><a name=l353>00353</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lui  %0, %1" </font>;
+</li><li><a name=l354>00354</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"addu %0, %0, %2" </font>;
+</li><li><a name=l355>00355</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lw   %0, (%0)" </font>;
+</li><li><a name=l356>00356</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l357>00357</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l358>00358</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"sw %reg, %exp (%reg)" </font>) {
+</li><li><a name=l359>00359</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/* this should be 'li %0, %1', but 'li' is a conditional pseudo in gas :/ 
+ </font></li><li><a name=l360>00360</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > - this only works when %exp < 2^16-1 - should be enough for validation */
+ </font></li><li><a name=l361>00361</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"lui  $at, %1" </font>; 
+</li><li><a name=l362>00362</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"addu $at, $at, %2" </font>;
+</li><li><a name=l363>00363</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"sw   %0, ($at)" </font>;
+</li><li><a name=l364>00364</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l365>00365</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l366>00366</a>&nbsp&nbsp&nbsp&nbsp     <font color="purple" >pseudo_instr </font>(<font color="brown" >"bne %reg, %imm, %exp" </font>) {
+</li><li><a name=l367>00367</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"addiu $at, $zero, %1" </font>;
+</li><li><a name=l368>00368</a>&nbsp&nbsp&nbsp&nbsp       <font color="brown" >"bne %0, $at, %2" </font>;
+</li><li><a name=l369>00369</a>&nbsp&nbsp&nbsp&nbsp     }
+</li><li><a name=l370>00370</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l371>00371</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l372>00372</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/*******************************************************/ </font>
+</li><li><a name=l373>00373</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/* Optional properties to optimize compiled simulation */ </font>
+</li><li><a name=l374>00374</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/*******************************************************/ </font>
+</li><li><a name=l375>00375</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l376>00376</a>&nbsp&nbsp&nbsp&nbsp     j.<font color="blue" >is_jump </font>(((ac_pc+4) & 0xF0000000) | (addr<<2));
+</li><li><a name=l377>00377</a>&nbsp&nbsp&nbsp&nbsp     j.<font color="blue" >delay </font>(1);
+</li><li><a name=l378>00378</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l379>00379</a>&nbsp&nbsp&nbsp&nbsp     jal.<font color="blue" >is_jump </font>(((ac_pc+4) & 0xF0000000) | (addr<<2));
+</li><li><a name=l380>00380</a>&nbsp&nbsp&nbsp&nbsp     jal.<font color="blue" >delay </font>(1);
+</li><li><a name=l381>00381</a>&nbsp&nbsp&nbsp&nbsp     jal.<font color="blue" >behavior </font>(RB[31] = (ac_pc+4)+4;);
+</li><li><a name=l382>00382</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l383>00383</a>&nbsp&nbsp&nbsp&nbsp     jr.<font color="blue" >is_jump </font>(RB[rs]);
+</li><li><a name=l384>00384</a>&nbsp&nbsp&nbsp&nbsp     jr.<font color="blue" >delay </font>(1);
+</li><li><a name=l385>00385</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l386>00386</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >is_jump </font>(RB[rs]);
+</li><li><a name=l387>00387</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >delay </font>(1);
+</li><li><a name=l388>00388</a>&nbsp&nbsp&nbsp&nbsp     jalr.<font color="blue" >behavior </font>(RB[(rd==0)?31:rd] = (ac_pc+4)+4;);
+</li><li><a name=l389>00389</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l390>00390</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l391>00391</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >cond </font>(RB[rs] == RB[rt]);
+</li><li><a name=l392>00392</a>&nbsp&nbsp&nbsp&nbsp     beq.<font color="blue" >delay </font>(1);
+</li><li><a name=l393>00393</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l394>00394</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l395>00395</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >cond </font>(RB[rs] != RB[rt]);
+</li><li><a name=l396>00396</a>&nbsp&nbsp&nbsp&nbsp     bne.<font color="blue" >delay </font>(1);
+</li><li><a name=l397>00397</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l398>00398</a>&nbsp&nbsp&nbsp&nbsp     blez.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l399>00399</a>&nbsp&nbsp&nbsp&nbsp     blez.<font color="blue" >cond </font>((RB[rs] == 0 ) || (RB[rs]&0x80000000 ));
+</li><li><a name=l400>00400</a>&nbsp&nbsp&nbsp&nbsp     blez.<font color="blue" >delay </font>(1);
+</li><li><a name=l401>00401</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l402>00402</a>&nbsp&nbsp&nbsp&nbsp     bgtz.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l403>00403</a>&nbsp&nbsp&nbsp&nbsp     bgtz.<font color="blue" >cond </font>(!(RB[rs] & 0x80000000) && (RB[rs]!=0));
+</li><li><a name=l404>00404</a>&nbsp&nbsp&nbsp&nbsp     bgtz.<font color="blue" >delay </font>(1);
+</li><li><a name=l405>00405</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l406>00406</a>&nbsp&nbsp&nbsp&nbsp     bltz.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l407>00407</a>&nbsp&nbsp&nbsp&nbsp     bltz.<font color="blue" >cond </font>(RB[rs] & 0x80000000);
+</li><li><a name=l408>00408</a>&nbsp&nbsp&nbsp&nbsp     bltz.<font color="blue" >delay </font>(1);
+</li><li><a name=l409>00409</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l410>00410</a>&nbsp&nbsp&nbsp&nbsp     bgez.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l411>00411</a>&nbsp&nbsp&nbsp&nbsp     bgez.<font color="blue" >cond </font>(!(RB[rs] & 0x80000000));
+</li><li><a name=l412>00412</a>&nbsp&nbsp&nbsp&nbsp     bgez.<font color="blue" >delay </font>(1);
+</li><li><a name=l413>00413</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l414>00414</a>&nbsp&nbsp&nbsp&nbsp     bltzal.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l415>00415</a>&nbsp&nbsp&nbsp&nbsp     bltzal.<font color="blue" >cond </font>(RB[rs] & 0x80000000);
+</li><li><a name=l416>00416</a>&nbsp&nbsp&nbsp&nbsp     bltzal.<font color="blue" >delay </font>(1);
+</li><li><a name=l417>00417</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l418>00418</a>&nbsp&nbsp&nbsp&nbsp     bgezal.<font color="blue" >is_branch </font>((ac_pc+4) + (imm<<2));
+</li><li><a name=l419>00419</a>&nbsp&nbsp&nbsp&nbsp     bgezal.<font color="blue" >cond </font>(!(RB[rs] & 0x80000000));
+</li><li><a name=l420>00420</a>&nbsp&nbsp&nbsp&nbsp     bgezal.<font color="blue" >delay </font>(1);
+</li><li><a name=l421>00421</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l422>00422</a>&nbsp&nbsp&nbsp&nbsp   };
+</li><li><a name=l423>00423</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l424>00424</a>&nbsp&nbsp&nbsp&nbsp };
+</li></ul></div>
+</body>
+</html>

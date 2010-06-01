@@ -1,0 +1,38 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>powerpc ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=powerpc_index.html>powerpc Architechture Description</a></div><div class='definfo'><a href=powerpc_isa.html>powerpc Instruction Set and Formats</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: powerpc_isa.ac</div>
+<div class='ac_asm_map'>reg (<a href='http://www.archc.org/'>ac_asm_map</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l196>[see source code]</a><div class='desc'>Maps:   0 31 0 31<br/>
+</div></div>
+<div class='pseudo_instr'>subis %reg, %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1064>[see source code]</a><div class='desc'>Instructions: <br/> addis %0, %1, -%2<br/></div>
+</div>
+<div class='pseudo_instr'>subi %reg, %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1060>[see source code]</a><div class='desc'>Instructions: <br/> addi %0, %1, -%2<br/></div>
+</div>
+<div class='pseudo_instr'>bge %imm, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1100>[see source code]</a><div class='desc'>Instructions: <br/> bc 0x4, %0*4, %1<br/></div>
+</div>
+<div class='pseudo_instr'>crnot %reg, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1072>[see source code]</a><div class='desc'>Instructions: <br/> crnor %0, %1, %1<br/></div>
+</div>
+<div class='pseudo_instr'>beq %imm, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1104>[see source code]</a><div class='desc'>Instructions: <br/> bc 0xC, %0*4+2, %1<br/></div>
+</div>
+<div class='pseudo_instr'>blt %imm, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1096>[see source code]</a><div class='desc'>Instructions: <br/> bc 0xC, %0*4, %1<br/></div>
+</div>
+<div class='pseudo_instr'>ble %imm, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1084>[see source code]</a><div class='desc'>Instructions: <br/> bc 0x4, %0*4+1, %1<br/></div>
+</div>
+<div class='pseudo_instr'>bne %imm, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1088>[see source code]</a><div class='desc'>Instructions: <br/> bc 0x4, %0*4+2, %1<br/></div>
+</div>
+<div class='pseudo_instr'>srwi %reg, %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1068>[see source code]</a><div class='desc'>Instructions: <br/> rlwinm %0, %1, 32-%2, %2, 31<br/></div>
+</div>
+<div class='pseudo_instr'>slwi %reg, %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1080>[see source code]</a><div class='desc'>Instructions: <br/> rlwinm %0, %1, %2, 0, 31-%2<br/></div>
+</div>
+<div class='pseudo_instr'>insrwi %reg, %reg, %imm, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1076>[see source code]</a><div class='desc'>Instructions: <br/> rlwimi %0, %1, 32-%3-%2, %3, %3+%2-1<br/></div>
+</div>
+<div class='pseudo_instr'>bgt %imm, %addr (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1092>[see source code]</a><div class='desc'>Instructions: <br/> bc 0xC, %0*4+1, %1<br/></div>
+</div>
+<div class='pseudo_instr'>mr %reg, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=powerpc_isa_source.html#l1056>[see source code]</a><div class='desc'>Instructions: <br/> or %0, %1, %1<br/></div>
+</div>
+</div>
+</body>
+</html>

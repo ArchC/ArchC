@@ -1,0 +1,1068 @@
+/**
+ * @file      IA32_isa.ac
+ * @author    Rodolfo Jardim de Azevedo
+ *            Valdiney Alves Pimenta (ArchC 2.0 port, new instructions, some fixed bugs)
+ *            Team 03 - MC723 - 2005, 1st period
+ *              Eduardo Uemura Okada
+ *              Andre Deiano Pansani
+ *              Ricardo Andrade
+ *            Modified by Rafael Madeira
+ *              readRegister8();
+ *              writeRegister8();
+ *              void ac_behavior( Type_op1bi )
+ *              DataManager
+ *            
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br
+ *
+ * @version   1.0
+ * @date      Thu, 29 Jun 2006 14:49:07 -0300
+ * 
+ * @brief     The ArchC x86 functional model.
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+
+AC_ISA(IA32)
+{
+  // No SSE2, SSE, MMX or System specific instructions declared
+
+  // Opcode sizes in IA32
+  // 1BYTE = op1b
+  // 2BYTES= op2b
+
+  ac_format Type_op1b = "%op1b:8";
+  ac_format Type_op2b = "%op2b:16";
+  ac_format Type_op1bi = "%op1b:8 %imme:32";
+  ac_format Type_op1bi8 = "%op1b:8 %imm8:8";
+  ac_format Type_op1bd8 = "%op1b:8 %disp8:8";
+  ac_format Type_op1bd32 = "%op1b:8 %imme:32";	// Restriction from archc, imme is a disp
+  ac_format Type_op2bd32 = "%op2b:16 %disp32:32";
+  //ac_format Type_op1b_rm32 = "%op1b:8 %mod:2 %regop:3 %rm:3 %sib:8 %disp:32 %imm:32";
+  //ac_format Type_op2b_rm32 = "%op2b:16 %mod2:2 %regop2:3 %rm2:3 %sib2:8 %disp2:32 %imm2:32";
+
+  ac_format Type_op1b_rm32 = "%op1b:8 %rm:3 %regop:3 %mod:2 %sib:8 %disp:32 %imm:32";
+  ac_format Type_op2b_rm32 = "%op2b:16 %rm2:3 %regop2:3 %mod2:2 %sib2:8 %disp2:32 %imm2:32";
+
+  // Debug formats (nonexistant in the instruction set)
+  ac_format Type_op2b_debug = "%op2b:16 %iadd:32 %eadd:32";
+
+  // Instruction naming patterns:
+  // <instr>_[<op1>]_[<op2>]
+  // Note: m16:32 = m16_32
+
+  ac_instr<Type_op2b>	ud2, cpuid, bswap_EAX_r32, bswap_ECX_r32, 
+			bswap_EDX_r32, bswap_EBX_r32, bswap_ESP_r32, bswap_EBP_r32,
+			bswap_ESI_r32, bswap_EDI_r32, push_FS, push_GS, pop_FS, pop_GS, aam,
+			aad;
+
+  ac_instr<Type_op2bd32>	ja_jnbe_rel16_32,
+        		        jae_jnb_jnc_rel16_32, jb_jc_jnae_rel16_32, jbe_jna_rel16_32,
+                        	je_jz_rel16_32, jg_jnle_rel16_32, jge_jnl_rel16_32,
+                        	jl_jnge_rel16_32, jle_jng_rel16_32, jne_jnz_rel16_32,
+                        	jno_rel16_32, jnp_jpo_rel16_32, jns_rel16_32, jo_rel16_32,
+                        	jp_jpe_rel16_32, js_rel16_32;
+
+  ac_instr<Type_op2b_rm32>	lss_r32_m16_32, lfs_r32_m16_32, lgs_r32_m16_32,
+				cmov_a_nbe_r32_rm32, cmov_ae_nb_nc_r32_rm32,
+				cmov_b_c_nae_r32_rm32, cmov_be_na_r32_rm32,
+				cmov_e_z_r32_rm32, cmov_g_nle_r32_rm32, cmov_ge_nl_r32_rm32,
+				cmov_l_nge_r32_rm32, cmov_le_ng_r32_rm32, cmov_ne_nz_r32_rm32,
+				cmov_no_r32_rm32, cmov_np_po_r32_rm32, cmov_ns_r32_rm32,
+				cmov_o_r32_rm32, cmov_p_pe_r32_rm32, cmov_s_r32_rm32,
+				xadd_rm32_r32, cmpxchg_rm32_r32, cmpxchg8b_m64, movsx_r32_rm8,
+				movsx_r32_rm16, movzx_r32_rm8, movzx_r32_rm16,
+				shrd_rm32_r32_imm8, shrd_rm32_r32_CL, shld_rm32_r32_imm8,
+				shld_rm32_r32_CL, bt_rm32_r32, bt_rm32_imm8, bts_rm32_r32,
+				btr_rm32_r32, btc_rm32_r32, bsf_r32_rm32, bsr_r32_rm32,
+				seta_setnbe_rm8, setae_setnb_setnc_rm8, setb_setc_setnae_rm8,
+				setbe_setna_rm8, sete_setz_rm8, setg_setnle_rm8,
+				setge_setnl_rm8, setl_setnge_rm8, setle_setng_rm8,
+				setne_setnz_rm8, setno_rm8, setnp_setpo_rm8, setns_rm8,
+				seto_rm8, setp_setpe_rm8, sets_rm8, bts_rm32_imm8,
+				btr_rm32_imm8, btc_rm32_imm8, imul_r32_rm32; 
+
+  ac_instr<Type_op1b>   insd, outsd, stc, clc, cmc, cld, std, lahf, sahf, pushfd, popfd, sti,
+                        cli, nop, xlatb, push_EAX, push_ECX, push_EDX, push_EBX, push_ESP,
+                        push_EBP, push_ESI, push_EDI, push_CS, push_SS, push_DS, push_ES,
+                        pop_EAX, pop_ECX, pop_EDX, pop_EBX, pop_ESP, pop_EBP, pop_ESI,
+                        pop_EDI, pop_DS, pop_ES, pop_SS, push_a_ad, pop_a_ad, in_EAX_DX,
+                        out_DX_EAX, cwd_cwq, cbw_cwde, inc_EAX, inc_ECX, inc_EDX, inc_EBX,
+                        inc_ESP, inc_EBP, inc_ESI, inc_EDI, dec_EAX, dec_ECX, dec_EDX, dec_EBX,
+                        dec_ESP, dec_EBP, dec_ESI, dec_EDI, daa, das, aaa, aas, iret_iretd,
+                        leave, movs_m32_m32, cmps_m32_m32, scas_m32, lods_m32, stos_m32,
+			/*xchg_EAX_EAX,*/xchg_EAX_ECX, xchg_EAX_EDX, xchg_EAX_EBX, xchg_EAX_ESP,
+			xchg_EAX_EBP, xchg_EAX_ESI, xchg_EAX_EDI, P_LOCK, P_REPNE_REPNZ,
+			P_REP_REPE_REPZ, P_CS, P_SS, P_DS, P_ES, P_FS, P_GS, P_BTAKEN,
+			P_BNTAKEN, P_OPSIZE, P_ADSIZE;
+
+  ac_instr<Type_op1bd8>	ja_jnbe_rel8, jae_jnb_jnc_rel8, jb_jc_jnae_rel8, jbe_jna_rel8,
+                        je_jz_rel8, jg_jnle_rel8, jge_jnl_rel8, jl_jnge_rel8,
+                        jle_jng_rel8, jne_jnz_rel8, jno_rel8, jnp_jpo_rel8, jns_rel8,
+                        jo_rel8, jp_jpe_rel8, js_rel8, jcxz_jecxz_rel8, loop_rel8,
+			loope_loopz_rel8, loopne_loopnz_rel8, jmp_rel8;
+
+  ac_instr<Type_op1bd32> call_rel32, jmp_rel32;
+
+  ac_instr<Type_op1bi>	mov_EAX_imm32, mov_ECX_imm32, mov_EDX_imm32, mov_EBX_imm32,
+			mov_ESP_imm32, mov_EBP_imm32, mov_ESI_imm32, mov_EDI_imm32,
+			push_imm32, add_EAX_imm32, adc_EAX_imm32, sub_EAX_imm32,
+			sbb_EAX_imm32, cmp_EAX_imm32, and_EAX_imm32, or_EAX_imm32,
+			xor_EAX_imm32, test_eax_imm32;
+
+  ac_instr<Type_op1bi8>	mov_AL_imm8, mov_CL_imm8, mov_DL_imm8, mov_BL_imm8,
+			mov_AH_imm8, mov_CH_imm8, mov_DH_imm8, mov_BH_imm8,
+			push_imm8, cmp_AL_imm8;
+
+  ac_instr<Type_op1b_rm32>      lds_r32_m16_32, les_r32_m16_32, lea_r32_m, mov_rm32_r32,
+                                mov_r32_rm32, mov_rm32_imm32, /*xchg_EAX_r32, xchg_ECX_r32,
+                                xchg_EDX_r32, xchg_EBX_r32, xchg_ESP_r32, xchg_EBP_r32,
+                                xchg_ESI_r32, xchg_EDI_r32,*/ xchg_rm32_r32, push_rm32,
+                                pop_rm32, in_EAX_imm8, out_imm8_EAX,
+                                add_rm32_imm32, add_rm32_r32, add_r32_rm32,
+                                adc_rm32_r32, adc_r32_rm32,
+                                sub_rm32_r32, sub_r32_rm32, sbb_rm32_r32,
+                                sbb_r32_rm32, mul_rm32, imul_r32_rm32_imm8, imul_r32_rm32_imm32,
+                                cmp_rm32_r32, cmp_r32_rm32,
+                                and_rm32_r32, and_r32_rm32, or_rm32_r32,
+                                or_r32_rm32, xor_rm32_r32, xor_r32_rm32,
+                                test_rm32_r32,
+                                jmp_ptr16_32, add_rm32_imm8,
+                                call_ptr16_32, ret_near, ret_far, ret_near_imm16,
+                                ret_far_imm16, int_3, int_imm8, into, bound_r32_m32_32,
+                                enter_imm16_0_1_imm8, inc_rm32, dec_rm32, jmp_rm32,
+				jmp_m16_32, call_rm32, call_m16_32, sub_rm32_imm32,
+				sub_rm32_imm8, sbb_rm32_imm32, sbb_rm32_imm8,
+				adc_rm32_imm32, adc_rm32_imm8, cmp_rm32_imm32,
+				cmp_rm32_imm8, and_rm32_imm32, and_rm32_imm8,
+				or_rm32_imm32, or_rm32_imm8, xor_rm32_imm32,
+				xor_rm32_imm8, div_rm32, idiv_rm32, imul_rm32,
+				neg_rm32, not_rm32, test_rm32_imm32,
+				sal_shl_1_rm32, sal_shl_cl_rm32, sal_shl_rm32_imm8,
+                                sar_1_rm32, sar_cl_rm32,
+				sar_rm32_imm8, shr_1_rm32, shr_cl_rm32, shr_rm32_imm8, rcl_rm32,
+				rcl_rm32_imm8, rcr_rm32, rcr_rm32_imm8, rol_rm32,
+				rol_rm32_imm8, ror_rm32, ror_rm32_imm8, mov_rm8_imm8,
+				mov_r8_rm8, add_r8_rm8, mov_rm8_r8, inc_rm8,
+				add_rm8_imm8, add_rm8_r8, sub_rm8_r8, dec_rm8, sub_rm8_imm8,
+				imul_rm8, mul_rm8, sal_rm8, sar_rm8, sar_rm8_imm8, cmp_rm8_imm8,
+				shr_rm8_imm8, div_rm8, shr_rm8, and_r8_rm8,
+				or_r8_rm8, xor_r8_rm8, sal_rm8_imm8, cmp_r8_rm8;
+
+  // Debug instructions, nonexistant in the instruction set
+  ac_instr<Type_op2b_debug>	dump_registers, dump_memory, dump_stack;
+
+  ISA_CTOR(IA32)
+  {
+    // -------------------------------------------
+    // Debug instructions ------------------------
+    // -------------------------------------------
+
+    dump_registers.set_asm ( "DUMP REGISTERS" );
+    dump_registers.set_decoder ( op2b=0xDD00 );
+
+    dump_memory.set_asm ( "DUMP MEMORY" );
+    dump_memory.set_decoder ( op2b=0xAAAA );
+
+    dump_stack.set_asm ( "DUMP STACK" );
+    dump_stack.set_decoder ( op2b=0xCC00 );
+
+    // -------------------------------------------
+    // End debug instructions --------------------
+    // -------------------------------------------
+
+    ud2.set_asm ( "UD2" );
+    ud2.set_decoder ( op2b = 0x0B0F );
+
+    cpuid.set_asm ( "CPUID" );
+    cpuid.set_decoder ( op2b = 0xA20F );
+
+    lss_r32_m16_32.set_asm ( "LSS" );
+    lss_r32_m16_32.set_decoder ( op2b = 0xB20F );
+
+    lfs_r32_m16_32.set_asm ( "LFS" );
+    lfs_r32_m16_32.set_decoder ( op2b = 0xB40F );
+
+    lgs_r32_m16_32.set_asm ( "LGS" );
+    lgs_r32_m16_32.set_decoder ( op2b = 0xB50F );
+
+    cmov_a_nbe_r32_rm32.set_asm ( "CMOVA CMOVNBE" );
+    cmov_a_nbe_r32_rm32.set_decoder ( op2b = 0x470F );
+    cmov_ae_nb_nc_r32_rm32.set_asm ( "CMOVAE CMOVNB CMOVNC" );
+    cmov_ae_nb_nc_r32_rm32.set_decoder ( op2b = 0x320F );
+    cmov_b_c_nae_r32_rm32.set_asm ( "CMOVB CMOVC CMOVNAE" );
+    cmov_b_c_nae_r32_rm32.set_decoder ( op2b = 0x420F );
+    cmov_be_na_r32_rm32.set_asm ( "CMOVBE CMOVNA" );
+    cmov_be_na_r32_rm32.set_decoder ( op2b = 0x460F );
+    cmov_e_z_r32_rm32.set_asm ( "CMOVE CMOVZ" );
+    cmov_e_z_r32_rm32.set_decoder ( op2b = 0x440F );
+    cmov_g_nle_r32_rm32.set_asm ( "CMOVG CMOVNLE" );
+    cmov_g_nle_r32_rm32.set_decoder ( op2b = 0x4F0F );
+    cmov_ge_nl_r32_rm32.set_asm ( "CMOVGE CMOVNL" );
+    cmov_ge_nl_r32_rm32.set_decoder ( op2b = 0x4D0F );
+    cmov_l_nge_r32_rm32.set_asm ( "CMOVL CMOVNGE" );
+    cmov_l_nge_r32_rm32.set_decoder ( op2b = 0x4C0F );
+    cmov_le_ng_r32_rm32.set_asm ( "CMOVLE CMOVNG" );
+    cmov_le_ng_r32_rm32.set_decoder ( op2b = 0x4E0F );
+    cmov_ne_nz_r32_rm32.set_asm ( "CMOVNE CMOVNZ" );
+    cmov_ne_nz_r32_rm32.set_decoder ( op2b = 0x450F );
+    cmov_no_r32_rm32.set_asm ( "CMOVNO" );
+    cmov_no_r32_rm32.set_decoder ( op2b = 0x410F );
+    cmov_np_po_r32_rm32.set_asm ( "CMOVNP CMOVPO" );
+    cmov_np_po_r32_rm32.set_decoder ( op2b = 0x4B0F );
+    cmov_ns_r32_rm32.set_asm ( "CMOVNS" );
+    cmov_ns_r32_rm32.set_decoder ( op2b = 0x490F );
+    cmov_o_r32_rm32.set_asm ( "CMOVO" );
+    cmov_o_r32_rm32.set_decoder ( op2b = 0x400F );
+    cmov_p_pe_r32_rm32.set_asm ( "CMOVP CMOVPE" );
+    cmov_p_pe_r32_rm32.set_decoder ( op2b = 0x4A0F );
+    cmov_s_r32_rm32.set_asm ( "CMOVS" );
+    cmov_s_r32_rm32.set_decoder ( op2b = 0x480F );
+
+    bswap_EAX_r32.set_asm ( "BSWAP" );
+    bswap_EAX_r32.set_decoder ( op2b = 0xC80F );
+    bswap_ECX_r32.set_asm ( "BSWAP" );
+    bswap_ECX_r32.set_decoder ( op2b = 0xC90F );
+    bswap_EDX_r32.set_asm ( "BSWAP" );
+    bswap_EDX_r32.set_decoder ( op2b = 0xCA0F );
+    bswap_EBX_r32.set_asm ( "BSWAP" );
+    bswap_EBX_r32.set_decoder ( op2b = 0xCB0F );
+    bswap_ESP_r32.set_asm ( "BSWAP" );
+    bswap_ESP_r32.set_decoder ( op2b = 0xCC0F );
+    bswap_EBP_r32.set_asm ( "BSWAP" );
+    bswap_EBP_r32.set_decoder ( op2b = 0xCD0F );
+    bswap_ESI_r32.set_asm ( "BSWAP" );
+    bswap_ESI_r32.set_decoder ( op2b = 0xCE0F );
+    bswap_EDI_r32.set_asm ( "BSWAP" );
+    bswap_EDI_r32.set_decoder ( op2b = 0xCF0F );
+
+    xadd_rm32_r32.set_asm ( "XADD" );
+    xadd_rm32_r32.set_decoder ( op2b = 0xC10F );
+
+    cmpxchg_rm32_r32.set_asm ( "CMPXCHG" );
+    cmpxchg_rm32_r32.set_decoder ( op2b = 0xB10F );
+
+    cmpxchg8b_m64.set_asm ( "CMPXCHG8B" );
+    cmpxchg8b_m64.set_decoder ( op2b = 0xC70F );
+
+    push_FS.set_asm ( "PUSH" );
+    push_FS.set_decoder ( op2b = 0xA00F );
+    push_GS.set_asm ( "PUSH" );
+    push_GS.set_decoder ( op2b = 0xA80F );
+
+    pop_FS.set_asm ( "POP" );
+    pop_FS.set_decoder ( op2b = 0xA10F );
+    pop_GS.set_asm ( "POP" );
+    pop_GS.set_decoder ( op2b = 0xA90F );
+
+    movsx_r32_rm8.set_asm ( "MOVSX" );
+    movsx_r32_rm8.set_decoder ( op2b = 0xBE0F );
+    movsx_r32_rm16.set_asm ( "MOVSX" );
+    movsx_r32_rm16.set_decoder ( op2b = 0xBF0F );
+
+    movzx_r32_rm8.set_asm ( "MOVZX" );
+    movzx_r32_rm8.set_decoder ( op2b = 0xB60F );
+    movzx_r32_rm16.set_asm ( "MOVZX" );
+    movzx_r32_rm16.set_decoder ( op2b = 0xB70F );
+
+    imul_r32_rm32.set_asm ( "IMUL R32, RM32" );
+    imul_r32_rm32.set_decoder ( op2b = 0xAF0F );
+
+    aam.set_asm ( "AAM" );
+    aam.set_decoder ( op2b = 0x0AD4 );
+
+    aad.set_asm ( "AAD" );
+    aad.set_decoder ( op2b = 0x0AD5 );
+
+    shrd_rm32_r32_imm8.set_asm ( "SHRD" );
+    shrd_rm32_r32_imm8.set_decoder ( op2b = 0xAC0F );
+    shrd_rm32_r32_CL.set_asm ( "SHRD" );
+    shrd_rm32_r32_CL.set_decoder ( op2b = 0xAD0F );
+
+    shld_rm32_r32_imm8.set_asm ( "SHLD" );
+    shld_rm32_r32_imm8.set_decoder ( op2b = 0xA40F );
+    shld_rm32_r32_CL.set_asm ( "SHLD" );
+    shld_rm32_r32_CL.set_decoder ( op2b = 0xA50F );
+
+    bt_rm32_r32.set_asm ( "BT" );
+    bt_rm32_r32.set_decoder ( op2b = 0xA30F );
+    bt_rm32_imm8.set_asm ( "BT" );
+    bt_rm32_imm8.set_decoder ( op2b = 0xBA0F, regop2 = 0x04 );
+
+    // Expansao:
+    bts_rm32_imm8.set_asm ( "BTS" );
+    bts_rm32_imm8.set_decoder ( op2b = 0xBA0F, regop2 = 0x05 );
+    btr_rm32_imm8.set_asm ( "BTR" );
+    btr_rm32_imm8.set_decoder ( op2b = 0xBA0F, regop2 = 0x06 );
+    btc_rm32_imm8.set_asm ( "BTC" );
+    btc_rm32_imm8.set_decoder ( op2b = 0xBA0F, regop2 = 0x07 );
+    // end
+
+    bts_rm32_r32.set_asm ( "BTS" );
+    bts_rm32_r32.set_decoder ( op2b = 0xAB0F );
+
+    btr_rm32_r32.set_asm ( "BTR" );
+    btr_rm32_r32.set_decoder ( op2b = 0xB30F );
+
+    btc_rm32_r32.set_asm ( "BTC" );
+    btc_rm32_r32.set_decoder ( op2b = 0xBB0F );
+
+    bsf_r32_rm32.set_asm ( "BSF" );
+    bsf_r32_rm32.set_decoder ( op2b = 0xBC0F );
+
+    bsr_r32_rm32.set_asm ( "BSR" );
+    bsr_r32_rm32.set_decoder ( op2b = 0xBD0F );
+
+    seta_setnbe_rm8.set_asm ( "SETA SETNBE" );
+    seta_setnbe_rm8.set_decoder ( op2b = 0x970F );
+
+    setae_setnb_setnc_rm8.set_asm ( "SETAE SETNB SETNC" );
+    setae_setnb_setnc_rm8.set_decoder ( op2b = 0x930F );
+
+    setb_setc_setnae_rm8.set_asm ( "SETB SETC SETNAE" );
+    setb_setc_setnae_rm8.set_decoder ( op2b = 0x920F );
+
+    setbe_setna_rm8.set_asm ( "SETBE SETNA" );
+    setbe_setna_rm8.set_decoder ( op2b = 0x960F );
+
+    sete_setz_rm8.set_asm ( "SETE SETZ" );
+    sete_setz_rm8.set_decoder ( op2b = 0x940F );
+
+    setg_setnle_rm8.set_asm ( "SETG SETNLE" );
+    setg_setnle_rm8.set_decoder ( op2b = 0x9F0F );
+
+    setge_setnl_rm8.set_asm ( "SETGE SETNL" );
+    setge_setnl_rm8.set_decoder ( op2b = 0x9D0F );
+
+    setl_setnge_rm8.set_asm ( "SETL SETNGE" );
+    setl_setnge_rm8.set_decoder ( op2b = 0x9C0F );
+
+    setle_setng_rm8.set_asm ( "SETLE SETNG" );
+    setle_setng_rm8.set_decoder ( op2b = 0x9E0F );
+
+    setne_setnz_rm8.set_asm ( "SETNE SETNZ" );
+    setne_setnz_rm8.set_decoder ( op2b = 0x950F );
+
+    setno_rm8.set_asm ( "SETNO" );
+    setno_rm8.set_decoder ( op2b = 0x910F );
+
+    setnp_setpo_rm8.set_asm ( "SETNP SETPO" );
+    setnp_setpo_rm8.set_decoder ( op2b = 0x9B0F );
+
+    setns_rm8.set_asm ( "SETNS" );
+    setns_rm8.set_decoder ( op2b = 0x990F );
+
+    seto_rm8.set_asm ( "SETO" );
+    seto_rm8.set_decoder ( op2b = 0x900F );
+
+    setp_setpe_rm8.set_asm ( "SETP SETPE" );
+    setp_setpe_rm8.set_decoder ( op2b = 0x9A0F );
+
+    sets_rm8.set_asm ( "SETS" );
+    sets_rm8.set_decoder ( op2b = 0x980F );
+
+    ja_jnbe_rel16_32.set_asm ( "JA JNBE" );
+    ja_jnbe_rel16_32.set_decoder ( op2b = 0x870F );
+
+    jae_jnb_jnc_rel16_32.set_asm ( "JAE JNB JNC" );
+    jae_jnb_jnc_rel16_32.set_decoder ( op2b = 0x830F );
+
+    jb_jc_jnae_rel16_32.set_asm ( "JB JC JNAE" );
+    jb_jc_jnae_rel16_32.set_decoder ( op2b = 0x820F );
+
+    jbe_jna_rel16_32.set_asm ( "JBE JNA" );
+    jbe_jna_rel16_32.set_decoder ( op2b = 0x860F );
+
+    je_jz_rel16_32.set_asm ( "JE JZ" );
+    je_jz_rel16_32.set_decoder ( op2b = 0x840F );
+
+    jg_jnle_rel16_32.set_asm ( "JG JNLE" );
+    jg_jnle_rel16_32.set_decoder ( op2b = 0x8F0F );
+
+    jge_jnl_rel16_32.set_asm ( "JGE JNL" );
+    jge_jnl_rel16_32.set_decoder ( op2b = 0x8D0F );
+
+    jl_jnge_rel16_32.set_asm ( "JL JNGE" );
+    jl_jnge_rel16_32.set_decoder ( op2b = 0x8C0F );
+
+    jle_jng_rel16_32.set_asm ( "JLE JNG" );
+    jle_jng_rel16_32.set_decoder ( op2b = 0x8E0F );
+
+    jne_jnz_rel16_32.set_asm ( "JNE JNZ" );
+    jne_jnz_rel16_32.set_decoder ( op2b = 0x850F );
+
+    jno_rel16_32.set_asm ( "JNO" );
+    jno_rel16_32.set_decoder ( op2b = 0x810F );
+
+    jnp_jpo_rel16_32.set_asm ( "JNP JPO" );
+    jnp_jpo_rel16_32.set_decoder ( op2b = 0x8B0F );
+
+    jns_rel16_32.set_asm ( "JNS" );
+    jns_rel16_32.set_decoder ( op2b = 0x890F );
+
+    jo_rel16_32.set_asm ( "JO" );
+    jo_rel16_32.set_decoder ( op2b = 0x800F );
+
+    jp_jpe_rel16_32.set_asm ( "JP JPE" );
+    jp_jpe_rel16_32.set_decoder ( op2b = 0x8A0F );
+
+    js_rel16_32.set_asm ( "JS" );
+    js_rel16_32.set_decoder ( op2b = 0x880F );
+
+    jmp_rel32.set_asm ( "JMP" );
+    jmp_rel32.set_decoder ( op1b = 0xE9 );
+
+    jmp_ptr16_32.set_asm ( "JMP" );
+    jmp_ptr16_32.set_decoder ( op1b = 0xEA );
+
+    jcxz_jecxz_rel8.set_asm ( "JCXZ JECXZ" );
+    jcxz_jecxz_rel8.set_decoder ( op1b = 0xE3 );
+
+    loop_rel8.set_asm ( "LOOP" );
+    loop_rel8.set_decoder ( op1b = 0xE2 );
+
+    loope_loopz_rel8.set_asm ( "LOOPE LOOPZ" );
+    loope_loopz_rel8.set_decoder ( op1b = 0xE1 );
+
+    loopne_loopnz_rel8.set_asm ( "LOOPNE LOOPNZ" );
+    loopne_loopnz_rel8.set_decoder ( op1b = 0xE0 );
+
+    call_rel32.set_asm ( "CALL" );
+    call_rel32.set_decoder ( op1b = 0xE8 );
+    call_ptr16_32.set_asm ( "CALL" );
+    call_ptr16_32.set_decoder ( op1b = 0x9A );
+
+    ret_near.set_asm ( "RET" );
+    ret_near.set_decoder ( op1b = 0xC3 );
+    ret_far.set_asm ( "RET" );
+    ret_far.set_decoder ( op1b = 0xCB );
+    ret_near_imm16.set_asm ( "RET" );
+    ret_near_imm16.set_decoder ( op1b = 0xC2 );
+    ret_far_imm16.set_asm ( "RET" );
+    ret_far_imm16.set_decoder ( op1b = 0xCA );
+
+    iret_iretd.set_asm ( "IRET IRETD" );
+    iret_iretd.set_decoder ( op1b = 0xCF );
+
+    int_3.set_asm ( "INT3" );
+    int_3.set_decoder ( op1b = 0xCC );
+    int_imm8.set_asm ( "INT" );
+    int_imm8.set_decoder ( op1b = 0xCD );
+    into.set_asm ( "INTO" );
+    into.set_decoder ( op1b = 0xCE );
+
+    bound_r32_m32_32.set_asm ( "BOUND" );
+    bound_r32_m32_32.set_decoder ( op1b = 0x62 );
+
+    enter_imm16_0_1_imm8.set_asm ( "ENTER" );
+    enter_imm16_0_1_imm8.set_decoder ( op1b = 0xC8 );
+
+    leave.set_asm ( "LEAVE" );
+    leave.set_decoder ( op1b = 0xC9 );
+
+    movs_m32_m32.set_asm ( "MOVS" );
+    movs_m32_m32.set_decoder ( op1b = 0xA5 );
+
+    cmps_m32_m32.set_asm ( "CMPS" );
+    cmps_m32_m32.set_decoder ( op1b = 0xA7 );
+
+    scas_m32.set_asm ( "SCAS" );
+    scas_m32.set_decoder ( op1b = 0xAF );
+
+    lods_m32.set_asm ( "LODS" );
+    lods_m32.set_decoder ( op1b = 0xAD );
+
+    stos_m32.set_asm ( "STOS" );
+    stos_m32.set_decoder ( op1b = 0xAB );
+
+    insd.set_asm     ( "INSD" );
+    insd.set_decoder ( op1b = 0x6D );
+
+    outsd.set_asm     ( "OUTSD" );
+    outsd.set_decoder ( op1b = 0x6F );
+
+    stc.set_asm     ( "STC" );
+    stc.set_decoder ( op1b = 0xF9 );
+
+    clc.set_asm     ( "CLC" );
+    clc.set_decoder ( op1b = 0xF8 );
+
+    cmc.set_asm     ( "CMC" );
+    cmc.set_decoder ( op1b = 0xF5 );
+
+    cld.set_asm     ( "CLD" );
+    cld.set_decoder ( op1b = 0xFC );
+
+    std.set_asm     ( "STD" );
+    std.set_decoder ( op1b = 0xFD );
+
+    lahf.set_asm     ( "LAHF" );
+    lahf.set_decoder ( op1b = 0x9F );
+
+    sahf.set_asm     ( "SAHF" );
+    sahf.set_decoder ( op1b = 0x9E );
+
+    pushfd.set_asm     ( "PUSHFD" );
+    pushfd.set_decoder ( op1b = 0x9C );
+
+    popfd.set_asm     ( "POPFD" );
+    popfd.set_decoder ( op1b = 0x9D );
+
+    sti.set_asm     ( "STI" );
+    sti.set_decoder ( op1b = 0xFB );
+
+    cli.set_asm     ( "CLI" );
+    cli.set_decoder ( op1b = 0xFA );
+    
+    nop.set_asm ( "NOP" );
+    nop.set_decoder ( op1b = 0x90 );
+
+    xlatb.set_asm ( "XLATB" );
+    xlatb.set_decoder ( op1b = 0xD7 );
+
+    lds_r32_m16_32.set_asm ( "LDS" );
+    lds_r32_m16_32.set_decoder ( op1b = 0xC5 );
+
+    les_r32_m16_32.set_asm ( "LES" );
+    les_r32_m16_32.set_decoder ( op1b = 0xC4 );
+
+    lea_r32_m.set_asm ( "LEA" );
+    lea_r32_m.set_decoder ( op1b = 0x8D );
+
+    mov_rm32_r32.set_asm ( "MOV" );
+    mov_rm32_r32.set_decoder ( op1b = 0x89 );
+    mov_r32_rm32.set_asm ( "MOV" );
+    mov_r32_rm32.set_decoder ( op1b = 0x8B );
+    mov_EAX_imm32.set_asm ( "MOV" );
+    mov_EAX_imm32.set_decoder ( op1b = 0xB8 );
+    mov_ECX_imm32.set_asm ( "MOV" );
+    mov_ECX_imm32.set_decoder ( op1b = 0xB9 );
+    mov_EDX_imm32.set_asm ( "MOV" );
+    mov_EDX_imm32.set_decoder ( op1b = 0xBA );
+    mov_EBX_imm32.set_asm ( "MOV" );
+    mov_EBX_imm32.set_decoder ( op1b = 0xBB );
+    mov_ESP_imm32.set_asm ( "MOV" );
+    mov_ESP_imm32.set_decoder ( op1b = 0xBC );
+    mov_EBP_imm32.set_asm ( "MOV" );
+    mov_EBP_imm32.set_decoder ( op1b = 0xBD );
+    mov_ESI_imm32.set_asm ( "MOV" );
+    mov_ESI_imm32.set_decoder ( op1b = 0xBE );
+    mov_EDI_imm32.set_asm ( "MOV" );
+    mov_EDI_imm32.set_decoder ( op1b = 0xBF );
+    mov_rm32_imm32.set_asm ( "MOV" );
+    mov_rm32_imm32.set_decoder ( op1b = 0xC7 );
+
+    // Sidenote: xchg_EAX_EAX is evaluated as NOP by Intel design decision
+    //xchg_EAX_EAX.set_asm ( "XCHG" );
+    //xchg_EAX_EAX.set_decoder ( op1b = 0x90 );
+    xchg_EAX_ECX.set_asm ( "XCHG" );
+    xchg_EAX_ECX.set_decoder ( op1b = 0x91 );
+    xchg_EAX_EDX.set_asm ( "XCHG" );
+    xchg_EAX_EDX.set_decoder ( op1b = 0x92 );
+    xchg_EAX_EBX.set_asm ( "XCHG" );
+    xchg_EAX_EBX.set_decoder ( op1b = 0x93 );
+    xchg_EAX_ESP.set_asm ( "XCHG" );
+    xchg_EAX_ESP.set_decoder ( op1b = 0x94 );
+    xchg_EAX_EBP.set_asm ( "XCHG" );
+    xchg_EAX_EBP.set_decoder ( op1b = 0x95 );
+    xchg_EAX_ESI.set_asm ( "XCHG" );
+    xchg_EAX_ESI.set_decoder ( op1b = 0x96 );
+    xchg_EAX_EDI.set_asm ( "XCHG" );
+    xchg_EAX_EDI.set_decoder ( op1b = 0x97 );
+    xchg_rm32_r32.set_asm ( "XCHG" );
+    xchg_rm32_r32.set_decoder ( op1b = 0x87 );
+
+    // Expansao
+    inc_rm32.set_asm ( "INC" );
+    inc_rm32.set_decoder ( op1b = 0xFF, regop = 0x00 );
+    dec_rm32.set_asm ( "DEC" );
+    dec_rm32.set_decoder ( op1b = 0xFF, regop = 0x01 );
+    jmp_rm32.set_asm ( "JMP" );
+    jmp_rm32.set_decoder ( op1b = 0xFF, regop = 0x04 );
+    jmp_m16_32.set_asm ( "JMP" );
+    jmp_m16_32.set_decoder ( op1b = 0xFF, regop = 0x05 );
+    call_rm32.set_asm ( "CALL" );
+    call_rm32.set_decoder ( op1b = 0xFF, regop = 0x02 );
+    call_m16_32.set_asm ( "CALL" );
+    call_m16_32.set_decoder ( op1b = 0xFF, regop = 0x03 );
+    // end
+
+    push_rm32.set_asm ( "PUSH" );
+    push_rm32.set_decoder ( op1b = 0xFF, regop = 0x06 );
+    push_EAX.set_asm ( "PUSH" );
+    push_EAX.set_decoder ( op1b = 0x50 );
+    push_ECX.set_asm ( "PUSH" );
+    push_ECX.set_decoder ( op1b = 0x51 );
+    push_EDX.set_asm ( "PUSH" );
+    push_EDX.set_decoder ( op1b = 0x52 );
+    push_EBX.set_asm ( "PUSH" );
+    push_EBX.set_decoder ( op1b = 0x53 );
+    push_ESP.set_asm ( "PUSH" );
+    push_ESP.set_decoder ( op1b = 0x54 );
+    push_EBP.set_asm ( "PUSH" );
+    push_EBP.set_decoder ( op1b = 0x55 );
+    push_ESI.set_asm ( "PUSH" );
+    push_ESI.set_decoder ( op1b = 0x56 );
+    push_EDI.set_asm ( "PUSH" );
+    push_EDI.set_decoder ( op1b = 0x57 );
+    push_imm32.set_asm ( "PUSH" );
+    push_imm32.set_decoder ( op1b = 0x68 );
+    push_CS.set_asm ( "PUSH" );
+    push_CS.set_decoder ( op1b = 0x0E );
+    push_SS.set_asm ( "PUSH" );
+    push_SS.set_decoder ( op1b = 0x16 );
+    push_DS.set_asm ( "PUSH" );
+    push_DS.set_decoder ( op1b = 0x1E );
+    push_ES.set_asm ( "PUSH" );
+    push_ES.set_decoder ( op1b = 0x06 );
+
+    push_a_ad.set_asm ( "PUSHA PUSHAD" );
+    push_a_ad.set_decoder ( op1b = 0x60 );
+
+    pop_a_ad.set_asm ( "POPA POPAD" );
+    pop_a_ad.set_decoder ( op1b = 0x61 );
+
+    in_EAX_imm8.set_asm ( "IN" );
+    in_EAX_imm8.set_decoder ( op1b = 0xE5 );
+    in_EAX_DX.set_asm ( "IN" );
+    in_EAX_DX.set_decoder ( op1b = 0xED );
+
+    out_imm8_EAX.set_asm ( "OUT" );
+    out_imm8_EAX.set_decoder ( op1b = 0xE7 );
+    out_DX_EAX.set_asm ( "OUT" );
+    out_DX_EAX.set_decoder ( op1b = 0xEF );
+
+    cwd_cwq.set_asm ( "CWD CWQ" );
+    cwd_cwq.set_decoder ( op1b = 0x99 );
+
+    cbw_cwde.set_asm ( "CBW CWDE" );
+    cbw_cwde.set_decoder ( op1b = 0x98 );
+
+    pop_rm32.set_asm ( "POP" );
+    pop_rm32.set_decoder ( op1b = 0x8F );
+    pop_EAX.set_asm ( "POP" );
+    pop_EAX.set_decoder ( op1b = 0x58 );
+    pop_ECX.set_asm ( "POP" );
+    pop_ECX.set_decoder ( op1b = 0x59 );
+    pop_EDX.set_asm ( "POP" );
+    pop_EDX.set_decoder ( op1b = 0x5A );
+    pop_EBX.set_asm ( "POP" );
+    pop_EBX.set_decoder ( op1b = 0x5B );
+    pop_ESP.set_asm ( "POP" );
+    pop_ESP.set_decoder ( op1b = 0x5C );
+    pop_EBP.set_asm ( "POP" );
+    pop_EBP.set_decoder ( op1b = 0x5D );
+    pop_ESI.set_asm ( "POP" );
+    pop_ESI.set_decoder ( op1b = 0x5E );
+    pop_EDI.set_asm ( "POP" );
+    pop_EDI.set_decoder ( op1b = 0x5F );
+    pop_DS.set_asm ( "POP" );
+    pop_DS.set_decoder ( op1b = 0x1F );
+    pop_ES.set_asm ( "POP" );
+    pop_ES.set_decoder ( op1b = 0x07 );
+    pop_SS.set_asm ( "POP" );
+    pop_SS.set_decoder ( op1b = 0x17 );
+
+    add_EAX_imm32.set_asm ( "ADD" );
+    add_EAX_imm32.set_decoder ( op1b = 0x05 );
+    add_rm32_imm32.set_asm ( "ADD" );
+    add_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x00 );
+    add_rm32_imm8.set_asm ( "ADD" );
+    add_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x00 );
+    add_rm32_r32.set_asm ( "ADD" );
+    add_rm32_r32.set_decoder ( op1b = 0x01 );
+    add_r32_rm32.set_asm ( "ADD" );
+    add_r32_rm32.set_decoder ( op1b = 0x03 );
+
+    // Expansion:
+    sub_rm32_imm32.set_asm ( "SUB" );
+    sub_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x05 );
+    sub_rm32_imm8.set_asm ( "SUB" );
+    sub_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x05 );
+    sbb_rm32_imm32.set_asm ( "SBB" );
+    sbb_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x03 );
+    sbb_rm32_imm8.set_asm ( "SBB" );
+    sbb_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x03 );
+    adc_rm32_imm32.set_asm ( "ADC" );
+    adc_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x02 );
+    adc_rm32_imm8.set_asm ( "ADC" );
+    adc_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x02 );
+    cmp_rm32_imm32.set_asm ( "CMP" );
+    cmp_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x07 );
+    cmp_rm32_imm8.set_asm ( "CMP" );
+    cmp_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x07 );
+    and_rm32_imm32.set_asm ( "AND" );
+    and_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x04 );
+    and_rm32_imm8.set_asm ( "AND" );
+    and_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x04 );
+    or_rm32_imm32.set_asm ( "OR" );
+    or_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x01 );
+    or_rm32_imm8.set_asm ( "OR" );
+    or_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x01 );
+    xor_rm32_imm32.set_asm ( "XOR" );
+    xor_rm32_imm32.set_decoder ( op1b = 0x81, regop = 0x06 );
+    xor_rm32_imm8.set_asm ( "XOR" );
+    xor_rm32_imm8.set_decoder ( op1b = 0x83, regop = 0x06 );
+    // end
+
+    adc_EAX_imm32.set_asm ( "ADC" );
+    adc_EAX_imm32.set_decoder ( op1b = 0x15 );
+    adc_rm32_r32.set_asm ( "ADC" );
+    adc_rm32_r32.set_decoder ( op1b = 0x11 );
+    adc_r32_rm32.set_asm ( "ADC" );
+    adc_r32_rm32.set_decoder ( op1b = 0x13 );
+
+    sub_EAX_imm32.set_asm ( "SUB" );
+    sub_EAX_imm32.set_decoder ( op1b = 0x2D );
+    sub_rm32_r32.set_asm ( "SUB" );
+    sub_rm32_r32.set_decoder ( op1b = 0x29 );
+    sub_r32_rm32.set_asm ( "SUB" );
+    sub_r32_rm32.set_decoder ( op1b = 0x2B );
+
+    sbb_EAX_imm32.set_asm ( "SBB" );
+    sbb_EAX_imm32.set_decoder ( op1b = 0x1D );
+    sbb_rm32_r32.set_asm ( "SBB" );
+    sbb_rm32_r32.set_decoder ( op1b = 0x19 );
+    sbb_r32_rm32.set_asm ( "SBB" );
+    sbb_r32_rm32.set_decoder ( op1b = 0x1B );
+
+    mul_rm32.set_asm ( "MUL" );
+    mul_rm32.set_decoder ( op1b = 0xF7, regop = 0x04 );
+
+    // Expansao:
+    div_rm32.set_asm ( "DIV" );
+    div_rm32.set_decoder ( op1b = 0xF7, regop = 0x06 );
+    idiv_rm32.set_asm ( "IDIV" );
+    idiv_rm32.set_decoder ( op1b = 0xF7, regop = 0x07 );
+    imul_rm32.set_asm ( "IMUL" );
+    imul_rm32.set_decoder ( op1b = 0xF7, regop = 0x05 );
+    neg_rm32.set_asm ( "NEG" );
+    neg_rm32.set_decoder ( op1b = 0xF7, regop = 0x03 );
+    not_rm32.set_asm ( "NOT" );
+    not_rm32.set_decoder ( op1b = 0xF7, regop = 0x02 );
+    test_rm32_imm32.set_asm ( "TEST" );
+    test_rm32_imm32.set_decoder ( op1b = 0xF7, regop = 0x00 );
+    // end
+
+    imul_r32_rm32_imm8.set_asm ( "IMUL" );
+    imul_r32_rm32_imm8.set_decoder ( op1b = 0x6B );
+    imul_r32_rm32_imm32.set_asm ( "IMUL" );
+    imul_r32_rm32_imm32.set_decoder ( op1b = 0x69 );
+
+    inc_EAX.set_asm ( "INC" );
+    inc_EAX.set_decoder ( op1b = 0x40 );
+    inc_ECX.set_asm ( "INC" );
+    inc_ECX.set_decoder ( op1b = 0x41 );
+    inc_EDX.set_asm ( "INC" );
+    inc_EDX.set_decoder ( op1b = 0x42 );
+    inc_EBX.set_asm ( "INC" );
+    inc_EBX.set_decoder ( op1b = 0x43 );
+    inc_ESP.set_asm ( "INC" );
+    inc_ESP.set_decoder ( op1b = 0x44 );
+    inc_EBP.set_asm ( "INC" );
+    inc_EBP.set_decoder ( op1b = 0x45 );
+    inc_ESI.set_asm ( "INC" );
+    inc_ESI.set_decoder ( op1b = 0x46 );
+    inc_EDI.set_asm ( "INC" );
+    inc_EDI.set_decoder ( op1b = 0x47 );
+
+    dec_EAX.set_asm ( "DEC" );
+    dec_EAX.set_decoder ( op1b = 0x48 );
+    dec_ECX.set_asm ( "DEC" );
+    dec_ECX.set_decoder ( op1b = 0x49 );
+    dec_EDX.set_asm ( "DEC" );
+    dec_EDX.set_decoder ( op1b = 0x4A );
+    dec_EBX.set_asm ( "DEC" );
+    dec_EBX.set_decoder ( op1b = 0x4B );
+    dec_ESP.set_asm ( "DEC" );
+    dec_ESP.set_decoder ( op1b = 0x4C );
+    dec_EBP.set_asm ( "DEC" );
+    dec_EBP.set_decoder ( op1b = 0x4D );
+    dec_ESI.set_asm ( "DEC" );
+    dec_ESI.set_decoder ( op1b = 0x4E );
+    dec_EDI.set_asm ( "DEC" );
+    dec_EDI.set_decoder ( op1b = 0x4F );
+
+    cmp_EAX_imm32.set_asm ( "CMP" );
+    cmp_EAX_imm32.set_decoder ( op1b = 0x3D );
+    cmp_rm32_r32.set_asm ( "CMP" );
+    cmp_rm32_r32.set_decoder ( op1b = 0x39 );
+    cmp_r32_rm32.set_asm ( "CMP" );
+    cmp_r32_rm32.set_decoder ( op1b = 0x3B );
+
+    daa.set_asm ( "DAA" );
+    daa.set_decoder ( op1b = 0x27 );
+
+    das.set_asm ( "DAS" );
+    das.set_decoder ( op1b = 0x2F );
+
+    aaa.set_asm ( "AAA" );
+    aaa.set_decoder ( op1b = 0x37 );
+
+    aas.set_asm ( "AAS" );
+    aas.set_decoder ( op1b = 0x3F );
+
+    and_EAX_imm32.set_asm ( "AND" );
+    and_EAX_imm32.set_decoder ( op1b = 0x25 );
+    and_rm32_r32.set_asm ( "AND" );
+    and_rm32_r32.set_decoder ( op1b = 0x21 );
+    and_r32_rm32.set_asm ( "AND" );
+    and_r32_rm32.set_decoder ( op1b = 0x23 );
+
+    or_EAX_imm32.set_asm ( "OR" );
+    or_EAX_imm32.set_decoder ( op1b = 0x0D );
+    or_rm32_r32.set_asm ( "OR" );
+    or_rm32_r32.set_decoder ( op1b = 0x09 );
+    or_r32_rm32.set_asm ( "OR" );
+    or_r32_rm32.set_decoder ( op1b = 0x0B );
+
+    xor_EAX_imm32.set_asm ( "XOR" );
+    xor_EAX_imm32.set_decoder ( op1b = 0x35 );
+    xor_rm32_r32.set_asm ( "XOR" );
+    xor_rm32_r32.set_decoder ( op1b = 0x31 );
+    xor_r32_rm32.set_asm ( "XOR" );
+    xor_r32_rm32.set_decoder ( op1b = 0x33 );
+
+    // Expansao
+    sal_shl_1_rm32.set_asm ( "SAL/SHL" );
+    sal_shl_1_rm32.set_decoder ( op1b = 0xD1, regop = 0x04 );
+    sal_shl_cl_rm32.set_asm ( "SAL SHL" );
+    sal_shl_cl_rm32.set_decoder ( op1b = 0xD3, regop = 0x04 );
+    sal_shl_rm32_imm8.set_asm ( "SAL/SHL" );
+    sal_shl_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x04 );
+    sar_1_rm32.set_asm ( "SAR" );
+    sar_1_rm32.set_decoder ( op1b = 0xD1, regop = 0x07 );
+    sar_cl_rm32.set_asm ( "SAR" );
+    sar_cl_rm32.set_decoder ( op1b = 0xD3, regop = 0x07 );
+    sar_rm32_imm8.set_asm ( "SAR" );
+    sar_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x07 );
+    shr_1_rm32.set_asm ( "SHR" );
+    shr_1_rm32.set_decoder ( op1b = 0xD1, regop = 0x05 );
+    shr_cl_rm32.set_asm ( "SHR" );
+    shr_cl_rm32.set_decoder ( op1b = 0xD3, regop = 0x05 );
+    shr_rm32_imm8.set_asm ( "SHR" );
+    shr_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x05 );
+    rcl_rm32.set_asm ( "RCL" );
+    rcl_rm32.set_decoder ( op1b = 0xD1, regop = 0x02 );
+    rcl_rm32_imm8.set_asm ( "RCL" );
+    rcl_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x02 );
+    rcr_rm32.set_asm ( "RCR" );
+    rcr_rm32.set_decoder ( op1b = 0xD1, regop = 0x03 );
+    rcr_rm32_imm8.set_asm ( "RCR" );
+    rcr_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x03 );
+    rol_rm32.set_asm ( "ROL" );
+    rol_rm32.set_decoder ( op1b = 0xD1, regop = 0x00 );
+    rol_rm32_imm8.set_asm ( "ROL" );
+    rol_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x00 );
+    ror_rm32.set_asm ( "ROR" );
+    ror_rm32.set_decoder ( op1b = 0xD1, regop = 0x01 );
+    ror_rm32_imm8.set_asm ( "ROR" );
+    ror_rm32_imm8.set_decoder ( op1b = 0xC1, regop = 0x01 );
+    // end
+
+    test_eax_imm32.set_asm ( "TEST" );
+    test_eax_imm32.set_decoder ( op1b = 0xA9 );
+    test_rm32_r32.set_asm ( "TEST" );
+    test_rm32_r32.set_decoder ( op1b = 0x85 );
+
+    ja_jnbe_rel8.set_asm ( "JA JNBE" );
+    ja_jnbe_rel8.set_decoder ( op1b = 0x77 );
+
+    jae_jnb_jnc_rel8.set_asm ( "JAE JNB JNC" );
+    jae_jnb_jnc_rel8.set_decoder ( op1b = 0x73 );
+
+    jb_jc_jnae_rel8.set_asm ( "JB JC JNAE" );
+    jb_jc_jnae_rel8.set_decoder ( op1b = 0x72 );
+
+    jbe_jna_rel8.set_asm ( "JBE JNA" );
+    jbe_jna_rel8.set_decoder ( op1b = 0x76 );
+
+    je_jz_rel8.set_asm ( "JE JZ" );
+    je_jz_rel8.set_decoder ( op1b = 0x74 );
+
+    jg_jnle_rel8.set_asm ( "JG JNLE" );
+    jg_jnle_rel8.set_decoder ( op1b = 0x7F );
+
+    jge_jnl_rel8.set_asm ( "JGE JNL" );
+    jge_jnl_rel8.set_decoder ( op1b = 0x7D );
+
+    jl_jnge_rel8.set_asm ( "JL JNGE" );
+    jl_jnge_rel8.set_decoder ( op1b = 0x7C );
+
+    jle_jng_rel8.set_asm ( "JLE JNG" );
+    jle_jng_rel8.set_decoder ( op1b = 0x7E );
+
+    jne_jnz_rel8.set_asm ( "JNE JNZ" );
+    jne_jnz_rel8.set_decoder ( op1b = 0x75 );
+
+    jno_rel8.set_asm ( "JNO" );
+    jno_rel8.set_decoder ( op1b = 0x71 );
+
+    jnp_jpo_rel8.set_asm ( "JNP JPO" );
+    jnp_jpo_rel8.set_decoder ( op1b = 0x7B );
+
+    jns_rel8.set_asm ( "JNS" );
+    jns_rel8.set_decoder ( op1b = 0x79 );
+
+    jo_rel8.set_asm ( "JO" );
+    jo_rel8.set_decoder ( op1b = 0x70 );
+
+    jp_jpe_rel8.set_asm ( "JP JPE" );
+    jp_jpe_rel8.set_decoder ( op1b = 0x7A );
+
+    js_rel8.set_asm ( "JS" );
+    js_rel8.set_decoder ( op1b = 0x78 );
+
+    P_LOCK.set_asm ( "LOCK PREFIX" );
+    P_LOCK.set_decoder ( op1b = 0xF0 );
+
+    P_REPNE_REPNZ.set_asm ( "REPNE/REPNZ PREFIX" );
+    P_REPNE_REPNZ.set_decoder ( op1b = 0xF2 );
+
+    P_REP_REPE_REPZ.set_asm ( "REP/REPE/REPZ PREFIX" );
+    P_REP_REPE_REPZ.set_decoder ( op1b = 0xF3 );
+
+    P_CS.set_asm ( "CS OVERRIDE PREFIX" );
+    P_CS.set_decoder ( op1b = 0x2E );
+
+    P_SS.set_asm ( "SS OVERRIDE PREFIX" );
+    P_SS.set_decoder ( op1b = 0x36 );
+
+    P_DS.set_asm ( "DS OVERRIDE PREFIX" );
+    P_DS.set_decoder ( op1b = 0x3E );
+
+    P_ES.set_asm ( "ES OVERRIDE PREFIX" );
+    P_ES.set_decoder ( op1b = 0x26 );
+
+    P_FS.set_asm ( "FS OVERRIDE PREFIX" );
+    P_FS.set_decoder ( op1b = 0x64 );
+
+    P_GS.set_asm ( "GS OVERRIDE PREFIX" );
+    P_GS.set_decoder ( op1b = 0x65 );
+
+    P_BTAKEN.set_asm ( "BRANCH TAKEN PREFIX" );
+    P_BTAKEN.set_decoder ( op1b = 0x3E );
+
+    P_BNTAKEN.set_asm ( "BRANCH NOT TAKEN PREFIX" );
+    P_BNTAKEN.set_decoder ( op1b = 0x2E );
+
+    P_OPSIZE.set_asm ( "OPERAND SIZE OVERRIDE PREFIX" );
+    P_OPSIZE.set_decoder ( op1b = 0x66 );
+
+    P_ADSIZE.set_asm ( "ADDRESS SIZE OVERRIDE PREFIX" );
+    P_ADSIZE.set_decoder ( op1b = 0x67 );
+
+    mov_rm8_imm8.set_asm ( "MOV RM8, IMM8" );
+    mov_rm8_imm8.set_decoder ( op1b = 0xC6 );
+
+    mov_r8_rm8.set_asm ( "MOVB R8, RM8" );
+    mov_r8_rm8.set_decoder ( op1b = 0x8A );
+
+    mov_rm8_r8.set_asm ( "MOVB RM8, R8" );
+    mov_rm8_r8.set_decoder ( op1b = 0x88 );
+
+    mov_AL_imm8.set_asm ( "MOVB AL, IMM8" );
+    mov_AL_imm8.set_decoder ( op1b = 0xB0 );
+
+    mov_CL_imm8.set_asm ( "MOVB CL, IMM8" );
+    mov_CL_imm8.set_decoder ( op1b = 0xB1 );
+
+    mov_DL_imm8.set_asm ( "MOVB DL, IMM8" );
+    mov_DL_imm8.set_decoder ( op1b = 0xB2 );
+
+    mov_BL_imm8.set_asm ( "MOVB BL, IMM8" );
+    mov_BL_imm8.set_decoder ( op1b = 0xB3 );
+
+    mov_AH_imm8.set_asm ( "MOVB AH, IMM8" );
+    mov_AH_imm8.set_decoder ( op1b = 0xB4 );
+
+    mov_CH_imm8.set_asm ( "MOVB CH, IMM8" );
+    mov_CH_imm8.set_decoder ( op1b = 0xB5 );
+
+    mov_DH_imm8.set_asm ( "MOVB DH, IMM8" );
+    mov_DH_imm8.set_decoder ( op1b = 0xB6 );
+
+    mov_BH_imm8.set_asm ( "MOVB BH, IMM8" );
+    mov_BH_imm8.set_decoder ( op1b = 0xB7 );
+
+    add_r8_rm8.set_asm ( "ADDB R8, RM8" );
+    add_r8_rm8.set_decoder ( op1b = 0x02 );
+
+    add_rm8_imm8.set_asm ( "ADDB RM8, IMM8" );
+    add_rm8_imm8.set_decoder ( op1b = 0x80, regop = 0x0 );
+
+    add_rm8_r8.set_asm ( "ADDB RM8, R8" );
+    add_rm8_r8.set_decoder ( op1b = 0x00 );
+
+    inc_rm8.set_asm ( "INC RM8" );
+    inc_rm8.set_decoder ( op1b = 0xFE, regop = 0x0 );
+
+    sub_rm8_r8.set_asm ( "SUB RM8, R8" );
+    sub_rm8_r8.set_decoder ( op1b = 0x28 );
+
+    dec_rm8.set_asm ( "DEC RM8" );
+    dec_rm8.set_decoder ( op1b = 0xFE, regop = 0x01 );
+
+    sub_rm8_imm8.set_asm ( "SUB RM8, IMM8" );
+    sub_rm8_imm8.set_decoder ( op1b = 0x80, regop = 0x05 );
+
+    imul_rm8.set_asm ( "IMUL RM8" );
+    imul_rm8.set_decoder ( op1b = 0xF6, regop = 0x05 );
+
+    mul_rm8.set_asm ( "MUL RM8" );
+    mul_rm8.set_decoder ( op1b = 0xF6, regop = 0x04 );
+
+    sal_rm8.set_asm ( "SAL RM8" );
+    sal_rm8.set_decoder ( op1b = 0xD0, regop = 0x04 );
+
+    sar_rm8.set_asm ( "SAR RM8" );
+    sar_rm8.set_decoder ( op1b = 0xD0, regop = 0x07 );
+
+    sar_rm8_imm8.set_asm ( "SAR RM8, IMM8" );
+    sar_rm8_imm8.set_decoder ( op1b = 0xC0, regop = 0x07 );
+
+    cmp_rm8_imm8.set_asm ( "CMP RM8, IMM8" );
+    cmp_rm8_imm8.set_decoder ( op1b = 0x80, regop = 0x07 );
+
+    shr_rm8_imm8.set_asm ( "SHR RM8, IMM8" );
+    shr_rm8_imm8.set_decoder ( op1b = 0xC0, regop = 0x05 );
+
+    div_rm8.set_asm ( "DIV RM8" );
+    div_rm8.set_decoder ( op1b = 0xF6, regop = 0x06 );
+
+    shr_rm8.set_asm ( "SHR RM8" );
+    shr_rm8.set_decoder ( op1b = 0xD0, regop = 0x05 );
+
+    cmp_AL_imm8.set_asm ( "CMP AL, IMM8" );
+    cmp_AL_imm8.set_decoder ( op1b = 0x3C );
+
+    and_r8_rm8.set_asm ( "AND R8, RM8" );
+    and_r8_rm8.set_decoder ( op1b = 0x22 );
+
+    or_r8_rm8.set_asm ( "OR R8, RM8" );
+    or_r8_rm8.set_decoder ( op1b = 0x0A );
+
+    xor_r8_rm8.set_asm ( "XOR R8, RM8" );
+    xor_r8_rm8.set_decoder ( op1b = 0x32 );
+
+    sal_rm8_imm8.set_asm ( "SAL RM8, IMM8" );
+    sal_rm8_imm8.set_decoder ( op1b = 0xC0, regop = 0x04 );
+
+    jmp_rel8.set_asm ( "JMP REL8" );
+    jmp_rel8.set_decoder ( op1b = 0xEB );
+
+    cmp_r8_rm8.set_asm ( "CMP R8, RM8" );
+    cmp_r8_rm8.set_decoder ( op1b = 0x3A );
+
+    push_imm8.set_asm ( "PUSH IMM8" );
+    push_imm8.set_decoder ( op1b = 0x6A );
+      
+  };                                                                                                              
+};
+

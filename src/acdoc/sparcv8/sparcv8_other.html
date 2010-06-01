@@ -1,0 +1,78 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>sparcv8 ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=sparcv8_index.html>sparcv8 Architechture Description</a></div><div class='definfo'><a href=sparcv8_isa.html>sparcv8 Instruction Set and Formats</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: sparcv8_isa.ac</div>
+<div class='ac_asm_map'>cond (<a href='http://www.archc.org/'>ac_asm_map</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l78>[see source code]</a><div class='desc'>Maps:  a 8<br/>
+Maps:  n 0<br/>
+Maps:  ne 5<br/>
+Maps:  e 1<br/>
+Maps:  g 10<br/>
+Maps:  le 2<br/>
+Maps:  ge 11<br/>
+Maps:  l 3<br/>
+Maps:  gu 12<br/>
+Maps:  leu 4<br/>
+Maps:  cc 13<br/>
+Maps:  cs 5<br/>
+Maps:  pos 14<br/>
+Maps:  neg 6<br/>
+Maps:  vc 15<br/>
+Maps:  vs 7<br/>
+</div></div>
+<div class='ac_asm_map'>reg (<a href='http://www.archc.org/'>ac_asm_map</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l63>[see source code]</a><div class='desc'>Maps:  %r 0 31 0 31<br/>
+Maps:  %g 0 7 0 7<br/>
+Maps:  %o 0 7 8 15<br/>
+Maps:  %l 0 7 16 23<br/>
+Maps:  %i 0 7 24 31<br/>
+Maps:  %fp 30<br/>
+Maps:  %sp 14<br/>
+</div></div>
+<div class='ac_asm_map'>anul (<a href='http://www.archc.org/'>ac_asm_map</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l73>[see source code]</a><div class='desc'>Maps:   0<br/>
+Maps:  ,a 1<br/>
+</div></div>
+<div class='pseudo_instr'>inccc %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l604>[see source code]</a><div class='desc'>Instructions: <br/> addcc %0, 1, %0<br/></div>
+</div>
+<div class='pseudo_instr'>call %reg, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l665>[see source code]</a><div class='desc'>Instructions: <br/> call %0<br/></div>
+</div>
+<div class='pseudo_instr'>set %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l633>[see source code]</a><div class='desc'>Instructions: <br/> or    \%g0, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>bset %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l641>[see source code]</a><div class='desc'>Instructions: <br/> or %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>inc %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l596>[see source code]</a><div class='desc'>Instructions: <br/> add %0, 1, %0<br/></div>
+</div>
+<div class='pseudo_instr'>inc %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l600>[see source code]</a><div class='desc'>Instructions: <br/> add %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>btog %reg, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l653>[see source code]</a><div class='desc'>Instructions: <br/> xor %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>set %addr, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l628>[see source code]</a><div class='desc'>Instructions: <br/> sethi \%hi(%0), %1<br/>or    %1, \%lo(%0), %1<br/></div>
+</div>
+<div class='pseudo_instr'>neg %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l385>[see source code]</a><div class='desc'>Instructions: <br/> sub \%g0, %0, %0<br/></div>
+</div>
+<div class='pseudo_instr'>deccc %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l620>[see source code]</a><div class='desc'>Instructions: <br/> subcc %0, 1, %0<br/></div>
+</div>
+<div class='pseudo_instr'>bclr %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l649>[see source code]</a><div class='desc'>Instructions: <br/> andn %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>not %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l319>[see source code]</a><div class='desc'>Instructions: <br/> xnor %0, \%g0, %0<br/></div>
+</div>
+<div class='pseudo_instr'>dec %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l612>[see source code]</a><div class='desc'>Instructions: <br/> sub %0, 1, %0<br/></div>
+</div>
+<div class='pseudo_instr'>call %exp, %imm (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l661>[see source code]</a><div class='desc'>Instructions: <br/> call %0<br/></div>
+</div>
+<div class='pseudo_instr'>deccc %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l624>[see source code]</a><div class='desc'>Instructions: <br/> subcc %0, %1, %0<br/></div>
+</div>
+<div class='pseudo_instr'>btog %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l657>[see source code]</a><div class='desc'>Instructions: <br/> xor %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>inccc %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l608>[see source code]</a><div class='desc'>Instructions: <br/> addcc %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>dec %imm, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l616>[see source code]</a><div class='desc'>Instructions: <br/> sub %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>bset %reg, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l637>[see source code]</a><div class='desc'>Instructions: <br/> or %1, %0, %1<br/></div>
+</div>
+<div class='pseudo_instr'>bclr %reg, %reg (<a href='http://www.archc.org/'>pseudo_instr</a>):&nbsp&nbsp&nbsp&nbsp<a href=sparcv8_isa_source.html#l645>[see source code]</a><div class='desc'>Instructions: <br/> andn %1, %0, %1<br/></div>
+</div>
+</div>
+</body>
+</html>

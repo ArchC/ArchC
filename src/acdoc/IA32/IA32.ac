@@ -1,0 +1,59 @@
+/**
+ * @file      IA32.ac
+ * @author    Rodolfo Jardim de Azevedo
+ *            Valdiney Alves Pimenta
+ *            Team 03 - MC723 - 2005, 1st period
+ *              Eduardo Uemura Okada
+ *              Andre Deiano Pansani
+ *              Ricardo Andrade
+ *
+ *            The ArchC Team
+ *            http://www.archc.org/
+ *
+ *            Computer Systems Laboratory (LSC)
+ *            IC-UNICAMP
+ *            http://www.lsc.ic.unicamp.br
+ *
+ * @version   1.0
+ * @date      Thu, 29 Jun 2006 14:49:06 -0300
+ * 
+ * @brief     The ArchC x86 functional model.
+ * 
+ * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ *
+ */
+
+// Assumpmitions:
+//
+// Memory is treated as processor internal as of  this  functional  model.  And  no
+// caching is emulated.
+//
+// No segment register override is implemented yet.
+
+AC_ARCH(IA32)
+{
+	// IA32 Family word is 16bit-wide, but registers are 32bits in this model
+	ac_wordsize 32;
+
+	// Memory is internal in this functional model
+	ac_mem MEM:32M;
+
+	// General purpose registers (32bit registers) :
+	// EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI
+	ac_regbank GR:8;
+
+	// Segment registers (segment registers are 16bit-wide):
+	// CS, DS, SS, ES, FS, GS
+	ac_regbank SR:6;
+
+	// Special registers (32bit registers) :
+	// EFLAGS, EIP
+	ac_regbank SPR:2;
+
+	ARCH_CTOR(IA32)
+	{
+		ac_isa("IA32_isa.ac");
+		set_endian("little");
+	};
+};
+

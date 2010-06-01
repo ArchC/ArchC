@@ -1,0 +1,473 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>armv5e ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=armv5e_index.html>armv5e Architechture Description</a></div><div class='definfo'><a href=armv5e_other.html>armv5e Other Properties</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: armv5e_isa.ac</div>
+<div class='ac_format'>Type_BBL (<a name='Type_BBL'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  offset 24; h 1; op 3; cond 4;<br/>
+Instructions:  <a href='#b'>b</a></br>
+</div></div>
+<div class='ac_format'>Type_LSR (<a name='Type_LSR'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; shift 2; shiftamount 5; rd 4; rn 4; l 1; w 1; b 1; u 1; p 1; op 3; cond 4;<br/>
+Instructions:  <a href='#ldr2'>ldr2</a> <a href='#strt2'>strt2</a> <a href='#strbt2'>strbt2</a> <a href='#ldrt2'>ldrt2</a> <a href='#strb2'>strb2</a> <a href='#ldrbt2'>ldrbt2</a> <a href='#ldrb2'>ldrb2</a> <a href='#str2'>str2</a></br>
+</div></div>
+<div class='ac_format'>Type_MBKPT (<a name='Type_MBKPT'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; func2 2; subop2 1; immediate 12; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#bkpt'>bkpt</a></br>
+</div></div>
+<div class='ac_format'>Type_MULT1 (<a name='Type_MULT1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; func2 2; subop2 1; rs 4; rd 4; rn 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#swpb'>swpb</a> <a href='#mla'>mla</a> <a href='#mul'>mul</a> <a href='#swp'>swp</a></br>
+</div></div>
+<div class='ac_format'>Type_BBLT (<a name='Type_BBLT'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  offset 24; h 1; op 3; cond 4;<br/>
+Instructions:  <a href='#blx1'>blx1</a></br>
+</div></div>
+<div class='ac_format'>Type_MULT2 (<a name='Type_MULT2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; func2 2; subop2 1; rs 4; rdlo 4; rdhi 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#umlal'>umlal</a> <a href='#smull'>smull</a> <a href='#umull'>umull</a> <a href='#smlal'>smlal</a></br>
+</div></div>
+<div class='ac_format'>Type_DPI1 (<a name='Type_DPI1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; shift 2; shiftamount 5; rd 4; rn 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#mvn1'>mvn1</a> <a href='#adc1'>adc1</a> <a href='#orr1'>orr1</a> <a href='#bic1'>bic1</a> <a href='#cmp1'>cmp1</a> <a href='#mov1'>mov1</a> <a href='#eor1'>eor1</a> <a href='#teq1'>teq1</a> <a href='#sbc1'>sbc1</a> <a href='#rsc1'>rsc1</a> <a href='#tst1'>tst1</a> <a href='#add1'>add1</a> <a href='#rsb1'>rsb1</a> <a href='#and1'>and1</a> <a href='#cmn1'>cmn1</a> <a href='#sub1'>sub1</a></br>
+</div></div>
+<div class='ac_format'>Type_DPI3 (<a name='Type_DPI3'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  imm8 8; rotate 4; rd 4; rn 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#mvn3'>mvn3</a> <a href='#adc3'>adc3</a> <a href='#orr3'>orr3</a> <a href='#bic3'>bic3</a> <a href='#cmp3'>cmp3</a> <a href='#mov3'>mov3</a> <a href='#eor3'>eor3</a> <a href='#sbc3'>sbc3</a> <a href='#rsc3'>rsc3</a> <a href='#teq3'>teq3</a> <a href='#add3'>add3</a> <a href='#rsb3'>rsb3</a> <a href='#tst3'>tst3</a> <a href='#sub3'>sub3</a> <a href='#and3'>and3</a> <a href='#cmn3'>cmn3</a></br>
+</div></div>
+<div class='ac_format'>Type_DPI2 (<a name='Type_DPI2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; shift 2; subop2 1; rs 4; rd 4; rn 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#mvn2'>mvn2</a> <a href='#adc2'>adc2</a> <a href='#orr2'>orr2</a> <a href='#mov2'>mov2</a> <a href='#cmp2'>cmp2</a> <a href='#bic2'>bic2</a> <a href='#eor2'>eor2</a> <a href='#teq2'>teq2</a> <a href='#sbc2'>sbc2</a> <a href='#rsc2'>rsc2</a> <a href='#tst2'>tst2</a> <a href='#add2'>add2</a> <a href='#rsb2'>rsb2</a> <a href='#and2'>and2</a> <a href='#cmn2'>cmn2</a> <a href='#sub2'>sub2</a></br>
+</div></div>
+<div class='ac_format'>Type_MSWI (<a name='Type_MSWI'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  swinumber 24; subop3 1; op 3; cond 4;<br/>
+Instructions:  <a href='#swi'>swi</a></br>
+</div></div>
+<div class='ac_format'>Type_MMSR1 (<a name='Type_MMSR1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; func2 2; subop2 1; zero3 4; rd 4; field 4; func12 2; r 1; func11 2; op 3; cond 4;<br/>
+Instructions:  <a href='#msr1'>msr1</a> <a href='#mrs'>mrs</a></br>
+</div></div>
+<div class='ac_format'>Type_MMSR2 (<a name='Type_MMSR2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  imm8 8; rotate 4; one2 4; field 4; func12 2; r 1; func11 2; op 3; cond 4;<br/>
+Instructions:  <a href='#msr2'>msr2</a></br>
+</div></div>
+<div class='ac_format'>Type_CLS (<a name='Type_CLS'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  imm8 8; cp_num 4; crd 4; rn 4; l 1; w 1; n 1; u 1; p 1; op 3; cond 4;<br/>
+Instructions:  <a href='#ldc'>ldc</a> <a href='#stc'>stc</a></br>
+</div></div>
+<div class='ac_format'>Type_LSE (<a name='Type_LSE'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  addr2 4; subop1 1; hh 1; ss 1; subop2 1; addr1 4; rd 4; rn 4; l 1; w 1; i 1; u 1; p 1; op 3; cond 4;<br/>
+Instructions:  <a href='#ldrd'>ldrd</a> <a href='#ldrh'>ldrh</a> <a href='#ldrsh'>ldrsh</a> <a href='#ldrsb'>ldrsb</a> <a href='#strh'>strh</a> <a href='#strd'>strd</a></br>
+</div></div>
+<div class='ac_format'>Type_MBXBLX (<a name='Type_MBXBLX'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; func2 2; subop2 1; one3 4; one2 4; one1 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#bx'>bx</a> <a href='#blx2'>blx2</a></br>
+</div></div>
+<div class='ac_format'>Type_LSI (<a name='Type_LSI'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  imm12 12; rd 4; rn 4; l 1; w 1; b 1; u 1; p 1; op 3; cond 4;<br/>
+Instructions:  <a href='#ldr1'>ldr1</a> <a href='#strt1'>strt1</a> <a href='#strbt1'>strbt1</a> <a href='#ldrt1'>ldrt1</a> <a href='#strb1'>strb1</a> <a href='#ldrbt1'>ldrbt1</a> <a href='#ldrb1'>ldrb1</a> <a href='#str1'>str1</a></br>
+</div></div>
+<div class='ac_format'>Type_CDP (<a name='Type_CDP'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  crm 4; subop1 1; funcc3 3; cp_num 4; crd 4; crn 4; funcc1 4; subop3 1; op 3; cond 4;<br/>
+Instructions:  <a href='#cdp'>cdp</a></br>
+</div></div>
+<div class='ac_format'>Type_MCLZ (<a name='Type_MCLZ'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; func2 2; subop2 1; one3 4; rd 4; one1 4; s 1; func1 4; op 3; cond 4;<br/>
+Instructions:  <a href='#clz'>clz</a></br>
+</div></div>
+<div class='ac_format'>Type_CRT (<a name='Type_CRT'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  crm 4; subop1 1; funcc3 3; cp_num 4; rd 4; crn 4; l 1; funcc2 3; subop3 1; op 3; cond 4;<br/>
+Instructions:  <a href='#mcr'>mcr</a> <a href='#mrc'>mrc</a></br>
+</div></div>
+<div class='ac_format'>Type_LSM (<a name='Type_LSM'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rlist 16; rn 4; l 1; w 1; r 1; u 1; p 1; op 3; cond 4;<br/>
+Instructions:  <a href='#ldm'>ldm</a> <a href='#stm'>stm</a></br>
+</div></div>
+<div class='ac_format'>Type_DSPSM (<a name='Type_DSPSM'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  rm 4; subop1 1; xx 1; yy 1; subop2 1; rs 4; drn 4; drd 4; sm 8; cond 4;<br/>
+Instructions:  <a href='#dsmul'>dsmul</a> <a href='#dsmla'>dsmla</a> <a href='#dsmulw'>dsmulw</a> <a href='#dsmlaw'>dsmlaw</a> <a href='#dsmlal'>dsmlal</a></br>
+</div></div>
+<div class='ac_instr'>mvn3 (<a name='mvn3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=15; <br/>
+ASM: mvn %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>mvn2 (<a name='mvn2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=15; <br/>
+ASM: mvn %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>mvn1 (<a name='mvn1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=15; <br/>
+ASM: mvn %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>dsmul (<a name='dsmul'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DSPSM>Type_DSPSM</a><br/>
+Decoder: sm=22; subop2=1; subop1=0; <br/>
+ASM: <br/>
+</div></a></div>
+<div class='ac_instr'>ldm (<a name='ldm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSM>Type_LSM</a><br/>
+Decoder: op=4; l=1; <br/>
+ASM: ldm %cond %p %u %w %rn %w, %rlist<br/>
+</div></a></div>
+<div class='ac_instr'>dsmla (<a name='dsmla'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DSPSM>Type_DSPSM</a><br/>
+Decoder: sm=16; subop2=1; subop1=0; <br/>
+ASM: <br/>
+</div></a></div>
+<div class='ac_instr'>adc2 (<a name='adc2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=5; <br/>
+ASM: adc %cond %s %rd, %rn, %rm, %shift %rs<br/>
+</div></a></div>
+<div class='ac_instr'>adc3 (<a name='adc3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=5; <br/>
+ASM: adc %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>adc1 (<a name='adc1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=5; <br/>
+ASM: adc %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>orr1 (<a name='orr1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=12; <br/>
+ASM: orr %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>orr3 (<a name='orr3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=12; <br/>
+ASM: orr %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>orr2 (<a name='orr2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=12; <br/>
+ASM: orr %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>mov2 (<a name='mov2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=13; <br/>
+ASM: mov %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>bic3 (<a name='bic3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=14; <br/>
+ASM: bic %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>clz (<a name='clz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MCLZ>Type_MCLZ</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=11; func2=0; s=0; <br/>
+ASM: clz %cond %rm %rd<br/>
+</div></a></div>
+<div class='ac_instr'>bic1 (<a name='bic1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=14; <br/>
+ASM: bic %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>cmp1 (<a name='cmp1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=10; s=1; <br/>
+ASM: cmp %cond %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>cmp2 (<a name='cmp2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=10; s=1; <br/>
+ASM: cmp %cond %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>cmp3 (<a name='cmp3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=10; s=1; <br/>
+ASM: cmp %cond %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>umlal (<a name='umlal'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT2>Type_MULT2</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=5; func2=0; <br/>
+ASM: umlal %cond %s %rdlo, %rdhi, %rm, %rs<br/>
+</div></a></div>
+<div class='ac_instr'>swpb (<a name='swpb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT1>Type_MULT1</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=10; func2=0; s=0; <br/>
+ASM: swpb %cond %rd, %rm, %rn<br/>
+</div></a></div>
+<div class='ac_instr'>mla (<a name='mla'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT1>Type_MULT1</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=1; func2=0; <br/>
+ASM: mla %cond %s, %rd, %rm, %rs, %rn<br/>
+</div></a></div>
+<div class='ac_instr'>bic2 (<a name='bic2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=14; <br/>
+ASM: bic %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>mov3 (<a name='mov3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=13; <br/>
+ASM: mov %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>mov1 (<a name='mov1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=13; <br/>
+ASM: mov %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>eor2 (<a name='eor2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=1; <br/>
+ASM: eor %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>eor3 (<a name='eor3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=1; <br/>
+ASM: eor %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>eor1 (<a name='eor1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=1; <br/>
+ASM: eor %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>ldc (<a name='ldc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_CLS>Type_CLS</a><br/>
+Decoder: op=6; l=1; <br/>
+ASM: ldc %cond %l %cp_num, %crd, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>teq2 (<a name='teq2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=9; s=1; <br/>
+ASM: teq %cond %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>cdp (<a name='cdp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_CDP>Type_CDP</a><br/>
+Decoder: op=7; subop1=0; subop3=0; <br/>
+ASM: cdp %cond %cp_num, %funcc1, %crd, %crn, %crm %funcc3<br/>
+</div></a></div>
+<div class='ac_instr'>teq1 (<a name='teq1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=9; s=1; <br/>
+ASM: teq %cond %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>ldr2 (<a name='ldr2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; b=0; l=1; <br/>
+ASM: ldr %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>ldr1 (<a name='ldr1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; b=0; l=1; <br/>
+ASM: ldr %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>smull (<a name='smull'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT2>Type_MULT2</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=6; func2=0; <br/>
+ASM: smull %cond %s %rdlo, %rdhi, %rm, %rs<br/>
+</div></a></div>
+<div class='ac_instr'>strt1 (<a name='strt1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; p=0; b=0; w=1; l=0; <br/>
+ASM: strt %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>strt2 (<a name='strt2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; p=0; b=0; w=1; l=0; <br/>
+ASM: strt %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>dsmulw (<a name='dsmulw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DSPSM>Type_DSPSM</a><br/>
+Decoder: sm=18; subop2=1; xx=1; subop1=0; <br/>
+ASM: <br/>
+</div></a></div>
+<div class='ac_instr'>mul (<a name='mul'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT1>Type_MULT1</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=0; func2=0; <br/>
+ASM: mul %cond %s, %rd, %rm, %rs<br/>
+</div></a></div>
+<div class='ac_instr'>strbt2 (<a name='strbt2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; p=0; b=1; w=1; l=0; <br/>
+ASM: strbt %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>strbt1 (<a name='strbt1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; p=0; b=1; w=1; l=0; <br/>
+ASM: strbt %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>sbc2 (<a name='sbc2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=6; <br/>
+ASM: sbc %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>sbc3 (<a name='sbc3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=6; <br/>
+ASM: sbc %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>sbc1 (<a name='sbc1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=6; <br/>
+ASM: sbc %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>rsc1 (<a name='rsc1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=7; <br/>
+ASM: rsc %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>rsc2 (<a name='rsc2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=7; <br/>
+ASM: rsc %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>rsc3 (<a name='rsc3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=7; <br/>
+ASM: rsc %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>ldrd (<a name='ldrd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSE>Type_LSE</a><br/>
+Decoder: op=0; subop1=1; subop2=1; ss=1; hh=0; l=0; <br/>
+ASM: ldrd %cond %rd, %addr1 %addr2<br/>
+</div></a></div>
+<div class='ac_instr'>teq3 (<a name='teq3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=9; s=1; <br/>
+ASM: teq %cond %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>ldrh (<a name='ldrh'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSE>Type_LSE</a><br/>
+Decoder: op=0; subop1=1; subop2=1; ss=0; hh=1; l=1; <br/>
+ASM: ldrh %cond %rd, %addr1 %addr2<br/>
+</div></a></div>
+<div class='ac_instr'>bx (<a name='bx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MBXBLX>Type_MBXBLX</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=9; s=0; func2=0; <br/>
+ASM: bx %cond %rm<br/>
+</div></a></div>
+<div class='ac_instr'>tst2 (<a name='tst2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=8; s=1; <br/>
+ASM: tst %cond %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>tst1 (<a name='tst1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=8; s=1; <br/>
+ASM: tst %cond %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>add3 (<a name='add3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=4; <br/>
+ASM: add %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>add2 (<a name='add2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=4; <br/>
+ASM: add %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>add1 (<a name='add1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=4; <br/>
+ASM: add %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>ldrt2 (<a name='ldrt2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; p=0; b=0; w=1; l=1; <br/>
+ASM: ldrt %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>ldrt1 (<a name='ldrt1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; p=0; b=0; w=1; l=1; <br/>
+ASM: ldrt %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>strb2 (<a name='strb2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; b=1; l=0; <br/>
+ASM: strb %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>strb1 (<a name='strb1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; b=1; l=0; <br/>
+ASM: strb %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>dsmlaw (<a name='dsmlaw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DSPSM>Type_DSPSM</a><br/>
+Decoder: sm=18; subop2=1; xx=0; subop1=0; <br/>
+ASM: <br/>
+</div></a></div>
+<div class='ac_instr'>rsb3 (<a name='rsb3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=3; <br/>
+ASM: rsb %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>rsb2 (<a name='rsb2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=3; <br/>
+ASM: rsb %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>rsb1 (<a name='rsb1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=3; <br/>
+ASM: rsb %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>dsmlal (<a name='dsmlal'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DSPSM>Type_DSPSM</a><br/>
+Decoder: sm=20; subop2=1; subop1=0; <br/>
+ASM: <br/>
+</div></a></div>
+<div class='ac_instr'>swi (<a name='swi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MSWI>Type_MSWI</a><br/>
+Decoder: op=7; subop3=1; <br/>
+ASM: swi %cond %swinumber<br/>
+</div></a></div>
+<div class='ac_instr'>tst3 (<a name='tst3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=8; s=1; <br/>
+ASM: tst %cond %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>ldrbt2 (<a name='ldrbt2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; p=0; b=1; w=1; l=1; <br/>
+ASM: ldrbt %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>ldrbt1 (<a name='ldrbt1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; p=0; b=1; w=1; l=1; <br/>
+ASM: ldrbt %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>bkpt (<a name='bkpt'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MBKPT>Type_MBKPT</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=9; func2=3; s=0; cond=14; <br/>
+ASM: bkpt %immediate<br/>
+</div></a></div>
+<div class='ac_instr'>swp (<a name='swp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT1>Type_MULT1</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=8; func2=0; s=0; <br/>
+ASM: swp %cond %rd, %rm, %rn<br/>
+</div></a></div>
+<div class='ac_instr'>msr2 (<a name='msr2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MMSR2>Type_MMSR2</a><br/>
+Decoder: op=1; func11=2; func12=2; <br/>
+ASM: msr %cond %field, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>msr1 (<a name='msr1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MMSR1>Type_MMSR1</a><br/>
+Decoder: op=0; subop1=0; subop2=0; func11=2; func12=2; <br/>
+ASM: msr %cond %field, %rm<br/>
+</div></a></div>
+<div class='ac_instr'>blx2 (<a name='blx2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MBXBLX>Type_MBXBLX</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=9; s=0; func2=1; <br/>
+ASM: blx %cond %rm<br/>
+</div></a></div>
+<div class='ac_instr'>sub3 (<a name='sub3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=2; <br/>
+ASM: sub %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>blx1 (<a name='blx1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_BBLT>Type_BBLT</a><br/>
+Decoder: op=5; cond=15; <br/>
+ASM: blx %offset<br/>
+</div></a></div>
+<div class='ac_instr'>ldrb1 (<a name='ldrb1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; b=1; l=1; <br/>
+ASM: ldrb %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>ldrb2 (<a name='ldrb2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; b=1; l=1; <br/>
+ASM: ldrb %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>mcr (<a name='mcr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_CRT>Type_CRT</a><br/>
+Decoder: op=7; subop1=1; subop3=0; l=0; <br/>
+ASM: mcr %cond %cp_num, %funcc2, %rd, %crn, %crm, %funcc3<br/>
+</div></a></div>
+<div class='ac_instr'>b (<a name='b'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_BBL>Type_BBL</a><br/>
+Decoder: op=5; <br/>
+ASM: b %h %cond %offset<br/>
+</div></a></div>
+<div class='ac_instr'>stc (<a name='stc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_CLS>Type_CLS</a><br/>
+Decoder: op=6; l=0; <br/>
+ASM: stc %cond %l %cp_num, %crd, %imm8 %w<br/>
+</div></a></div>
+<div class='ac_instr'>stm (<a name='stm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSM>Type_LSM</a><br/>
+Decoder: op=4; l=0; <br/>
+ASM: stm %cond %p %u %w %rn %w, %rlist<br/>
+</div></a></div>
+<div class='ac_instr'>and1 (<a name='and1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=0; <br/>
+ASM: and %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>and3 (<a name='and3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=0; <br/>
+ASM: and %cond %s %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>and2 (<a name='and2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=0; <br/>
+ASM: and %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>cmn2 (<a name='cmn2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=11; s=1; <br/>
+ASM: cmn %cond %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>cmn3 (<a name='cmn3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI3>Type_DPI3</a><br/>
+Decoder: op=1; func1=11; s=1; <br/>
+ASM: cmn %cond %rd, %rn, %imm8<br/>
+</div></a></div>
+<div class='ac_instr'>cmn1 (<a name='cmn1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=11; s=1; <br/>
+ASM: cmn %cond %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>sub2 (<a name='sub2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI2>Type_DPI2</a><br/>
+Decoder: op=0; subop1=1; subop2=0; func1=2; <br/>
+ASM: sub %cond %s %rd, %rn, %rm, %shift %rs <br/>
+</div></a></div>
+<div class='ac_instr'>str2 (<a name='str2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSR>Type_LSR</a><br/>
+Decoder: op=3; subop1=0; b=0; l=0; <br/>
+ASM: str %cond %rd, %rn, %rm, %shift %shiftamount %w<br/>
+</div></a></div>
+<div class='ac_instr'>str1 (<a name='str1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSI>Type_LSI</a><br/>
+Decoder: op=2; b=0; l=0; <br/>
+ASM: str %cond %rd, %rn, %imm12 %w<br/>
+</div></a></div>
+<div class='ac_instr'>sub1 (<a name='sub1'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_DPI1>Type_DPI1</a><br/>
+Decoder: op=0; subop1=0; func1=2; <br/>
+ASM: sub %cond %s %rd, %rn, %rm, %shift %shiftamount<br/>
+</div></a></div>
+<div class='ac_instr'>ldrsh (<a name='ldrsh'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSE>Type_LSE</a><br/>
+Decoder: op=0; subop1=1; subop2=1; ss=1; hh=1; l=1; <br/>
+ASM: ldrsh %cond %rd, %addr1 %addr2<br/>
+</div></a></div>
+<div class='ac_instr'>umull (<a name='umull'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT2>Type_MULT2</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=4; func2=0; <br/>
+ASM: umull %cond %s %rdlo, %rdhi, %rm, %rs<br/>
+</div></a></div>
+<div class='ac_instr'>ldrsb (<a name='ldrsb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSE>Type_LSE</a><br/>
+Decoder: op=0; subop1=1; subop2=1; ss=1; hh=0; l=1; <br/>
+ASM: ldrsb %cond %rd, %addr1 %addr2<br/>
+</div></a></div>
+<div class='ac_instr'>mrs (<a name='mrs'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MMSR1>Type_MMSR1</a><br/>
+Decoder: op=0; subop1=0; subop2=0; func11=2; func12=0; <br/>
+ASM: mrs %cond %rn, %r<br/>
+</div></a></div>
+<div class='ac_instr'>strh (<a name='strh'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSE>Type_LSE</a><br/>
+Decoder: op=0; subop1=1; subop2=1; ss=0; hh=1; l=0; <br/>
+ASM: strh %cond %rd, %addr1 %addr2<br/>
+</div></a></div>
+<div class='ac_instr'>smlal (<a name='smlal'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_MULT2>Type_MULT2</a><br/>
+Decoder: op=0; subop1=1; subop2=1; func1=7; func2=0; <br/>
+ASM: smlal %cond %s %rdlo, %rdhi, %rm, %rs<br/>
+</div></a></div>
+<div class='ac_instr'>mrc (<a name='mrc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_CRT>Type_CRT</a><br/>
+Decoder: op=7; subop1=1; subop3=0; l=1; <br/>
+ASM: mrc %cond %cp_num, %funcc2, %rd, %crn, %crm, %funcc3<br/>
+</div></a></div>
+<div class='ac_instr'>strd (<a name='strd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_LSE>Type_LSE</a><br/>
+Decoder: op=0; subop1=1; subop2=1; ss=1; hh=1; l=0; <br/>
+ASM: strd %cond %rd, %addr1 %addr2<br/>
+</div></a></div>
+</div>
+</body>
+</html>

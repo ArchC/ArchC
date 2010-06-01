@@ -1,0 +1,1347 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>powerpc ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=powerpc_index.html>powerpc Architechture Description</a></div><div class='definfo'><a href=powerpc_other.html>powerpc Other Properties</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: powerpc_isa.ac</div>
+<div class='ac_format'>M1 (<a name='M1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; rb 5; mb 5; me 5; rc 1;<br/>
+Instructions:  <a href='#rlwnm_'>rlwnm_</a> <a href='#rlwnm'>rlwnm</a></br>
+</div></div>
+<div class='ac_format'>M2 (<a name='M2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; sh 5; mb 5; me 5; rc 1;<br/>
+Instructions:  <a href='#rlwinm'>rlwinm</a> <a href='#rlwimi'>rlwimi</a> <a href='#rlwinm_'>rlwinm_</a> <a href='#rlwimi_'>rlwimi_</a></br>
+</div></div>
+<div class='ac_format'>X25 (<a name='X25'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; 0 5; 0 5; e 1; 0 4; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X24 (<a name='X24'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; 0 5; 0 5; 0 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X21 (<a name='X21'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; to 5; ra 5; rb 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X20 (<a name='X20'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 2; 0 5; 0 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X23 (<a name='X23'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; 0 5; ra 5; rb 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X22 (<a name='X22'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bt 5; 0 5; 0 5; xog 10; rc 1;<br/>
+</div></div>
+<div class='ac_format'>XFX2 (<a name='XFX2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; dcrf 10; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>XFX3 (<a name='XFX3'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; 0 1; xfm 8; 0 1; xog 10; 0 1;<br/>
+Instructions:  <a href='#mtcrf'>mtcrf</a></br>
+</div></div>
+<div class='ac_format'>XFX1 (<a name='XFX1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; sprf 10; xog 10; 0 1;<br/>
+Instructions:  <a href='#mfspr'>mfspr</a></br>
+</div></div>
+<div class='ac_format'>XO2 (<a name='XO2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; rb 5; 0 1; xos 9; rc 1;<br/>
+Instructions:  <a href='#mulhwu'>mulhwu</a> <a href='#mulhw'>mulhw</a> <a href='#mulhwu_'>mulhwu_</a> <a href='#mulhw_'>mulhw_</a></br>
+</div></div>
+<div class='ac_format'>XO3 (<a name='XO3'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; 0 5; oe 1; xos 9; rc 1;<br/>
+Instructions:  <a href='#subfzeo'>subfzeo</a> <a href='#nego'>nego</a> <a href='#neg_'>neg_</a> <a href='#subfze'>subfze</a> <a href='#subfze_'>subfze_</a> <a href='#addzeo_'>addzeo_</a> <a href='#addmeo_'>addmeo_</a> <a href='#addze'>addze</a> <a href='#neg'>neg</a> <a href='#addze_'>addze_</a> <a href='#subfzeo_'>subfzeo_</a> <a href='#nego_'>nego_</a> <a href='#addme_'>addme_</a> <a href='#subfme_'>subfme_</a> <a href='#addmeo'>addmeo</a> <a href='#addzeo'>addzeo</a> <a href='#subfme'>subfme</a> <a href='#addme'>addme</a> <a href='#subfmeo_'>subfmeo_</a> <a href='#subfmeo'>subfmeo</a></br>
+</div></div>
+<div class='ac_format'>XFX4 (<a name='XFX4'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; sprf 10; xog 10; 0 1;<br/>
+Instructions:  <a href='#mtspr'>mtspr</a></br>
+</div></div>
+<div class='ac_format'>XFX5 (<a name='XFX5'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; dcrf 10; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>I1 (<a name='I1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; li 24 s; aa 1; lk 1;<br/>
+Instructions:  <a href='#bl'>bl</a> <a href='#bla'>bla</a> <a href='#ba'>ba</a> <a href='#b'>b</a></br>
+</div></div>
+<div class='ac_format'>X14 (<a name='X14'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; 0 5; rb 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X8 (<a name='X8'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; rb 5; xog 10; 1 1;<br/>
+</div></div>
+<div class='ac_format'>X9 (<a name='X9'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; rb 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#stwx'>stwx</a> <a href='#stswx'>stswx</a> <a href='#sthbrx'>sthbrx</a> <a href='#sthx'>sthx</a> <a href='#stbx'>stbx</a> <a href='#sthux'>sthux</a> <a href='#stwbrx'>stwbrx</a> <a href='#stbux'>stbux</a> <a href='#stwux'>stwux</a></br>
+</div></div>
+<div class='ac_format'>X2 (<a name='X2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; rb 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#lhaux'>lhaux</a> <a href='#lwzx'>lwzx</a> <a href='#lwzux'>lwzux</a> <a href='#lbzux'>lbzux</a> <a href='#lhzux'>lhzux</a> <a href='#lhax'>lhax</a> <a href='#lwbrx'>lwbrx</a> <a href='#lswx'>lswx</a> <a href='#lbzx'>lbzx</a> <a href='#lhzx'>lhzx</a> <a href='#lhbrx'>lhbrx</a></br>
+</div></div>
+<div class='ac_format'>X3 (<a name='X3'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; nb 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#lswi'>lswi</a></br>
+</div></div>
+<div class='ac_format'>X1 (<a name='X1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; rb 5; xog 10; rc 1;<br/>
+Instructions:  <a href='#mullhwu_'>mullhwu_</a> <a href='#mullhwu'>mullhwu</a> <a href='#mullhw_'>mullhw_</a> <a href='#mullhw'>mullhw</a></br>
+</div></div>
+<div class='ac_format'>X6 (<a name='X6'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; 0 5; 0 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#mfcr'>mfcr</a></br>
+</div></div>
+<div class='ac_format'>X7 (<a name='X7'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; rb 5; xog 10; rc 1;<br/>
+Instructions:  <a href='#sraw_'>sraw_</a> <a href='#srw_'>srw_</a> <a href='#orc_'>orc_</a> <a href='#nor_'>nor_</a> <a href='#nor'>nor</a> <a href='#nand_'>nand_</a> <a href='#slw_'>slw_</a> <a href='#xxor_'>xxor_</a> <a href='#nand'>nand</a> <a href='#sraw'>sraw</a> <a href='#ore'>ore</a> <a href='#orc'>orc</a> <a href='#ande_'>ande_</a> <a href='#eqv_'>eqv_</a> <a href='#ore_'>ore_</a> <a href='#srw'>srw</a> <a href='#ande'>ande</a> <a href='#andc'>andc</a> <a href='#eqv'>eqv</a> <a href='#slw'>slw</a> <a href='#andc_'>andc_</a> <a href='#xxor'>xxor</a></br>
+</div></div>
+<div class='ac_format'>X4 (<a name='X4'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; ws 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X5 (<a name='X5'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; 0 5; rb 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X18 (<a name='X18'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 2; 0 5; 0 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#mcrxr'>mcrxr</a></br>
+</div></div>
+<div class='ac_format'>X19 (<a name='X19'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 2; 0 5; u 5; xog 10; rc 1;<br/>
+</div></div>
+<div class='ac_format'>X10 (<a name='X10'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; nb 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#stswi'>stswi</a></br>
+</div></div>
+<div class='ac_format'>X11 (<a name='X11'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; ws 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X12 (<a name='X12'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; sh 5; xog 10; rc 1;<br/>
+Instructions:  <a href='#srawi'>srawi</a> <a href='#srawi_'>srawi_</a></br>
+</div></div>
+<div class='ac_format'>X13 (<a name='X13'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; 0 5; xog 10; rc 1;<br/>
+Instructions:  <a href='#cntlzw'>cntlzw</a> <a href='#extsb_'>extsb_</a> <a href='#extsb'>extsb</a> <a href='#extsh'>extsh</a> <a href='#cntlzw_'>cntlzw_</a> <a href='#extsh_'>extsh_</a></br>
+</div></div>
+<div class='ac_format'>SC1 (<a name='SC1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; 0 5; 0 5; 0 4; lev 7; 0 3; 1 1; 0 1;<br/>
+Instructions:  <a href='#sc'>sc</a></br>
+</div></div>
+<div class='ac_format'>X15 (<a name='X15'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; 0 5; 0 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>X16 (<a name='X16'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 1; l 1; ra 5; rb 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#cmpl'>cmpl</a> <a href='#cmp'>cmp</a></br>
+</div></div>
+<div class='ac_format'>X17 (<a name='X17'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 2; bfa 3; 0 2; 0 5; xog 10; rc 1;<br/>
+</div></div>
+<div class='ac_format'>XL4 (<a name='XL4'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; 0 5; 0 5; 0 5; xog 10; 0 1;<br/>
+</div></div>
+<div class='ac_format'>XL3 (<a name='XL3'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 2; bfa 3; 0 2; 0 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#mcrf'>mcrf</a></br>
+</div></div>
+<div class='ac_format'>XO1 (<a name='XO1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; rb 5; oe 1; xos 9; rc 1;<br/>
+Instructions:  <a href='#subfco'>subfco</a> <a href='#mullw_'>mullw_</a> <a href='#divwou_'>divwou_</a> <a href='#subfc'>subfc</a> <a href='#add'>add</a> <a href='#mullwo'>mullwo</a> <a href='#addc'>addc</a> <a href='#addc_'>addc_</a> <a href='#mullw'>mullw</a> <a href='#subfo'>subfo</a> <a href='#subfe'>subfe</a> <a href='#subf_'>subf_</a> <a href='#subfc_'>subfc_</a> <a href='#add_'>add_</a> <a href='#adde'>adde</a> <a href='#adde_'>adde_</a> <a href='#addo'>addo</a> <a href='#divwu_'>divwu_</a> <a href='#divw_'>divw_</a> <a href='#subfco_'>subfco_</a> <a href='#addeo_'>addeo_</a> <a href='#subf'>subf</a> <a href='#divw'>divw</a> <a href='#subfe_'>subfe_</a> <a href='#subfeo'>subfeo</a> <a href='#divwo'>divwo</a> <a href='#subfeo_'>subfeo_</a> <a href='#subfo_'>subfo_</a> <a href='#divwu'>divwu</a> <a href='#addco_'>addco_</a> <a href='#addo_'>addo_</a> <a href='#addco'>addco</a> <a href='#divwou'>divwou</a> <a href='#addeo'>addeo</a> <a href='#divwo_'>divwo_</a> <a href='#mullwo_'>mullwo_</a></br>
+</div></div>
+<div class='ac_format'>XL2 (<a name='XL2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bo 5; bi 5; 0 3; bh 2; xog 10; lk 1;<br/>
+Instructions:  <a href='#bcctr'>bcctr</a> <a href='#bclrl'>bclrl</a> <a href='#bclr'>bclr</a> <a href='#bcctrl'>bcctrl</a></br>
+</div></div>
+<div class='ac_format'>B1 (<a name='B1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bo 5; bi 5; bd 14 s; aa 1; lk 1;<br/>
+Instructions:  <a href='#bcla'>bcla</a> <a href='#bc'>bc</a> <a href='#bcl'>bcl</a> <a href='#bca'>bca</a></br>
+</div></div>
+<div class='ac_format'>D6 (<a name='D6'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 1; l 1; ra 5; ui 16;<br/>
+Instructions:  <a href='#cmpli'>cmpli</a></br>
+</div></div>
+<div class='ac_format'>D7 (<a name='D7'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; to 5; ra 5; si 16 s;<br/>
+</div></div>
+<div class='ac_format'>D4 (<a name='D4'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; ui 16;<br/>
+Instructions:  <a href='#ori'>ori</a> <a href='#xoris'>xoris</a> <a href='#oris'>oris</a> <a href='#andi_'>andi_</a> <a href='#andis_'>andis_</a> <a href='#xori'>xori</a></br>
+</div></div>
+<div class='ac_format'>D5 (<a name='D5'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bf 3; 0 1; l 1; ra 5; si 16 s;<br/>
+Instructions:  <a href='#cmpi'>cmpi</a></br>
+</div></div>
+<div class='ac_format'>D2 (<a name='D2'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; si 16 s;<br/>
+</div></div>
+<div class='ac_format'>D3 (<a name='D3'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rs 5; ra 5; d 16 s;<br/>
+Instructions:  <a href='#stwu'>stwu</a> <a href='#sthu'>sthu</a> <a href='#stmw'>stmw</a> <a href='#stbu'>stbu</a> <a href='#stb'>stb</a> <a href='#sth'>sth</a> <a href='#stw'>stw</a></br>
+</div></div>
+<div class='ac_format'>XL1 (<a name='XL1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; bt 5; ba 5; bb 5; xog 10; 0 1;<br/>
+Instructions:  <a href='#crnor'>crnor</a> <a href='#crxor'>crxor</a> <a href='#crnand'>crnand</a> <a href='#cror'>cror</a> <a href='#crand'>crand</a> <a href='#creqv'>creqv</a> <a href='#crorc'>crorc</a> <a href='#crandc'>crandc</a></br>
+</div></div>
+<div class='ac_format'>D1 (<a name='D1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  opcd 6; rt 5; ra 5; d 16 s;<br/>
+Instructions:  <a href='#lwzu'>lwzu</a> <a href='#subfic'>subfic</a> <a href='#lhau'>lhau</a> <a href='#mulli'>mulli</a> <a href='#addi'>addi</a> <a href='#addic'>addic</a> <a href='#lmw'>lmw</a> <a href='#addis'>addis</a> <a href='#lbzu'>lbzu</a> <a href='#lhzu'>lhzu</a> <a href='#lwz'>lwz</a> <a href='#lbz'>lbz</a> <a href='#lha'>lha</a> <a href='#lhz'>lhz</a> <a href='#addic_'>addic_</a></br>
+</div></div>
+<div class='ac_instr'>rlwnm_ (<a name='rlwnm_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#M1>M1</a><br/>
+Decoder: opcd=23; rc=1; <br/>
+ASM: rlwnm. %imm, %imm, %imm, %imm, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+ASM: mb<br/>
+ASM: me<br/>
+</div></a></div>
+<div class='ac_instr'>crnor (<a name='crnor'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=33; <br/>
+ASM: crnor %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>subfco (<a name='subfco'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=8; rc=0; <br/>
+ASM: subfco %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mullw_ (<a name='mullw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=235; rc=1; <br/>
+ASM: mullw. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>bcla (<a name='bcla'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#B1>B1</a><br/>
+Decoder: opcd=16; aa=1; lk=1; <br/>
+ASM: bcla %imm, %exp, %addr(pcrel)<br/>
+ASM: bo<br/>
+ASM: bi<br/>
+ASM: bd<br/>
+Is Branch: bd<<2<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+Behavior: LR.write(ac_pc+4);<br/>
+</div></a></div>
+<div class='ac_instr'>subfzeo (<a name='subfzeo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=200; rc=0; <br/>
+ASM: subfzeo %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>mullhwu_ (<a name='mullhwu_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X1>X1</a><br/>
+Decoder: opcd=4; xog=392; rc=1; <br/>
+ASM: mullhwu. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divwou_ (<a name='divwou_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=459; oe=1; rc=1; <br/>
+ASM: divwou. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>nego (<a name='nego'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; xos=104; oe=1; rc=0; <br/>
+ASM: nego %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>cmpi (<a name='cmpi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D5>D5</a><br/>
+Decoder: opcd=11; l=0; <br/>
+ASM: ['cmpwi %imm, %reg, %imm', 'bf', 'ra', 'si', 'l', '0']<br/>
+ASM: ['cmpi %reg, %imm, %reg, %imm', 'bf', 'l', 'ra', 'si']<br/>
+</div></a></div>
+<div class='ac_instr'>cmpl (<a name='cmpl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X16>X16</a><br/>
+Decoder: opcd=31; l=0; xog=32; <br/>
+ASM: ['cmplw %reg, %reg, %reg', 'bf', 'ra', 'rb', 'l', '0']<br/>
+ASM: ['cmpl %imm, %imm, %reg, %reg', 'bf', 'l', 'ra', 'rb']<br/>
+</div></a></div>
+<div class='ac_instr'>subfc (<a name='subfc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=8; rc=0; <br/>
+ASM: subfc %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>sraw_ (<a name='sraw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=792; rc=1; <br/>
+ASM: sraw. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stwu (<a name='stwu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=37; <br/>
+ASM: ['stwu %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['stwu %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>cmpli (<a name='cmpli'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D6>D6</a><br/>
+Decoder: opcd=10; l=0; <br/>
+ASM: ['cmplwi %reg, %reg, %imm', 'bf', 'ra', 'ui', 'l', '0']<br/>
+ASM: ['cmpli %reg, %imm, %reg, %imm', 'bf', 'l', 'ra', 'ui']<br/>
+</div></a></div>
+<div class='ac_instr'>neg_ (<a name='neg_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; xos=104; oe=0; rc=1; <br/>
+ASM: neg. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>srawi (<a name='srawi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X12>X12</a><br/>
+Decoder: opcd=31; xog=824; rc=0; <br/>
+ASM: srawi %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: sh<br/>
+</div></a></div>
+<div class='ac_instr'>stwx (<a name='stwx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=151; <br/>
+ASM: stwx %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stswi (<a name='stswi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X10>X10</a><br/>
+Decoder: opcd=31; xog=725; <br/>
+ASM: stswi %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: nb<br/>
+</div></a></div>
+<div class='ac_instr'>subfze (<a name='subfze'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=200; rc=0; <br/>
+ASM: subfze %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>add (<a name='add'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=266; rc=0; <br/>
+ASM: add %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lhaux (<a name='lhaux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=375; <br/>
+ASM: lhaux %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>cntlzw (<a name='cntlzw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X13>X13</a><br/>
+Decoder: opcd=31; xog=26; rc=0; <br/>
+ASM: cntlzw %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>rlwnm (<a name='rlwnm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#M1>M1</a><br/>
+Decoder: opcd=23; rc=0; <br/>
+ASM: rlwnm %imm, %imm, %imm, %imm, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+ASM: mb<br/>
+ASM: me<br/>
+</div></a></div>
+<div class='ac_instr'>srw_ (<a name='srw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=536; rc=1; <br/>
+ASM: srw. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mullwo (<a name='mullwo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=235; rc=0; <br/>
+ASM: mullwo %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stswx (<a name='stswx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=661; <br/>
+ASM: stswx %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subfze_ (<a name='subfze_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=200; rc=1; <br/>
+ASM: subfze. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>orc_ (<a name='orc_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=412; rc=1; <br/>
+ASM: orc. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>addc (<a name='addc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=10; rc=0; <br/>
+ASM: addc %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>sthbrx (<a name='sthbrx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=918; <br/>
+ASM: sthbrx %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>addzeo_ (<a name='addzeo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=202; rc=1; <br/>
+ASM: addzeo. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>nor_ (<a name='nor_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=124; rc=1; <br/>
+ASM: nor. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>addc_ (<a name='addc_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=10; rc=1; <br/>
+ASM: addc. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>crxor (<a name='crxor'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=193; <br/>
+ASM: crxor %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>addmeo_ (<a name='addmeo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=234; rc=1; <br/>
+ASM: addmeo. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>mcrxr (<a name='mcrxr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X18>X18</a><br/>
+Decoder: opcd=31; xog=512; <br/>
+ASM: mcrxr %imm<br/>
+ASM: bf<br/>
+</div></a></div>
+<div class='ac_instr'>mullw (<a name='mullw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=235; rc=0; <br/>
+ASM: mullw %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lwzx (<a name='lwzx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=23; <br/>
+ASM: lwzx %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subfo (<a name='subfo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=40; rc=0; <br/>
+ASM: subfo %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lwzu (<a name='lwzu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=33; <br/>
+ASM: ['lwzu %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lwzu %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>subfic (<a name='subfic'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=8; <br/>
+ASM: subfic %reg, %reg, %exp<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: d<br/>
+</div></a></div>
+<div class='ac_instr'>addze (<a name='addze'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=202; rc=0; <br/>
+ASM: addze %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>subfe (<a name='subfe'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=136; rc=0; <br/>
+ASM: subfe %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>nor (<a name='nor'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=124; rc=0; <br/>
+ASM: nor %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>nand_ (<a name='nand_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=476; rc=1; <br/>
+ASM: nand. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>slw_ (<a name='slw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=24; rc=1; <br/>
+ASM: slw. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subf_ (<a name='subf_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=40; rc=1; <br/>
+ASM: subf. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>bcctr (<a name='bcctr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL2>XL2</a><br/>
+Decoder: opcd=19; xog=528; lk=0; <br/>
+ASM: ['bctr', 'bo', 20, 'bi', '0', 'bh', '0']<br/>
+ASM: ['bcctr %reg, %reg, %reg', 'bo', 'bi', 'bh']<br/>
+Is Branch: CTR.read() & 0xFFFFFFFC<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+</div></a></div>
+<div class='ac_instr'>lwzux (<a name='lwzux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=55; <br/>
+ASM: lwzux %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>sthx (<a name='sthx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=407; <br/>
+ASM: sthx %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>rlwinm (<a name='rlwinm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#M2>M2</a><br/>
+Decoder: opcd=21; rc=0; <br/>
+ASM: rlwinm %reg, %reg, %exp, %imm, %exp<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: sh<br/>
+ASM: mb<br/>
+ASM: me<br/>
+</div></a></div>
+<div class='ac_instr'>mfcr (<a name='mfcr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X6>X6</a><br/>
+Decoder: opcd=31; xog=19; <br/>
+ASM: mfcr %imm<br/>
+ASM: rt<br/>
+</div></a></div>
+<div class='ac_instr'>lbzux (<a name='lbzux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=119; <br/>
+ASM: lbzux %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>sthu (<a name='sthu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=45; <br/>
+ASM: ['sthu %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['sthu %reg, %exp@l(%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>cmp (<a name='cmp'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X16>X16</a><br/>
+Decoder: opcd=31; l=0; xog=0; <br/>
+ASM: ['cmpw %imm, %imm, %imm', 'bf', 'ra', 'rb', 'l', '0']<br/>
+ASM: ['cmp %imm, %imm, %reg, %reg', 'bf', 'l', 'ra', 'rb']<br/>
+</div></a></div>
+<div class='ac_instr'>subfc_ (<a name='subfc_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=8; rc=1; <br/>
+ASM: subfc. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>add_ (<a name='add_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=266; rc=1; <br/>
+ASM: add. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>crnand (<a name='crnand'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=225; <br/>
+ASM: crnand %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>rlwimi (<a name='rlwimi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#M2>M2</a><br/>
+Decoder: opcd=20; rc=0; <br/>
+ASM: rlwimi %reg, %reg, %exp, %imm, %exp<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: sh<br/>
+ASM: mb<br/>
+ASM: me<br/>
+</div></a></div>
+<div class='ac_instr'>lhzux (<a name='lhzux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=311; <br/>
+ASM: lhzux %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lhax (<a name='lhax'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=343; <br/>
+ASM: lhax %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>xxor_ (<a name='xxor_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=316; rc=1; <br/>
+ASM: xor. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lhau (<a name='lhau'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=43; <br/>
+ASM: ['lhau %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lhau %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>neg (<a name='neg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; xos=104; oe=0; rc=0; <br/>
+ASM: neg %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>mulli (<a name='mulli'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=7; <br/>
+ASM: mulli %reg, %reg, %exp<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: d<br/>
+</div></a></div>
+<div class='ac_instr'>rlwinm_ (<a name='rlwinm_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#M2>M2</a><br/>
+Decoder: opcd=21; rc=1; <br/>
+ASM: rlwinm. %reg, %reg, %exp, %imm, %exp<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: sh<br/>
+ASM: mb<br/>
+ASM: me<br/>
+</div></a></div>
+<div class='ac_instr'>nand (<a name='nand'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=476; rc=0; <br/>
+ASM: nand %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>bl (<a name='bl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#I1>I1</a><br/>
+Decoder: opcd=18; aa=0; lk=1; <br/>
+ASM: bl %addr(pcrel)<br/>
+ASM: li<br/>
+Is Jump: ac_pc+(li<<2)<br/>
+Behavior: LR.write(ac_pc+4);<br/>
+</div></a></div>
+<div class='ac_instr'>adde (<a name='adde'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=138; rc=0; <br/>
+ASM: adde %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lwbrx (<a name='lwbrx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=534; <br/>
+ASM: lwbrx %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>adde_ (<a name='adde_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=138; rc=1; <br/>
+ASM: adde. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mfspr (<a name='mfspr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XFX1>XFX1</a><br/>
+Decoder: opcd=31; xog=339; <br/>
+ASM: [['mfctr %imm', 'rt', 'sprf', 288], ['mflr %imm', 'rt', 'sprf', 256]]<br/>
+ASM: ['mfspr %imm, %imm', 'rt', 'sprf']<br/>
+</div></a></div>
+<div class='ac_instr'>addo (<a name='addo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=266; rc=0; <br/>
+ASM: addo %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divwu_ (<a name='divwu_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=459; oe=0; rc=1; <br/>
+ASM: divwu. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>extsb_ (<a name='extsb_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X13>X13</a><br/>
+Decoder: opcd=31; xog=954; rc=1; <br/>
+ASM: extsb. %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>bla (<a name='bla'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#I1>I1</a><br/>
+Decoder: opcd=18; aa=1; lk=1; <br/>
+ASM: bla %addr(pcrel)<br/>
+ASM: li<br/>
+Is Jump: li<<2<br/>
+Behavior: LR.write(ac_pc+4);<br/>
+</div></a></div>
+<div class='ac_instr'>addi (<a name='addi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=14; <br/>
+ASM: [[['li %reg, %exp', 'rt', 'ra', '0', 'd'], ['li %reg, %exp(carry)@ha', 'rt', 'ra', '0', 'd']], ['la %reg, %exp@l(%imm)', 'rt', 'd', 'ra']]<br/>
+ASM: ['addi %reg, %reg, %exp', 'rt', 'ra', 'd']<br/>
+</div></a></div>
+<div class='ac_instr'>addze_ (<a name='addze_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=202; rc=1; <br/>
+ASM: addze. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>ba (<a name='ba'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#I1>I1</a><br/>
+Decoder: opcd=18; aa=1; lk=0; <br/>
+ASM: ba %addr(pcrel)<br/>
+ASM: li<br/>
+Is Jump: li<<2<br/>
+</div></a></div>
+<div class='ac_instr'>bc (<a name='bc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#B1>B1</a><br/>
+Decoder: opcd=16; aa=0; lk=0; <br/>
+ASM: bc %imm, %exp, %addr(pcrel)<br/>
+ASM: bo<br/>
+ASM: bi<br/>
+ASM: bd<br/>
+Is Branch: ac_pc+(bd<<2)<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+</div></a></div>
+<div class='ac_instr'>addic (<a name='addic'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=12; <br/>
+ASM: addic %reg, %reg, %exp<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: d<br/>
+</div></a></div>
+<div class='ac_instr'>subfzeo_ (<a name='subfzeo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=200; rc=1; <br/>
+ASM: subfzeo. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>lswx (<a name='lswx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=533; <br/>
+ASM: lswx %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stmw (<a name='stmw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=47; <br/>
+ASM: ['stmw %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['stmw %reg, %exp@l(%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>divw_ (<a name='divw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=491; oe=0; rc=1; <br/>
+ASM: divw. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lmw (<a name='lmw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=46; <br/>
+ASM: ['lmw %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lmw %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>sraw (<a name='sraw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=792; rc=0; <br/>
+ASM: sraw %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subfco_ (<a name='subfco_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=8; rc=1; <br/>
+ASM: subfco. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>ori (<a name='ori'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D4>D4</a><br/>
+Decoder: opcd=24; <br/>
+ASM: ori %reg, %reg, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: ui<br/>
+</div></a></div>
+<div class='ac_instr'>addis (<a name='addis'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=15; <br/>
+ASM: [['lis %reg, %exp', 'rt', 'ra', '0', 'd'], ['lis %reg, %exp(carry)@ha', 'rt', 'ra', '0', 'd']]<br/>
+ASM: ['addis %reg, %reg, %exp', 'rt', 'ra', 'd']<br/>
+</div></a></div>
+<div class='ac_instr'>ore (<a name='ore'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=444; rc=0; <br/>
+ASM: or %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>orc (<a name='orc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=412; rc=0; <br/>
+ASM: orc %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>ande_ (<a name='ande_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=28; rc=1; <br/>
+ASM: and. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>eqv_ (<a name='eqv_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=284; rc=1; <br/>
+ASM: eqv. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mulhwu (<a name='mulhwu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO2>XO2</a><br/>
+Decoder: opcd=31; xos=11; rc=0; <br/>
+ASM: mulhwu %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>xoris (<a name='xoris'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D4>D4</a><br/>
+Decoder: opcd=27; <br/>
+ASM: xoris %reg, %reg, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: ui<br/>
+</div></a></div>
+<div class='ac_instr'>lbzx (<a name='lbzx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=87; <br/>
+ASM: lbzx %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lbzu (<a name='lbzu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=35; <br/>
+ASM: ['lbzu %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lbzu %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>ore_ (<a name='ore_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=444; rc=1; <br/>
+ASM: or. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>srw (<a name='srw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=536; rc=0; <br/>
+ASM: srw %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>nego_ (<a name='nego_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; xos=104; oe=1; rc=1; <br/>
+ASM: nego. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>addeo_ (<a name='addeo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=138; rc=1; <br/>
+ASM: addeo. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>addme_ (<a name='addme_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=234; rc=1; <br/>
+ASM: addme. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>lhzx (<a name='lhzx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=279; <br/>
+ASM: lhzx %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lhzu (<a name='lhzu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=41; <br/>
+ASM: ['lhzu %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lhzu %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>subf (<a name='subf'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=40; rc=0; <br/>
+ASM: subf %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divw (<a name='divw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=491; oe=0; rc=0; <br/>
+ASM: divw %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subfe_ (<a name='subfe_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=0; xos=136; rc=1; <br/>
+ASM: subfe. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stbx (<a name='stbx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=215; <br/>
+ASM: stbx %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>sthux (<a name='sthux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=439; <br/>
+ASM: sthux %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subfme_ (<a name='subfme_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=232; rc=1; <br/>
+ASM: subfme. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>stbu (<a name='stbu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=39; <br/>
+ASM: ['stbu %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['stbu %reg, %exp@l(%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>lwz (<a name='lwz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=32; <br/>
+ASM: ['lwz %imm, %imm (%imm)', 'rt', 'd', 'ra']<br/>
+ASM: ['lwz %imm, %exp@l(%imm)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>subfeo (<a name='subfeo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=136; rc=0; <br/>
+ASM: subfeo %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lswi (<a name='lswi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X3>X3</a><br/>
+Decoder: opcd=31; xog=597; <br/>
+ASM: lswi %imm, %imm, %imm<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: nb<br/>
+</div></a></div>
+<div class='ac_instr'>ande (<a name='ande'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=28; rc=0; <br/>
+ASM: and %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>andc (<a name='andc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=60; rc=0; <br/>
+ASM: andc %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>eqv (<a name='eqv'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=284; rc=0; <br/>
+ASM: eqv %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divwo (<a name='divwo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=491; oe=1; rc=0; <br/>
+ASM: divwo %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>addmeo (<a name='addmeo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=234; rc=0; <br/>
+ASM: addmeo %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>addzeo (<a name='addzeo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=202; rc=0; <br/>
+ASM: addzeo %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>oris (<a name='oris'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D4>D4</a><br/>
+Decoder: opcd=25; <br/>
+ASM: oris %reg, %reg, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: ui<br/>
+</div></a></div>
+<div class='ac_instr'>subfeo_ (<a name='subfeo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=136; rc=1; <br/>
+ASM: subfeo. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>andi_ (<a name='andi_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D4>D4</a><br/>
+Decoder: opcd=28; <br/>
+ASM: andi. %reg, %reg, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: ui<br/>
+</div></a></div>
+<div class='ac_instr'>mtcrf (<a name='mtcrf'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XFX3>XFX3</a><br/>
+Decoder: opcd=31; xog=144; <br/>
+ASM: mtcrf %imm, %imm<br/>
+ASM: xfm<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>subfo_ (<a name='subfo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=40; rc=1; <br/>
+ASM: subfo. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mullhwu (<a name='mullhwu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X1>X1</a><br/>
+Decoder: opcd=4; xog=392; rc=0; <br/>
+ASM: mullhwu %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>extsb (<a name='extsb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X13>X13</a><br/>
+Decoder: opcd=31; xog=954; rc=0; <br/>
+ASM: extsb %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>cror (<a name='cror'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=449; <br/>
+ASM: cror %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>extsh (<a name='extsh'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X13>X13</a><br/>
+Decoder: opcd=31; xog=922; rc=0; <br/>
+ASM: extsh %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>cntlzw_ (<a name='cntlzw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X13>X13</a><br/>
+Decoder: opcd=31; xog=26; rc=1; <br/>
+ASM: cntlzw. %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>subfme (<a name='subfme'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=232; rc=0; <br/>
+ASM: subfme %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>stwbrx (<a name='stwbrx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=662; <br/>
+ASM: stwbrx %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divwu (<a name='divwu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=459; oe=0; rc=0; <br/>
+ASM: divwu %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>crand (<a name='crand'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=257; <br/>
+ASM: crand %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>b (<a name='b'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#I1>I1</a><br/>
+Decoder: opcd=18; aa=0; lk=0; <br/>
+ASM: b %addr(pcrel)<br/>
+ASM: li<br/>
+Is Jump: ac_pc+(li<<2)<br/>
+</div></a></div>
+<div class='ac_instr'>addco_ (<a name='addco_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=10; rc=1; <br/>
+ASM: addco. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stb (<a name='stb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=38; <br/>
+ASM: ['stb %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['stb %reg, %exp@l(%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>slw (<a name='slw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=24; rc=0; <br/>
+ASM: slw %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>sth (<a name='sth'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=44; <br/>
+ASM: ['sth %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['sth %reg, %exp@l(%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>addo_ (<a name='addo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=266; rc=1; <br/>
+ASM: addo. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mullhw_ (<a name='mullhw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X1>X1</a><br/>
+Decoder: opcd=4; xog=424; rc=1; <br/>
+ASM: mullhw. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stw (<a name='stw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D3>D3</a><br/>
+Decoder: opcd=36; <br/>
+ASM: ['stw %reg, %imm (%reg)', 'rs', 'd', 'ra']<br/>
+ASM: ['stw %reg, %exp@l(%reg)', 'rs', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>bclrl (<a name='bclrl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL2>XL2</a><br/>
+Decoder: opcd=19; xog=16; lk=1; <br/>
+ASM: bclrl %reg, %reg, %reg<br/>
+ASM: bo<br/>
+ASM: bi<br/>
+ASM: bh<br/>
+Is Branch: LR.read() & 0xFFFFFFFC<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+Behavior: LR.write(ac_pc+4);<br/>
+</div></a></div>
+<div class='ac_instr'>extsh_ (<a name='extsh_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X13>X13</a><br/>
+Decoder: opcd=31; xog=922; rc=1; <br/>
+ASM: extsh. %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+</div></a></div>
+<div class='ac_instr'>addco (<a name='addco'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=10; rc=0; <br/>
+ASM: addco %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lbz (<a name='lbz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=34; <br/>
+ASM: ['lbz %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lbz %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>bclr (<a name='bclr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL2>XL2</a><br/>
+Decoder: opcd=19; xog=16; lk=0; <br/>
+ASM: ['blr', 'bo', 20, 'bi', '0', 'bh', '0']<br/>
+ASM: ['bclr %reg, %reg, %reg', 'bo', 'bi', 'bh']<br/>
+Is Branch: LR.read() & 0xFFFFFFFC<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+</div></a></div>
+<div class='ac_instr'>mtspr (<a name='mtspr'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XFX4>XFX4</a><br/>
+Decoder: opcd=31; xog=467; <br/>
+ASM: [['mtctr %imm', 'rs', 'sprf', 288], ['mtlr %imm', 'rs', 'sprf', 256]]<br/>
+ASM: ['mtspr %imm, %imm', 'sprf', 'rs']<br/>
+</div></a></div>
+<div class='ac_instr'>andis_ (<a name='andis_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D4>D4</a><br/>
+Decoder: opcd=29; <br/>
+ASM: andis. %reg, %reg, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: ui<br/>
+</div></a></div>
+<div class='ac_instr'>andc_ (<a name='andc_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=60; rc=1; <br/>
+ASM: andc. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>xxor (<a name='xxor'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X7>X7</a><br/>
+Decoder: opcd=31; xog=316; rc=0; <br/>
+ASM: xor %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>stbux (<a name='stbux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=247; <br/>
+ASM: stbux %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>creqv (<a name='creqv'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=289; <br/>
+ASM: creqv %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>lhbrx (<a name='lhbrx'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X2>X2</a><br/>
+Decoder: opcd=31; xog=790; <br/>
+ASM: lhbrx %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>rlwimi_ (<a name='rlwimi_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#M2>M2</a><br/>
+Decoder: opcd=20; rc=1; <br/>
+ASM: rlwimi. %reg, %reg, %exp, %imm, %exp<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: sh<br/>
+ASM: mb<br/>
+ASM: me<br/>
+</div></a></div>
+<div class='ac_instr'>mulhw (<a name='mulhw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO2>XO2</a><br/>
+Decoder: opcd=31; xos=75; rc=0; <br/>
+ASM: mulhw %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divwou (<a name='divwou'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=459; oe=1; rc=0; <br/>
+ASM: divwou %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>addeo (<a name='addeo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=138; rc=0; <br/>
+ASM: addeo %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>bcctrl (<a name='bcctrl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL2>XL2</a><br/>
+Decoder: opcd=19; xog=528; lk=1; <br/>
+ASM: ['bctrl', 'bo', 20, 'bi', '0', 'bh', '0']<br/>
+ASM: ['bcctrl %reg, %reg, %reg', 'bo', 'bi', 'bh']<br/>
+Is Branch: CTR.read() & 0xFFFFFFFC<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+Behavior: LR.write(ac_pc+4);<br/>
+</div></a></div>
+<div class='ac_instr'>mcrf (<a name='mcrf'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL3>XL3</a><br/>
+Decoder: opcd=19; xog=0; <br/>
+ASM: mcrf %imm, %imm<br/>
+ASM: bf<br/>
+ASM: bfa<br/>
+</div></a></div>
+<div class='ac_instr'>stwux (<a name='stwux'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X9>X9</a><br/>
+Decoder: opcd=31; xog=183; <br/>
+ASM: stwux %reg, %reg, %reg<br/>
+ASM: rs<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>mulhwu_ (<a name='mulhwu_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO2>XO2</a><br/>
+Decoder: opcd=31; xos=11; rc=1; <br/>
+ASM: mulhwu. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>xori (<a name='xori'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D4>D4</a><br/>
+Decoder: opcd=26; <br/>
+ASM: xori %reg, %reg, %imm<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: ui<br/>
+</div></a></div>
+<div class='ac_instr'>addme (<a name='addme'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=0; xos=234; rc=0; <br/>
+ASM: addme %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>srawi_ (<a name='srawi_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X12>X12</a><br/>
+Decoder: opcd=31; xog=824; rc=1; <br/>
+ASM: srawi. %reg, %reg, %reg<br/>
+ASM: ra<br/>
+ASM: rs<br/>
+ASM: sh<br/>
+</div></a></div>
+<div class='ac_instr'>bcl (<a name='bcl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#B1>B1</a><br/>
+Decoder: opcd=16; aa=0; lk=1; <br/>
+ASM: bcl %imm, %exp, %addr(pcrel)<br/>
+ASM: bo<br/>
+ASM: bi<br/>
+ASM: bd<br/>
+Is Branch: ac_pc+(bd<<2)<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+Behavior: LR.write(ac_pc+4);<br/>
+</div></a></div>
+<div class='ac_instr'>subfmeo_ (<a name='subfmeo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=232; rc=1; <br/>
+ASM: subfmeo. %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>lha (<a name='lha'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=42; <br/>
+ASM: ['lha %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lha %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>mulhw_ (<a name='mulhw_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO2>XO2</a><br/>
+Decoder: opcd=31; xos=75; rc=1; <br/>
+ASM: mulhw. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>divwo_ (<a name='divwo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; xos=491; oe=1; rc=1; <br/>
+ASM: divwo. %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>subfmeo (<a name='subfmeo'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO3>XO3</a><br/>
+Decoder: opcd=31; oe=1; xos=232; rc=0; <br/>
+ASM: subfmeo %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+</div></a></div>
+<div class='ac_instr'>mullwo_ (<a name='mullwo_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XO1>XO1</a><br/>
+Decoder: opcd=31; oe=1; xos=235; rc=1; <br/>
+ASM: mullw %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>bca (<a name='bca'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#B1>B1</a><br/>
+Decoder: opcd=16; aa=1; lk=0; <br/>
+ASM: bca %imm, %exp, %addr(pcrel)<br/>
+ASM: bo<br/>
+ASM: bi<br/>
+ASM: bd<br/>
+Is Branch: bd<<2<br/>
+Condition: test_Branch_Cond(bo,bi)<br/>
+</div></a></div>
+<div class='ac_instr'>crorc (<a name='crorc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=417; <br/>
+ASM: crorc %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+<div class='ac_instr'>sc (<a name='sc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#SC1>SC1</a><br/>
+Decoder: opcd=17; <br/>
+ASM: sc %imm<br/>
+ASM: lev<br/>
+</div></a></div>
+<div class='ac_instr'>mullhw (<a name='mullhw'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#X1>X1</a><br/>
+Decoder: opcd=4; xog=424; rc=0; <br/>
+ASM: mullhw %reg, %reg, %reg<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: rb<br/>
+</div></a></div>
+<div class='ac_instr'>lhz (<a name='lhz'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=40; <br/>
+ASM: ['lhz %reg, %imm (%reg)', 'rt', 'd', 'ra']<br/>
+ASM: ['lhz %reg, %exp@l(%reg)', 'rt', 'd', 'ra']<br/>
+</div></a></div>
+<div class='ac_instr'>addic_ (<a name='addic_'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#D1>D1</a><br/>
+Decoder: opcd=13; <br/>
+ASM: addic. %reg, %reg, %exp<br/>
+ASM: rt<br/>
+ASM: ra<br/>
+ASM: d<br/>
+</div></a></div>
+<div class='ac_instr'>crandc (<a name='crandc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#XL1>XL1</a><br/>
+Decoder: opcd=19; xog=129; <br/>
+ASM: crandc %reg, %reg, %reg<br/>
+ASM: bt<br/>
+ASM: ba<br/>
+ASM: bb<br/>
+</div></a></div>
+</div>
+</body>
+</html>

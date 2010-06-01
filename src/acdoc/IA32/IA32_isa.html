@@ -1,0 +1,1420 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>IA32 ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=IA32_index.html>IA32 Architechture Description</a></div><div class='definfo'><a href=IA32_other.html>IA32 Other Properties</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: IA32_isa.ac</div>
+<div class='ac_format'>Type_op1b_rm32 (<a name='Type_op1b_rm32'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op1b 8; rm 3; regop 3; mod 2; sib 8; disp 32; imm 32;<br/>
+Instructions:  <a href='#sbb_rm32_imm32'>sbb_rm32_imm32</a> <a href='#or_r8_rm8'>or_r8_rm8</a> <a href='#shr_rm32_imm8'>shr_rm32_imm8</a> <a href='#test_rm32_r32'>test_rm32_r32</a> <a href='#sub_rm8_r8'>sub_rm8_r8</a> <a href='#adc_r32_rm32'>adc_r32_rm32</a> <a href='#imul_rm8'>imul_rm8</a> <a href='#shr_rm8'>shr_rm8</a> <a href='#and_r8_rm8'>and_r8_rm8</a> <a href='#sub_rm32_imm8'>sub_rm32_imm8</a> <a href='#jmp_m16_32'>jmp_m16_32</a> <a href='#sal_shl_rm32_imm8'>sal_shl_rm32_imm8</a> <a href='#dec_rm8'>dec_rm8</a> <a href='#int_3'>int_3</a> <a href='#les_r32_m16_32'>les_r32_m16_32</a> <a href='#rcr_rm32'>rcr_rm32</a> <a href='#cmp_r32_rm32'>cmp_r32_rm32</a> <a href='#not_rm32'>not_rm32</a> <a href='#int_imm8'>int_imm8</a> <a href='#add_r32_rm32'>add_r32_rm32</a> <a href='#mov_rm32_r32'>mov_rm32_r32</a> <a href='#sal_shl_1_rm32'>sal_shl_1_rm32</a> <a href='#mul_rm8'>mul_rm8</a> <a href='#or_rm32_imm8'>or_rm32_imm8</a> <a href='#mov_rm8_r8'>mov_rm8_r8</a> <a href='#sbb_rm32_imm8'>sbb_rm32_imm8</a> <a href='#out_imm8_EAX'>out_imm8_EAX</a> <a href='#mov_rm32_imm32'>mov_rm32_imm32</a> <a href='#and_rm32_r32'>and_rm32_r32</a> <a href='#adc_rm32_imm32'>adc_rm32_imm32</a> <a href='#shr_cl_rm32'>shr_cl_rm32</a> <a href='#xor_rm32_imm32'>xor_rm32_imm32</a> <a href='#call_rm32'>call_rm32</a> <a href='#cmp_rm32_r32'>cmp_rm32_r32</a> <a href='#sub_rm8_imm8'>sub_rm8_imm8</a> <a href='#rol_rm32'>rol_rm32</a> <a href='#and_rm32_imm8'>and_rm32_imm8</a> <a href='#xor_rm32_imm8'>xor_rm32_imm8</a> <a href='#cmp_r8_rm8'>cmp_r8_rm8</a> <a href='#mov_rm8_imm8'>mov_rm8_imm8</a> <a href='#cmp_rm32_imm8'>cmp_rm32_imm8</a> <a href='#sal_shl_cl_rm32'>sal_shl_cl_rm32</a> <a href='#enter_imm16_0_1_imm8'>enter_imm16_0_1_imm8</a> <a href='#sar_rm8'>sar_rm8</a> <a href='#mov_r8_rm8'>mov_r8_rm8</a> <a href='#xchg_rm32_r32'>xchg_rm32_r32</a> <a href='#div_rm32'>div_rm32</a> <a href='#imul_rm32'>imul_rm32</a> <a href='#lea_r32_m'>lea_r32_m</a> <a href='#sal_rm8_imm8'>sal_rm8_imm8</a> <a href='#dec_rm32'>dec_rm32</a> <a href='#xor_rm32_r32'>xor_rm32_r32</a> <a href='#and_r32_rm32'>and_r32_rm32</a> <a href='#mov_r32_rm32'>mov_r32_rm32</a> <a href='#sar_cl_rm32'>sar_cl_rm32</a> <a href='#ret_far_imm16'>ret_far_imm16</a> <a href='#xor_r32_rm32'>xor_r32_rm32</a> <a href='#cmp_rm8_imm8'>cmp_rm8_imm8</a> <a href='#call_m16_32'>call_m16_32</a> <a href='#sar_1_rm32'>sar_1_rm32</a> <a href='#sub_rm32_imm32'>sub_rm32_imm32</a> <a href='#add_rm8_imm8'>add_rm8_imm8</a> <a href='#neg_rm32'>neg_rm32</a> <a href='#rcl_rm32'>rcl_rm32</a> <a href='#in_EAX_imm8'>in_EAX_imm8</a> <a href='#or_rm32_imm32'>or_rm32_imm32</a> <a href='#sub_rm32_r32'>sub_rm32_r32</a> <a href='#sar_rm32_imm8'>sar_rm32_imm8</a> <a href='#jmp_rm32'>jmp_rm32</a> <a href='#sar_rm8_imm8'>sar_rm8_imm8</a> <a href='#rcr_rm32_imm8'>rcr_rm32_imm8</a> <a href='#add_r8_rm8'>add_r8_rm8</a> <a href='#test_rm32_imm32'>test_rm32_imm32</a> <a href='#jmp_ptr16_32'>jmp_ptr16_32</a> <a href='#mul_rm32'>mul_rm32</a> <a href='#pop_rm32'>pop_rm32</a> <a href='#xor_r8_rm8'>xor_r8_rm8</a> <a href='#or_r32_rm32'>or_r32_rm32</a> <a href='#sbb_r32_rm32'>sbb_r32_rm32</a> <a href='#inc_rm8'>inc_rm8</a> <a href='#imul_r32_rm32_imm32'>imul_r32_rm32_imm32</a> <a href='#lds_r32_m16_32'>lds_r32_m16_32</a> <a href='#rcl_rm32_imm8'>rcl_rm32_imm8</a> <a href='#bound_r32_m32_32'>bound_r32_m32_32</a> <a href='#call_ptr16_32'>call_ptr16_32</a> <a href='#cmp_rm32_imm32'>cmp_rm32_imm32</a> <a href='#shr_rm8_imm8'>shr_rm8_imm8</a> <a href='#add_rm32_imm32'>add_rm32_imm32</a> <a href='#adc_rm32_r32'>adc_rm32_r32</a> <a href='#inc_rm32'>inc_rm32</a> <a href='#ret_near_imm16'>ret_near_imm16</a> <a href='#sal_rm8'>sal_rm8</a> <a href='#add_rm8_r8'>add_rm8_r8</a> <a href='#shr_1_rm32'>shr_1_rm32</a> <a href='#sub_r32_rm32'>sub_r32_rm32</a> <a href='#add_rm32_imm8'>add_rm32_imm8</a> <a href='#ror_rm32_imm8'>ror_rm32_imm8</a> <a href='#adc_rm32_imm8'>adc_rm32_imm8</a> <a href='#sbb_rm32_r32'>sbb_rm32_r32</a> <a href='#ret_near'>ret_near</a> <a href='#imul_r32_rm32_imm8'>imul_r32_rm32_imm8</a> <a href='#into'>into</a> <a href='#or_rm32_r32'>or_rm32_r32</a> <a href='#rol_rm32_imm8'>rol_rm32_imm8</a> <a href='#and_rm32_imm32'>and_rm32_imm32</a> <a href='#div_rm8'>div_rm8</a> <a href='#add_rm32_r32'>add_rm32_r32</a> <a href='#ret_far'>ret_far</a> <a href='#push_rm32'>push_rm32</a> <a href='#idiv_rm32'>idiv_rm32</a> <a href='#ror_rm32'>ror_rm32</a></br>
+</div></div>
+<div class='ac_format'>Type_op2b_debug (<a name='Type_op2b_debug'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op2b 16; iadd 32; eadd 32;<br/>
+Instructions:  <a href='#dump_memory'>dump_memory</a> <a href='#dump_stack'>dump_stack</a> <a href='#dump_registers'>dump_registers</a></br>
+</div></div>
+<div class='ac_format'>Type_op1bi8 (<a name='Type_op1bi8'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op1b 8; imm8 8;<br/>
+Instructions:  <a href='#mov_AH_imm8'>mov_AH_imm8</a> <a href='#mov_CH_imm8'>mov_CH_imm8</a> <a href='#mov_DH_imm8'>mov_DH_imm8</a> <a href='#cmp_AL_imm8'>cmp_AL_imm8</a> <a href='#mov_BH_imm8'>mov_BH_imm8</a> <a href='#mov_BL_imm8'>mov_BL_imm8</a> <a href='#mov_CL_imm8'>mov_CL_imm8</a> <a href='#mov_AL_imm8'>mov_AL_imm8</a> <a href='#mov_DL_imm8'>mov_DL_imm8</a> <a href='#push_imm8'>push_imm8</a></br>
+</div></div>
+<div class='ac_format'>Type_op1bd8 (<a name='Type_op1bd8'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op1b 8; disp8 8;<br/>
+Instructions:  <a href='#jl_jnge_rel8'>jl_jnge_rel8</a> <a href='#jnp_jpo_rel8'>jnp_jpo_rel8</a> <a href='#jno_rel8'>jno_rel8</a> <a href='#jae_jnb_jnc_rel8'>jae_jnb_jnc_rel8</a> <a href='#jns_rel8'>jns_rel8</a> <a href='#jbe_jna_rel8'>jbe_jna_rel8</a> <a href='#je_jz_rel8'>je_jz_rel8</a> <a href='#ja_jnbe_rel8'>ja_jnbe_rel8</a> <a href='#jcxz_jecxz_rel8'>jcxz_jecxz_rel8</a> <a href='#loopne_loopnz_rel8'>loopne_loopnz_rel8</a> <a href='#jo_rel8'>jo_rel8</a> <a href='#jb_jc_jnae_rel8'>jb_jc_jnae_rel8</a> <a href='#loope_loopz_rel8'>loope_loopz_rel8</a> <a href='#loop_rel8'>loop_rel8</a> <a href='#jmp_rel8'>jmp_rel8</a> <a href='#jg_jnle_rel8'>jg_jnle_rel8</a> <a href='#jle_jng_rel8'>jle_jng_rel8</a> <a href='#jp_jpe_rel8'>jp_jpe_rel8</a> <a href='#jge_jnl_rel8'>jge_jnl_rel8</a> <a href='#js_rel8'>js_rel8</a> <a href='#jne_jnz_rel8'>jne_jnz_rel8</a></br>
+</div></div>
+<div class='ac_format'>Type_op2b_rm32 (<a name='Type_op2b_rm32'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op2b 16; rm2 3; regop2 3; mod2 2; sib2 8; disp2 32; imm2 32;<br/>
+Instructions:  <a href='#setp_setpe_rm8'>setp_setpe_rm8</a> <a href='#imul_r32_rm32'>imul_r32_rm32</a> <a href='#cmov_ae_nb_nc_r32_rm32'>cmov_ae_nb_nc_r32_rm32</a> <a href='#bsf_r32_rm32'>bsf_r32_rm32</a> <a href='#setle_setng_rm8'>setle_setng_rm8</a> <a href='#setge_setnl_rm8'>setge_setnl_rm8</a> <a href='#movzx_r32_rm8'>movzx_r32_rm8</a> <a href='#setl_setnge_rm8'>setl_setnge_rm8</a> <a href='#cmov_p_pe_r32_rm32'>cmov_p_pe_r32_rm32</a> <a href='#setns_rm8'>setns_rm8</a> <a href='#cmov_ne_nz_r32_rm32'>cmov_ne_nz_r32_rm32</a> <a href='#cmov_no_r32_rm32'>cmov_no_r32_rm32</a> <a href='#cmov_a_nbe_r32_rm32'>cmov_a_nbe_r32_rm32</a> <a href='#lgs_r32_m16_32'>lgs_r32_m16_32</a> <a href='#cmov_l_nge_r32_rm32'>cmov_l_nge_r32_rm32</a> <a href='#bt_rm32_r32'>bt_rm32_r32</a> <a href='#shld_rm32_r32_imm8'>shld_rm32_r32_imm8</a> <a href='#setno_rm8'>setno_rm8</a> <a href='#shrd_rm32_r32_CL'>shrd_rm32_r32_CL</a> <a href='#seto_rm8'>seto_rm8</a> <a href='#btr_rm32_imm8'>btr_rm32_imm8</a> <a href='#seta_setnbe_rm8'>seta_setnbe_rm8</a> <a href='#shrd_rm32_r32_imm8'>shrd_rm32_r32_imm8</a> <a href='#movzx_r32_rm16'>movzx_r32_rm16</a> <a href='#setg_setnle_rm8'>setg_setnle_rm8</a> <a href='#setne_setnz_rm8'>setne_setnz_rm8</a> <a href='#setae_setnb_setnc_rm8'>setae_setnb_setnc_rm8</a> <a href='#bsr_r32_rm32'>bsr_r32_rm32</a> <a href='#bts_rm32_imm8'>bts_rm32_imm8</a> <a href='#cmov_ge_nl_r32_rm32'>cmov_ge_nl_r32_rm32</a> <a href='#setb_setc_setnae_rm8'>setb_setc_setnae_rm8</a> <a href='#cmov_be_na_r32_rm32'>cmov_be_na_r32_rm32</a> <a href='#sete_setz_rm8'>sete_setz_rm8</a> <a href='#sets_rm8'>sets_rm8</a> <a href='#cmpxchg8b_m64'>cmpxchg8b_m64</a> <a href='#movsx_r32_rm8'>movsx_r32_rm8</a> <a href='#cmov_ns_r32_rm32'>cmov_ns_r32_rm32</a> <a href='#cmov_s_r32_rm32'>cmov_s_r32_rm32</a> <a href='#btc_rm32_r32'>btc_rm32_r32</a> <a href='#cmov_o_r32_rm32'>cmov_o_r32_rm32</a> <a href='#btr_rm32_r32'>btr_rm32_r32</a> <a href='#setnp_setpo_rm8'>setnp_setpo_rm8</a> <a href='#cmov_np_po_r32_rm32'>cmov_np_po_r32_rm32</a> <a href='#movsx_r32_rm16'>movsx_r32_rm16</a> <a href='#lss_r32_m16_32'>lss_r32_m16_32</a> <a href='#cmov_le_ng_r32_rm32'>cmov_le_ng_r32_rm32</a> <a href='#setbe_setna_rm8'>setbe_setna_rm8</a> <a href='#cmov_e_z_r32_rm32'>cmov_e_z_r32_rm32</a> <a href='#xadd_rm32_r32'>xadd_rm32_r32</a> <a href='#bts_rm32_r32'>bts_rm32_r32</a> <a href='#cmpxchg_rm32_r32'>cmpxchg_rm32_r32</a> <a href='#cmov_g_nle_r32_rm32'>cmov_g_nle_r32_rm32</a> <a href='#btc_rm32_imm8'>btc_rm32_imm8</a> <a href='#bt_rm32_imm8'>bt_rm32_imm8</a> <a href='#shld_rm32_r32_CL'>shld_rm32_r32_CL</a> <a href='#lfs_r32_m16_32'>lfs_r32_m16_32</a> <a href='#cmov_b_c_nae_r32_rm32'>cmov_b_c_nae_r32_rm32</a></br>
+</div></div>
+<div class='ac_format'>Type_op2bd32 (<a name='Type_op2bd32'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op2b 16; disp32 32;<br/>
+Instructions:  <a href='#ja_jnbe_rel16_32'>ja_jnbe_rel16_32</a> <a href='#jnp_jpo_rel16_32'>jnp_jpo_rel16_32</a> <a href='#jno_rel16_32'>jno_rel16_32</a> <a href='#jbe_jna_rel16_32'>jbe_jna_rel16_32</a> <a href='#jp_jpe_rel16_32'>jp_jpe_rel16_32</a> <a href='#jl_jnge_rel16_32'>jl_jnge_rel16_32</a> <a href='#jle_jng_rel16_32'>jle_jng_rel16_32</a> <a href='#jns_rel16_32'>jns_rel16_32</a> <a href='#je_jz_rel16_32'>je_jz_rel16_32</a> <a href='#jb_jc_jnae_rel16_32'>jb_jc_jnae_rel16_32</a> <a href='#js_rel16_32'>js_rel16_32</a> <a href='#jg_jnle_rel16_32'>jg_jnle_rel16_32</a> <a href='#jne_jnz_rel16_32'>jne_jnz_rel16_32</a> <a href='#jo_rel16_32'>jo_rel16_32</a> <a href='#jge_jnl_rel16_32'>jge_jnl_rel16_32</a> <a href='#jae_jnb_jnc_rel16_32'>jae_jnb_jnc_rel16_32</a></br>
+</div></div>
+<div class='ac_format'>Type_op1bd32 (<a name='Type_op1bd32'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op1b 8; imme 32;<br/>
+Instructions:  <a href='#jmp_rel32'>jmp_rel32</a> <a href='#call_rel32'>call_rel32</a></br>
+</div></div>
+<div class='ac_format'>Type_op2b (<a name='Type_op2b'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  o p 2 b; 1 6;<br/>
+Instructions:  <a href='#pop_FS'>pop_FS</a> <a href='#bswap_ECX_r32'>bswap_ECX_r32</a> <a href='#bswap_ESI_r32'>bswap_ESI_r32</a> <a href='#bswap_EAX_r32'>bswap_EAX_r32</a> <a href='#bswap_EBX_r32'>bswap_EBX_r32</a> <a href='#bswap_ESP_r32'>bswap_ESP_r32</a> <a href='#bswap_EBP_r32'>bswap_EBP_r32</a> <a href='#bswap_EDI_r32'>bswap_EDI_r32</a> <a href='#bswap_EDX_r32'>bswap_EDX_r32</a> <a href='#pop_GS'>pop_GS</a> <a href='#ud2'>ud2</a> <a href='#push_GS'>push_GS</a> <a href='#aad'>aad</a> <a href='#cpuid'>cpuid</a> <a href='#aam'>aam</a> <a href='#push_FS'>push_FS</a></br>
+</div></div>
+<div class='ac_format'>Type_op1b (<a name='Type_op1b'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  o p 1 b; 8;<br/>
+Instructions:  <a href='#pop_EAX'>pop_EAX</a> <a href='#xchg_EAX_EBX'>xchg_EAX_EBX</a> <a href='#xchg_EAX_EBP'>xchg_EAX_EBP</a> <a href='#cmc'>cmc</a> <a href='#leave'>leave</a> <a href='#scas_m32'>scas_m32</a> <a href='#push_DS'>push_DS</a> <a href='#cmps_m32_m32'>cmps_m32_m32</a> <a href='#P_ES'>P_ES</a> <a href='#P_BTAKEN'>P_BTAKEN</a> <a href='#iret_iretd'>iret_iretd</a> <a href='#out_DX_EAX'>out_DX_EAX</a> <a href='#dec_ECX'>dec_ECX</a> <a href='#inc_EAX'>inc_EAX</a> <a href='#xchg_EAX_ESI'>xchg_EAX_ESI</a> <a href='#xchg_EAX_ESP'>xchg_EAX_ESP</a> <a href='#insd'>insd</a> <a href='#pop_EDI'>pop_EDI</a> <a href='#pop_EDX'>pop_EDX</a> <a href='#P_CS'>P_CS</a> <a href='#push_EAX'>push_EAX</a> <a href='#xlatb'>xlatb</a> <a href='#push_ESP'>push_ESP</a> <a href='#P_SS'>P_SS</a> <a href='#push_ESI'>push_ESI</a> <a href='#cli'>cli</a> <a href='#cld'>cld</a> <a href='#inc_ESP'>inc_ESP</a> <a href='#inc_ESI'>inc_ESI</a> <a href='#daa'>daa</a> <a href='#P_REP_REPE_REPZ'>P_REP_REPE_REPZ</a> <a href='#push_CS'>push_CS</a> <a href='#das'>das</a> <a href='#nop'>nop</a> <a href='#P_DS'>P_DS</a> <a href='#pop_a_ad'>pop_a_ad</a> <a href='#push_a_ad'>push_a_ad</a> <a href='#sahf'>sahf</a> <a href='#stos_m32'>stos_m32</a> <a href='#dec_EDI'>dec_EDI</a> <a href='#dec_EDX'>dec_EDX</a> <a href='#P_BNTAKEN'>P_BNTAKEN</a> <a href='#std'>std</a> <a href='#aaa'>aaa</a> <a href='#stc'>stc</a> <a href='#sti'>sti</a> <a href='#aas'>aas</a> <a href='#pop_DS'>pop_DS</a> <a href='#push_EBP'>push_EBP</a> <a href='#push_EBX'>push_EBX</a> <a href='#outsd'>outsd</a> <a href='#movs_m32_m32'>movs_m32_m32</a> <a href='#pushfd'>pushfd</a> <a href='#inc_EBX'>inc_EBX</a> <a href='#inc_EBP'>inc_EBP</a> <a href='#P_ADSIZE'>P_ADSIZE</a> <a href='#xchg_EAX_EDI'>xchg_EAX_EDI</a> <a href='#xchg_EAX_EDX'>xchg_EAX_EDX</a> <a href='#P_REPNE_REPNZ'>P_REPNE_REPNZ</a> <a href='#dec_EAX'>dec_EAX</a> <a href='#dec_ESP'>dec_ESP</a> <a href='#dec_ESI'>dec_ESI</a> <a href='#clc'>clc</a> <a href='#cbw_cwde'>cbw_cwde</a> <a href='#P_GS'>P_GS</a> <a href='#pop_ECX'>pop_ECX</a> <a href='#lahf'>lahf</a> <a href='#lods_m32'>lods_m32</a> <a href='#P_OPSIZE'>P_OPSIZE</a> <a href='#pop_EBX'>pop_EBX</a> <a href='#pop_SS'>pop_SS</a> <a href='#xchg_EAX_ECX'>xchg_EAX_ECX</a> <a href='#push_EDX'>push_EDX</a> <a href='#inc_ECX'>inc_ECX</a> <a href='#push_EDI'>push_EDI</a> <a href='#popfd'>popfd</a> <a href='#inc_EDX'>inc_EDX</a> <a href='#in_EAX_DX'>in_EAX_DX</a> <a href='#inc_EDI'>inc_EDI</a> <a href='#P_LOCK'>P_LOCK</a> <a href='#pop_ES'>pop_ES</a> <a href='#pop_EBP'>pop_EBP</a> <a href='#push_SS'>push_SS</a> <a href='#dec_EBP'>dec_EBP</a> <a href='#dec_EBX'>dec_EBX</a> <a href='#push_ES'>push_ES</a> <a href='#push_ECX'>push_ECX</a> <a href='#P_FS'>P_FS</a> <a href='#cwd_cwq'>cwd_cwq</a> <a href='#pop_ESP'>pop_ESP</a> <a href='#pop_ESI'>pop_ESI</a></br>
+</div></div>
+<div class='ac_format'>Type_op1bi (<a name='Type_op1bi'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op1b 8; imme 32;<br/>
+Instructions:  <a href='#mov_ESP_imm32'>mov_ESP_imm32</a> <a href='#mov_EBP_imm32'>mov_EBP_imm32</a> <a href='#cmp_EAX_imm32'>cmp_EAX_imm32</a> <a href='#xor_EAX_imm32'>xor_EAX_imm32</a> <a href='#adc_EAX_imm32'>adc_EAX_imm32</a> <a href='#mov_EAX_imm32'>mov_EAX_imm32</a> <a href='#mov_EDX_imm32'>mov_EDX_imm32</a> <a href='#and_EAX_imm32'>and_EAX_imm32</a> <a href='#test_eax_imm32'>test_eax_imm32</a> <a href='#mov_ECX_imm32'>mov_ECX_imm32</a> <a href='#mov_EDI_imm32'>mov_EDI_imm32</a> <a href='#add_EAX_imm32'>add_EAX_imm32</a> <a href='#push_imm32'>push_imm32</a> <a href='#mov_EBX_imm32'>mov_EBX_imm32</a> <a href='#sub_EAX_imm32'>sub_EAX_imm32</a> <a href='#sbb_EAX_imm32'>sbb_EAX_imm32</a> <a href='#or_EAX_imm32'>or_EAX_imm32</a> <a href='#mov_ESI_imm32'>mov_ESI_imm32</a></br>
+</div></div>
+<div class='ac_instr'>sbb_rm32_imm32 (<a name='sbb_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=3; <br/>
+ASM: SBB<br/>
+</div></a></div>
+<div class='ac_instr'>mov_AH_imm8 (<a name='mov_AH_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=180; <br/>
+ASM: MOVB AH, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>pop_EAX (<a name='pop_EAX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=88; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>or_r8_rm8 (<a name='or_r8_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=10; <br/>
+ASM: OR R8, RM8<br/>
+</div></a></div>
+<div class='ac_instr'>pop_FS (<a name='pop_FS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=41231; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>shr_rm32_imm8 (<a name='shr_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=5; <br/>
+ASM: SHR<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_ECX_r32 (<a name='bswap_ECX_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=51471; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>jl_jnge_rel8 (<a name='jl_jnge_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=124; <br/>
+ASM: JL JNGE<br/>
+</div></a></div>
+<div class='ac_instr'>setp_setpe_rm8 (<a name='setp_setpe_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=39439; <br/>
+ASM: SETP SETPE<br/>
+</div></a></div>
+<div class='ac_instr'>test_rm32_r32 (<a name='test_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=133; <br/>
+ASM: TEST<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_EBX (<a name='xchg_EAX_EBX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=147; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_EBP (<a name='xchg_EAX_EBP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=149; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>mov_CH_imm8 (<a name='mov_CH_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=181; <br/>
+ASM: MOVB CH, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_ESI_r32 (<a name='bswap_ESI_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=52751; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>cmc (<a name='cmc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=245; <br/>
+ASM: CMC<br/>
+</div></a></div>
+<div class='ac_instr'>leave (<a name='leave'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=201; <br/>
+ASM: LEAVE<br/>
+</div></a></div>
+<div class='ac_instr'>imul_r32_rm32 (<a name='imul_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=44815; <br/>
+ASM: IMUL R32, RM32<br/>
+</div></a></div>
+<div class='ac_instr'>sub_rm8_r8 (<a name='sub_rm8_r8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=40; <br/>
+ASM: SUB RM8, R8<br/>
+</div></a></div>
+<div class='ac_instr'>scas_m32 (<a name='scas_m32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=175; <br/>
+ASM: SCAS<br/>
+</div></a></div>
+<div class='ac_instr'>push_DS (<a name='push_DS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=30; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>mov_DH_imm8 (<a name='mov_DH_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=182; <br/>
+ASM: MOVB DH, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_ae_nb_nc_r32_rm32 (<a name='cmov_ae_nb_nc_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=12815; <br/>
+ASM: CMOVAE CMOVNB CMOVNC<br/>
+</div></a></div>
+<div class='ac_instr'>adc_r32_rm32 (<a name='adc_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=19; <br/>
+ASM: ADC<br/>
+</div></a></div>
+<div class='ac_instr'>imul_rm8 (<a name='imul_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=246; regop=5; <br/>
+ASM: IMUL RM8<br/>
+</div></a></div>
+<div class='ac_instr'>shr_rm8 (<a name='shr_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=208; regop=5; <br/>
+ASM: SHR RM8<br/>
+</div></a></div>
+<div class='ac_instr'>cmps_m32_m32 (<a name='cmps_m32_m32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=167; <br/>
+ASM: CMPS<br/>
+</div></a></div>
+<div class='ac_instr'>P_ES (<a name='P_ES'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=38; <br/>
+ASM: ES OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>and_r8_rm8 (<a name='and_r8_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=34; <br/>
+ASM: AND R8, RM8<br/>
+</div></a></div>
+<div class='ac_instr'>bsf_r32_rm32 (<a name='bsf_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=48143; <br/>
+ASM: BSF<br/>
+</div></a></div>
+<div class='ac_instr'>sub_rm32_imm8 (<a name='sub_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=5; <br/>
+ASM: SUB<br/>
+</div></a></div>
+<div class='ac_instr'>jmp_m16_32 (<a name='jmp_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=5; <br/>
+ASM: JMP<br/>
+</div></a></div>
+<div class='ac_instr'>ja_jnbe_rel16_32 (<a name='ja_jnbe_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=34575; <br/>
+ASM: JA JNBE<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_EAX_r32 (<a name='bswap_EAX_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=51215; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>sal_shl_rm32_imm8 (<a name='sal_shl_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=4; <br/>
+ASM: SAL/SHL<br/>
+</div></a></div>
+<div class='ac_instr'>dec_rm8 (<a name='dec_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=254; regop=1; <br/>
+ASM: DEC RM8<br/>
+</div></a></div>
+<div class='ac_instr'>P_BTAKEN (<a name='P_BTAKEN'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=62; <br/>
+ASM: BRANCH TAKEN PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>setle_setng_rm8 (<a name='setle_setng_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=40463; <br/>
+ASM: SETLE SETNG<br/>
+</div></a></div>
+<div class='ac_instr'>int_3 (<a name='int_3'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=204; <br/>
+ASM: INT3<br/>
+</div></a></div>
+<div class='ac_instr'>les_r32_m16_32 (<a name='les_r32_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=196; <br/>
+ASM: LES<br/>
+</div></a></div>
+<div class='ac_instr'>iret_iretd (<a name='iret_iretd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=207; <br/>
+ASM: IRET IRETD<br/>
+</div></a></div>
+<div class='ac_instr'>rcr_rm32 (<a name='rcr_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=3; <br/>
+ASM: RCR<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_r32_rm32 (<a name='cmp_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=59; <br/>
+ASM: CMP<br/>
+</div></a></div>
+<div class='ac_instr'>not_rm32 (<a name='not_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=2; <br/>
+ASM: NOT<br/>
+</div></a></div>
+<div class='ac_instr'>setge_setnl_rm8 (<a name='setge_setnl_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=40207; <br/>
+ASM: SETGE SETNL<br/>
+</div></a></div>
+<div class='ac_instr'>movzx_r32_rm8 (<a name='movzx_r32_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=46607; <br/>
+ASM: MOVZX<br/>
+</div></a></div>
+<div class='ac_instr'>jnp_jpo_rel16_32 (<a name='jnp_jpo_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=35599; <br/>
+ASM: JNP JPO<br/>
+</div></a></div>
+<div class='ac_instr'>jno_rel16_32 (<a name='jno_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=33039; <br/>
+ASM: JNO<br/>
+</div></a></div>
+<div class='ac_instr'>int_imm8 (<a name='int_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=205; <br/>
+ASM: INT<br/>
+</div></a></div>
+<div class='ac_instr'>setl_setnge_rm8 (<a name='setl_setnge_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=39951; <br/>
+ASM: SETL SETNGE<br/>
+</div></a></div>
+<div class='ac_instr'>jbe_jna_rel16_32 (<a name='jbe_jna_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=34319; <br/>
+ASM: JBE JNA<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_EBX_r32 (<a name='bswap_EBX_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=51983; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>out_DX_EAX (<a name='out_DX_EAX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=239; <br/>
+ASM: OUT<br/>
+</div></a></div>
+<div class='ac_instr'>add_r32_rm32 (<a name='add_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=3; <br/>
+ASM: ADD<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_ESP_r32 (<a name='bswap_ESP_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=52239; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>mov_rm32_r32 (<a name='mov_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=137; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_AL_imm8 (<a name='cmp_AL_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=60; <br/>
+ASM: CMP AL, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>dec_ECX (<a name='dec_ECX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=73; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>sal_shl_1_rm32 (<a name='sal_shl_1_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=4; <br/>
+ASM: SAL/SHL<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_p_pe_r32_rm32 (<a name='cmov_p_pe_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=18959; <br/>
+ASM: CMOVP CMOVPE<br/>
+</div></a></div>
+<div class='ac_instr'>setns_rm8 (<a name='setns_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=39183; <br/>
+ASM: SETNS<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_ne_nz_r32_rm32 (<a name='cmov_ne_nz_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=17679; <br/>
+ASM: CMOVNE CMOVNZ<br/>
+</div></a></div>
+<div class='ac_instr'>jnp_jpo_rel8 (<a name='jnp_jpo_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=123; <br/>
+ASM: JNP JPO<br/>
+</div></a></div>
+<div class='ac_instr'>mul_rm8 (<a name='mul_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=246; regop=4; <br/>
+ASM: MUL RM8<br/>
+</div></a></div>
+<div class='ac_instr'>inc_EAX (<a name='inc_EAX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=64; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_no_r32_rm32 (<a name='cmov_no_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=16655; <br/>
+ASM: CMOVNO<br/>
+</div></a></div>
+<div class='ac_instr'>or_rm32_imm8 (<a name='or_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=1; <br/>
+ASM: OR<br/>
+</div></a></div>
+<div class='ac_instr'>jno_rel8 (<a name='jno_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=113; <br/>
+ASM: JNO<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_ESI (<a name='xchg_EAX_ESI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=150; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_ESP (<a name='xchg_EAX_ESP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=148; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>insd (<a name='insd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=109; <br/>
+ASM: INSD<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_a_nbe_r32_rm32 (<a name='cmov_a_nbe_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=18191; <br/>
+ASM: CMOVA CMOVNBE<br/>
+</div></a></div>
+<div class='ac_instr'>pop_EDI (<a name='pop_EDI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=95; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>mov_rm8_r8 (<a name='mov_rm8_r8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=136; <br/>
+ASM: MOVB RM8, R8<br/>
+</div></a></div>
+<div class='ac_instr'>sbb_rm32_imm8 (<a name='sbb_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=3; <br/>
+ASM: SBB<br/>
+</div></a></div>
+<div class='ac_instr'>pop_EDX (<a name='pop_EDX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=90; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>out_imm8_EAX (<a name='out_imm8_EAX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=231; <br/>
+ASM: OUT<br/>
+</div></a></div>
+<div class='ac_instr'>mov_rm32_imm32 (<a name='mov_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=199; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>jae_jnb_jnc_rel8 (<a name='jae_jnb_jnc_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=115; <br/>
+ASM: JAE JNB JNC<br/>
+</div></a></div>
+<div class='ac_instr'>and_rm32_r32 (<a name='and_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=33; <br/>
+ASM: AND<br/>
+</div></a></div>
+<div class='ac_instr'>adc_rm32_imm32 (<a name='adc_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=2; <br/>
+ASM: ADC<br/>
+</div></a></div>
+<div class='ac_instr'>P_CS (<a name='P_CS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=46; <br/>
+ASM: CS OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>push_EAX (<a name='push_EAX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=80; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_EBP_r32 (<a name='bswap_EBP_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=52495; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>shr_cl_rm32 (<a name='shr_cl_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=211; regop=5; <br/>
+ASM: SHR<br/>
+</div></a></div>
+<div class='ac_instr'>xlatb (<a name='xlatb'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=215; <br/>
+ASM: XLATB<br/>
+</div></a></div>
+<div class='ac_instr'>push_ESP (<a name='push_ESP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=84; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_EDI_r32 (<a name='bswap_EDI_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=53007; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>P_SS (<a name='P_SS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=54; <br/>
+ASM: SS OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>xor_rm32_imm32 (<a name='xor_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=6; <br/>
+ASM: XOR<br/>
+</div></a></div>
+<div class='ac_instr'>call_rm32 (<a name='call_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=2; <br/>
+ASM: CALL<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_rm32_r32 (<a name='cmp_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=57; <br/>
+ASM: CMP<br/>
+</div></a></div>
+<div class='ac_instr'>mov_BH_imm8 (<a name='mov_BH_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=183; <br/>
+ASM: MOVB BH, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>bswap_EDX_r32 (<a name='bswap_EDX_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=51727; <br/>
+ASM: BSWAP<br/>
+</div></a></div>
+<div class='ac_instr'>push_ESI (<a name='push_ESI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=86; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>lgs_r32_m16_32 (<a name='lgs_r32_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=46351; <br/>
+ASM: LGS<br/>
+</div></a></div>
+<div class='ac_instr'>cli (<a name='cli'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=250; <br/>
+ASM: CLI<br/>
+</div></a></div>
+<div class='ac_instr'>cld (<a name='cld'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=252; <br/>
+ASM: CLD<br/>
+</div></a></div>
+<div class='ac_instr'>inc_ESP (<a name='inc_ESP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=68; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_l_nge_r32_rm32 (<a name='cmov_l_nge_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=19471; <br/>
+ASM: CMOVL CMOVNGE<br/>
+</div></a></div>
+<div class='ac_instr'>jp_jpe_rel16_32 (<a name='jp_jpe_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=35343; <br/>
+ASM: JP JPE<br/>
+</div></a></div>
+<div class='ac_instr'>inc_ESI (<a name='inc_ESI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=70; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>bt_rm32_r32 (<a name='bt_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=41743; <br/>
+ASM: BT<br/>
+</div></a></div>
+<div class='ac_instr'>mov_ESP_imm32 (<a name='mov_ESP_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=188; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>daa (<a name='daa'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=39; <br/>
+ASM: DAA<br/>
+</div></a></div>
+<div class='ac_instr'>P_REP_REPE_REPZ (<a name='P_REP_REPE_REPZ'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=243; <br/>
+ASM: REP/REPE/REPZ PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>push_CS (<a name='push_CS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=14; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>das (<a name='das'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=47; <br/>
+ASM: DAS<br/>
+</div></a></div>
+<div class='ac_instr'>shld_rm32_r32_imm8 (<a name='shld_rm32_r32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=41999; <br/>
+ASM: SHLD<br/>
+</div></a></div>
+<div class='ac_instr'>nop (<a name='nop'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=144; <br/>
+ASM: NOP<br/>
+</div></a></div>
+<div class='ac_instr'>P_DS (<a name='P_DS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=62; <br/>
+ASM: DS OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>sub_rm8_imm8 (<a name='sub_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=128; regop=5; <br/>
+ASM: SUB RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>rol_rm32 (<a name='rol_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=0; <br/>
+ASM: ROL<br/>
+</div></a></div>
+<div class='ac_instr'>pop_a_ad (<a name='pop_a_ad'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=97; <br/>
+ASM: POPA POPAD<br/>
+</div></a></div>
+<div class='ac_instr'>mov_BL_imm8 (<a name='mov_BL_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=179; <br/>
+ASM: MOVB BL, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>jl_jnge_rel16_32 (<a name='jl_jnge_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=35855; <br/>
+ASM: JL JNGE<br/>
+</div></a></div>
+<div class='ac_instr'>push_a_ad (<a name='push_a_ad'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=96; <br/>
+ASM: PUSHA PUSHAD<br/>
+</div></a></div>
+<div class='ac_instr'>and_rm32_imm8 (<a name='and_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=4; <br/>
+ASM: AND<br/>
+</div></a></div>
+<div class='ac_instr'>xor_rm32_imm8 (<a name='xor_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=6; <br/>
+ASM: XOR<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_r8_rm8 (<a name='cmp_r8_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=58; <br/>
+ASM: CMP R8, RM8<br/>
+</div></a></div>
+<div class='ac_instr'>setno_rm8 (<a name='setno_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=37135; <br/>
+ASM: SETNO<br/>
+</div></a></div>
+<div class='ac_instr'>shrd_rm32_r32_CL (<a name='shrd_rm32_r32_CL'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=44303; <br/>
+ASM: SHRD<br/>
+</div></a></div>
+<div class='ac_instr'>pop_GS (<a name='pop_GS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=43279; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>mov_rm8_imm8 (<a name='mov_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=198; <br/>
+ASM: MOV RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>sahf (<a name='sahf'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=158; <br/>
+ASM: SAHF<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_rm32_imm8 (<a name='cmp_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=7; <br/>
+ASM: CMP<br/>
+</div></a></div>
+<div class='ac_instr'>seto_rm8 (<a name='seto_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=36879; <br/>
+ASM: SETO<br/>
+</div></a></div>
+<div class='ac_instr'>mov_EBP_imm32 (<a name='mov_EBP_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=189; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>sal_shl_cl_rm32 (<a name='sal_shl_cl_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=211; regop=4; <br/>
+ASM: SAL SHL<br/>
+</div></a></div>
+<div class='ac_instr'>ud2 (<a name='ud2'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=2831; <br/>
+ASM: UD2<br/>
+</div></a></div>
+<div class='ac_instr'>enter_imm16_0_1_imm8 (<a name='enter_imm16_0_1_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=200; <br/>
+ASM: ENTER<br/>
+</div></a></div>
+<div class='ac_instr'>dump_memory (<a name='dump_memory'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_debug>Type_op2b_debug</a><br/>
+Decoder: op2b=43690; <br/>
+ASM: DUMP MEMORY<br/>
+</div></a></div>
+<div class='ac_instr'>stos_m32 (<a name='stos_m32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=171; <br/>
+ASM: STOS<br/>
+</div></a></div>
+<div class='ac_instr'>dec_EDI (<a name='dec_EDI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=79; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>jns_rel8 (<a name='jns_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=121; <br/>
+ASM: JNS<br/>
+</div></a></div>
+<div class='ac_instr'>dec_EDX (<a name='dec_EDX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=74; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>sar_rm8 (<a name='sar_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=208; regop=7; <br/>
+ASM: SAR RM8<br/>
+</div></a></div>
+<div class='ac_instr'>btr_rm32_imm8 (<a name='btr_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=47631; regop2=6; <br/>
+ASM: BTR<br/>
+</div></a></div>
+<div class='ac_instr'>P_BNTAKEN (<a name='P_BNTAKEN'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=46; <br/>
+ASM: BRANCH NOT TAKEN PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>mov_r8_rm8 (<a name='mov_r8_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=138; <br/>
+ASM: MOVB R8, RM8<br/>
+</div></a></div>
+<div class='ac_instr'>push_GS (<a name='push_GS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=43023; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_rm32_r32 (<a name='xchg_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=135; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>jle_jng_rel16_32 (<a name='jle_jng_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=36367; <br/>
+ASM: JLE JNG<br/>
+</div></a></div>
+<div class='ac_instr'>std (<a name='std'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=253; <br/>
+ASM: STD<br/>
+</div></a></div>
+<div class='ac_instr'>aad (<a name='aad'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=2773; <br/>
+ASM: AAD<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_EAX_imm32 (<a name='cmp_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=61; <br/>
+ASM: CMP<br/>
+</div></a></div>
+<div class='ac_instr'>aaa (<a name='aaa'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=55; <br/>
+ASM: AAA<br/>
+</div></a></div>
+<div class='ac_instr'>stc (<a name='stc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=249; <br/>
+ASM: STC<br/>
+</div></a></div>
+<div class='ac_instr'>div_rm32 (<a name='div_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=6; <br/>
+ASM: DIV<br/>
+</div></a></div>
+<div class='ac_instr'>sti (<a name='sti'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=251; <br/>
+ASM: STI<br/>
+</div></a></div>
+<div class='ac_instr'>seta_setnbe_rm8 (<a name='seta_setnbe_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=38671; <br/>
+ASM: SETA SETNBE<br/>
+</div></a></div>
+<div class='ac_instr'>aas (<a name='aas'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=63; <br/>
+ASM: AAS<br/>
+</div></a></div>
+<div class='ac_instr'>shrd_rm32_r32_imm8 (<a name='shrd_rm32_r32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=44047; <br/>
+ASM: SHRD<br/>
+</div></a></div>
+<div class='ac_instr'>movzx_r32_rm16 (<a name='movzx_r32_rm16'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=46863; <br/>
+ASM: MOVZX<br/>
+</div></a></div>
+<div class='ac_instr'>pop_DS (<a name='pop_DS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=31; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>setg_setnle_rm8 (<a name='setg_setnle_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=40719; <br/>
+ASM: SETG SETNLE<br/>
+</div></a></div>
+<div class='ac_instr'>jbe_jna_rel8 (<a name='jbe_jna_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=118; <br/>
+ASM: JBE JNA<br/>
+</div></a></div>
+<div class='ac_instr'>cpuid (<a name='cpuid'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=41487; <br/>
+ASM: CPUID<br/>
+</div></a></div>
+<div class='ac_instr'>imul_rm32 (<a name='imul_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=5; <br/>
+ASM: IMUL<br/>
+</div></a></div>
+<div class='ac_instr'>push_EBP (<a name='push_EBP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=85; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>lea_r32_m (<a name='lea_r32_m'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=141; <br/>
+ASM: LEA<br/>
+</div></a></div>
+<div class='ac_instr'>push_EBX (<a name='push_EBX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=83; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>je_jz_rel8 (<a name='je_jz_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=116; <br/>
+ASM: JE JZ<br/>
+</div></a></div>
+<div class='ac_instr'>sal_rm8_imm8 (<a name='sal_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=192; regop=4; <br/>
+ASM: SAL RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>outsd (<a name='outsd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=111; <br/>
+ASM: OUTSD<br/>
+</div></a></div>
+<div class='ac_instr'>dec_rm32 (<a name='dec_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=1; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>xor_rm32_r32 (<a name='xor_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=49; <br/>
+ASM: XOR<br/>
+</div></a></div>
+<div class='ac_instr'>and_r32_rm32 (<a name='and_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=35; <br/>
+ASM: AND<br/>
+</div></a></div>
+<div class='ac_instr'>setne_setnz_rm8 (<a name='setne_setnz_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=38159; <br/>
+ASM: SETNE SETNZ<br/>
+</div></a></div>
+<div class='ac_instr'>setae_setnb_setnc_rm8 (<a name='setae_setnb_setnc_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=37647; <br/>
+ASM: SETAE SETNB SETNC<br/>
+</div></a></div>
+<div class='ac_instr'>mov_r32_rm32 (<a name='mov_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=139; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>jns_rel16_32 (<a name='jns_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=35087; <br/>
+ASM: JNS<br/>
+</div></a></div>
+<div class='ac_instr'>xor_EAX_imm32 (<a name='xor_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=53; <br/>
+ASM: XOR<br/>
+</div></a></div>
+<div class='ac_instr'>sar_cl_rm32 (<a name='sar_cl_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=211; regop=7; <br/>
+ASM: SAR<br/>
+</div></a></div>
+<div class='ac_instr'>adc_EAX_imm32 (<a name='adc_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=21; <br/>
+ASM: ADC<br/>
+</div></a></div>
+<div class='ac_instr'>ret_far_imm16 (<a name='ret_far_imm16'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=202; <br/>
+ASM: RET<br/>
+</div></a></div>
+<div class='ac_instr'>xor_r32_rm32 (<a name='xor_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=51; <br/>
+ASM: XOR<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_rm8_imm8 (<a name='cmp_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=128; regop=7; <br/>
+ASM: CMP RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>ja_jnbe_rel8 (<a name='ja_jnbe_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=119; <br/>
+ASM: JA JNBE<br/>
+</div></a></div>
+<div class='ac_instr'>mov_EAX_imm32 (<a name='mov_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=184; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>je_jz_rel16_32 (<a name='je_jz_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=33807; <br/>
+ASM: JE JZ<br/>
+</div></a></div>
+<div class='ac_instr'>movs_m32_m32 (<a name='movs_m32_m32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=165; <br/>
+ASM: MOVS<br/>
+</div></a></div>
+<div class='ac_instr'>call_m16_32 (<a name='call_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=3; <br/>
+ASM: CALL<br/>
+</div></a></div>
+<div class='ac_instr'>pushfd (<a name='pushfd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=156; <br/>
+ASM: PUSHFD<br/>
+</div></a></div>
+<div class='ac_instr'>inc_EBX (<a name='inc_EBX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=67; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>jb_jc_jnae_rel16_32 (<a name='jb_jc_jnae_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=33295; <br/>
+ASM: JB JC JNAE<br/>
+</div></a></div>
+<div class='ac_instr'>sar_1_rm32 (<a name='sar_1_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=7; <br/>
+ASM: SAR<br/>
+</div></a></div>
+<div class='ac_instr'>inc_EBP (<a name='inc_EBP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=69; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>sub_rm32_imm32 (<a name='sub_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=5; <br/>
+ASM: SUB<br/>
+</div></a></div>
+<div class='ac_instr'>bsr_r32_rm32 (<a name='bsr_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=48399; <br/>
+ASM: BSR<br/>
+</div></a></div>
+<div class='ac_instr'>mov_EDX_imm32 (<a name='mov_EDX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=186; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>aam (<a name='aam'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=2772; <br/>
+ASM: AAM<br/>
+</div></a></div>
+<div class='ac_instr'>js_rel16_32 (<a name='js_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=34831; <br/>
+ASM: JS<br/>
+</div></a></div>
+<div class='ac_instr'>add_rm8_imm8 (<a name='add_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=128; regop=0; <br/>
+ASM: ADDB RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>bts_rm32_imm8 (<a name='bts_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=47631; regop2=5; <br/>
+ASM: BTS<br/>
+</div></a></div>
+<div class='ac_instr'>neg_rm32 (<a name='neg_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=3; <br/>
+ASM: NEG<br/>
+</div></a></div>
+<div class='ac_instr'>rcl_rm32 (<a name='rcl_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=2; <br/>
+ASM: RCL<br/>
+</div></a></div>
+<div class='ac_instr'>in_EAX_imm8 (<a name='in_EAX_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=229; <br/>
+ASM: IN<br/>
+</div></a></div>
+<div class='ac_instr'>and_EAX_imm32 (<a name='and_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=37; <br/>
+ASM: AND<br/>
+</div></a></div>
+<div class='ac_instr'>or_rm32_imm32 (<a name='or_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=1; <br/>
+ASM: OR<br/>
+</div></a></div>
+<div class='ac_instr'>sub_rm32_r32 (<a name='sub_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=41; <br/>
+ASM: SUB<br/>
+</div></a></div>
+<div class='ac_instr'>jmp_rel32 (<a name='jmp_rel32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd32>Type_op1bd32</a><br/>
+Decoder: op1b=233; <br/>
+ASM: JMP<br/>
+</div></a></div>
+<div class='ac_instr'>sar_rm32_imm8 (<a name='sar_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=7; <br/>
+ASM: SAR<br/>
+</div></a></div>
+<div class='ac_instr'>mov_CL_imm8 (<a name='mov_CL_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=177; <br/>
+ASM: MOVB CL, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>P_ADSIZE (<a name='P_ADSIZE'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=103; <br/>
+ASM: ADDRESS SIZE OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_ge_nl_r32_rm32 (<a name='cmov_ge_nl_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=19727; <br/>
+ASM: CMOVGE CMOVNL<br/>
+</div></a></div>
+<div class='ac_instr'>setb_setc_setnae_rm8 (<a name='setb_setc_setnae_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=37391; <br/>
+ASM: SETB SETC SETNAE<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_EDI (<a name='xchg_EAX_EDI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=151; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_be_na_r32_rm32 (<a name='cmov_be_na_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=17935; <br/>
+ASM: CMOVBE CMOVNA<br/>
+</div></a></div>
+<div class='ac_instr'>sete_setz_rm8 (<a name='sete_setz_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=37903; <br/>
+ASM: SETE SETZ<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_EDX (<a name='xchg_EAX_EDX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=146; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>sets_rm8 (<a name='sets_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=38927; <br/>
+ASM: SETS<br/>
+</div></a></div>
+<div class='ac_instr'>jmp_rm32 (<a name='jmp_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=4; <br/>
+ASM: JMP<br/>
+</div></a></div>
+<div class='ac_instr'>cmpxchg8b_m64 (<a name='cmpxchg8b_m64'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=50959; <br/>
+ASM: CMPXCHG8B<br/>
+</div></a></div>
+<div class='ac_instr'>sar_rm8_imm8 (<a name='sar_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=192; regop=7; <br/>
+ASM: SAR RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>P_REPNE_REPNZ (<a name='P_REPNE_REPNZ'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=242; <br/>
+ASM: REPNE/REPNZ PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>rcr_rm32_imm8 (<a name='rcr_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=3; <br/>
+ASM: RCR<br/>
+</div></a></div>
+<div class='ac_instr'>movsx_r32_rm8 (<a name='movsx_r32_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=48655; <br/>
+ASM: MOVSX<br/>
+</div></a></div>
+<div class='ac_instr'>dec_EAX (<a name='dec_EAX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=72; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>jcxz_jecxz_rel8 (<a name='jcxz_jecxz_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=227; <br/>
+ASM: JCXZ JECXZ<br/>
+</div></a></div>
+<div class='ac_instr'>push_FS (<a name='push_FS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b>Type_op2b</a><br/>
+Decoder: op2b=40975; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>dec_ESP (<a name='dec_ESP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=76; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>dec_ESI (<a name='dec_ESI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=78; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>add_r8_rm8 (<a name='add_r8_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=2; <br/>
+ASM: ADDB R8, RM8<br/>
+</div></a></div>
+<div class='ac_instr'>clc (<a name='clc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=248; <br/>
+ASM: CLC<br/>
+</div></a></div>
+<div class='ac_instr'>jg_jnle_rel16_32 (<a name='jg_jnle_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=36623; <br/>
+ASM: JG JNLE<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_ns_r32_rm32 (<a name='cmov_ns_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=18703; <br/>
+ASM: CMOVNS<br/>
+</div></a></div>
+<div class='ac_instr'>test_rm32_imm32 (<a name='test_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=0; <br/>
+ASM: TEST<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_s_r32_rm32 (<a name='cmov_s_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=18447; <br/>
+ASM: CMOVS<br/>
+</div></a></div>
+<div class='ac_instr'>jmp_ptr16_32 (<a name='jmp_ptr16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=234; <br/>
+ASM: JMP<br/>
+</div></a></div>
+<div class='ac_instr'>mul_rm32 (<a name='mul_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=4; <br/>
+ASM: MUL<br/>
+</div></a></div>
+<div class='ac_instr'>pop_rm32 (<a name='pop_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=143; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>dump_stack (<a name='dump_stack'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_debug>Type_op2b_debug</a><br/>
+Decoder: op2b=52224; <br/>
+ASM: DUMP STACK<br/>
+</div></a></div>
+<div class='ac_instr'>cbw_cwde (<a name='cbw_cwde'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=152; <br/>
+ASM: CBW CWDE<br/>
+</div></a></div>
+<div class='ac_instr'>P_GS (<a name='P_GS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=101; <br/>
+ASM: GS OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>xor_r8_rm8 (<a name='xor_r8_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=50; <br/>
+ASM: XOR R8, RM8<br/>
+</div></a></div>
+<div class='ac_instr'>btc_rm32_r32 (<a name='btc_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=47887; <br/>
+ASM: BTC<br/>
+</div></a></div>
+<div class='ac_instr'>or_r32_rm32 (<a name='or_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=11; <br/>
+ASM: OR<br/>
+</div></a></div>
+<div class='ac_instr'>sbb_r32_rm32 (<a name='sbb_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=27; <br/>
+ASM: SBB<br/>
+</div></a></div>
+<div class='ac_instr'>loopne_loopnz_rel8 (<a name='loopne_loopnz_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=224; <br/>
+ASM: LOOPNE LOOPNZ<br/>
+</div></a></div>
+<div class='ac_instr'>pop_ECX (<a name='pop_ECX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=89; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>lahf (<a name='lahf'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=159; <br/>
+ASM: LAHF<br/>
+</div></a></div>
+<div class='ac_instr'>lods_m32 (<a name='lods_m32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=173; <br/>
+ASM: LODS<br/>
+</div></a></div>
+<div class='ac_instr'>inc_rm8 (<a name='inc_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=254; regop=0; <br/>
+ASM: INC RM8<br/>
+</div></a></div>
+<div class='ac_instr'>mov_AL_imm8 (<a name='mov_AL_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=176; <br/>
+ASM: MOVB AL, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>jo_rel8 (<a name='jo_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=112; <br/>
+ASM: JO<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_o_r32_rm32 (<a name='cmov_o_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=16399; <br/>
+ASM: CMOVO<br/>
+</div></a></div>
+<div class='ac_instr'>imul_r32_rm32_imm32 (<a name='imul_r32_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=105; <br/>
+ASM: IMUL<br/>
+</div></a></div>
+<div class='ac_instr'>lds_r32_m16_32 (<a name='lds_r32_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=197; <br/>
+ASM: LDS<br/>
+</div></a></div>
+<div class='ac_instr'>rcl_rm32_imm8 (<a name='rcl_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=2; <br/>
+ASM: RCL<br/>
+</div></a></div>
+<div class='ac_instr'>mov_DL_imm8 (<a name='mov_DL_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=178; <br/>
+ASM: MOVB DL, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>bound_r32_m32_32 (<a name='bound_r32_m32_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=98; <br/>
+ASM: BOUND<br/>
+</div></a></div>
+<div class='ac_instr'>jb_jc_jnae_rel8 (<a name='jb_jc_jnae_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=114; <br/>
+ASM: JB JC JNAE<br/>
+</div></a></div>
+<div class='ac_instr'>btr_rm32_r32 (<a name='btr_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=45839; <br/>
+ASM: BTR<br/>
+</div></a></div>
+<div class='ac_instr'>P_OPSIZE (<a name='P_OPSIZE'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=102; <br/>
+ASM: OPERAND SIZE OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>call_ptr16_32 (<a name='call_ptr16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=154; <br/>
+ASM: CALL<br/>
+</div></a></div>
+<div class='ac_instr'>cmp_rm32_imm32 (<a name='cmp_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=7; <br/>
+ASM: CMP<br/>
+</div></a></div>
+<div class='ac_instr'>pop_EBX (<a name='pop_EBX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=91; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>pop_SS (<a name='pop_SS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=23; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>shr_rm8_imm8 (<a name='shr_rm8_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=192; regop=5; <br/>
+ASM: SHR RM8, IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>xchg_EAX_ECX (<a name='xchg_EAX_ECX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=145; <br/>
+ASM: XCHG<br/>
+</div></a></div>
+<div class='ac_instr'>add_rm32_imm32 (<a name='add_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=0; <br/>
+ASM: ADD<br/>
+</div></a></div>
+<div class='ac_instr'>test_eax_imm32 (<a name='test_eax_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=169; <br/>
+ASM: TEST<br/>
+</div></a></div>
+<div class='ac_instr'>push_EDX (<a name='push_EDX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=82; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>adc_rm32_r32 (<a name='adc_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=17; <br/>
+ASM: ADC<br/>
+</div></a></div>
+<div class='ac_instr'>inc_rm32 (<a name='inc_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=0; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>inc_ECX (<a name='inc_ECX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=65; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>push_EDI (<a name='push_EDI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=87; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>ret_near_imm16 (<a name='ret_near_imm16'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=194; <br/>
+ASM: RET<br/>
+</div></a></div>
+<div class='ac_instr'>popfd (<a name='popfd'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=157; <br/>
+ASM: POPFD<br/>
+</div></a></div>
+<div class='ac_instr'>mov_ECX_imm32 (<a name='mov_ECX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=185; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>inc_EDX (<a name='inc_EDX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=66; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>push_imm8 (<a name='push_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi8>Type_op1bi8</a><br/>
+Decoder: op1b=106; <br/>
+ASM: PUSH IMM8<br/>
+</div></a></div>
+<div class='ac_instr'>in_EAX_DX (<a name='in_EAX_DX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=237; <br/>
+ASM: IN<br/>
+</div></a></div>
+<div class='ac_instr'>inc_EDI (<a name='inc_EDI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=71; <br/>
+ASM: INC<br/>
+</div></a></div>
+<div class='ac_instr'>P_LOCK (<a name='P_LOCK'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=240; <br/>
+ASM: LOCK PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>setnp_setpo_rm8 (<a name='setnp_setpo_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=39695; <br/>
+ASM: SETNP SETPO<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_np_po_r32_rm32 (<a name='cmov_np_po_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=19215; <br/>
+ASM: CMOVNP CMOVPO<br/>
+</div></a></div>
+<div class='ac_instr'>pop_ES (<a name='pop_ES'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=7; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>pop_EBP (<a name='pop_EBP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=93; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>loope_loopz_rel8 (<a name='loope_loopz_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=225; <br/>
+ASM: LOOPE LOOPZ<br/>
+</div></a></div>
+<div class='ac_instr'>sal_rm8 (<a name='sal_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=208; regop=4; <br/>
+ASM: SAL RM8<br/>
+</div></a></div>
+<div class='ac_instr'>push_SS (<a name='push_SS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=22; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>add_rm8_r8 (<a name='add_rm8_r8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=0; <br/>
+ASM: ADDB RM8, R8<br/>
+</div></a></div>
+<div class='ac_instr'>jne_jnz_rel16_32 (<a name='jne_jnz_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=34063; <br/>
+ASM: JNE JNZ<br/>
+</div></a></div>
+<div class='ac_instr'>shr_1_rm32 (<a name='shr_1_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=5; <br/>
+ASM: SHR<br/>
+</div></a></div>
+<div class='ac_instr'>movsx_r32_rm16 (<a name='movsx_r32_rm16'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=48911; <br/>
+ASM: MOVSX<br/>
+</div></a></div>
+<div class='ac_instr'>lss_r32_m16_32 (<a name='lss_r32_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=45583; <br/>
+ASM: LSS<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_le_ng_r32_rm32 (<a name='cmov_le_ng_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=19983; <br/>
+ASM: CMOVLE CMOVNG<br/>
+</div></a></div>
+<div class='ac_instr'>sub_r32_rm32 (<a name='sub_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=43; <br/>
+ASM: SUB<br/>
+</div></a></div>
+<div class='ac_instr'>call_rel32 (<a name='call_rel32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd32>Type_op1bd32</a><br/>
+Decoder: op1b=232; <br/>
+ASM: CALL<br/>
+</div></a></div>
+<div class='ac_instr'>add_rm32_imm8 (<a name='add_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=0; <br/>
+ASM: ADD<br/>
+</div></a></div>
+<div class='ac_instr'>loop_rel8 (<a name='loop_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=226; <br/>
+ASM: LOOP<br/>
+</div></a></div>
+<div class='ac_instr'>ror_rm32_imm8 (<a name='ror_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=1; <br/>
+ASM: ROR<br/>
+</div></a></div>
+<div class='ac_instr'>setbe_setna_rm8 (<a name='setbe_setna_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=38415; <br/>
+ASM: SETBE SETNA<br/>
+</div></a></div>
+<div class='ac_instr'>mov_EDI_imm32 (<a name='mov_EDI_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=191; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>dec_EBP (<a name='dec_EBP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=77; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>add_EAX_imm32 (<a name='add_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=5; <br/>
+ASM: ADD<br/>
+</div></a></div>
+<div class='ac_instr'>dec_EBX (<a name='dec_EBX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=75; <br/>
+ASM: DEC<br/>
+</div></a></div>
+<div class='ac_instr'>jo_rel16_32 (<a name='jo_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=32783; <br/>
+ASM: JO<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_e_z_r32_rm32 (<a name='cmov_e_z_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=17423; <br/>
+ASM: CMOVE CMOVZ<br/>
+</div></a></div>
+<div class='ac_instr'>adc_rm32_imm8 (<a name='adc_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=131; regop=2; <br/>
+ASM: ADC<br/>
+</div></a></div>
+<div class='ac_instr'>sbb_rm32_r32 (<a name='sbb_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=25; <br/>
+ASM: SBB<br/>
+</div></a></div>
+<div class='ac_instr'>push_imm32 (<a name='push_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=104; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>ret_near (<a name='ret_near'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=195; <br/>
+ASM: RET<br/>
+</div></a></div>
+<div class='ac_instr'>push_ES (<a name='push_ES'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=6; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>jge_jnl_rel16_32 (<a name='jge_jnl_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=36111; <br/>
+ASM: JGE JNL<br/>
+</div></a></div>
+<div class='ac_instr'>jmp_rel8 (<a name='jmp_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=235; <br/>
+ASM: JMP REL8<br/>
+</div></a></div>
+<div class='ac_instr'>push_ECX (<a name='push_ECX'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=81; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>mov_EBX_imm32 (<a name='mov_EBX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=187; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>imul_r32_rm32_imm8 (<a name='imul_r32_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=107; <br/>
+ASM: IMUL<br/>
+</div></a></div>
+<div class='ac_instr'>jg_jnle_rel8 (<a name='jg_jnle_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=127; <br/>
+ASM: JG JNLE<br/>
+</div></a></div>
+<div class='ac_instr'>xadd_rm32_r32 (<a name='xadd_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=49423; <br/>
+ASM: XADD<br/>
+</div></a></div>
+<div class='ac_instr'>into (<a name='into'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=206; <br/>
+ASM: INTO<br/>
+</div></a></div>
+<div class='ac_instr'>jle_jng_rel8 (<a name='jle_jng_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=126; <br/>
+ASM: JLE JNG<br/>
+</div></a></div>
+<div class='ac_instr'>dump_registers (<a name='dump_registers'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_debug>Type_op2b_debug</a><br/>
+Decoder: op2b=56576; <br/>
+ASM: DUMP REGISTERS<br/>
+</div></a></div>
+<div class='ac_instr'>or_rm32_r32 (<a name='or_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=9; <br/>
+ASM: OR<br/>
+</div></a></div>
+<div class='ac_instr'>bts_rm32_r32 (<a name='bts_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=43791; <br/>
+ASM: BTS<br/>
+</div></a></div>
+<div class='ac_instr'>rol_rm32_imm8 (<a name='rol_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=193; regop=0; <br/>
+ASM: ROL<br/>
+</div></a></div>
+<div class='ac_instr'>jp_jpe_rel8 (<a name='jp_jpe_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=122; <br/>
+ASM: JP JPE<br/>
+</div></a></div>
+<div class='ac_instr'>cmpxchg_rm32_r32 (<a name='cmpxchg_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=45327; <br/>
+ASM: CMPXCHG<br/>
+</div></a></div>
+<div class='ac_instr'>and_rm32_imm32 (<a name='and_rm32_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=129; regop=4; <br/>
+ASM: AND<br/>
+</div></a></div>
+<div class='ac_instr'>P_FS (<a name='P_FS'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=100; <br/>
+ASM: FS OVERRIDE PREFIX<br/>
+</div></a></div>
+<div class='ac_instr'>div_rm8 (<a name='div_rm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=246; regop=6; <br/>
+ASM: DIV RM8<br/>
+</div></a></div>
+<div class='ac_instr'>cwd_cwq (<a name='cwd_cwq'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=153; <br/>
+ASM: CWD CWQ<br/>
+</div></a></div>
+<div class='ac_instr'>add_rm32_r32 (<a name='add_rm32_r32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=1; <br/>
+ASM: ADD<br/>
+</div></a></div>
+<div class='ac_instr'>sub_EAX_imm32 (<a name='sub_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=45; <br/>
+ASM: SUB<br/>
+</div></a></div>
+<div class='ac_instr'>ret_far (<a name='ret_far'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=203; <br/>
+ASM: RET<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_g_nle_r32_rm32 (<a name='cmov_g_nle_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=20239; <br/>
+ASM: CMOVG CMOVNLE<br/>
+</div></a></div>
+<div class='ac_instr'>push_rm32 (<a name='push_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=255; regop=6; <br/>
+ASM: PUSH<br/>
+</div></a></div>
+<div class='ac_instr'>sbb_EAX_imm32 (<a name='sbb_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=29; <br/>
+ASM: SBB<br/>
+</div></a></div>
+<div class='ac_instr'>idiv_rm32 (<a name='idiv_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=247; regop=7; <br/>
+ASM: IDIV<br/>
+</div></a></div>
+<div class='ac_instr'>or_EAX_imm32 (<a name='or_EAX_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=13; <br/>
+ASM: OR<br/>
+</div></a></div>
+<div class='ac_instr'>btc_rm32_imm8 (<a name='btc_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=47631; regop2=7; <br/>
+ASM: BTC<br/>
+</div></a></div>
+<div class='ac_instr'>jae_jnb_jnc_rel16_32 (<a name='jae_jnb_jnc_rel16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2bd32>Type_op2bd32</a><br/>
+Decoder: op2b=33551; <br/>
+ASM: JAE JNB JNC<br/>
+</div></a></div>
+<div class='ac_instr'>mov_ESI_imm32 (<a name='mov_ESI_imm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bi>Type_op1bi</a><br/>
+Decoder: op1b=190; <br/>
+ASM: MOV<br/>
+</div></a></div>
+<div class='ac_instr'>bt_rm32_imm8 (<a name='bt_rm32_imm8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=47631; regop2=4; <br/>
+ASM: BT<br/>
+</div></a></div>
+<div class='ac_instr'>shld_rm32_r32_CL (<a name='shld_rm32_r32_CL'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=42255; <br/>
+ASM: SHLD<br/>
+</div></a></div>
+<div class='ac_instr'>pop_ESP (<a name='pop_ESP'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=92; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>pop_ESI (<a name='pop_ESI'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b>Type_op1b</a><br/>
+Decoder: op1b=94; <br/>
+ASM: POP<br/>
+</div></a></div>
+<div class='ac_instr'>ror_rm32 (<a name='ror_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1b_rm32>Type_op1b_rm32</a><br/>
+Decoder: op1b=209; regop=1; <br/>
+ASM: ROR<br/>
+</div></a></div>
+<div class='ac_instr'>lfs_r32_m16_32 (<a name='lfs_r32_m16_32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=46095; <br/>
+ASM: LFS<br/>
+</div></a></div>
+<div class='ac_instr'>jge_jnl_rel8 (<a name='jge_jnl_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=125; <br/>
+ASM: JGE JNL<br/>
+</div></a></div>
+<div class='ac_instr'>cmov_b_c_nae_r32_rm32 (<a name='cmov_b_c_nae_r32_rm32'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op2b_rm32>Type_op2b_rm32</a><br/>
+Decoder: op2b=16911; <br/>
+ASM: CMOVB CMOVC CMOVNAE<br/>
+</div></a></div>
+<div class='ac_instr'>js_rel8 (<a name='js_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=120; <br/>
+ASM: JS<br/>
+</div></a></div>
+<div class='ac_instr'>jne_jnz_rel8 (<a name='jne_jnz_rel8'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_op1bd8>Type_op1bd8</a><br/>
+Decoder: op1b=117; <br/>
+ASM: JNE JNZ<br/>
+</div></a></div>
+</div>
+</body>
+</html>

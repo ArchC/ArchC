@@ -1,0 +1,69 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>IA32.ac Source Code</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=IA32_index.html>IA32 Architechture Description</a></div><div class='definfo'><a href=IA32_isa.html>IA32 Instruction Set and Formats</a></div><div class='definfo'><a href=IA32_other.html>IA32 Other Properties</a></div><div class='source'><ul>
+<li><a name=l1>00001</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/**
+ </font></li><li><a name=l2>00002</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @file      IA32.ac
+ </font></li><li><a name=l3>00003</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @author    Rodolfo Jardim de Azevedo
+ </font></li><li><a name=l4>00004</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            Valdiney Alves Pimenta
+ </font></li><li><a name=l5>00005</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            Team 03 - MC723 - 2005, 1st period
+ </font></li><li><a name=l6>00006</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *              Eduardo Uemura Okada
+ </font></li><li><a name=l7>00007</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *              Andre Deiano Pansani
+ </font></li><li><a name=l8>00008</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *              Ricardo Andrade
+ </font></li><li><a name=l9>00009</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *
+ </font></li><li><a name=l10>00010</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            The ArchC Team
+ </font></li><li><a name=l11>00011</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            http://www.archc.org/
+ </font></li><li><a name=l12>00012</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *
+ </font></li><li><a name=l13>00013</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            Computer Systems Laboratory (LSC)
+ </font></li><li><a name=l14>00014</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            IC-UNICAMP
+ </font></li><li><a name=l15>00015</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *            http://www.lsc.ic.unicamp.br
+ </font></li><li><a name=l16>00016</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *
+ </font></li><li><a name=l17>00017</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @version   1.0
+ </font></li><li><a name=l18>00018</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @date      Thu, 29 Jun 2006 14:49:06 -0300
+ </font></li><li><a name=l19>00019</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * 
+ </font></li><li><a name=l20>00020</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @brief     The ArchC x86 functional model.
+ </font></li><li><a name=l21>00021</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * 
+ </font></li><li><a name=l22>00022</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ </font></li><li><a name=l23>00023</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > *
+ </font></li><li><a name=l24>00024</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > */
+ </font></li><li><a name=l25>00025</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l26>00026</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >// Assumpmitions:
+ </font></li><li><a name=l27>00027</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >//
+ </font></li><li><a name=l28>00028</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >// Memory is treated as processor internal as of  this  functional  model.  And  no
+ </font></li><li><a name=l29>00029</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >// caching is emulated.
+ </font></li><li><a name=l30>00030</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >//
+ </font></li><li><a name=l31>00031</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >// No segment register override is implemented yet.
+ </font></li><li><a name=l32>00032</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l33>00033</a>&nbsp&nbsp&nbsp&nbsp <font color="purple" >AC_ARCH </font>(IA32)
+</li><li><a name=l34>00034</a>&nbsp&nbsp&nbsp&nbsp {
+</li><li><a name=l35>00035</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// IA32 Family word is 16bit-wide, but registers are 32bits in this model
+ </font></li><li><a name=l36>00036</a>&nbsp&nbsp&nbsp&nbsp 	<font color="green" >ac_wordsize </font> 32;
+</li><li><a name=l37>00037</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l38>00038</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// Memory is internal in this functional model
+ </font></li><li><a name=l39>00039</a>&nbsp&nbsp&nbsp&nbsp 	<font color="green" >ac_mem </font> MEM:32M;
+</li><li><a name=l40>00040</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l41>00041</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// General purpose registers (32bit registers) :
+ </font></li><li><a name=l42>00042</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI
+ </font></li><li><a name=l43>00043</a>&nbsp&nbsp&nbsp&nbsp 	<font color="green" >ac_regbank </font> GR:8;
+</li><li><a name=l44>00044</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l45>00045</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// Segment registers (segment registers are 16bit-wide):
+ </font></li><li><a name=l46>00046</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// CS, DS, SS, ES, FS, GS
+ </font></li><li><a name=l47>00047</a>&nbsp&nbsp&nbsp&nbsp 	<font color="green" >ac_regbank </font> SR:6;
+</li><li><a name=l48>00048</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l49>00049</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// Special registers (32bit registers) :
+ </font></li><li><a name=l50>00050</a>&nbsp&nbsp&nbsp&nbsp 	<font color="gray" >// EFLAGS, EIP
+ </font></li><li><a name=l51>00051</a>&nbsp&nbsp&nbsp&nbsp 	<font color="green" >ac_regbank </font> SPR:2;
+</li><li><a name=l52>00052</a>&nbsp&nbsp&nbsp&nbsp 
+</li><li><a name=l53>00053</a>&nbsp&nbsp&nbsp&nbsp 	<font color="purple" >ARCH_CTOR </font>(IA32)
+</li><li><a name=l54>00054</a>&nbsp&nbsp&nbsp&nbsp 	{
+</li><li><a name=l55>00055</a>&nbsp&nbsp&nbsp&nbsp 		<font color="green" >ac_isa </font>(<font color="brown" >"IA32_isa.ac" </font>);
+</li><li><a name=l56>00056</a>&nbsp&nbsp&nbsp&nbsp 		<font color="green" >set_endian </font>(<font color="brown" >"little" </font>);
+</li><li><a name=l57>00057</a>&nbsp&nbsp&nbsp&nbsp 	};
+</li><li><a name=l58>00058</a>&nbsp&nbsp&nbsp&nbsp };
+</li><li><a name=l59>00059</a>&nbsp&nbsp&nbsp&nbsp 
+</li></ul></div>
+</body>
+</html>

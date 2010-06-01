@@ -1,0 +1,761 @@
+<html>
+<head>
+<link href='style.css' rel='stylesheet' type='text/css' />
+<title>sparcv8 ISA Documentation</title>
+</head>
+<body>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=sparcv8_index.html>sparcv8 Architechture Description</a></div><div class='definfo'><a href=sparcv8_other.html>sparcv8 Other Properties</a></div><div class='ac_isa'>ISA (<a href='http://www.archc.org/'>ac_isa</a>):<div class='isa_name'>Name: sparcv8_isa.ac</div>
+<div class='ac_format'>Type_F3B (<a name='Type_F3B'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 2; rd 5; op3 6; rs1 5; is 1; simm13 13 s;<br/>
+Instructions:  <a href='#ldsb_imm'>ldsb_imm</a> <a href='#andn_imm'>andn_imm</a> <a href='#lduh_imm'>lduh_imm</a> <a href='#addcc_imm'>addcc_imm</a> <a href='#restore_imm'>restore_imm</a> <a href='#stb_imm'>stb_imm</a> <a href='#sth_imm'>sth_imm</a> <a href='#ld_imm'>ld_imm</a> <a href='#andcc_imm'>andcc_imm</a> <a href='#orcc_imm'>orcc_imm</a> <a href='#st_imm'>st_imm</a> <a href='#ldstub_imm'>ldstub_imm</a> <a href='#mulscc_imm'>mulscc_imm</a> <a href='#sdiv_imm'>sdiv_imm</a> <a href='#sub_imm'>sub_imm</a> <a href='#xorcc_imm'>xorcc_imm</a> <a href='#xnor_imm'>xnor_imm</a> <a href='#rdy'>rdy</a> <a href='#udivcc_imm'>udivcc_imm</a> <a href='#udiv_imm'>udiv_imm</a> <a href='#sra_imm'>sra_imm</a> <a href='#xnorcc_imm'>xnorcc_imm</a> <a href='#subx_imm'>subx_imm</a> <a href='#or_imm'>or_imm</a> <a href='#sll_imm'>sll_imm</a> <a href='#andncc_imm'>andncc_imm</a> <a href='#umul_imm'>umul_imm</a> <a href='#ldsh_imm'>ldsh_imm</a> <a href='#save_imm'>save_imm</a> <a href='#subcc_imm'>subcc_imm</a> <a href='#smul_imm'>smul_imm</a> <a href='#and_imm'>and_imm</a> <a href='#std_imm'>std_imm</a> <a href='#xor_imm'>xor_imm</a> <a href='#addxcc_imm'>addxcc_imm</a> <a href='#umulcc_imm'>umulcc_imm</a> <a href='#subxcc_imm'>subxcc_imm</a> <a href='#sdivcc_imm'>sdivcc_imm</a> <a href='#add_imm'>add_imm</a> <a href='#swap_imm'>swap_imm</a> <a href='#srl_imm'>srl_imm</a> <a href='#jmpl_imm'>jmpl_imm</a> <a href='#orncc_imm'>orncc_imm</a> <a href='#wry_imm'>wry_imm</a> <a href='#smulcc_imm'>smulcc_imm</a> <a href='#orn_imm'>orn_imm</a> <a href='#ldub_imm'>ldub_imm</a> <a href='#addx_imm'>addx_imm</a> <a href='#ldd_imm'>ldd_imm</a></br>
+</div></div>
+<div class='ac_format'>Type_F3A (<a name='Type_F3A'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 2; rd 5; op3 6; rs1 5; is 1; asi 8; rs2 5;<br/>
+Instructions:  <a href='#srl_reg'>srl_reg</a> <a href='#umul_reg'>umul_reg</a> <a href='#andncc_reg'>andncc_reg</a> <a href='#orncc_reg'>orncc_reg</a> <a href='#std_reg'>std_reg</a> <a href='#xnorcc_reg'>xnorcc_reg</a> <a href='#sll_reg'>sll_reg</a> <a href='#jmpl_reg'>jmpl_reg</a> <a href='#sdiv_reg'>sdiv_reg</a> <a href='#sub_reg'>sub_reg</a> <a href='#sra_reg'>sra_reg</a> <a href='#restore_reg'>restore_reg</a> <a href='#subcc_reg'>subcc_reg</a> <a href='#or_reg'>or_reg</a> <a href='#udiv_reg'>udiv_reg</a> <a href='#subx_reg'>subx_reg</a> <a href='#wry_reg'>wry_reg</a> <a href='#add_reg'>add_reg</a> <a href='#swap_reg'>swap_reg</a> <a href='#lduh_reg'>lduh_reg</a> <a href='#xor_reg'>xor_reg</a> <a href='#save_reg'>save_reg</a> <a href='#ldd_reg'>ldd_reg</a> <a href='#umulcc_reg'>umulcc_reg</a> <a href='#sdivcc_reg'>sdivcc_reg</a> <a href='#orn_reg'>orn_reg</a> <a href='#subxcc_reg'>subxcc_reg</a> <a href='#addx_reg'>addx_reg</a> <a href='#ld_reg'>ld_reg</a> <a href='#udivcc_reg'>udivcc_reg</a> <a href='#ldub_reg'>ldub_reg</a> <a href='#and_reg'>and_reg</a> <a href='#st_reg'>st_reg</a> <a href='#sth_reg'>sth_reg</a> <a href='#addcc_reg'>addcc_reg</a> <a href='#ldsb_reg'>ldsb_reg</a> <a href='#andn_reg'>andn_reg</a> <a href='#ldsh_reg'>ldsh_reg</a> <a href='#addxcc_reg'>addxcc_reg</a> <a href='#andcc_reg'>andcc_reg</a> <a href='#xnor_reg'>xnor_reg</a> <a href='#xorcc_reg'>xorcc_reg</a> <a href='#smulcc_reg'>smulcc_reg</a> <a href='#smul_reg'>smul_reg</a> <a href='#orcc_reg'>orcc_reg</a> <a href='#mulscc_reg'>mulscc_reg</a> <a href='#stb_reg'>stb_reg</a> <a href='#ldstub_reg'>ldstub_reg</a></br>
+</div></div>
+<div class='ac_format'>Type_F2A (<a name='Type_F2A'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 2; rd 5; op2 3; imm22 22;<br/>
+Instructions:  <a href='#nop'>nop</a> <a href='#unimplemented'>unimplemented</a> <a href='#sethi'>sethi</a></br>
+</div></div>
+<div class='ac_format'>Type_FT (<a name='Type_FT'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 2; r1 1; cond 4; op2a 6; rs1 5; is 1; (('r2a', '8'), ('rs2', '5')) (('r2b', '6'), ('imm7', '7'));<br/>
+Instructions:  <a href='#trap_reg'>trap_reg</a> <a href='#trap_imm'>trap_imm</a></br>
+</div></div>
+<div class='ac_format'>Type_F2B (<a name='Type_F2B'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 2; an 1; cond 4; op2 3; disp22 22 s;<br/>
+Instructions:  <a href='#bvs'>bvs</a> <a href='#bvc'>bvc</a> <a href='#bne'>bne</a> <a href='#bleu'>bleu</a> <a href='#ble'>ble</a> <a href='#bn'>bn</a> <a href='#be'>be</a> <a href='#bg'>bg</a> <a href='#ba'>ba</a> <a href='#bl'>bl</a> <a href='#bge'>bge</a> <a href='#bpos'>bpos</a> <a href='#bgu'>bgu</a> <a href='#bneg'>bneg</a> <a href='#bcc'>bcc</a> <a href='#bcs'>bcs</a></br>
+</div></div>
+<div class='ac_format'>Type_F1 (<a name='Type_F1'><a href='http://www.archc.org/'>ac_format</a>):</a><div class='desc'>Format Description:  op 2; disp30 30;<br/>
+Instructions:  <a href='#call'>call</a></br>
+</div></div>
+<div class='ac_instr'>bvs (<a name='bvs'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=7; op2=2; <br/>
+ASM: bvs%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_v<br/>
+Delay Condition: PSR_icc_v || !an<br/>
+</div></a></div>
+<div class='ac_instr'>srl_reg (<a name='srl_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=38; is=0; <br/>
+ASM: srl %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>umul_reg (<a name='umul_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=10; is=0; <br/>
+ASM: umul %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>andncc_reg (<a name='andncc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=21; is=0; <br/>
+ASM: andncc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>ldsb_imm (<a name='ldsb_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=9; is=1; <br/>
+ASM: [[['ldsb [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['ldsb [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['ldsb [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['ldsb [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>orncc_reg (<a name='orncc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=22; is=0; <br/>
+ASM: orncc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>bvc (<a name='bvc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=15; op2=2; <br/>
+ASM: bvc%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !PSR_icc_v<br/>
+Delay Condition: !PSR_icc_v || !an<br/>
+</div></a></div>
+<div class='ac_instr'>andn_imm (<a name='andn_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=5; is=1; <br/>
+ASM: ['andn %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['andn %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>std_reg (<a name='std_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=7; is=0; <br/>
+ASM: ['std %reg, [%reg + %reg]', 'rd', 'rs1', 'rs2']<br/>
+ASM: ['std %reg, [%reg]', 'rd', 'rs1', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>lduh_imm (<a name='lduh_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=2; is=1; <br/>
+ASM: [[['lduh [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['lduh [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['lduh [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['lduh [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>xnorcc_reg (<a name='xnorcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=23; is=0; <br/>
+ASM: xnorcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>sll_reg (<a name='sll_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=37; is=0; <br/>
+ASM: sll %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>addcc_imm (<a name='addcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=16; is=1; <br/>
+ASM: [['addcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd'], ['addcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']]<br/>
+ASM: ['btst %reg, %imm', 'rs1', 'simm13', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>restore_imm (<a name='restore_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=61; is=1; <br/>
+ASM: ['restore %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['restore %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>stb_imm (<a name='stb_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=5; is=1; <br/>
+ASM: [[[[[['stb %reg, [%reg + \\%lo(%exp(low))]', 'rd', 'rs1', 'simm13'], ['stb %reg, [%reg + %imm]', 'rd', 'rs1', 'simm13']], ['stb %reg, [%imm + %reg]', 'rd', 'simm13', 'rs1']], ['stb %reg, [%imm]', 'rd', 'simm13', 'rs1', '%g0']], ['clrb [%reg + %imm]', 'rd', '%g0', 'rs1', 'simm13']], ['clrb [%imm + %reg]', 'rd', '%g0', 'simm13', 'rs1']]<br/>
+ASM: ['clrb [%imm]', 'rd', '%g0', 'rs1', '%g0', 'simm13']<br/>
+</div></a></div>
+<div class='ac_instr'>sth_imm (<a name='sth_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=6; is=1; <br/>
+ASM: [[[[[['sth %reg, [%reg + \\%lo(%exp(low))]', 'rd', 'rs1', 'simm13'], ['sth %reg, [%reg + %imm]', 'rd', 'rs1', 'simm13']], ['sth %reg, [%imm + %reg]', 'rd', 'simm13', 'rs1']], ['sth %reg, [%imm]', 'rd', 'simm13', 'rs1', '%g0']], ['clrh [%reg + %imm]', 'rd', '%g0', 'rs1', 'simm13']], ['clrh [%imm + %reg]', 'rd', '%g0', 'simm13', 'rs1']]<br/>
+ASM: ['clrh [%imm]', 'rd', '%g0', 'rs1', '%g0', 'simm13']<br/>
+</div></a></div>
+<div class='ac_instr'>jmpl_reg (<a name='jmpl_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=56; is=0; <br/>
+ASM: [[[['jmp %reg', 'rs1', 'rs2', '0', 'rd', '0'], ['call %reg', 'rs1', 'rs2', '0', 'rd', '15']], ['jmpl %reg + %reg, %reg', 'rs1', 'rs2', 'rd']], ['jmp %reg + %reg', 'rs1', 'rs2', 'rd', '%g0']]<br/>
+ASM: ['call %reg + %reg', 'rs1', 'rs2', 'rd', '%o7']<br/>
+Is Jump: readReg(rs1) + readReg(rs2) - ac_start_addr<br/>
+Delay: 1<br/>
+Behavior: writeReg(rd, ac_pc);<br/>
+</div></a></div>
+<div class='ac_instr'>bne (<a name='bne'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=9; op2=2; <br/>
+ASM: ['bne%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+ASM: ['bnz%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !PSR_icc_z<br/>
+Delay Condition: !PSR_icc_z || !an<br/>
+</div></a></div>
+<div class='ac_instr'>sdiv_reg (<a name='sdiv_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=15; is=0; <br/>
+ASM: sdiv %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>sub_reg (<a name='sub_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=4; is=0; <br/>
+ASM: ['sub %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['neg %reg, %reg', 'rs1', '%g0', 'rs2', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>sra_reg (<a name='sra_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=39; is=0; <br/>
+ASM: sra %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>ld_imm (<a name='ld_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=0; is=1; <br/>
+ASM: [[['ld [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['ld [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['ld [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['ld [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>nop (<a name='nop'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2A>Type_F2A</a><br/>
+Decoder: op=0; rd=0; op2=4; imm22=0; <br/>
+ASM: nop<br/>
+</div></a></div>
+<div class='ac_instr'>andcc_imm (<a name='andcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=17; is=1; <br/>
+ASM: [['andcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd'], ['andcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']]<br/>
+ASM: ['btst %imm, %reg', 'simm13', 'rs1', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>restore_reg (<a name='restore_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=61; is=0; <br/>
+ASM: ['restore %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['restore', 'rs1', '%g0', 'rs2', '%g0', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>subcc_reg (<a name='subcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=20; is=0; <br/>
+ASM: ['subcc %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['cmp %reg, %reg', 'rs1', 'rs2', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>or_reg (<a name='or_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=2; is=0; <br/>
+ASM: [['or %reg, %reg, %reg', 'rs1', 'rs2', 'rd'], ['clr %reg', 'rs1', '%g0', 'rs2', '%g0', 'rd']]<br/>
+ASM: ['mov %reg, %reg', 'rs1', '%g0', 'rs2', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>orcc_imm (<a name='orcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=18; is=1; <br/>
+ASM: ['orcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['orcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>udiv_reg (<a name='udiv_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=14; is=0; <br/>
+ASM: udiv %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>bleu (<a name='bleu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=4; op2=2; <br/>
+ASM: bleu%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_c ||PSR_icc_z<br/>
+Delay Condition: PSR_icc_c ||PSR_icc_z || !an<br/>
+</div></a></div>
+<div class='ac_instr'>st_imm (<a name='st_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=4; is=1; <br/>
+ASM: [[[[[['st %reg, [%reg + \\%lo(%exp(low))]', 'rd', 'rs1', 'simm13'], ['st %reg, [%reg + %imm]', 'rd', 'rs1', 'simm13']], ['st %reg, [%imm + %reg]', 'rd', 'simm13', 'rs1']], ['st %reg, [%imm]', 'rd', 'simm13', 'rs1', '%g0']], ['clr [%reg + %imm]', 'rd', '%g0', 'rs1', 'simm13']], ['clr [%imm + %reg]', 'rd', '%g0', 'simm13', 'rs1']]<br/>
+ASM: ['clr [%imm]', 'rd', '%g0', 'rs1', '%g0', 'simm13']<br/>
+</div></a></div>
+<div class='ac_instr'>subx_reg (<a name='subx_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=12; is=0; <br/>
+ASM: subx %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>wry_reg (<a name='wry_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=48; is=0; <br/>
+ASM: [['wr %reg, \\%y', 'rs1', 'rd', '0', 'rs2', '0'], ['wr %reg, %reg, \\%y', 'rs1', 'rs2', 'rd', '0']]<br/>
+ASM: ['mov %reg, \\%y', 'rs1', '%g0', 'rs2', 'rd', '0']<br/>
+</div></a></div>
+<div class='ac_instr'>add_reg (<a name='add_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=0; is=0; <br/>
+ASM: add %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>swap_reg (<a name='swap_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=15; is=0; <br/>
+ASM: ['swap [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['swap [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>lduh_reg (<a name='lduh_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=2; is=0; <br/>
+ASM: ['lduh [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['lduh [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>ldstub_imm (<a name='ldstub_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=13; is=1; <br/>
+ASM: [[['ldstub [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['ldstub [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['ldstub [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['ldstub [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>xor_reg (<a name='xor_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=3; is=0; <br/>
+ASM: xor %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>save_reg (<a name='save_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=60; is=0; <br/>
+ASM: ['save %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['save', 'rs1', '%g0', 'rs2', '%g0', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>mulscc_imm (<a name='mulscc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=36; is=1; <br/>
+ASM: ['mulscc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['mulscc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>sdiv_imm (<a name='sdiv_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=15; is=1; <br/>
+ASM: ['sdiv %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['sdiv %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>ldd_reg (<a name='ldd_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=3; is=0; <br/>
+ASM: ['ldd [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['ldd [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>umulcc_reg (<a name='umulcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=26; is=0; <br/>
+ASM: umulcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>sdivcc_reg (<a name='sdivcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=31; is=0; <br/>
+ASM: sdivcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>ble (<a name='ble'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=2; op2=2; <br/>
+ASM: ble%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_z ||(PSR_icc_n ^PSR_icc_v)<br/>
+Delay Condition: PSR_icc_z ||(PSR_icc_n ^PSR_icc_v) || !an<br/>
+</div></a></div>
+<div class='ac_instr'>sub_imm (<a name='sub_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=4; is=1; <br/>
+ASM: ['sub %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['sub %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>bn (<a name='bn'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=0; op2=2; <br/>
+ASM: ['bn %exp(pcrel)', 'disp22', 'an', '0']<br/>
+ASM: ['bn,a %exp(pcrel)', 'disp22', 'an', '1']<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: 0<br/>
+Delay Condition: !an<br/>
+</div></a></div>
+<div class='ac_instr'>be (<a name='be'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=1; op2=2; <br/>
+ASM: ['be%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+ASM: ['bz%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_z<br/>
+Delay Condition: PSR_icc_z || !an<br/>
+</div></a></div>
+<div class='ac_instr'>bg (<a name='bg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=10; op2=2; <br/>
+ASM: bg%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !(PSR_icc_z ||(PSR_icc_n ^PSR_icc_v))<br/>
+Delay Condition: !(PSR_icc_z ||(PSR_icc_n ^PSR_icc_v)) || !an<br/>
+</div></a></div>
+<div class='ac_instr'>ba (<a name='ba'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=8; op2=2; <br/>
+ASM: [['b  %exp(pcrel)', 'disp22', 'an', '0'], ['ba %exp(pcrel)', 'disp22', 'an', '0']]<br/>
+ASM: ['ba,a %exp(pcrel)', 'disp22', 'an', '1']<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: 1<br/>
+Delay Condition: !an<br/>
+</div></a></div>
+<div class='ac_instr'>bl (<a name='bl'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=3; op2=2; <br/>
+ASM: bl%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_n ^PSR_icc_v<br/>
+Delay Condition: PSR_icc_n ^PSR_icc_v || !an<br/>
+</div></a></div>
+<div class='ac_instr'>xorcc_imm (<a name='xorcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=19; is=1; <br/>
+ASM: ['xorcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['xorcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>orn_reg (<a name='orn_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=6; is=0; <br/>
+ASM: orn %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>xnor_imm (<a name='xnor_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=7; is=1; <br/>
+ASM: ['xnor %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['xnor %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>trap_reg (<a name='trap_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_FT>Type_FT</a><br/>
+Decoder: op=2; is=0; op2a=58; <br/>
+ASM: t%cond %reg<br/>
+ASM: cond<br/>
+ASM: rs2<br/>
+</div></a></div>
+<div class='ac_instr'>bge (<a name='bge'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=11; op2=2; <br/>
+ASM: bge%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !(PSR_icc_n ^PSR_icc_v)<br/>
+Delay Condition: !(PSR_icc_n ^PSR_icc_v) || !an<br/>
+</div></a></div>
+<div class='ac_instr'>rdy (<a name='rdy'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=40; <br/>
+ASM: ['rd \\%y, %reg', 'rs1', '0', 'rd']<br/>
+ASM: ['mov \\%y, %reg', 'rs1', '0', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>bpos (<a name='bpos'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=14; op2=2; <br/>
+ASM: bpos%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !PSR_icc_n<br/>
+Delay Condition: !PSR_icc_n || !an<br/>
+</div></a></div>
+<div class='ac_instr'>subxcc_reg (<a name='subxcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=28; is=0; <br/>
+ASM: subxcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>bgu (<a name='bgu'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=12; op2=2; <br/>
+ASM: bgu%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !(PSR_icc_c ||PSR_icc_z)<br/>
+Delay Condition: !(PSR_icc_c ||PSR_icc_z) || !an<br/>
+</div></a></div>
+<div class='ac_instr'>addx_reg (<a name='addx_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=8; is=0; <br/>
+ASM: addx %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>ld_reg (<a name='ld_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=0; is=0; <br/>
+ASM: ['ld [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['ld [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>udivcc_reg (<a name='udivcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=30; is=0; <br/>
+ASM: smul %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>ldub_reg (<a name='ldub_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=1; is=0; <br/>
+ASM: ['ldub [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['ldub [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>and_reg (<a name='and_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=1; is=0; <br/>
+ASM: and %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>st_reg (<a name='st_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=4; is=0; <br/>
+ASM: [[['st %reg, [%reg + %reg]', 'rd', 'rs1', 'rs2'], ['st %reg, [%reg]', 'rd', 'rs1', 'rs2', '%g0']], ['clr [%reg + %reg]', 'rd', '%g0', 'rs1', 'rs2']]<br/>
+ASM: ['clr [%reg]', 'rd', '%g0', 'rs1', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>udivcc_imm (<a name='udivcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=30; is=1; <br/>
+ASM: ['udivcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['udivcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>udiv_imm (<a name='udiv_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=14; is=1; <br/>
+ASM: ['udiv %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['udiv %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>sra_imm (<a name='sra_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=39; is=1; <br/>
+ASM: ['sra %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['sra %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>sth_reg (<a name='sth_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=6; is=0; <br/>
+ASM: [[['sth %reg, [%reg + %reg]', 'rd', 'rs1', 'rs2'], ['sth %reg, [%reg]', 'rd', 'rs1', 'rs2', '%g0']], ['clrh [%reg + %reg]', 'rd', '%g0', 'rs1', 'rs2']]<br/>
+ASM: ['clrh [%reg]', 'rd', '%g0', 'rs1', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>xnorcc_imm (<a name='xnorcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=23; is=1; <br/>
+ASM: ['xnorcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['xnorcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>addcc_reg (<a name='addcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=16; is=0; <br/>
+ASM: ['addcc %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['btst %reg, %reg', 'rs1', 'rs2', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>ldsb_reg (<a name='ldsb_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=9; is=0; <br/>
+ASM: ['ldsb [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['ldsb [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>subx_imm (<a name='subx_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=12; is=1; <br/>
+ASM: ['subx %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['subx %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>or_imm (<a name='or_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=2; is=1; <br/>
+ASM: [['or %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd'], ['or %reg, %imm, %reg', 'rs1', 'simm13', 'rd']]<br/>
+ASM: ['mov %imm, %reg', 'rs1', '%g0', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>andn_reg (<a name='andn_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=5; is=0; <br/>
+ASM: andn %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>call (<a name='call'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F1>Type_F1</a><br/>
+Decoder: op=1; <br/>
+ASM: call %exp(pcrel)<br/>
+ASM: disp30<br/>
+Is Jump: ac_pc+(disp30<<2)<br/>
+Delay: 1<br/>
+Behavior: writeReg(15, ac_pc);<br/>
+</div></a></div>
+<div class='ac_instr'>ldsh_reg (<a name='ldsh_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=10; is=0; <br/>
+ASM: ['ldsh [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['ldsh [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>sll_imm (<a name='sll_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=37; is=1; <br/>
+ASM: ['sll %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['sll %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>addxcc_reg (<a name='addxcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=24; is=0; <br/>
+ASM: addxcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>andncc_imm (<a name='andncc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=21; is=1; <br/>
+ASM: ['andncc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['andncc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>umul_imm (<a name='umul_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=10; is=1; <br/>
+ASM: ['umul %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['umul %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>unimplemented (<a name='unimplemented'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2A>Type_F2A</a><br/>
+Decoder: op=0; rd=0; op2=0; <br/>
+ASM: unimp %imm<br/>
+ASM: imm22<br/>
+</div></a></div>
+<div class='ac_instr'>ldsh_imm (<a name='ldsh_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=10; is=1; <br/>
+ASM: [[['ldsh [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['ldsh [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['ldsh [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['ldsh [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>save_imm (<a name='save_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=60; is=1; <br/>
+ASM: ['save %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['save %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>subcc_imm (<a name='subcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=20; is=1; <br/>
+ASM: [['subcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd'], ['subcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']]<br/>
+ASM: ['cmp %reg, %imm', 'rs1', 'simm13', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>smul_imm (<a name='smul_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=11; is=1; <br/>
+ASM: smul %reg, %imm, %reg<br/>
+ASM: rs1<br/>
+ASM: simm13<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>and_imm (<a name='and_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=1; is=1; <br/>
+ASM: ['and %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['and %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>andcc_reg (<a name='andcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=17; is=0; <br/>
+ASM: ['andcc %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['btst %reg, %reg', 'rs2', 'rs1', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>xnor_reg (<a name='xnor_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=7; is=0; <br/>
+ASM: ['xnor %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['not %reg, %reg', 'rs1', 'rs2', '%g0', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>xorcc_reg (<a name='xorcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=19; is=0; <br/>
+ASM: xorcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>std_imm (<a name='std_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=7; is=1; <br/>
+ASM: [[['std %reg, [%reg + \\%lo(%exp(low))]', 'rd', 'rs1', 'simm13'], ['std %reg, [%reg + %imm]', 'rd', 'rs1', 'simm13']], ['std %reg, [%imm + %reg]', 'rd', 'simm13', 'rs1']]<br/>
+ASM: ['std %reg, [%imm]', 'rd', 'simm13', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>xor_imm (<a name='xor_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=3; is=1; <br/>
+ASM: ['xor %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['xor %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>bneg (<a name='bneg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=6; op2=2; <br/>
+ASM: bneg%[anul] %exp(pcrel)<br/>
+ASM: an<br/>
+ASM: disp22<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_n<br/>
+Delay Condition: PSR_icc_n || !an<br/>
+</div></a></div>
+<div class='ac_instr'>addxcc_imm (<a name='addxcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=24; is=1; <br/>
+ASM: ['addxcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['addxcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>umulcc_imm (<a name='umulcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=26; is=1; <br/>
+ASM: ['umulcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['umulcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>subxcc_imm (<a name='subxcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=28; is=1; <br/>
+ASM: ['subxcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['subxcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>sdivcc_imm (<a name='sdivcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=31; is=1; <br/>
+ASM: ['sdivcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['sdivcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>add_imm (<a name='add_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=0; is=1; <br/>
+ASM: ['add %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['add %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>smulcc_reg (<a name='smulcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=27; is=0; <br/>
+ASM: smulcc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>swap_imm (<a name='swap_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=15; is=1; <br/>
+ASM: [[['swap [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['swap [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['swap [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['swap [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>srl_imm (<a name='srl_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=38; is=1; <br/>
+ASM: ['srl %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['srl %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>jmpl_imm (<a name='jmpl_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=56; is=1; <br/>
+ASM: [[[[['jmpl %reg + %imm, %reg', 'rs1', 'simm13', 'rd'], ['jmpl %imm + %reg, %reg', 'simm13', 'rs1', 'rd']], ['jmp %reg + %imm', 'rs1', 'simm13', 'rd', '%g0']], ['call %reg + %imm', 'rs1', 'simm13', 'rd', '%o7']], ['ret', 'rs1', '%i7', 'simm13', '8', 'rd', '%g0']]<br/>
+ASM: ['retl', 'rs1', '%o7', 'simm13', '8', 'rd', '%g0']<br/>
+Is Jump: readReg(rs1) + simm13<br/>
+Delay: 1<br/>
+Behavior: writeReg(rd, ac_pc);<br/>
+</div></a></div>
+<div class='ac_instr'>orncc_imm (<a name='orncc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=22; is=1; <br/>
+ASM: ['orncc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['orncc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>sethi (<a name='sethi'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2A>Type_F2A</a><br/>
+Decoder: op=0; op2=4; <br/>
+ASM: ['sethi %exp, %reg', 'imm22', 'rd']<br/>
+ASM: ['sethi \\%hi(%exp(high)), %reg', 'imm22', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>wry_imm (<a name='wry_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=48; is=1; <br/>
+ASM: ['wr %reg, %imm, \\%y', 'rs1', 'simm13', 'rd', '0']<br/>
+ASM: ['mov %imm, \\%y', 'simm13', 'rs1', '%g0', 'rd', '0']<br/>
+</div></a></div>
+<div class='ac_instr'>smulcc_imm (<a name='smulcc_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=27; is=1; <br/>
+ASM: ['smulcc %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['smulcc %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>smul_reg (<a name='smul_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=11; is=0; <br/>
+ASM: smul %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>orn_imm (<a name='orn_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=6; is=1; <br/>
+ASM: ['orn %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['orn %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>ldub_imm (<a name='ldub_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=1; is=1; <br/>
+ASM: [[['ldub [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['ldub [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['ldub [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['ldub [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>orcc_reg (<a name='orcc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=18; is=0; <br/>
+ASM: ['orcc %reg, %reg, %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['tst %reg', 'rs1', '%g0', 'rs2', 'rd', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>mulscc_reg (<a name='mulscc_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=2; op3=36; is=0; <br/>
+ASM: mulscc %reg, %reg, %reg<br/>
+ASM: rs1<br/>
+ASM: rs2<br/>
+ASM: rd<br/>
+</div></a></div>
+<div class='ac_instr'>stb_reg (<a name='stb_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=5; is=0; <br/>
+ASM: [[['stb %reg, [%reg + %reg]', 'rd', 'rs1', 'rs2'], ['stb %reg, [%reg]', 'rd', 'rs1', 'rs2', '%g0']], ['clrb [%reg + %reg]', 'rd', '%g0', 'rs1', 'rs2']]<br/>
+ASM: ['clrb [%reg]', 'rd', '%g0', 'rs1', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>bcc (<a name='bcc'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=13; op2=2; <br/>
+ASM: ['bcc%anul %exp(pcrel)', 'an', 'disp22']<br/>
+ASM: ['bgeu%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: !PSR_icc_c<br/>
+Delay Condition: !PSR_icc_c || !an<br/>
+</div></a></div>
+<div class='ac_instr'>ldstub_reg (<a name='ldstub_reg'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3A>Type_F3A</a><br/>
+Decoder: op=3; op3=13; is=0; <br/>
+ASM: ['ldstub [%reg + %reg], %reg', 'rs1', 'rs2', 'rd']<br/>
+ASM: ['ldstub [%reg], %reg', 'rs1', 'rd', 'rs2', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>addx_imm (<a name='addx_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=2; op3=8; is=1; <br/>
+ASM: ['addx %reg, \\%lo(%exp(low)), %reg', 'rs1', 'simm13', 'rd']<br/>
+ASM: ['addx %reg, %imm, %reg', 'rs1', 'simm13', 'rd']<br/>
+</div></a></div>
+<div class='ac_instr'>trap_imm (<a name='trap_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_FT>Type_FT</a><br/>
+Decoder: op=2; is=1; op2a=58; <br/>
+ASM: t%cond %imm<br/>
+ASM: cond<br/>
+ASM: imm7<br/>
+ASM: r1<br/>
+ASM: 0<br/>
+</div></a></div>
+<div class='ac_instr'>ldd_imm (<a name='ldd_imm'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F3B>Type_F3B</a><br/>
+Decoder: op=3; op3=3; is=1; <br/>
+ASM: [[['ldd [%reg + \\%lo(%exp(low))], %reg', 'rs1', 'simm13', 'rd'], ['ldd [%reg + %imm], %reg', 'rs1', 'simm13', 'rd']], ['ldd [%imm + %reg], %reg', 'simm13', 'rs1', 'rd']]<br/>
+ASM: ['ldd [%imm], %reg', 'simm13', 'rd', 'rs1', '%g0']<br/>
+</div></a></div>
+<div class='ac_instr'>bcs (<a name='bcs'><a href='http://www.archc.org/'>ac_instr</a>):<div class='desc'>Instruction Type: <a href=#Type_F2B>Type_F2B</a><br/>
+Decoder: op=0; cond=5; op2=2; <br/>
+ASM: ['bcs%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+ASM: ['blu%[anul] %exp(pcrel)', 'an', 'disp22']<br/>
+Is Branch: ac_pc+(disp22<<2)<br/>
+Delay: 1<br/>
+Condition: PSR_icc_c<br/>
+Delay Condition: PSR_icc_c || !an<br/>
+</div></a></div>
+</div>
+</body>
+</html>
