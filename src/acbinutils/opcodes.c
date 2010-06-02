@@ -23,7 +23,7 @@
  * 
  * @brief     Opcodes library related code (implementation)
  * 
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
+ * @attention Copyright (C) 2002-2008 --- The ArchC Team
  *
  */
 
@@ -43,6 +43,7 @@ typedef struct _oper_list {
   operand_type type;
   int mod_type;
   int mod_addend;
+  int is_list;
   unsigned int fields;
   unsigned int format_id;
   unsigned int reloc_id;
@@ -89,7 +90,8 @@ void create_operand_list()
  
       oper_list *oper = (oper_list *) malloc (sizeof(oper_list));
 
-      oper->name = (char *) malloc(sizeof(opP->str)+1);
+      oper->name = (char *) malloc(strlen(opP->str)+1);
+
       strcpy(oper->name, opP->str);
 
       oper->type = opP->type;
@@ -97,6 +99,8 @@ void create_operand_list()
       oper->mod_type = opP->modifier.type;
       oper->mod_addend = opP->modifier.addend;
 
+      oper->is_list = opP->is_list;
+      
       oper->fields = encode_fields(opP->fields);
 
       oper->reloc_id = 0; /*opP->reloc_id;*/
@@ -259,18 +263,18 @@ int CreateOpcodeTable(const char *table_filename)
 
       }      
     }
-    fprintf(output, "0x%08X,\t", base_image);      
+    fprintf(output, "0x%08lX,\t", base_image);      
     /*----------------------------------------------------------------*/
   
     /* format id */
     /*----------------------------------------------------------------*/
-    fprintf(output, "%d,\t", format_id);
+    fprintf(output, "%lu,\t", format_id);
     /*----------------------------------------------------------------*/
 
     /* if a pseudo, saves the pseudo-instr table instruction index */
     /*----------------------------------------------------------------*/
     if (asml->pseudolist != NULL) {
-      fprintf(output, "%d", pseudo_idx);
+      fprintf(output, "%lu", pseudo_idx);
       pseudo_idx += asml->num_pseudo+1;
     }
     else
@@ -283,7 +287,7 @@ int CreateOpcodeTable(const char *table_filename)
     fprintf(output, ",\t0");
 
     /* Mask, used for disassemble */
-    fprintf(output, ", \t0x%08X", dmask);
+    fprintf(output, ", \t0x%08lX", dmask);
 
     fprintf(output, "},\n"); 
 
@@ -308,27 +312,15 @@ int CreateAsmSymbolTable(const char *symtab_filename)
     return 0;
   
   /* gets the mappings */
-  ac_asm_map_list *ml = ac_asm_get_mapping_list();
+  ac_asm_symbol *s = ac_asm_get_mapping_list();
   
-  /* for each conversion specifier... */
-  while (ml != NULL) {
 
-    if (!(ml->used_where & 1)) {  /* skip if not an operand marker */
-      ml = ml->next;
-      continue;
-    }
+  /* ... and for each symbol, write the mapping */
+  while (s != NULL) {
+    fprintf(output, "%s{\"%s\",\t\"%s\",\t%d},\n", IND1, s->symbol, s->map_marker, 
+          s->value);
 
-    ac_asm_symbol *s = ml->symbol_list;
-
-    /* ... and for each symbol, write the mapping */
-    while (s != NULL) {
-      fprintf(output, "%s{\"%s\",\t\"%s\",\t%d},\n", IND1, s->symbol, ml->marker, 
-            s->value);
-
-      s = s->next;
-    }
-
-    ml = ml->next;
+    s = s->next;
   }
 
   fclose(output);
@@ -392,10 +384,11 @@ int CreateOperandTable(const char *optable_filename)
     fprintf(output, "%s{\"%s\",\t // (%d)\n\t", IND1, opL->name, opL->id);
     fprintf(output, "%d,\t", opL->type);
     fprintf(output, "%d,\t", opL->mod_type);
+    fprintf(output, "%d,\t", opL->is_list);
     fprintf(output, "%d,\t", opL->mod_addend);
     fprintf(output, "%u,\t", opL->fields);
     fprintf(output, "%u,\t", opL->format_id);
-    fprintf(output, "%u ", opL->reloc_id);
+    fprintf(output, "%u ", opL->reloc_id + 13);
 
     fprintf(output, "},\n"); 
 
@@ -581,17 +574,9 @@ static unsigned int encode_insn_field(unsigned int field_value, unsigned insn_si
   unsigned int mask2 = 0xffffffff;
   unsigned int return_value;
 
-  //big endian
-  if (ac_tgt_endian == 1) { 
-    mask1 <<= (insn_size-(fbit+1));
-    mask2 >>= fbit+1-fsize;
-    return_value = ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
-  }
-  else { //little endian
-    mask1 >>= (insn_size-(fbit+1));
-    mask2 <<= fbit+1-fsize;
-    return_value = ((field_value << ((fbit+1)-fsize) & (mask1 & mask2)));
-  }
+  mask1 <<= (insn_size-(fbit+1));
+  mask2 >>= fbit+1-fsize;
+  return_value = ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
   return return_value;
 }
 
@@ -607,17 +592,9 @@ static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsign
     field_value = (field_value<<1) + 1;
   }
 
-  //big endian
-  if (ac_tgt_endian == 1) { 
-    mask1 <<= (insn_size-(fbit+1));
-    mask2 >>= fbit+1-fsize;
-    return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
-  }
-  else { //little endian
-    mask1 >>= (insn_size-(fbit+1));
-    mask2 <<= fbit+1-fsize;
-    return ((field_value << ((fbit+1)-fsize) & (mask1 & mask2)));
-  }
+  mask1 <<= (insn_size-(fbit+1));
+  mask2 >>= fbit+1-fsize;
+  return ((field_value << (insn_size-(fbit+1)) & (mask1 & mask2)));
 }
 
 
@@ -629,6 +606,7 @@ static oper_list *find_operand(oper_list *opl)
   while (otmp != NULL) {
     if (!strcmp(otmp->name, opl->name) &&
          otmp->type == opl->type &&
+	 otmp->is_list == opl->is_list &&
          otmp->mod_type == opl->mod_type &&
          otmp->mod_addend == opl->mod_addend &&
          otmp->fields == opl->fields &&

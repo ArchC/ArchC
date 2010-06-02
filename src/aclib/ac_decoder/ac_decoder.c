@@ -74,7 +74,7 @@ void ShowDecFormat(ac_dec_format *f)
 void ShowDecodeList(ac_dec_list *l)
 {
   while (l) {
-    printf("\tac_dec_list\n\t  Name : %s\n\t  Value: %d\n", l -> name, l -> value);
+    printf("\tac_dec_list\n\t  Name : %s\n\t  ID : %d\n\t  Value: %d\n", l -> name, l->id, l -> value);
     l = l -> next;
   }
 }
@@ -135,25 +135,16 @@ int CompareFields(const void *p1, const void *p2)
 }
 
 
-/* Fields which have the same name, should have the same position inside the instruction
-   \return 0 if fields have the same name but different position, -1 if fields are equal, 1 otherwise
+/* Fields which have the same position, size and sign inside the instruction are treated as equal.
+   \return 1 if fields are equal, 0 otherwise
 */
 
 int CheckFields(const ac_dec_field *f1, const ac_dec_field *f2)
 {
-  if (!strcmp(f1 -> name, f2 -> name)) {
-    if (strcmp(f1 -> name, "0")) {
-      if ((f1 -> size != f2 -> size) || (f1 -> first_bit != f2 -> first_bit)) {
-        fprintf(stderr, "Field '%s' defined in two formats but with different size or position.\n", f1 -> name);
-        return 0;
-      }
-    }
-    else
-      return 1;
-
-    return -1;
-  }
-  return 1;
+  if (f1->size == f2->size && f1->first_bit == f2->first_bit && f1->sign == f2->sign)
+    return 1;
+  
+  return 0;
 }
 
 
@@ -180,10 +171,11 @@ void FreeDecField(ac_dec_field *f)
 }
 
 
-ac_dec_field *FindDecField(ac_dec_field *fields, char *name)
+ac_dec_field *FindDecField(ac_dec_field *fields, int id)
 {
   while (fields) {
-    if (!strcmp(fields -> name, name))
+    //if (!strcmp(fields -> name, name))
+    if (fields->id == id)
       return fields;
 
     fields = fields -> next;
@@ -194,17 +186,11 @@ ac_dec_field *FindDecField(ac_dec_field *fields, char *name)
 
 
 ac_dec_field *PutIDs(ac_dec_format *formats, unsigned nFields)
-     /* TODO:
-        - porque o indice e o id n� s� iguais? (poderia pegar o nome pelo id) (id 0 reservado)
-        - porque n� muda o id na mesma estrutura recebida?
-        - nFields �na verdade o limit!!! (== id de maior valor) (ao alocar, nFields+1, pois tem o 0)
-      */
 {
   ac_dec_field *fields, *tmp;
   ac_dec_format *f = formats;
   unsigned limit = 0, index, result;
   char found;
-  int error = 0;
 
   // Allocates memory
   fields = (ac_dec_field *) malloc(nFields * sizeof(ac_dec_field));
@@ -216,12 +202,11 @@ ac_dec_field *PutIDs(ac_dec_format *formats, unsigned nFields)
       found = 0;
       for (index = 0; index < limit; index ++) {
         result = CheckFields(&(fields[index]), tmp);
-        if (result == -1) {
+        if (result == 1) {
           found = 1;
           tmp -> id = fields[index].id;
           break;
         }
-        else if (result == 0) error++;
       }
 
       if (!found) {
@@ -240,16 +225,14 @@ ac_dec_field *PutIDs(ac_dec_format *formats, unsigned nFields)
     f = f -> next;
   }
 
-  if (error) exit(1);
-
   return fields;
 }
 
 
-ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_field *fields)
+ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_field *fields, ac_dec_format *fmt)
 {
   ac_decoder *d = decoder, *base = decoder;
-  //ac_dec_field *f;
+  ac_dec_field *f;
   ac_dec_list *l = instruction -> dec_list;
   //enum {IncludeSubCheck, IncludeNext} action;
 
@@ -258,10 +241,25 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
     exit(1);
   }
 
+  // Assigning ac_dec_list IDs with each respective field ID 
+  while (l) {
+    f = fmt->fields;
+    while (f) {
+      if (strcmp(f->name, l->name)==0) {
+	l->id = f->id;
+	break;
+      }
+      f = f->next;
+    }
+    l = l->next;
+  }
+  l = instruction->dec_list;
+
   if (d == NULL) {
     base = d = (ac_decoder *) malloc(sizeof(ac_decoder));
     d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
-    d -> check -> name = NewString(l -> name);
+    d -> check -> name = NewString(l -> name); 
+    d->check->id = l->id;
     d -> check -> value = l -> value;
     d -> found = NULL;
     d -> subcheck = NULL;
@@ -270,7 +268,11 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
 
   while (l) {
     // Same field and same value to check
-    if ((!strcmp(d -> check -> name, l -> name)) && (d -> check -> value == l -> value))
+    if ((d->check->id == l->id) && (d -> check -> value == l -> value)) {
+      if (d->found != NULL) {
+	fprintf(stderr, "ERROR building instruction decoder: decoding conflict between %s and %s.\n", d->found->name, instruction->name);
+	exit(1);
+      }
       if (l -> next == NULL) {            // This is the last check
         d -> found = instruction;
         l = l -> next;
@@ -284,12 +286,14 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
           d = d -> subcheck;
           d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
           d -> check -> name = NewString(l -> name);
+	  d -> check -> id = l -> id;
           d -> check -> value = l -> value;
           d -> found = NULL;
           d -> subcheck = NULL;
           d -> next = NULL;
         }
       }
+    }
     else {
       if (d -> next != NULL)
         d = d -> next;
@@ -298,6 +302,7 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
         d = d -> next;
         d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
         d -> check -> name = NewString(l -> name);
+	d -> check -> id = l -> id;
         d -> check -> value = l -> value;
         d -> found = NULL;
         d -> subcheck = NULL;
@@ -308,6 +313,34 @@ ac_decoder *AddToDecoder(ac_decoder *decoder, ac_dec_instr *instruction, ac_dec_
 
   d -> found = instruction;
   d -> subcheck = NULL;
+
+  // Now we append remaining fields, not with values to be compared, but only
+  // as a guide to the runtime decoder to know what fields need to be extracted as operands, as
+  // this instruction has already been decoded.
+  f = fmt->fields;
+  while (f) {
+    l = instruction->dec_list;
+    int extracted = 0;
+    while (l) {
+      if (l->id == f->id) {
+	extracted = 1;
+	break;
+      }
+      l = l->next;
+    }
+    if (!extracted) {
+      d -> subcheck = (ac_decoder *) malloc(sizeof(ac_decoder));
+      d = d -> subcheck;
+      d -> check = (ac_dec_list *) malloc(sizeof(ac_dec_list));
+      d -> check -> name = NewString(f -> name);
+      d -> check -> id = f -> id;
+      d -> check -> value = -1; // not used for decoding purposes
+      d -> found = NULL;
+      d -> subcheck = NULL;
+      d -> next = NULL; // not used for decoding purposes
+    }
+    f = f->next;
+  }
 
   return base;
 }
@@ -321,11 +354,10 @@ ac_decoder_full *CreateDecoder(ac_dec_format *formats, ac_dec_instr *instruction
   ac_dec_instr *instr = instructions;
   ac_decoder *dec;
   ac_decoder_full *full;
-  unsigned nFields = 0, nFormats = 0;
+  unsigned nFields = 0;
 
   while (format) {
 /*     int format_size = 0; */
-    nFormats ++;
     field = format -> fields;
     while (field) {
 /*       format_size += field->size; */
@@ -341,8 +373,9 @@ ac_decoder_full *CreateDecoder(ac_dec_format *formats, ac_dec_instr *instruction
   dec = NULL;
 
   while (instr) {
-    dec = AddToDecoder(dec, instr, allFields);
-    instr->size = FindFormat(formats, instr->format)->size / 8;  //bits to bytes
+    ac_dec_format *fmt =  FindFormat(formats, instr->format);
+    dec = AddToDecoder(dec, instr, allFields, fmt);
+    instr->size = fmt->size / 8;  //bits to bytes
     instr = instr -> next;
   }
 
@@ -358,21 +391,26 @@ ac_decoder_full *CreateDecoder(ac_dec_format *formats, ac_dec_instr *instruction
 }
 
 
-ac_dec_instr *FindInstruction(ac_decoder_full *decoder, unsigned char *buffer, int quant)
+unsigned *Decode(ac_decoder_full *decoder, unsigned char *buffer, int quant)
 {
   ac_decoder *d = decoder -> decoder;
-  //ac_dec_list *check;
   ac_dec_field *field = 0;
   long long field_value;
-  //char byte;
+  ac_dec_instr *instruction = NULL;
+  static unsigned *fields = 0;
 
   ac_decoder *chosenPath[64]; // usar uma constante = MAX_DECODER_DEPTH
   int chosenPathPos = 0;
   chosenPath[chosenPathPos] = d;
 
+  //!Allocate the first time only
+  if (!fields) {
+    fields = (unsigned *) malloc(sizeof(unsigned) * decoder -> nFields);
+  }
+
   while (d) {
     if (!field) {
-      field = FindDecField(decoder -> fields, d -> check -> name);
+      field = FindDecField(decoder -> fields, d -> check -> id);
       field_value = GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
     }
 
@@ -382,10 +420,14 @@ ac_dec_instr *FindInstruction(ac_decoder_full *decoder, unsigned char *buffer, i
     if (field_value == d -> check -> value) {
       if (d -> found) {
         //fprintf(stderr, "Instruction %s has been found.\n", d -> found -> name);
-        return d -> found;
+        //return d -> found;
+	fields[d->check->id] = field_value;
+	instruction = d->found;
+	break;
       } else {
         //fprintf(stderr, "Following d -> subcheck branch in the decoder tree. \n");
         chosenPath[++chosenPathPos] = d -> subcheck;
+	fields[d->check->id] = field_value;
         d = d -> subcheck;
         field = 0;
       }
@@ -393,7 +435,8 @@ ac_dec_instr *FindInstruction(ac_decoder_full *decoder, unsigned char *buffer, i
       //fprintf(stderr, "Following d->next branch in the decoder tree. \n");
       chosenPath[chosenPathPos] = d -> next;
       d = d -> next;
-      if (d && strcmp(d->check->name, field->name) != 0)
+      //if (d && strcmp(d->check->name, field->name) != 0)
+      if (d && d -> check -> id != field -> id)
         field=0;
     }
 
@@ -402,9 +445,22 @@ ac_dec_instr *FindInstruction(ac_decoder_full *decoder, unsigned char *buffer, i
       d = chosenPath[--chosenPathPos];
       chosenPath[chosenPathPos] = d -> next;
       d = d -> next;
-      if (d && strcmp(d -> check -> name, field -> name) != 0)
+      if (d && d -> check -> id != field -> id)
         field = 0;
     }
+  }
+
+  /* If found, extract operands from instruction */
+  if (instruction != NULL) {
+    d = d->subcheck;
+    while (d) {
+      field = FindDecField(decoder -> fields, d -> check -> id);
+      field_value = GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
+      fields[d->check->id] = field_value;
+      d = d->subcheck;
+    }
+    fields[0] = instruction->id;
+    return fields;
   }
 
   return NULL;
@@ -439,52 +495,3 @@ ac_dec_instr *GetInstrByID(ac_dec_instr *instr, int id)
 }
 
 
-unsigned *DecodeAsInstruction(ac_decoder_full * decoder, ac_dec_instr *instruction, unsigned char *buffer, int quant)
-{
-  static unsigned *fields = 0;
-  unsigned counter;
-  ac_dec_field *field;
-  //ac_dec_list *list = instruction -> dec_list;
-  ac_dec_field *list ;
-
-  ac_dec_format *format;
-
-  //!Allocate only the first time
-  if (!fields) fields = (unsigned *) malloc(sizeof(unsigned) * decoder -> nFields);
-
-  //!Looking for the instruction format structure.
-  format = FindFormat(decoder->formats, instruction->format);
-
-  //!Get Format's field list
-  list = format -> fields;
-
-  for (counter = 1; counter < decoder -> nFields; counter ++)
-    fields[counter] = 0;
-
-  while (list) {
-    field = FindDecField(decoder -> fields, list -> name);
-    if (!field) {
-      fprintf(stderr, "Invalid field name %s.\n", list -> name);
-      exit(1);
-    }
-    fields[field -> id] = GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
-    list = list -> next;
-  }
-
-  fields[0] = instruction -> id;
-  return fields;
-}
-
-
-unsigned *Decode(ac_decoder_full *decoder, unsigned char *buffer, int quant)
-{
-  ac_dec_instr *instruction;
-
-  instruction = FindInstruction(decoder, buffer, quant);
-
-  if (instruction != NULL) {
-    return DecodeAsInstruction(decoder, instruction, buffer, quant);
-  }
-
-  return NULL;
-}

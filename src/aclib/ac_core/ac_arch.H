@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include  "ac_regbank.H"
+#include  "ac_rtld.H"
 
 template <typename T, typename U> class ac_memport;
 
@@ -70,6 +71,9 @@ public:
 
   /// Decoder buffer.
   ac_word* buffer;
+
+  /// Dynamic linker and loader
+  ac_dynlink::ac_rtld ac_dyn_loader;
 
   /// Decoder variables.
   unsigned int quant, decode_pc;

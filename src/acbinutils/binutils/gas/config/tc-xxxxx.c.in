@@ -2,7 +2,7 @@
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
 /* `tc-'___arch_name___`.c' -- Assemble code for ___arch_name___
-   Copyright 2005, 2006 --- The ArchC Team
+   Copyright 2005, 2006, 2007, 2008 --- The ArchC Team
  
    This file is automatically retargeted by ArchC binutils generation 
    tool. This file is part of GAS, the GNU Assembler.
@@ -25,6 +25,7 @@
 /*
  * written by:
  *   Alexandro Baldassin            
+ *   Rafael Auler
  */
 
 
@@ -36,6 +37,16 @@
 #include `"elf/'___arch_name___`.h"'
 #include `"opcode/'___arch_name___`.h"'
 #include `"share-'___arch_name___`.h"'
+
+/*
+ * The gas source in binutils 2.15 signals fatal error
+ * when unclosed parenthesis is found, and would not generate output file 
+ * even when assembly is finished successful.
+ * When trying to parse an invalid syntax while finding the correct one,
+ * our parser may call gas's expression() (expr.c) which will halt with an
+ * unexpected fatal error.
+ */
+#define FIX_GASEXPERR
 
 //#define DEBUG_ON
 
@@ -80,8 +91,22 @@ typedef struct _acfixuptype
   struct _acfixuptype *next;
 } acfixuptype;
 
+/* Linked list to store aliases created with .req directive */
+typedef struct _acaliastype
+{
+  char * old_name;
+  char * new_name;
 
+  struct _acaliastype *next;
+} acaliastype;
+
+static bfd_reloc_code_real_type ac_parse_reloc PARAMS((void));
+static void ac_parse_req (char *str);
 static void s_cons(int byte_size);
+static void s_bss (int);
+static void s_req (int);
+static void s_dummy (int);
+static void s_unreq (int);
 static void archc_show_information(void);
 static void pseudo_assemble(void);
 static void emit_insn(void);
@@ -89,23 +114,28 @@ static int get_expression(expressionS *, char **);
 static int get_immediate(expressionS *ep, char **str);
 static int get_address(expressionS *, char **);
 static int get_userdefoper(unsigned int *val, const char *opclass, char **str);
+static int ac_symbol_dispensable(const char *marker, unsigned int *value);
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, 
                            unsigned int *value);
 static int ac_parse_operands(char *s_pos, char *args);
+static int ac_parse_mnemonic_suffixes(char **s_pos, char **args);
 static void create_fixup(unsigned oper_id);
 static void strtolower(char *str);
 static void clean_out_insn(void);
 static void free_all_fixups(acfixuptype *fix);
+#ifdef DEBUG_ON
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
-static void encode_field(unsigned int val_const, unsigned int oper_id);
-
+static void print_req_aliases PARAMS((void));
+#endif
+static void encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr);
+void md_apply_fix3 (fixS *fixP ATTRIBUTE_UNUSED, valueT *valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED);
 
 /*
   variables used by the core
 */
-const char comment_chars[] = "#!";  // # - MIPS, ! - SPARC, @ - ARM
-const char line_comment_chars[] = "#";
+const char comment_chars[] = "___comment_chars___";  // # - MIPS, ! - SPARC, @ - ARM
+const char line_comment_chars[] = "___line_comment_chars___";
 const char line_separator_chars[] = ";";
 
 const char EXP_CHARS[] = "eE";
@@ -122,6 +152,11 @@ const pseudo_typeS md_pseudo_table[] =
   {"quad",  s_cons, AC_WORD_SIZE/8 *2},  
   {"short", s_cons, AC_WORD_SIZE/8 /2},
   {"word",  s_cons, AC_WORD_SIZE/8},
+  {"bss", s_bss, 0},
+  {"unreq", s_unreq, 0},
+  {"req", s_req, 0},
+  {"arm", s_dummy, 0},
+  {"code", s_dummy, 0},
   {NULL, 0, 0},
 };
 
@@ -188,6 +223,8 @@ static int in_imm_mode = 0;
 /* if an operand is of type expr, it will be saved here */
 static expressionS ref_expr;
 
+/* linked list to store aliases created with .req directive */
+static acaliastype *req_alias = NULL;
 
 /* out_insn is the current instruction being assembled */
 static struct insn_encoding
@@ -197,11 +234,14 @@ static struct insn_encoding
 
   unsigned int is_pseudo;
   unsigned int op_num;
-  unsigned int op_pos[9*2];
+  void * op_pos[9*2];
 
   acfixuptype *fixup;
 } out_insn;
 
+#ifdef FIX_GASEXPERR
+static char save_expr = 0;
+#endif
 
 
 
@@ -233,8 +273,6 @@ md_begin()
   }
 
   /* TODO:
-   *  . It not allowed to define the same symbol name in more than one
-   *  ac_asm_map section -> remove this restriction
    *  . Desalloc the memory allocated in case of 'insensitive'
    */
   sym_hash = hash_new();
@@ -251,18 +289,17 @@ md_begin()
       symtoadd = (char *)t_symbol;
 
     retval = hash_insert(sym_hash, (const char *)symtoadd, (PTR) &udsymbols[i]);
-
-    if (retval != NULL) {
+    
+    if (retval != NULL && strcmp("exists", retval)) {
       fprintf (stderr, _("internal error: can't hash `%s': %s\n"),
          udsymbols[i].symbol, retval);
       as_fatal (_("Broken assembler.  No assembly attempted."));
-    }
+    }    
   }
 
   record_alignment(text_section, log_table[AC_WORD_SIZE/8]);
 
 }
-
 
 #define KEEP_GOING 1
 #define STOP_INSN  0
@@ -273,7 +310,12 @@ md_assemble(char *str)
   dbg_printf(0, "Assembling instruction \"%s\"\n", str);
 
   static int has_pseudo = 0;
-
+  /* saves the last error ocurried with operands parsing. the algorithm
+    will try to reduce the mnemonic size, and if fail, instead of reporting
+    "unrecognized mnemonic", it must report the last error ocurried since
+    a successful mnemonic hash find */
+  char *last_error = NULL;
+  
   /* insn we need to encode at this call */
   acasm_opcode *insn = NULL;
 
@@ -297,76 +339,179 @@ md_assemble(char *str)
 
   /* buffer used to store ArchC argument string and a pointer to scan it */
   char buffer[200];
+  char *pbuffer = (char *) buffer;
+  char *saved_pos;
 
   /* advance till first space (this indicates we should have got a mnemonic) 
      or end of string (maybe a mnemonic with no operands) */
   while (*s_pos != '\0' && !ISSPACE (*s_pos)) s_pos++;
 
-  /* save the char at s_pos (it might get lost) */
-  save_c = *s_pos;
+ /* Checks for .req directives of the form 
+   new_register_name .req existing_register_name */
+  if (s_pos != '\0')
+    {
+      int i;
+      char id[4];
+      saved_pos = s_pos;
 
-  /* If we stopped on whitespace then replace the whitespace with null for
-     the call to hash_find. Note that if we didn't stop on whitespace then
-     *s_pos is already '\0': it doesn't hurt, does it? ;)  */
-  *s_pos = '\0';
+      while(ISSPACE(*s_pos))
+	s_pos++;
 
-  /* try finding the opcode in the hash table */
-  insn = (acasm_opcode *) hash_find (op_hash, p_mnemonic);
+      for (i = 0; i < 4; i++)
+	{
+	  id[i] = TOLOWER(*s_pos);
+	  s_pos++;
+	}
 
-  /* if the instruction was not found then abort this insn encoding (it won't
-     abort the assembler though, just move to the next one) */
-  if (insn == NULL) {
-    as_bad (_("unrecognized mnemonic: %s"), p_mnemonic);
-    return;
-  }
-
-  /* restore original string */
-  *s_pos = save_c;
-
-  /* makes s_pos points to the start of the argument string (if there is one) */
-  while (ISSPACE(*s_pos)) s_pos++;
-
-  /* main encoding loop */
-  for (;;) {
-    dbg_printf(1, "opcode = ");
-    dbg_print_insn(0, insn);
-
-    strcpy(buffer, insn->args);
-
-    clean_out_insn();
-
-    out_insn.image = insn->image;
-    out_insn.format = insn->format_id;
-    out_insn.is_pseudo = insn->pseudo_idx;
-    insn_error = NULL;
-
-    if (insensitive_symbols) {
-      strtolower(s_pos);
-      strtolower(buffer);
+      if (strncmp(id, ".req", 4) == 0)
+	{
+	  /* If the second string matches ".req", then this is
+	   not an instruction, it is a .req directive and we should parse
+	  it as a pseudo-op. */
+	  ac_parse_req(str);
+	  return;
+	}
+      s_pos = saved_pos;
     }
 
-    dbg_printf(1, "Parsing \"%s\" with \"%s\"\n", s_pos, buffer);  
-    
-    int go_next = ac_parse_operands(s_pos, buffer); /* parse the operands */
+  insn_error = ""; 
 
-    if (go_next == STOP_INSN)
-      break;
-    
-    /* try the next insn (overload) if the current failed */
-    if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
-        (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
-      insn++;
-      dbg_printf(1, "\n");
-      dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
-      dbg_printf(1, "\n");
+  /* outer loop stop condition       : -parsing was succesful (no errors) (happy end)
+                                       -no more mnemonic possibilities (s_pos == str) 
+                                            (condition implemented in the inner loop)
+     outer loop step: s_pos--
+     remember: s_pos points to the end of the mnemonic identification substring (without suffixes)
+     in other words: "if there is an error and we are not trying to find a null-sized
+      mnemonic, try to solve decrementing the end of the mnemonic substring and fetching
+      a new mnemonic entry"
+
+      note: rarely the outer loop will step more than once. its role is to support instruction
+        sets whose mnenonics may match with a substring of the combination of other mnemonic
+        plus its suffixes, causing the mnemonic finding algorithm to wrongly point the bigger
+        one as the true mnemonic. this step (reducing mnemonic size) will correctly find the
+        correct one, but may slow the conclusion of a bad instruction error. 
+  */
+  while (insn_error) {
+
+    insn = NULL;
+    /* loops in order to find the mnemonic as a substring among its suffixes */
+    /* inner loop stop condition 1 of 2 (opcode found)
+       inner loop step: s_pos-- */
+    while (insn == NULL) {      
+      /* inner loop stop condition 2 of 2 (reached substring size = 0, no more mnemonic possibilities) */
+      /* comforming to the algorithm, any errors will end up here.
+        (exausted all mnemonic possibilities) */
+      if (s_pos == str)
+        {
+          if (last_error == NULL) {
+            /* so we had never reached a succesful mnemonic hash, and we have no idea what is that
+              mnemonic */
+	          as_bad (_("unrecognized mnemonic: %s"), p_mnemonic);
+	          return;
+          } else {
+            /* report the error when parsing the operands of the last succesful mnemonic substring */
+            as_bad(_("%s in insn: '%s'"), last_error, p_mnemonic);
+            return;
+          }
+        }
+      /* Prepares to mark the end of the opcode name with \0 in order to call hash_find */
+      save_c = *s_pos;
+      *s_pos = '\0';
+
+      /* try finding the opcode in the hash table */
+      insn = (acasm_opcode *) hash_find (op_hash, p_mnemonic);
+
+      /* done, so restore the original character */
+      *s_pos = save_c;
+      /* decrement the pointer indicating the character where the opcode name ends 
+       (trying to find the original opcode without suffixes appended to it) */
+      s_pos--; // next step
     }
-    else break;
-  } 
+  
+    /* reverting innerloop step */
+    s_pos++;
+  
+    /* saves end of mnemonic - parsing start position */
+    saved_pos = s_pos;
+  
+    /* main encoding loop */
+    for (;;) {     
+      dbg_printf(1, "opcode = ");
+      dbg_print_insn(0, insn);
+  
+      /* starts insn encoding */
+      strcpy(buffer, insn->args);
+      s_pos = saved_pos;
+      pbuffer = (char *) buffer;
+      clean_out_insn();
+      out_insn.image = insn->image;
+      out_insn.format = insn->format_id;
+      out_insn.is_pseudo = insn->pseudo_idx;
+      insn_error = NULL;
+  
+      /* no support for mnemonic suffixes in pseudo instructions */
+      if (insn->pseudo_idx)
+      {
+        if (*s_pos != '\0')
+          pbuffer++;
+      }
+      else
+      {
+        dbg_printf(1, "Parsing (mnemonic suffixes) \"%s\" with \"%s\"\n", s_pos, pbuffer);  
+  
+        if (insensitive_symbols) {
+          strtolower(s_pos);
+          strtolower(buffer);
+        }    
+        ac_parse_mnemonic_suffixes(&s_pos, &pbuffer); /* parse the mnemonic suffixes */
+        /* try the next insn (overload) if the current failed */
+        if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
+            (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
+          insn++;
+          dbg_printf(1, "\n");
+          dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
+          dbg_printf(1, "\n");
+          continue;
+        }
+        else if (insn_error) break;
 
-  if (insn_error) {
-    as_bad(_("%s in insn: '%s'"), insn_error, p_mnemonic);
-    return;
-  }
+        insn_error = NULL;  
+      
+        /* if mnemonic suffix parsing was successful and there are remaining operands to parse,
+         remaining whitespaces in both pbuffer and s_pos exists. */
+        if (*pbuffer != '\0') pbuffer++; // eats whitespace
+      }
+      while (ISSPACE(*s_pos)) s_pos++;
+
+      dbg_printf(1, "Parsing (operands) \"%s\" with \"%s\"\n", s_pos, pbuffer);  
+    
+      int go_next = ac_parse_operands(s_pos, pbuffer); /* parse the operands */
+  
+      if (insn_error)
+	{
+	  /* in the outer loop step, we'll try another mnemonic size. if this search fails, we must
+	     report the last error since a succesful mnemonic hash find (correct mnemonic size) */
+	  last_error = insn_error;
+	}
+      if (go_next == STOP_INSN)
+        break;
+    
+      /* try the next insn (overload) if the current failed */
+      if (insn_error && (insn+1 < &opcodes[num_opcodes]) && 
+          (!strcmp(insn->mnemonic, insn[1].mnemonic))) {
+        insn++;
+        dbg_printf(1, "\n");
+        dbg_printf(1, "Trying another opcode. Error: %s\n", insn_error);
+        dbg_printf(1, "\n");
+      }
+      else break;
+    } /* main encoding loop end */
+
+    /* outer loop next step */
+    s_pos = saved_pos;
+    s_pos--;
+
+  } /* outer loop end */
 
   if (insn->pseudo_idx) {
     if (has_pseudo != 0) {
@@ -382,6 +527,31 @@ md_assemble(char *str)
 }
 
 
+/* Auxiliary function to help create nodes of the linked list list_op_results, a 
+data structure to store information about the operands parsed in case a list operator
+is specified */
+static node_list_op_results *create_list_results_node(node_list_op_results ** list,
+                                               node_list_op_results ** tail, int result)
+{
+  if (*list == NULL)
+  {
+    *list = (node_list_op_results *) malloc(sizeof(node_list_op_results));
+    *tail = *list;
+    (*list)->result = result;
+    (*list)->separator = 0;
+    (*list)->next = NULL;
+    return *list;
+  }
+  else
+  {
+    (*tail)->next = (node_list_op_results *) malloc(sizeof(node_list_op_results));
+    *tail = (*tail)->next;
+    (*tail)->result = result;
+    (*tail)->separator = 0;
+    (*tail)->next = NULL;
+    return *tail;
+  }
+}
 
 /*
   Operands Parser. Actually, it does a semantic job as well.
@@ -403,6 +573,12 @@ int ac_parse_operands(char *s_pos, char *args)
   /* a buffer to hold the current conversion specifier found in args */
   char op_buf[30]; 
   char *ob = op_buf;
+  
+  int is_list = 0; // Is our operand specified as a list of operands? (See list operator)
+  list_op_results list_results = NULL; /* Pointer to data structure carrying out parsing
+				       information about the list elements in case of list op.*/
+  list_op_results list_results_tail = NULL;
+  int listloopcontrol = 0; /* Controls wether we need to loop in order to parse more data */
 
   insn_error = NULL;
   ref_expr.X_op = O_absent;
@@ -444,7 +620,7 @@ int ac_parse_operands(char *s_pos, char *args)
       args++;
 
       /* save the start of the operand string in case a pseudo is called later */
-      out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
+      out_insn.op_pos[out_insn.op_num++] = (char *) s_pos;
 
       /* ob points to the conversion specifier buffer - null terminated */
       ob = op_buf;
@@ -466,95 +642,199 @@ int ac_parse_operands(char *s_pos, char *args)
       if (operand_id >= num_oper_id)
         INTERNAL_ERROR();
 
-    
-      switch (operands[operand_id].type) {
- 
-      /* EXP */ 
-        case op_exp:
-
-          if (!get_expression(&ref_expr, &s_pos)) 
-            return KEEP_GOING;
-
-          switch (ref_expr.X_op) {
-            case O_symbol:  /* X_add_symbol + X_add_number */
-              create_fixup(operand_id);
-              break;
-                
-            case O_constant: /* X_add_number */
-              encode_field(ref_expr.X_add_number, operand_id);
-              break;
-
-            case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
-            case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
-            case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
-            case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
-            case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
-            case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
-            case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
-            case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
-            case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
-            case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
-            case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
-            case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
-              insn_error = "operation not supported with relocatable symbol";
-              return STOP_INSN;
-              break;
-
-           default:
-              insn_error = "invalid expression";
-              return KEEP_GOING;
+      /* List operator loop. If the operand has a list operator, it will loop until
+         there is input satisfying its type. Else, it will run only once.*/
+      is_list = operands[operand_id].is_list;
+      listloopcontrol = 1;
+      
+      while (listloopcontrol)
+      {
+        if (!is_list) /* if this is not a list, parse only once */
+          listloopcontrol = 0; 
+          
+	switch (operands[operand_id].type) {
+  
+	/* EXP */ 
+	  case op_exp:
+  
+	    if (!get_expression(&ref_expr, &s_pos))
+            {
+              if (is_list)
+                free_list_results(&list_results);
+	      return KEEP_GOING;
+            }
+  
+	    switch (ref_expr.X_op) {
+	       case O_symbol: {  /* X_add_symbol + X_add_number */
+	      bfd_reloc_code_real_type reloc;
+	      /* ac_parse_reloc works on input_line_pointer */
+	      char *save = input_line_pointer;
+	      input_line_pointer = s_pos;
+	      if ( *s_pos == '('
+		   && (reloc = ac_parse_reloc ()) != BFD_RELOC_UNUSED) {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		if (reloc != `R_'___arch_name___`_PLT)'
+		  {
+		    insn_error = "only PLT relocations supported on instruction operand";
+		    return STOP_INSN;
+		  }
+		create_fixup(operand_id);
+	      }
+	      else {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		create_fixup(operand_id);
+	      }
+	      }
+	      break;
+	      
+		  
+	      case O_constant: /* X_add_number */
+	        if (!is_list)
+		  encode_field(ref_expr.X_add_number, operand_id, NULL);
+		else
+		  create_list_results_node(&list_results, &list_results_tail,
+		                           ref_expr.X_add_number);
+		break;
+  
+	      case O_uminus:          /* (- X_add_symbol) + X_add_number.  */
+	      case O_bit_not:         /* (~ X_add_symbol) + X_add_number.  */
+	      case O_logical_not:     /* (! X_add_symbol) + X_add_number.  */
+	      case O_multiply:        /* (X_add_symbol * X_op_symbol) + X_add_number.  */
+	      case O_divide:          /* (X_add_symbol / X_op_symbol) + X_add_number.  */
+	      case O_modulus:         /* (X_add_symbol % X_op_symbol) + X_add_number.  */
+	      case O_left_shift:      /* (X_add_symbol << X_op_symbol) + X_add_number. */
+	      case O_right_shift:     /* (X_add_symbol >> X_op_symbol) + X_add_number. */
+	      case O_bit_inclusive_or:/* (X_add_symbol | X_op_symbol) + X_add_number.  */
+	      case O_bit_or_not:      /* (X_add_symbol |~ X_op_symbol) + X_add_number. */
+	      case O_bit_exclusive_or:/* (X_add_symbol ^ X_op_symbol) + X_add_number.  */
+	      case O_bit_and:         /* (X_add_symbol & X_op_symbol) + X_add_number.  */
+		insn_error = "operation not supported with relocatable symbol";
+		if (is_list)
+                  free_list_results(&list_results);
+		return STOP_INSN;
+		break;
+  
+	    default:
+		insn_error = "invalid expression";
+		if (is_list)
+                  free_list_results(&list_results);
+		return KEEP_GOING;
+	    } /* end of switch(ref_expr.X_op) */
+	    break; 
+  
+  
+	  case op_imm:
+  
+	    in_imm_mode = 1;
+	    if (!get_immediate(&ref_expr, &s_pos)) {
+	      in_imm_mode = 0;
+	      if (is_list)
+                free_list_results(&list_results);
+	      return KEEP_GOING;
+	    }
+	    in_imm_mode = 0;
+  
+	    dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
+	    
+            if (!is_list)
+	      encode_field(ref_expr.X_add_number, operand_id, NULL);
+	    else
+	      create_list_results_node(&list_results, &list_results_tail,
+		                           ref_expr.X_add_number);
+  
+	    break;
+  
+	  case op_addr:
+  
+	    if (!get_address(&ref_expr, &s_pos)) return KEEP_GOING;
+  
+	    if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
+	      insn_error = "invalid operand, expected a symbolic address";
+	      return KEEP_GOING;
+	    }
+	      if (!is_list) {
+	      bfd_reloc_code_real_type reloc;
+	      char *save = input_line_pointer;
+	      input_line_pointer = s_pos; /* ac_parse_reloc works on input_line_pointer */
+	      if ( *s_pos == '('
+		   && (reloc = ac_parse_reloc ()) != BFD_RELOC_UNUSED) {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		if (reloc != `R_'___arch_name___`_PLT)'
+		  {
+		    insn_error = "only PLT relocations supported on instruction operand";
+		    return STOP_INSN;
+		  }
+		create_fixup(operand_id);
+	      }
+	      else {
+		s_pos = input_line_pointer;
+		input_line_pointer = save;
+		create_fixup(operand_id);
+	      }
+	    }
+	    else {
+	      // assembler is malformed, cannot have list operator with relocatable elements!
+	      INTERNAL_ERROR();	
+            }
+  
+	    break;
+  
+	  case op_userdef:
+  
+	    if (!get_userdefoper(&symbol_value, operands[operand_id].name, &s_pos)) 
+            {
+              if (is_list)
+                free_list_results(&list_results);
+	      return KEEP_GOING;
+            }
+  
+  
+	  /* NEVER!!! discomment the line below O.O */
+	  /* if (out_insn.is_pseudo) return; */
+  
+	  /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
+	    if (!is_list)
+              encode_field(symbol_value, operand_id, NULL);
+            else
+              create_list_results_node(&list_results, &list_results_tail,
+		                           symbol_value);
+  
+	    break;
+  
+	  default:
+	    INTERNAL_ERROR();
+  
+	} /* end of switch*/
+	
+	/* processes some list-specific parsing features */
+	if (is_list)
+        {
+          while (ISSPACE(*s_pos)) s_pos++;
+          if(*s_pos == ',') {
+            list_results_tail->separator = ',';
+            s_pos++;
           }
-          break; 
-
-
-        case op_imm:
-
-          in_imm_mode = 1;
-          if (!get_immediate(&ref_expr, &s_pos)) {
-            in_imm_mode = 0;
-            return KEEP_GOING;
+          else if (*s_pos == '-') {
+            list_results_tail->separator = '-';
+            s_pos++;
           }
-          in_imm_mode = 0;
-
-          dbg_printf(3, "Immediate value: %ld\n", ref_expr.X_add_number);
-
-          encode_field(ref_expr.X_add_number, operand_id);
-
-          break;
-
-        case op_addr:
-
-          if (!get_address(&ref_expr, &s_pos)) return KEEP_GOING;
-
-          if (ref_expr.X_op != O_symbol) {    // X_add_symbol + X_add_number
-            insn_error = "invalid operand, expected a symbolic address";
-            return KEEP_GOING;
+          else 
+          {
+            listloopcontrol = 0; /* the list has ended, nothing more to parse*/
+            /* Encode the list parsed */
+            encode_field(symbol_value, operand_id, list_results);
+            free_list_results(&list_results);
+            list_results = NULL;
+            list_results_tail = NULL;
           }
+          while (ISSPACE(*s_pos)) s_pos++;
+        }
+      }/* end of while (listloopcontrol) */
 
-          create_fixup(operand_id);
-
-          break;
-
-        case op_userdef:
-
-          if (!get_userdefoper(&symbol_value, operands[operand_id].name, &s_pos)) 
-            return KEEP_GOING;
-
-
-        /* NEVER!!! discomment the line below O.O */
-        /* if (out_insn.is_pseudo) return; */
-
-        /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
-          encode_field(symbol_value, operand_id);
-
-          break;
- 
-        default:
-          INTERNAL_ERROR();
-
-      }
-
-      out_insn.op_pos[out_insn.op_num++] = (int)s_pos;
+      out_insn.op_pos[out_insn.op_num++] = (char *)s_pos;
 
     } /* end of if (*args == '%') */
     else {  
@@ -584,23 +864,170 @@ int ac_parse_operands(char *s_pos, char *args)
   return KEEP_GOING;
 }
 
+/* 
+  Similar to ac_parse_operands (Operands parser), but this version is limited to
+  user defined operands (the only ones permitted as mnemonic suffixes) without
+  ignoring whitespaces, like the operands parser.
+
+  In fact, the mnemonic suffix must not contain any whitespace, and a recursive
+  algorithm is used (splitting the suffix) in order to try to guess a valid parse.
+ */
+static 
+int ac_parse_mnemonic_suffixes(char **s_pos, char **args)
+{
+  /* an ArchC symbol value (gas symbols use expressionS) */
+  unsigned int symbol_value; 
+
+  /* a buffer to hold the current conversion specifier found in args */
+  char op_buf[30]; 
+  char *ob = op_buf;
+
+  insn_error = NULL;
+
+  /* while mnemonic suffix list is not empty, try parsing the operands */
+  while (**args != '\0' && !ISSPACE(**args)) { 
+
+    /*      '%' is the start of a well-formed sentence.    */
+    if (**args == '%') {    
+      (*args)++;
+
+      /* ob points to the conversion specifier buffer - null terminated */
+      ob = op_buf;
+      while (**args != ':') { 
+        *ob = **args;
+        ob++; (*args)++;
+      }
+      *ob = '\0';
+
+      (*args)++;                  /* next literal character/operand */
+
+      unsigned int operand_id = atoi(op_buf);
+
+      dbg_printf(2, "Using operand[%d] to parse mnemonic suffix \"%s\"\n", operand_id, *s_pos);
+      dbg_printf(3, "operand[%d] = ", operand_id);
+      dbg_print_operand_info(0, operand_id);
+
+
+      /* As mnemonic suffixes, exp addr and imm aren't permitted */
+      if (operand_id >= num_oper_id ||
+          operands[operand_id].type == op_exp ||
+          operands[operand_id].type == op_addr ||
+          operands[operand_id].type == op_imm)
+        INTERNAL_ERROR();
+
+      if (operands[operand_id].type == op_userdef)
+      {
+        char saved_char = '\0';
+        char *saved_s_pos = NULL;
+        char *saved_args = NULL;
+        char *suffix_split = *s_pos;
+        char *s_pos_begin = *s_pos;
+
+        /* suffix_split = end of mnemonic suffix (first space or end of string) 
+          s_pos_begin to suffix_split will be parsed here
+          suffix_split until the end will be parsed in a recursive call */
+        while (!ISSPACE(*suffix_split) && *suffix_split != '\0')
+          suffix_split++;
+  
+        /* loop stop condition: suffix_split == s_pos_begin (could not parse without discarding current arg) */
+        while (suffix_split != s_pos_begin) {  
+          saved_char = *suffix_split;
+          *suffix_split = '\0';
+          saved_s_pos = *s_pos;
+          get_userdefoper(&symbol_value, operands[operand_id].name, s_pos);
+          if (saved_char != '\0')
+            *suffix_split = saved_char;
+          if (saved_s_pos == *s_pos) {            
+            suffix_split--;
+            continue;
+          }
+          saved_args = *args;
+          ac_parse_mnemonic_suffixes(s_pos, args);
+          if (!insn_error)
+            break;
+          insn_error = NULL;
+          *s_pos = saved_s_pos;
+          *args = saved_args;
+          suffix_split--;
+        }
+        
+        /* if couldn't parse considering current arg, check if it is a mandatory field (hasn't "" value entry) */
+        if (suffix_split == s_pos_begin) {
+          if (!get_userdefoper(&symbol_value, operands[operand_id].name, s_pos)) {
+            insn_error = "unrecognized mnemonic";
+            return KEEP_GOING; //failed
+          }
+          /* if field is not mandatory, try to parse the rest with remaining args */
+          saved_s_pos = *s_pos;
+          saved_args = *args;                    
+          ac_parse_mnemonic_suffixes(s_pos, args);
+          if (insn_error){
+            *s_pos = saved_s_pos;
+            *args = saved_args;
+            return KEEP_GOING; //failed
+          }
+        }
+
+        /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
+        encode_field(symbol_value, operand_id, NULL);
+      }
+      else
+          INTERNAL_ERROR();
+
+      out_insn.op_pos[out_insn.op_num++] = (char *)*s_pos;
+
+    } /* end of if (*args == '%') */
+    else {  
+      /* args string must equal s_pos string in case its not a '%' */    
+
+      /* scape */
+      if (**args == '\\') {
+        (*args)++;   
+      }
+
+      if (**s_pos != **args) {  
+        insn_error = "unrecognized mnemonic";
+        return KEEP_GOING;
+      }
+      (*args)++;
+      (*s_pos)++;
+
+    }
+    
+  } /*end while */
+
+  /* algorithm stop condition: a whitespace in the args string means that there are no more
+      suffixes to parse */
+  if (ISSPACE(**args)){
+    /* if the suffixes in string are fully parsed, it must contain a whitespace too */
+    if (!ISSPACE(**s_pos)) {
+      insn_error = "unrecognized mnemonic";
+      return KEEP_GOING;
+    }
+    return KEEP_GOING; // job finished!
+  }
+
+  return KEEP_GOING;
+}
 
 
 static void pseudo_assemble() {
 
   char op_string[9][50];
   unsigned int i;
-  int j;
+  unsigned int j;
 
   /* extract the operand strings */
   for (i=0; i<out_insn.op_num/2; i++) {
      
-    int str_count = out_insn.op_pos[i*2+1] - out_insn.op_pos[i*2];
-    if (str_count < 0 || str_count >= 50) 
+    unsigned int str_count = (((char *)out_insn.op_pos[i*2+1]) - ((char *)out_insn.op_pos[i*2]));
+    if (str_count >= 50) 
       INTERNAL_ERROR(); /* out buffer is too small */
 
     for (j=0; j<str_count; j++) 
-      op_string[i][j] = *(char *)(out_insn.op_pos[i*2]+j);
+    {      
+      op_string[i][j] = *(char *)(out_insn.op_pos[i*2]+j);      
+    }
 
     op_string[i][str_count] = '\0';
 
@@ -652,7 +1079,7 @@ static void emit_insn()
   /* frag address where we emit the insn encoding (call frag_more() to get the address) */
     char *frag_address;
   
-  dbg_printf(1, "Emitting image 0x%08lX (%ld bits) at address 0x%08lX\n", 
+  dbg_printf(1, "Emitting image 0x%08X (%ld bits) at address 0x%08lX\n", 
                 out_insn.image, 
                 get_insn_size(out_insn.format), 
                 frag_now_fix());
@@ -726,7 +1153,7 @@ md_number_to_chars(char *buf, valueT val, int n)
 
 */
 void
-md_apply_fix3 (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
+md_apply_fix3 (fixS *fixP ATTRIBUTE_UNUSED, valueT *valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED)
 {
 
   INTERNAL_ERROR(); // should never get called
@@ -750,6 +1177,7 @@ ___arch_name___`_validate_fix'(struct fix *fixP ATTRIBUTE_UNUSED, asection *seg 
     resolve_symbol_value(fixP->fx_subsy);
 
     fixP->fx_offset -= S_GET_VALUE(fixP->fx_subsy);
+    fixP->fx_offset += fixP->fx_frag->fr_address / OCTETS_PER_BYTE;
 
     switch (fixP->fx_r_type) {
       case `R_'___arch_name___`_8:'
@@ -802,8 +1230,7 @@ ___arch_name___`_adjust_reloc_count'(struct fix *fixP, long seg_reloc_count)
 
   Called by write_relocs() (write.c) for each fixup so that a BFD arelent structure can be build
 and returned do be applied through 'bfd_install_relocation()' which in turn will call a backend
-routine to apply the fix. As we are not dealing with relocations atm, we just return NULL so that
-no bfd_install_relocation and similar functions will be called. 
+routine to apply the fix. 
 */
 arelent *
 tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
@@ -858,7 +1285,7 @@ the bfd alignment, and return the next aligned address. I've not tested that tho
 }
 
 void
-___arch_name___`_symbol_new_hook' (symbolS *sym)
+___arch_name___`_symbol_new_hook' (symbolS *sym ATTRIBUTE_UNUSED)
 {
   dbg_printf(0, "Symbol Created!!!\n%*s", 4, "");
   dbg_print_symbolS(1, sym);
@@ -903,19 +1330,125 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
  Static functions
 */
  
-/*
-  We created this to auto-align data section whenever a data size > 1 is found
-  (The MIPS version uses this method, so I decided to use also)
+
+/* ac_parse_reloc() is used to parse special symbol modifiers, parenthesis next to a symbol
+  name with "got", "gotoff" or "plt" markers to flag the use of a different relocation
+  for this symbol. ac_parse_reloc() uses input_line_pointer to parse these constructs
+  and returns the apropriate relocation type for this symbol.
+
+  If no special relocation marker is found, it returns BFD_RELOC_UNUSED.   
+
+  This code was based on gas/tc-arm.c, the binutils arm model.
 */
+static bfd_reloc_code_real_type
+ac_parse_reloc ()
+{
+  char         id [16];
+  char *       ip;
+  unsigned int i;
+  static struct
+  {
+    char * str;
+    int    len;
+    bfd_reloc_code_real_type reloc;
+  }
+  reloc_map[] =
+  {
+#define MAP(str,reloc) { str, sizeof (str) - 1, reloc }
+    MAP ("(got)",    `R_'___arch_name___`_GOT),'
+    MAP ("(gotoff)", `R_'___arch_name___`_GOTOFF),'
+    MAP ("(plt)",    `R_'___arch_name___`_PLT),'
+    { NULL, 0,         BFD_RELOC_UNUSED }
+#undef MAP
+  };
+
+  for (i = 0, ip = input_line_pointer;
+       i < sizeof (id) && (ISALNUM (*ip) || ISPUNCT (*ip));
+       i++, ip++)
+    id[i] = TOLOWER (*ip);
+
+  for (i = 0; reloc_map[i].str; i++)
+    if (strncmp (id, reloc_map[i].str, reloc_map[i].len) == 0)
+      break;
+
+  input_line_pointer += reloc_map[i].len;
+
+  return reloc_map[i].reloc;
+}
+
+ /* Handles pseudo-ops like .word, etc. */
+
 static void
 s_cons (int byte_size)
 {
+  expressionS exp;
+
   if (byte_size > 1) {
     frag_align(log_table[byte_size], 0, 0);
     record_alignment(now_seg, log_table[byte_size]);
   }
 
-  cons(byte_size);
+  /* Start of code similar to cons_worker() in read.c 
+     s_cons used to call it instead of replicating its code,
+     but to support GOT/PLT relocations,
+     we need to modify the expression parsing logic */
+#ifdef md_flush_pending_output
+  md_flush_pending_output ();
+#endif
+
+  /* No parameters to our constructor pseudo-operator, so we silently return */
+  if (is_it_end_of_statement ())
+    {
+      demand_empty_rest_of_line ();
+      return;
+    }
+
+#ifdef md_cons_align
+  md_cons_align (byte_size);
+#endif
+
+  /* Parameter parsing loop, iterates through each expression separated by comma */
+  do
+    {
+      bfd_reloc_code_real_type reloc;
+
+      expression (& exp);
+
+      if (exp.X_op == O_symbol
+	  && * input_line_pointer == '('
+	  && (reloc = ac_parse_reloc ()) != BFD_RELOC_UNUSED)
+	{
+	  reloc_howto_type *howto = bfd_reloc_type_lookup (stdoutput, reloc);
+	  int size = bfd_get_reloc_size (howto);
+
+	  if (size > byte_size)
+	    as_bad ("%s relocations do not fit in %d bytes",
+		    howto->name, byte_size);
+	  else
+	    {
+	      char *p = frag_more ((int) byte_size);
+	      int offset = byte_size - size;
+
+	      fix_new_exp (frag_now, p - frag_now->fr_literal + offset, size,
+			   &exp, 0, reloc);
+	    }
+	}
+      else
+	emit_expr (&exp, (unsigned int) byte_size);
+    }
+  while (*input_line_pointer++ == ',');
+
+  /* Put terminator back into stream.  */
+  input_line_pointer --;
+  demand_empty_rest_of_line ();
+}
+
+static void
+s_bss (ignore)
+     int ignore ATTRIBUTE_UNUSED;
+{
+  subseg_set (bss_section, 0);
+  demand_empty_rest_of_line ();
 }
  
 
@@ -927,6 +1460,9 @@ get_expression (expressionS *ep, char **str)
   save_in = input_line_pointer;
 
   input_line_pointer = *str;
+#ifdef FIX_GASEXPERR
+  save_expr = **str;
+#endif
   expression (ep);
 
 #ifdef DEBUG_ON
@@ -1006,15 +1542,20 @@ get_address (expressionS *ep, char **str)
   return 1;
 }
 
-
 static int 
 get_userdefoper(unsigned int *val, const char *opclass, char **str)
 {
   char *s_pos = *str;
 
   if (*s_pos == '\0') { 
-    insn_error = "operand missing";
-    return 0;
+    /* Verifies if opclass can be ignored (can assume "") */
+    if (!ac_symbol_dispensable(opclass, val)) {
+      insn_error = "operand missing";
+      return 0;
+    } else {
+      dbg_printf(3, "\"\" = %u\n", *val);
+      return 1; // Operand ignored, exit without update str
+    }
   }
  
   /* get the operand string (sync with ac_asm_map identifiers) */
@@ -1033,8 +1574,14 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
         *s_pos == ',' || *s_pos == '_')
     s_pos++;
   else {
-    insn_error = "unrecognized operand symbol";
-    return 0;
+    /* Verifies if opclass can be ignored (can assume "") */
+    if (!ac_symbol_dispensable(opclass, val)) {
+      insn_error = "unrecognized operand symbol";
+      return 0;
+    } else {
+      dbg_printf(3, "\"\" = %u\n", *val);
+      return 1; // Operand ignored, exit without update str
+    }
   }
   
   while ( (*s_pos >= 'a' && *s_pos <= 'z') ||
@@ -1047,9 +1594,16 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
   *s_pos = '\0';
  
   if (!ac_valid_symbol(opclass, *str, val)) {
-    insn_error = "unrecognized operand symbol";
-    *s_pos = save_c;
-    return 0;
+    /* Verifies if opclass can be ignored (can assume "") */
+    if (!ac_symbol_dispensable(opclass, val)) {
+      insn_error = "unrecognized operand symbol";
+      *s_pos = save_c;
+      return 0;
+    } else {
+      dbg_printf(3, "\"\" = %u\n", *val);
+      *s_pos = save_c;
+      return 1; // Operand ignored, exit without update str
+    }
   }
 
   dbg_printf(3, "\"%s = %u\"\n", *str, *val);
@@ -1061,28 +1615,92 @@ get_userdefoper(unsigned int *val, const char *opclass, char **str)
 }
 
 
-
 /* 
-  if ac_symbol == "" then marker is not checked
+  Checks if parser_symbol "" is valid with a specified ac_symbol
 */
+static int ac_symbol_dispensable(const char *marker, unsigned int *value)
+{
+  acasm_symbol *msymb = NULL;
+
+  if (marker == NULL || strcmp(marker, "") == 0)
+    INTERNAL_ERROR();
+
+  msymb = (acasm_symbol *) hash_find (sym_hash, "");
+
+  if (msymb == NULL) {
+    return 0;
+  }
+
+  while (strcmp(msymb->cspec, marker)!=0 && (msymb+1 < &udsymbols[num_symbols]) &&
+      strcmp(msymb[1].symbol, "")==0)
+  {
+    msymb++;
+  }
+  
+  if (strcmp(msymb->cspec, marker)==0 && strcmp(msymb->symbol, "")==0)
+  {
+    *value = msymb->value;
+    return 1;
+  }
+
+  return 0;
+}
+
+
+
 static int ac_valid_symbol(const char *ac_symbol, char *parser_symbol, unsigned int *value)
 {
   acasm_symbol *msymb = NULL;
+  acaliastype *p;
+  
+  if (ac_symbol == NULL)
+    INTERNAL_ERROR();
   
   msymb = (acasm_symbol *) hash_find (sym_hash, parser_symbol);
 
-  // TODO: handle the case when there are 2 or more symbols with same names (but different markers)
-
   // symbol not found
-  if (msymb == NULL) return 0;
+  if (msymb == NULL)
+    {
+      /* symbol not found, check for aliases */
+      p = req_alias;
+      while (p != NULL)
+	{
+	  if (strncmp(p->new_name, parser_symbol, strlen(p->new_name))==0)
+	    break;
+	  p = p->next;
+	}
+      if (p != NULL)
+	{
+	  /* in order to avoid infinite looping here, req_alias linked list
+	     cannot contain any illegal aliases (new_name referencing to an
+	     existing symbol name). this checking is done in .req directive parsing. */
+	  dbg_printf(4, "Operand \"%s\" was not found. Trying its alias \"%s\"\n", parser_symbol, p->old_name);
+	  return ac_valid_symbol(ac_symbol, p->old_name, value);
+	}
+      return 0;
+    }
   
-  // marker not valid for this symbol
-  if (ac_symbol != "")    
-    if (strcmp(msymb->cspec, ac_symbol)) return 0;
-
-  *value = msymb->value;
-
-  return 1;
+  if (strcmp(ac_symbol, "")==0) // any map marker will do
+  {
+    *value = msymb->value;
+    return 1;
+  }
+  else               // specific map marker is supplied
+  {
+    while (strcmp(msymb->cspec, ac_symbol)!=0 && (msymb+1 < &udsymbols[num_symbols]) &&
+        strcmp(msymb[1].symbol, parser_symbol)==0)
+    {
+      msymb++;
+    }
+    
+    if (strcmp(msymb->cspec, ac_symbol)==0 && strcmp(msymb->symbol, parser_symbol)==0)
+    {
+      *value = msymb->value;
+      return 1;
+    }
+  
+    return 0;
+  }
 }
 
 
@@ -1234,7 +1852,7 @@ md_estimate_size_before_relax (fragp, segtype)
 
 long
 md_pcrel_from (fixP)
-     fixS *fixP;
+     fixS *fixP ATTRIBUTE_UNUSED;
 {
   /* should not be called */
   INTERNAL_ERROR();
@@ -1272,6 +1890,32 @@ int ___arch_name___`_parse_name'(char *name, expressionS *expP, char *c ATTRIBUT
   }
 
   if (ac_valid_symbol("", name, &dummy)) { /* symbol found */
+#ifdef FIX_GASEXPERR
+    if (save_expr == '[' || save_expr == '(')
+      {
+	*input_line_pointer = *c;
+	char *str_p = input_line_pointer;
+	while (*str_p != '\0')
+	  {
+	    if ((save_expr == '[' && *str_p == ']')
+		|| (save_expr == '(' && *str_p == ')'))
+	      break;
+	    str_p++;
+	  }
+	if (*str_p == '\0')
+	 {
+	   insn_error = "invalid symbol in expression";
+	   return 1;
+	 }
+	else 
+	 {
+	    input_line_pointer = str_p;
+	    *c = *str_p;	    
+	    insn_error = "invalid symbol in expression";
+	    return 1;
+	 }
+      }
+#endif
     expP->X_op = O_absent;
     insn_error = "invalid symbol in expression";
     return 1;
@@ -1288,7 +1932,7 @@ void ___arch_name___`_frob_label'(symbolS *sym) {
   dbg_print_symbolS(1, sym);
 
   if (ac_valid_symbol("",  (char *)S_GET_NAME(sym), &dummy))  /* symbol found as label -.- */
-    as_bad(_("invalid label name: '%s'"), S_GET_NAME(sym));
+    as_warn(_("symbol name used as label may create lead to ambiguous code: '%s'"), S_GET_NAME(sym));
   
 }
 
@@ -1322,9 +1966,8 @@ create_fixup(unsigned int oper_id)
   dbg_print_fixup(0, fixups);
 }
 
-
 static void 
-encode_field(unsigned int val_const, unsigned int oper_id)
+encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr)
 {
   mod_parms mp;
   char secname[] = "no symbol";
@@ -1334,10 +1977,11 @@ encode_field(unsigned int val_const, unsigned int oper_id)
   mp.input   = val_const;
   mp.address = frag_now_fix();
   mp.section = secname; 
+  mp.list_results = lr;
 
-  dbg_printf(3, "image 0x%08lX + %u ==> ", out_insn.image, val_const);
+  dbg_printf(3, "image 0x%08X + %u ==> ", out_insn.image, val_const);
   encode_cons_field(&out_insn.image, &mp, oper_id);
-  dbg_printf(0, "0x%08lX\n", out_insn.image);
+  dbg_printf(0, "0x%08X\n", out_insn.image);  
 
   if (mp.error) 
     as_bad(_("invalid operand value: '%u'"), val_const);
@@ -1360,7 +2004,7 @@ static void clean_out_insn()
   out_insn.format = 0;
   out_insn.is_pseudo = 0;
   out_insn.op_num = 0;
-  out_insn.op_pos[9*2] = 0;
+  //out_insn.op_pos[9*2] = 0;
   free_all_fixups(out_insn.fixup);
   out_insn.fixup = NULL;
 }
@@ -1378,6 +2022,7 @@ static void free_all_fixups(acfixuptype *fix)
   }
 }
 
+#ifdef DEBUG_ON
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix)
 {
 //  expressions ref_expr_fix; /* symbol in which the relocation points to */
@@ -1388,8 +2033,9 @@ static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix
                     operands[fix->operand_id].mod_type,
                     operands[fix->operand_id].reloc_id);
 }
+#endif
 
-
+#ifdef DEBUG_ON
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
 {
   fprintf(stream, "%*s%lu - [%s,%u] - pcrel %d, done %d, rel %u\n", 
@@ -1428,5 +2074,278 @@ static void print_fixup(FILE *stream, unsigned int il, fixS *fixP)
                 il*4, "",
                 fixP->tc_fix_data);
 }
+#endif
 
+
+
+#ifdef DEBUG_ON
+static void print_req_aliases()
+{
+  acaliastype *p = req_alias;
+
+  unsigned int i = 1;
+
+  dbg_printf(3, "Now dumping .req aliases linked list content\n");
+  while (p != NULL)
+    {
+      dbg_printf(4, "Element #%d, new_name=\"%s\", old_name=\"%s\"\n", i, p->new_name, p->old_name);
+      p = p->next;
+      i++;
+    }
+}
+#endif
+
+/* parses .req directives of the form 
+ new_register_name .req existing_register
+
+ Creates the alias as a node of the linked list
+ req_alias of type acaliastype. When an userdef
+ symbol is queried and not found, this list
+ will be checked.
+*/
+static void ac_parse_req (char *str)
+{
+  char *s_pos = str; // Works on s_pos, avoid changing str so we have the full string
+                     // to report on error
+  char *saved_pos;
+  char *operand1; // Stores operand1 string (new symbol name)
+  char *operand2; // Stores the second operand (existing symbol name)
+  char directive[5]; // Parses .req directive for sanity check
+  unsigned int i;
+
+  dbg_printf(0, "Parsing .req directive: \"%s\"\n", str);
+
+  while (ISSPACE(*s_pos)) s_pos++;
+  if (*s_pos == '\0')
+    INTERNAL_ERROR();
+
+  /* Calculates first operand size */
+  i = 0;
+  saved_pos = s_pos;
+  while (ISALNUM(*s_pos))
+    {
+      s_pos++;
+      i++;
+    }
+  s_pos = saved_pos;
+
+  if (i > 128)
+    {
+      as_bad(".req directive first operand is too long in size");
+      return;
+    }
+  /* Allocate first operand */
+  operand1 = (char *) malloc(sizeof(char) * (i+1));
+  i = 0;
+  
+  /* Parses first operand */
+  while (ISALNUM(*s_pos))
+    {
+      operand1[i] = TOLOWER(*s_pos);
+      i++;
+      s_pos++;
+    }
+  operand1[i] = '\0';
+
+  if (!ISSPACE(*s_pos))
+    {
+      as_bad("bad character \"%c\" in .req directive: %s", *s_pos, str);
+      free(operand1);
+      return;
+    }
+
+  while (ISSPACE(*s_pos)) s_pos++;
+  
+  /* Checks for .req directive presence - sanity check */
+  i = 0;
+  while (ISALNUM(*s_pos) || ISPUNCT(*s_pos))
+    {
+      directive[i] = TOLOWER(*s_pos);
+      s_pos++;
+      i++;
+      if (i >= 5)
+	{
+	  as_bad("malformed .req directive: %s", str);
+	  free(operand1);
+	  return;
+	}
+    }
+  if (strncmp(directive, ".req", 4) || !ISSPACE(*s_pos))
+    {
+      as_bad("malformed .req directive: %s", str);
+      free(operand1);
+      return;
+    }
+
+  /* Calculates operand2 size */
+  while (ISSPACE(*s_pos)) s_pos++;
+
+  i = 0;
+  saved_pos = s_pos;
+  while (ISALNUM(*s_pos))
+    {
+      s_pos++;
+      i++;
+    }
+  s_pos = saved_pos;
+
+ if (i > 128)
+    {
+      as_bad(".req directive second operand is too long in size");
+      free(operand1);
+      return;
+    }
+  /* Allocates second operand */
+  operand2 = (char *) malloc(sizeof(char) * (i+1));
+  i = 0;
+  
+  /* Parses second operand */
+  while (ISALNUM(*s_pos))
+    {
+      operand2[i] = TOLOWER(*s_pos);
+      i++;
+      s_pos++;
+    }
+  operand2[i] = '\0';
+
+  while (ISSPACE(*s_pos)) s_pos++;
+
+  if (*s_pos != '\0')
+    {
+      as_bad("junk at end of line in .req directive: %s", str);
+      free(operand1);
+      free(operand2);
+      return;
+    } 
+
+  dbg_printf(1, ".req directive with operands new_name=\"%s\" old_name=\"%s\"\n", operand1, operand2);
+
+  /* Verify if operand2 is really an existing register(in fact any other symbol category will do) */
+  if (!ac_valid_symbol("", operand2, &i))
+    {
+      as_bad("\"%s\" in .req directive does not exists", operand2);
+      free(operand1);
+      free(operand2);
+      return;
+    }
+
+  /* Verify if operand1 does not reference an existing register */
+  if (ac_valid_symbol("", operand1, &i))
+    {
+      as_warn("ignoring redefinition of symbol alias \"%s\"", operand1);
+      free(operand1);
+      free(operand2);
+      return;
+    }
+
+  /* Create alias */
+  if (req_alias == NULL)
+    {
+      req_alias = (acaliastype *) malloc(sizeof(acaliastype));
+      req_alias->next = NULL;      
+    }
+  else
+    {
+      acaliastype *temp;
+      temp = (acaliastype *) malloc (sizeof(acaliastype));
+      temp->next = req_alias;
+      req_alias = temp;
+    }
+  req_alias->new_name = strdup(operand1);
+  req_alias->old_name = strdup(operand2);
+
+  free(operand1);
+  free(operand2);
+
+#ifdef DEBUG_ON
+  print_req_aliases();
+#endif
+}
+
+/* should not be used
+ .req directive does not start a line - prints error */
+static void s_req (int a ATTRIBUTE_UNUSED)
+{
+  as_bad("invalid syntax for .req directive");
+
+  while (!(*input_line_pointer == '\n' || *input_line_pointer == '\0'))
+    input_line_pointer++;
+  return;
+}
+
+/* .unreq directive, unregister an alias created with
+ .req directive. */
+static void s_unreq (int a ATTRIBUTE_UNUSED) 
+{
+  char *unregister_name;
+
+  char *s_pos, saved_char;
+  unsigned int i;
+
+  acaliastype *p, *ant;
+
+  s_pos = input_line_pointer;
+  while (ISSPACE(*s_pos))s_pos++;
+
+  unregister_name = s_pos;
+  i = 0;
+  while (ISALNUM(*s_pos))
+    {
+      i++;
+      s_pos++;
+    }
+  if (i > 128)
+    {
+      as_bad(".unreq operand too long");
+      while (!(*input_line_pointer == '\n' || *input_line_pointer == '\0'))
+	input_line_pointer++;
+      return;
+    }
+  saved_char = *s_pos;
+  *s_pos = '\0';
+
+  dbg_printf(0, "Parsing .unreq directive, operand: \"%s\"\n", unregister_name);
+  
+  /* Finds the alias */
+  ant = req_alias;
+  p = req_alias;
+  while (p != NULL)
+    {
+      if (strncmp(p->new_name, unregister_name, i)==0)
+	break;
+      ant = p;
+      p = p->next;
+    }
+  
+  /* if not found */
+  if (p == NULL)
+    {
+      as_bad("\"%s\" symbol in .unreq directive does not exist", unregister_name);
+      *s_pos = saved_char;
+      input_line_pointer = s_pos;
+      demand_empty_rest_of_line();
+      return;
+    }
+  /* deletes it */
+  if (p == req_alias)
+    req_alias = req_alias->next;
+  else 
+    ant->next = p->next;
+    
+  free(p->new_name);
+  free(p->old_name);
+  free(p);
+
+  *s_pos = saved_char;
+
+  input_line_pointer = s_pos;
+  demand_empty_rest_of_line();
+  
+}
+
+static void s_dummy (int a ATTRIBUTE_UNUSED){
+while (!(*input_line_pointer == '\n' || *input_line_pointer == '\0'))
+	input_line_pointer++;
+      return;
+}
 

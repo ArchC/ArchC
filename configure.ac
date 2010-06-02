@@ -101,16 +101,17 @@ AC_CHECK_FUNC([getopt_long_only],,
 # Configuration files
 AC_CONFIG_FILES(
 [
-  Makefile
-  Doxyfile
-  src/Makefile
-  src/replace/Makefile
-  src/acpp/Makefile
-  src/aclib/Makefile
-  src/aclib/ac_core/Makefile
-  src/aclib/ac_decoder/Makefile
-  src/aclib/ac_gdb/Makefile
-  src/aclib/ac_storage/Makefile
+  Makefile 
+  Doxyfile 
+  src/Makefile 
+  src/replace/Makefile 
+  src/acpp/Makefile 
+  src/aclib/Makefile 
+  src/aclib/ac_core/Makefile 
+  src/aclib/ac_decoder/Makefile 
+  src/aclib/ac_gdb/Makefile 
+  src/aclib/ac_rtld/Makefile
+  src/aclib/ac_storage/Makefile 
   src/aclib/ac_stats/Makefile
   src/aclib/ac_syscall/Makefile
   src/aclib/ac_tlm/Makefile

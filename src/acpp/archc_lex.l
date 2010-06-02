@@ -234,6 +234,34 @@ HEXA_DIGIT [0-9A-Fa-f]
   return SET_ASM;
  }
 
+<INITIAL>"assembler" {
+  #if DEBUG_LEX
+  printf("AC_ASM_ASSEMBLER: %s\n", yytext);
+  #endif
+  return AC_ASM_ASSEMBLER;
+ }
+
+<INITIAL>"map_to" {
+  #if DEBUG_LEX
+  printf("MAP_TO: %s\n", yytext);
+  #endif
+  return MAP_TO;
+ }
+
+<INITIAL>"set_comment" {
+  #if DEBUG_LEX
+  printf("AC_ASM_COMMENT: %s\n", yytext);
+  #endif
+  return AC_ASM_COMMENT;
+}
+
+<INITIAL>"set_line_comment" {
+#if DEBUG_LEX
+  printf("AC_ASM_LINE_COMMENT: %s\n", yytext);
+#endif
+  return AC_ASM_LINE_COMMENT;
+}
+
 <INITIAL>"set_cycles" {
   #if DEBUG_LEX
   printf("SET_CYCLES: %s\n", yytext);
@@ -284,6 +312,7 @@ HEXA_DIGIT [0-9A-Fa-f]
   #endif
   return AC_ASM_MAP;
  }
+ 
 
 <INITIAL>"pseudo_instr" {
   #if DEBUG_LEX

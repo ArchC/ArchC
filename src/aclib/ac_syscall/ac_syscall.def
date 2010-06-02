@@ -1,3 +1,4 @@
+AC_SYSC(ac_forbidden, 0x3c);
 AC_SYSC(open, 0x40);
 AC_SYSC(creat, 0x44);
 AC_SYSC(close, 0x48);
@@ -14,3 +15,6 @@ AC_SYSC(random, 0x70);
 AC_SYSC(ac_syscall_wrapper, 0x74);
 AC_SYSC(ac_syscall_geterrno, 0x78);
 AC_SYSC(ac_syscall_stat_mode, 0x7c);
+AC_SYSC(ac_rtld_init, 0x80);
+AC_SYSC(ac_rtld_fini, 0x84);
+AC_SYSC(ac_rtld_dummy, 0x88);

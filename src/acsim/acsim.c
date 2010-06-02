@@ -122,6 +122,26 @@ unsigned long long GetBits(void *buffer, int *quant, int last, int quantity, int
   return 1;
 };
 
+/*!If target is little endian, this function inverts fields in each format. This
+  is necessary in order to the decoder works in little endian architectures.
+  \param formats The list of parsed formats containing fields to be inverted.
+ */
+void invert_fields(ac_dec_format *format)
+{
+  ac_dec_field *field;
+
+  while (format) {
+    int size = format->size;
+    field = format->fields;
+    while (field) {
+      field->first_bit = size - 2 - field->first_bit + field->size;
+      field = field->next;
+    }
+
+    format = format->next;
+  }
+}
+
 
 /**********************************************************/
 /*!Writes a standard comment at the begining of each file
@@ -339,6 +359,10 @@ int main(int argc, char** argv) {
 
     ac_match_endian = (ac_host_endian == ac_tgt_endian);
 
+    //If target is little endian, invert the order of fields in each format. This is the
+    //way the little endian decoder expects format fields.
+    if (ac_tgt_endian == 0)
+      invert_fields(format_ins_list);
 
     //Creating decoder to get Field Number info and write its static version.
     //This object will be used by some Create functions.
@@ -1157,9 +1181,12 @@ int main(int argc, char** argv) {
     fprintf( output, "#include \"ac_instr_info.H\"\n");
     fprintf( output, "#include \"%s_arch.H\"\n", project_name);
     fprintf( output, "#include \"%s_arch_ref.H\"\n", project_name);
+    if (ACABIFlag)
+      fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
     if (ACStatsFlag)
       fprintf(output, "#include \"%s_stats.H\"\n", project_name);
     fprintf( output, "\n");
+
 
     fprintf(output, "namespace %s_parms\n{\n", project_name);
     fprintf(output, "class %s_isa: public %s_arch_ref", project_name,
@@ -1183,20 +1210,25 @@ int main(int argc, char** argv) {
     fprintf(output, "%sstatic const ac_instr_info instr_table[AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1]);
 
     fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
+    if (ACABIFlag)
+      fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
 
     /* current instruction ID */
     fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
     /* ac_helper */
     if (helper_contents)
     {
-     fprintf(output, helper_contents);
+     fprintf(output, "%s", helper_contents);
      fprintf(output, "\n");
     }
 
     //Emiting Constructor.
     COMMENT(INDENT[1], "Constructor.");
-    fprintf( output,"%s%s_isa(%s_arch& ref) : %s_arch_ref(ref) {\n", INDENT[1],
+    fprintf( output,"%s%s_isa(%s_arch& ref) : %s_arch_ref(ref) ", INDENT[1],
 	     project_name, project_name, project_name);
+    if (ACABIFlag)
+      fprintf(output, ", syscall(ref)");
+    fprintf( output," {\n");
 
     COMMENT(INDENT[2], "Building Decoder.");
     fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n", INDENT[2], project_name, project_name );
@@ -1205,8 +1237,8 @@ int main(int argc, char** argv) {
     fprintf( output,"%s}\n\n", INDENT[1] );
 
     /* getter methods for current instruction */
-    fprintf(output, "%sinline char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
-    fprintf(output, "%sinline char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
+    fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
+    fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
     fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
     fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
     fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
@@ -1566,8 +1598,8 @@ int main(int argc, char** argv) {
     fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
 
     fprintf( output, "%s%s_parms::%s_isa ISA;\n", INDENT[1], project_name, project_name);
-    if (ACABIFlag)
-      fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
+    /*    if (ACABIFlag)
+          fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );*/
 
     if (HaveTLMIntrPorts) {
       for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
@@ -1604,8 +1636,8 @@ int main(int argc, char** argv) {
     //!Declaring ARCH Constructor.
     COMMENT(INDENT[1], "Constructor.");
     fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", INDENT[1], project_name, project_name);
-    if (ACABIFlag)
-      fprintf(output, ", syscall(*this)");
+    /*if (ACABIFlag)
+      fprintf(output, ", syscall(*this)");*/
 
     if (HaveTLMIntrPorts) {
       for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
@@ -1661,7 +1693,7 @@ int main(int argc, char** argv) {
       fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", INDENT[1]);
 
       fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
-      fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1]);
+      fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1], project_name);
     }
 
 
@@ -2014,7 +2046,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name) {
       }
 
       if( ACABIFlag ){
-        fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name);
+        /*fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name);*/
         fprintf( output, "%sstatic int flushes_left=7;\n", INDENT[1]);
         fprintf( output, "%sstatic ac_instr *the_nop = new ac_instr;\n", INDENT[1]);
       }			
@@ -2107,7 +2139,8 @@ void CreateProcessorImpl() {
   }
 
   print_comment( output, "Processor Module Implementation File.");
-  fprintf( output, "#include  \"%s.H\"\n\n", project_name);
+  fprintf( output, "#include  \"%s.H\"\n", project_name);
+  fprintf( output, "#include  \"%s_isa.cpp\"\n\n", project_name);
 
   if( ACVerifyFlag ){
     fprintf( output, "#include  \"ac_msgbuf.H\"\n");
@@ -2141,6 +2174,7 @@ void CreateProcessorImpl() {
   /* Delayed program loading */
   fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
   fprintf(output, "%sAPP_MEM->load(delayed_load_program);\n", INDENT[2]);
+  fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[2]);
   fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
   fprintf(output, "%s}\n\n", INDENT[1]);
 
@@ -2301,7 +2335,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
   fprintf(output, "#endif\n\n");
-
+  fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
   fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", INDENT[1]);
   fprintf(output, "%sInitStat();\n\n", INDENT[1]);
@@ -2316,7 +2350,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_running();\n", INDENT[1]);
   fprintf(output, "#else\n");
-  fprintf(output, "%sac_pc = 0;\n", INDENT[1]);
+  //  fprintf(output, "%sac_pc = 0;\n", INDENT[1]);
   fprintf(output, "%svoid Execute(int argc, char *argv[]);\n", INDENT[1]);
   fprintf(output, "%sExecute(argc, argv);\n", INDENT[1]);
   fprintf(output, "#endif\n");
@@ -2333,6 +2367,7 @@ void CreateProcessorImpl() {
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
   fprintf(output, "#endif\n\n");
 
+  fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
   fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", INDENT[1]);
   fprintf(output, "%sInitStat();\n\n", INDENT[1]);
@@ -2347,7 +2382,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_running();\n", INDENT[1]);
   fprintf(output, "#else\n");
-  fprintf(output, "%sac_pc = 0;\n", INDENT[1]);
+  //fprintf(output, "%sac_pc = 0;\n", INDENT[1]);
   fprintf(output, "%svoid Execute(int argc, char *argv[]);\n", INDENT[1]);
   fprintf(output, "%sExecute(argc, argv);\n", INDENT[1]);
   fprintf(output, "#endif\n");
@@ -2901,10 +2936,11 @@ void CreateImplTmpl(){
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     for (pdeclist = pinstr->dec_list; pdeclist != NULL;
          pdeclist = pdeclist->next) {
-      /* fprintf char* name, int value, ac_dec_list* next  */
-      fprintf(output, "%s{\"%s\", %d, ",
+      /* fprintf char* name, int id, int value, ac_dec_list* next  */
+      fprintf(output, "%s{\"%s\", %d, %d, ",
               INDENT[1],
               pdeclist->name,
+              pdeclist->id,
               pdeclist->value);
       if (pdeclist->next)
         fprintf(output, "&(%s_parms::%s_isa::dec_list[%d])},\n", project_name, project_name, i + 1);
@@ -3058,7 +3094,7 @@ void CreateArchSyscallHeader()
   FILE *output;
   char filename[50];
 
-  snprintf(filename, 50, "%s_syscall.H", project_name);
+  snprintf(filename, 50, "%s_syscall.H.tmpl", project_name);
 
   if ( !(output = fopen( filename, "w"))){
     perror("ArchC could not open output file");
@@ -3326,8 +3362,8 @@ void CreateMakefile(){
     fprintf( output, "$(MODULE).H ");
   }
 
-  if(ACABIFlag)
-    fprintf( output, "$(MODULE)_syscall.H ");
+  /*  if(ACABIFlag)
+      fprintf( output, "$(MODULE)_syscall.H ");*/
 
   if(HaveTLMIntrPorts)
     fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
@@ -3375,9 +3411,10 @@ void CreateMakefile(){
   fprintf(output, "\n\n");
 
   //Declaring SRCS variable
+  //Note: Removed $(MODULE)_isa.cpp, added as include inside $(MODULE).cpp
   COMMENT_MAKE("These are the source files provided by the user + ArchC sources");
-  fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) $(MODULE)_isa.cpp %s",
-           (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":"");
+  fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) %s",
+           (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":""); 
 
   if (ACABIFlag)
     fprintf( output, " $(MODULE)_syscall.cpp");
@@ -3400,7 +3437,10 @@ void CreateMakefile(){
   //Declaring dependencie rules
   fprintf( output, ".SUFFIXES: .cc .cpp .o .x\n\n");
 
-  fprintf( output, "all: $(addprefix %s/, $(ACFILESHEAD)) $(ACHEAD) $(ACFILES) $(EXE)\n\n", INCLUDEDIR);
+  fprintf( output, "all: $(addprefix %s/, $(ACFILESHEAD))", INCLUDEDIR);
+  if (ACABIFlag)
+    fprintf( output, " $(MODULE)_syscall.H");
+  fprintf( output, " $(ACHEAD) $(ACFILES) $(EXE)\n\n");
 
   fprintf( output, "$(EXE): $(OBJS) %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
@@ -3409,6 +3449,12 @@ void CreateMakefile(){
   COMMENT_MAKE("Copy from template if main.cpp not exist");
   fprintf(output, "main.cpp:\n");
   fprintf(output, "\tcp main.cpp.tmpl main.cpp\n\n");
+
+  if (ACABIFlag) {
+    COMMENT_MAKE("Copy from template if %s_syscall.H not exist", project_name);
+    fprintf(output, "%s_syscall.H:\n", project_name);
+    fprintf(output, "\tcp %s_syscall.H.tmpl %s_syscall.H\n\n", project_name, project_name);
+  }
 
   if (ACStatsFlag) {
     COMMENT_MAKE("Copy from template if %s_stats.H not exist", project_name);
@@ -3743,6 +3789,7 @@ void EmitDecStruct( FILE* output){
 
     for( pdeclist = pinstr->dec_list; pdeclist!= NULL; pdeclist=pdeclist->next){
       fprintf( output, "%sdec_list[%d].name      = \"%s\";\n", INDENT[2], i, pdeclist->name);
+      fprintf( output, "%sdec_list[%d].id        = %d;\n", INDENT[2], i, pdeclist->id);
       fprintf( output, "%sdec_list[%d].value     = %d;\n", INDENT[2], i, pdeclist->value);
       if(pdeclist->next)
         fprintf( output, "%sdec_list[%d].next      = &(dec_list[%d]);\n\n", INDENT[2], i, i+1);
@@ -4171,9 +4218,9 @@ void EmitFetchInit( FILE *output, int base_indent){
   fprintf( output, "%selse {\n", INDENT[base_indent]);
 
   fprintf( output, "%sif( start_up ){\n", INDENT[base_indent+1]);
-  fprintf( output, "%sdecode_pc = ac_start_addr;\n", INDENT[base_indent+2]);
+  fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent+2]);
   if(ACABIFlag)
-    fprintf( output, "%ssyscall.set_prog_args(argc, argv);\n", INDENT[3]);
+    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", INDENT[3]);
   fprintf( output, "%sstart_up=0;\n", INDENT[base_indent+2]);
   if( ACDecCacheFlag )
     fprintf( output, "%sinit_dec_cache();\n", INDENT[base_indent+2]);
@@ -4339,7 +4386,7 @@ void EmitPipeABIDefine( FILE *output){
     fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", INDENT[5]);
   }
 
-  fprintf( output, "%ssyscall.NAME(); \\\n", INDENT[4]);
+  fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[4]);
   fprintf( output, "%sac_instr_counter++; \\\n", INDENT[4]);
   fprintf( output, "%sflushes_left = 7; \\\n", INDENT[4]);
   fprintf( output, "%s} \\\n", INDENT[3]);
@@ -4372,7 +4419,7 @@ void EmitABIDefine( FILE *output){
     fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", INDENT[5]);
   }
 
-  fprintf( output, "%ssyscall.NAME(); \\\n", INDENT[4]);
+  fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[4]);
   fprintf( output, "%sbreak;  \\\n", INDENT[3]);
 }
 

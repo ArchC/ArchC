@@ -75,12 +75,12 @@ public:
   }
 
   /// Default constructor
-  ac_reg(char* name, T value):
+  ac_reg(string name, T value):
     Data(value), Name(name) {}
 
 #ifdef AC_DELAY
   /// Constructor with delay parameter
-  ac_reg(char* name, T value, double& ts):
+  ac_reg(string name, T value, double& ts):
     Data(value), Name(name), time_step(ts) {}
 #endif // AC_DELAY
 

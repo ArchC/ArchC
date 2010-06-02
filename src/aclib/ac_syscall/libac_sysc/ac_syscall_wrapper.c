@@ -72,3 +72,15 @@ int fstat(int filedes, struct stat *buf)
   }
   return res;
 }
+
+#include <utime.h>
+
+int utime (const char *filename, const struct utimbuf *times)
+{
+  return 0;
+}
+
+void abort (void)
+{
+  _exit(1);
+}

@@ -1328,7 +1328,7 @@ void CreateISAHeader(void)
  fprintf(output, "%sac_decoder_full* decoder;\n", INDENT[3]);
  if (helper_contents)
  {
-  fprintf(output, helper_contents);
+  fprintf(output, "%s", helper_contents);
   fprintf(output, "\n");
  }
  fprintf(output, "\n");
@@ -3609,7 +3609,7 @@ void EmitDecStruct(FILE* output)
   for (pdecfield = pformat->fields; pdecfield != NULL; pdecfield = pdecfield->next)
   {
    i++;
-   fprintf(output, "%s{\"%s\", %d, %d, %d, %d, %d, ", INDENT[1],
+   fprintf(output, "%s{\"%s\", %d, %d, %d, %ld, %d, ", INDENT[1],
            pdecfield->name, pdecfield->size, pdecfield->first_bit,
            pdecfield->id, pdecfield->val, pdecfield->sign);
    if (pdecfield->next)

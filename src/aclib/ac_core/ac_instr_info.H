@@ -40,8 +40,8 @@ struct ac_instr_info {
   /// Instruction number.
   int ac_instr_number;
 
-  char* ac_instr_name;           /**< Instruction name. */
-  char* ac_instr_mnemonic;       /**< Instruction mnemonic. */
+  const char* ac_instr_name;           /**< Instruction name. */
+  const char* ac_instr_mnemonic;       /**< Instruction mnemonic. */
   unsigned ac_instr_size;        /**< Instruction size in bytes. */
   unsigned ac_instr_cycles;      /**< Number of cycles of the instruction. */
   unsigned ac_instr_min_latency; /**< Minimum latency in cycles. */
@@ -49,8 +49,8 @@ struct ac_instr_info {
   
   /// Default constructor.
   explicit ac_instr_info(int number,
-			 char* name,
-			 char* mnemonic,
+			 const char* name,
+			 const char* mnemonic,
 			 unsigned size = 0,
 			 unsigned cycles = 0,
 			 unsigned min_latency = 0,

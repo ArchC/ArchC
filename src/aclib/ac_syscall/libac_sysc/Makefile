@@ -5,7 +5,7 @@ AR       = $(TARGET)-ar
 RANLIB   = $(TARGET)-ranlib
 
 # Flags
-CFLAGS   = -O3 -g -I. -I..
+CFLAGS   = -O2 -g -I. -I..
 ARFLAGS  = cr
 RM       = rm
 RMFLAGS  = -rf
