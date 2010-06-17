@@ -7,28 +7,12 @@
 
 # Parameters adjustable by environment variables
 
-# Tests switches (yes/no)
-RUN_ARM_ACSIM=yes
-RUN_MIPS_ACSIM=yes
-RUN_SPARC_ACSIM=yes
-RUN_POWERPC_ACSIM=yes
-RUN_ARM_ACASM=yes
-RUN_MIPS_ACASM=yes
-RUN_SPARC_ACASM=yes
-RUN_POWERPC_ACASM=yes
-DELETEWHENDONE=yes
+if ! [ -f "nightlytester.conf" ]; then
+  echo "Configuration file not found. Must run in the same directory which contains the configuration file."
+  exit 1
+fi
 
-# Internal parameters
-SCRIPTROOT=`pwd`
-TESTROOT=${SCRIPTROOT}/TEMP${RANDOM}
-LOGROOT=${SCRIPTROOT}/htmllogs
-HTMLINDEX=${LOGROOT}/index.htm
-NIGHTLYVERSION=0.1
-CHECKOUTLINK=http://lampiao.lsc.ic.unicamp.br/svn/archc-prj/archc/branches/archc-newbingen-branch/
-ARMSVNLINK=http://lampiao.lsc.ic.unicamp.br/svn/archc-prj/models/armv5/branches/armv5-newbingen-branch/
-SPARCSVNLINK=http://lampiao.lsc.ic.unicamp.br/svn/archc-prj/models/sparcv8/trunk/
-MIPSSVNLINK=http://lampiao.lsc.ic.unicamp.br/svn/archc-prj/models/mips1/trunk/
-POWERPCSVNLINK=http://lampiao.lsc.ic.unicamp.br/svn/archc-prj/models/powerpc/trunk/
+. nightlytester.conf
 
 # Constants 
 SYSTEMCPATH=${TESTROOT}/systemc/install
@@ -102,7 +86,7 @@ build_model() {
   [ $? -ne 0 ] && {
     rm $TEMPFL
     echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model SVN checkout failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
-    finalize_html "" $HTMLLOG  
+    finalize_html $HTMLLOG ""
     echo -ne "SVN checkout \e[31mfailed\e[m. Check script parameters.\n"
     do_abort
   } 
@@ -128,7 +112,7 @@ build_model() {
 
     cd ${TESTROOT}/${MODELNAME}
     TEMPFL=${random}.out
-    ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac -nw -abi > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
+    ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
     RETCODE=$?
     HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-log.htm
     initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV build output"
@@ -163,16 +147,16 @@ build_binary_tools() {
   TEMPFL=${random}.out
   ${TESTROOT}/install/bin/acbingen.sh ${MODELNAME}.ac > $TEMPFL 2>&1 &&
     mkdir build-binutils &&
-    cd build-binutils &&
-    ${BINUTILSPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
+    cd build-binutils && # D_FORTIFY used below is used to prevent a bug present in binutils 2.15 and 2.16
+    CFLAGS="-g -O2 -D_FORTIFY_SOURCE=1" ${BINUTILSPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
     make >> $TEMPFL 2>&1 &&
-    make install >> $TEMPFL 2>&1 #&& won't build gdb
-    #cd .. &&
-    #mkdir build-gdb &&
-    #cd build-gdb &&
-    #${GDBPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
-    #make >> $TEMPFL 2>&1 &&
-    #make install >> $TEMPFL 2>&1
+    make install >> $TEMPFL 2>&1 &&
+    cd .. &&
+    mkdir build-gdb &&
+    cd build-gdb &&
+    ${GDBPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
+    make >> $TEMPFL 2>&1 &&
+    make install >> $TEMPFL 2>&1
   RETCODE=$?
   HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm
   initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV acbinutils build output"
@@ -182,11 +166,11 @@ build_binary_tools() {
   if [ $RETCODE -ne 0 ]; then
     echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV binutils build failed (using acbingen). Check <a href=\"${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
     finalize_html $HTMLLOG ""
-    echo -ne "ACASM \e[31mfailed\e[m to build $MODELNAME binutils tools.\n"
+    echo -ne "ACASM \e[31mfailed\e[m to build $MODELNAME binutils and gdb tools.\n"
     do_abort
   else
-    echo -ne "<p>${MODELNAME} binutils built successfully using acbingen. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
-  fi
+    echo -ne "<p>${MODELNAME} binutils and gdb built successfully using acbingen. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+  fi  
 }
 
 #
@@ -245,7 +229,7 @@ run_tests_acsim() {
   ARCH="${MODELNAME}"
   SIMULATOR="${TESTROOT}/${MODELNAME}/${MODELNAME}.x --load="
   RUNSMALL=yes
-  RUNLARGE=no
+  RUNLARGE=yes
   COMPILE=no
   GOLDENROOT=${TESTROOT}/acsim/GoldenMibench
   BENCHROOT=${MODELBENCHROOT}  
@@ -345,11 +329,22 @@ echo -ne "<h3>Listing of SVN links used in this run.</h3>\n" >> $HTMLLOG
 echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
 echo -ne "<tr><th>Component</th><th>Link</th></tr>\n" >> $HTMLLOG
 echo -ne "<tr><td>ArchC</td><td>${CHECKOUTLINK}</td></tr>\n" >> $HTMLLOG
-echo -ne "<tr><td>ARM Model</td><td>${ARMSVNLINK}</td></tr>\n" >> $HTMLLOG
-echo -ne "<tr><td>MIPS Model</td><td>${MIPSSVNLINK}</td></tr>\n" >> $HTMLLOG
-echo -ne "<tr><td>SPARC Model</td><td>${SPARCSVNLINK}</td></tr>\n" >> $HTMLLOG
-echo -ne "<tr><td>PowerPC Model</td><td>${POWERPCSVNLINK}</td></tr>\n" >> $HTMLLOG
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
+  echo -ne "<tr><td>ARM Model</td><td>${ARMSVNLINK}</td></tr>\n" >> $HTMLLOG
+fi
+if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
+  echo -ne "<tr><td>MIPS Model</td><td>${MIPSSVNLINK}</td></tr>\n" >> $HTMLLOG
+fi
+if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
+  echo -ne "<tr><td>SPARC Model</td><td>${SPARCSVNLINK}</td></tr>\n" >> $HTMLLOG
+fi
+if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+  echo -ne "<tr><td>PowerPC Model</td><td>${POWERPCSVNLINK}</td></tr>\n" >> $HTMLLOG
+fi
 echo -ne "</table></p>\n" >> $HTMLLOG
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+  echo -ne "<p>Parameters used to build acsim models: ${ACSIM_PARAMS}</p>\n" >> $HTMLLOG
+fi
 
 # SVN checkout and ArchC build configuration
 mkdir ${TESTROOT}
@@ -363,7 +358,7 @@ svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
 [ $? -ne 0 ] && {
   rm $TEMPFL
   echo -ne "<p><b><font color=\"crimson\">ArchC SVN checkout failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
-  finalize_html "" $HTMLLOG
+  finalize_html $HTMLLOG ""
   echo -ne "SVN checkout \e[31mfailed\e[m. Check script parameters.\n"
   do_abort
 } 
@@ -391,6 +386,13 @@ tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
 mkdir ${TESTROOT}/gcc
 cd ${TESTROOT}/gcc
 tar -xf ${SCRIPTROOT}/sources/gcc-3.3.tar.gz
+
+# glibc
+mkdir ${TESTROOT}/glibc
+cd ${TESTROOT}/glibc
+tar -xjf ${SCRIPTROOT}/sources/glibc-2.3.2.tar.bz2
+cd ${TESTROOT}/glibc/glibc-2.3.2
+tar -xjf ${SCRIPTROOT}/sources/glibc-linuxthreads-2.3.2.tar.bz2
 
 # tlm
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
@@ -426,7 +428,7 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM"
     finalize_html $HTMLBUILDLOG ""
     rm $TEMPFL
     echo -ne "<p><b><font color=\"crimson\">SystemC build failed. Check <a href=\"/${HTMLPREFIX}-systemc-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
-    finalize_html "" $HTMLLOG  
+    finalize_html $HTMLLOG ""
     echo -ne "SystemC build \e[31mfailed\e[m.\n"
     do_abort
   } 
@@ -441,7 +443,7 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM"
     finalize_html $HTMLBUILDLOG ""
     rm $TEMPFL
     echo -ne "<p><b><font color=\"crimson\">SystemC install failed. Check <a href=\"${HTMLPREFIX}-systemc-install-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
-    finalize_html "" $HTMLLOG    
+    finalize_html $HTMLLOG ""
     echo -ne "SystemC install \e[31mfailed\e[m.\n"
     do_abort
   } 
@@ -477,7 +479,7 @@ rm $TEMPFL
 if [ $RETCODE -ne 0 ]; then
   echo -ne "<p><b><font color=\"crimson\">ArchC rev. $ARCHCREV build failed. Check <a href=\"${HTMLPREFIX}-archc-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
   echo -ne "ArchC build \e[31mfailed\e[m.\n"
-  finalize_html "" $HTMLLOG    
+  finalize_html $HTMLLOG ""
   do_abort
 else
   echo -ne "<p>ArchC rev. $ARCHCREV built successfully. Check <a href=\"${HTMLPREFIX}-archc-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
@@ -488,36 +490,44 @@ fi
 ######################
 
 ### Build ARM Model
-build_model "armv5e" "${ARMSVNLINK}" "${RUN_ARM_ACSIM}"
-ARMREV=${MODELREV}
-if [ "$RUN_ARM_ACASM" != "no" ]; then
-  build_binary_tools "armv5e"
-  build_original_toolchain "armv5e" "arm"
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
+  build_model "armv5e" "${ARMSVNLINK}" "${RUN_ARM_ACSIM}"
+  ARMREV=${MODELREV}
+  if [ "$RUN_ARM_ACASM" != "no" ]; then
+    build_binary_tools "armv5e"
+    build_original_toolchain "armv5e" "arm"
+  fi
 fi
 
 ### Build sparcv8 Model
-build_model "sparcv8" "${SPARCSVNLINK}" "${RUN_SPARC_ACSIM}"
-SPARCREV=${MODELREV}
-if [ "$RUN_SPARC_ACASM" != "no" ]; then
-  build_binary_tools "sparcv8"
-  build_original_toolchain "sparcv8" "sparc"
+if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
+  build_model "sparcv8" "${SPARCSVNLINK}" "${RUN_SPARC_ACSIM}"
+  SPARCREV=${MODELREV}
+  if [ "$RUN_SPARC_ACASM" != "no" ]; then
+    build_binary_tools "sparcv8"
+    build_original_toolchain "sparcv8" "sparc"
+  fi
 fi
 
 ### Build mips1 Model
-build_model "mips1" "${MIPSSVNLINK}" "${RUN_MIPS_ACSIM}"
-MIPSREV=${MODELREV}
-if [ "$RUN_MIPS_ACASM" != "no" ]; then
-  build_binary_tools "mips1"
-  build_original_toolchain "mips1" "mips"
+if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
+  build_model "mips1" "${MIPSSVNLINK}" "${RUN_MIPS_ACSIM}"
+  MIPSREV=${MODELREV}
+  if [ "$RUN_MIPS_ACASM" != "no" ]; then
+    build_binary_tools "mips1"
+    build_original_toolchain "mips1" "mips"
+  fi
 fi
 
 ### Build powerpc Model
-build_model "powerpc" "${POWERPCSVNLINK}" "${RUN_POWERPC_ACSIM}"
- ### in powerpc model we change the name of the model to "powerpc1" to avoid conflicts in acbinutils validation
-PPCREV=${MODELREV}
-if [ "$RUN_POWERPC_ACASM" != "no" ]; then
-  build_binary_tools "powerpc1"
-  build_original_toolchain "powerpc1" "powerpc"
+if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+  build_model "powerpc" "${POWERPCSVNLINK}" "${RUN_POWERPC_ACSIM}"
+  ### in powerpc model we change the name of the model to "powerpc1" to avoid conflicts in acbinutils validation
+  PPCREV=${MODELREV}
+  if [ "$RUN_POWERPC_ACASM" != "no" ]; then
+    build_binary_tools "powerpc1"
+    build_original_toolchain "powerpc1" "powerpc"
+  fi
 fi
 
 ### Test enviroment setup
@@ -530,7 +540,9 @@ export HTMLPREFIX
 echo -ne "<h3>Listing of component versions tested in this run.</h3>\n" >> $HTMLLOG
 echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
 echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
-echo -ne "<tr><td>ACSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+  echo -ne "<tr><td>ACSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+fi
 
 ######################################
 ### Building ARM Test Environment  ###
@@ -592,12 +604,15 @@ fi
 #################################
 ### ACASM VALIDATION TESTS
 #################################
-echo -ne "Uncompressing ACASM validation package...\n"
-cd $TESTROOT
-tar -xjf ${SCRIPTROOT}/sources/acasm-validation.tar.bz2
-[ $? -ne 0 ] && do_abort
-chmod u+x acasm-validation/runtest.sh
-echo -ne "<tr><td>ACASM assembling and linking Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+  echo -ne "Uncompressing ACASM validation package...\n"
+  cd $TESTROOT
+  tar -xjf ${SCRIPTROOT}/sources/acasm-validation.tar.bz2
+  [ $? -ne 0 ] && do_abort
+  chmod u+x acasm-validation/runtest.sh
+  echo -ne "<tr><td>ACASM assembling and linking Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+fi
+
 # ARM
 if [ "$RUN_ARM_ACASM" != "no" ]; then
   echo -ne "Validating binary tools generated for arm ArchC model...\n"
