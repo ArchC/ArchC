@@ -44,6 +44,7 @@
 ##    commented out parameters are defined by nightlytester.sh when invoking this script for a specific test purpose
 #GOLDENROOT=/home/rafael/disco2/rafael/valida/GoldenMibench  
 #BENCHROOT=/home/rafael/disco2/rafael/valida/TestMibench
+#STATSROOT=${BENCHROOT}/stats
 #RUNSMALL=yes
 #RUNLARGE=yes
 #COMPILE=yes
@@ -144,6 +145,10 @@ run_test() {
 		echo -ne "Testando runme_small.sh - saída em output_small.txt\n"
 		TEMPFL=${random}.out
 		./${TESTSCRIPT} > $TEMPFL 2>&1
+		if [ "$COLLECT_STATS" != "no" ]; then
+		  # Copy output to stats folder, to be later processed by collect_stats.py
+		  cp $TEMPFL ${STATSROOT}/${TESTNAME}-${ARCH}.stats
+		fi
 		# Process output here!
 		SIMSPEED=`sed -n -e '/Simulation speed/a\<br\>' -e '/Simulation speed/{s/.*Simulation speed: //;s/ /\&nbsp;/g;p}' <$TEMPFL`
 		SIMSPEED=`sed -e 's/<br>$//' <<<$SIMSPEED`
@@ -183,6 +188,17 @@ run_test() {
 		echo -ne "<td><b>-</b></td>" >> $HTMLMAIN
 		echo -ne "<td><b>-</b></td>" >> $HTMLMAIN
 	fi
+}
+
+# This function will sumarize statistical information about all ran programs using the collect_stats.py script.
+build_stats() {
+  HTMLSTATS=${LOGROOT}/${HTMLPREFIX}-${ARCH}-mibench-stats.htm
+  initialize_html $HTMLSTATS "Mibench for ${ARCH} instruction usage data"
+  cd ${STATSROOT}  
+  python collect_stats.py ${ARCH} &> /dev/null
+  format_html_output total.${ARCH}.stats $HTMLSTATS
+  finalize_html $HTMLSTATS ""
+  echo -ne "<p><B>Statistical information about instructions usage per category is available <a href=\"${HTMLSTATS}\">here</a>.</B></p>\n" >> $HTMLMAIN
 }
 
 ### Creating HTML's headers and general structure ###
@@ -377,4 +393,11 @@ echo -ne "<tr><td>Consumer</td><td></td><td></td><td></td><td></td><td></td><td>
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
-finalize_html $HTMLMAIN "</table>"
+echo -ne "</table>\n" >> $HTMLMAIN
+
+# Collect statistical information 
+if [ "$COLLECT_STATS" != "no" ]; then
+  build_stats
+fi
+
+finalize_html $HTMLMAIN ""

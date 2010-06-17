@@ -248,6 +248,12 @@ run_tests_acsim() {
   SIMULATOR="${TESTROOT}/${MODELNAME}/${MODELNAME}.x --load="
   GOLDENROOT=${TESTROOT}/acsim/GoldenMibench
   BENCHROOT=${MODELBENCHROOT}  
+  STATSROOT=${BENCHROOT}/stats
+  # Collect statistical information 
+  if [ "$COLLECT_STATS" != "no" ]; then
+    mkdir -p ${STATSROOT}
+    cp ${SCRIPTROOT}/collect_stats.py ${STATSROOT}
+  fi
   export ARCH
   export SIMULATOR 
   export RUNSMALL   # ==================================
@@ -255,6 +261,7 @@ run_tests_acsim() {
   export COMPILE    # ==================================
   export GOLDENROOT
   export BENCHROOT
+  export STATSROOT
   export COLLECT_STATS
 
   # Define which programs to test (definition in nightlytester.conf)  
