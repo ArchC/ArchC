@@ -17,6 +17,8 @@ Options:
   -i<dir>    build and install the binary utilities in directory <dir>
              NOTE: <dir> -MUST- be an absolute path
   -c         only create the files, do not copy to binutils tree
+  -f         force patching binutils and gdb tree even if an architecture
+             with the same name already exists
   -h         print this help
   -v         print version number
 
@@ -33,15 +35,17 @@ CREATE_ONLY=0
 BINUTILS_INST_DIR=""
 PATCH_BINUTILS=1  #1 means to patch, 0 otherwise
 PATCH_GDB=1  #1 means to patch, 0 otherwise
+FORCE_PATCH=0 
 TEMP_DIR="acbingenbuilddir"
 
 # Parse command line
-while getopts  ":hvca:i:" flag
+while getopts  ":hvfca:i:" flag
 do
   case $flag in
     h) echo "$usage"; exit 0 ;;
     v) echo "$version" ; exit 0 ;;
     c) CREATE_ONLY=1 ;;
+    f) FORCE_PATCH=1 ;;
     a) ARCH_NAME="$OPTARG" ;;
     i) BINUTILS_INST_DIR="$OPTARG" ;;
     *) echo "$me: invalid option $help"
@@ -99,20 +103,24 @@ if [ "$CREATE_ONLY" -eq 0 ]; then
 # tell the user if the architecture name already exists in Binutils
   $BINUTILS_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
   if [ $? -eq 0 ]; then
-    echo "==================="
-    echo "It has been detected that your Binutils distribution already uses"
-    echo "the architecture name '${ARCH_NAME}'."
-    echo
-    echo "It is not recommended to continue if you have not set it by yourself."
-#  echo "If you continue, the Binutils files will not be patched."
-    echo "==================="
-    echo
-    read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
-    echo
-    case $USER_ANSWER in 
-        y | yes | Y | YES) PATCH_BINUTILS=0; break;;
-        * ) echo "Quitting ..."; echo; exit 1;;
-    esac
+    if [ $FORCE_PATCH -eq 0 ]; then
+      echo "==================="
+      echo "It has been detected that your Binutils distribution already uses"
+      echo "the architecture name '${ARCH_NAME}'."
+      echo
+      echo "It is not recommended to continue if you have not set it by yourself."
+#     echo "If you continue, the Binutils files will not be patched."
+      echo "==================="
+      echo
+      read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+      echo
+      case $USER_ANSWER in 
+	  y | yes | Y | YES) PATCH_BINUTILS=0; break;;
+	  * ) echo "Quitting ..."; echo; exit 1;;
+      esac
+    else
+      PATCH_BINUTILS=0;
+    fi
   fi
 fi
 
@@ -211,20 +219,24 @@ if [ ! -z ${GDB_DIR} ]; then
   # tell the user if the architecture name already exists in Gdb
     $GDB_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-      echo "==================="
-      echo "It has been detected that your Gdb distribution already uses"
-      echo "the architecture name '${ARCH_NAME}'."
-      echo
-      echo "It is not recommended to continue if you have not set it by yourself."
-  #  echo "If you continue, the Gdb files will not be patched."
-      echo "==================="
-      echo
-      read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
-      echo
-      case $USER_ANSWER in 
-          y | yes | Y | YES) PATCH_GDB=0; break;;
-          * ) echo "Quitting ..."; echo; exit 1;;
-      esac
+      if [ $FORCE_PATCH -eq 0 ]; then
+	echo "==================="
+	echo "It has been detected that your Gdb distribution already uses"
+	echo "the architecture name '${ARCH_NAME}'."
+	echo
+	echo "It is not recommended to continue if you have not set it by yourself."
+#       echo "If you continue, the Gdb files will not be patched."
+	echo "==================="
+	echo
+	read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+	echo
+	case $USER_ANSWER in 
+	    y | yes | Y | YES) PATCH_GDB=0; break;;
+	    * ) echo "Quitting ..."; echo; exit 1;;
+	esac
+      else
+	PATCH_GDB=0;
+      fi
     fi
   fi
 fi
