@@ -14,6 +14,11 @@ fi
 
 . nightlytester.conf
 
+# Configuring ACSIM param
+if [ "$COLLECT_STATS" != "no" ]; then
+  ACSIM_PARAMS="${ACSIM_PARAMS} --stats"
+fi
+
 # Constants 
 SYSTEMCPATH=${TESTROOT}/systemc/install
 TLMPATH=${TESTROOT}/tlm/TLM-2005-04-08/tlm
@@ -94,6 +99,19 @@ build_model() {
   MODELREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
   rm $TEMPFL
 
+  ### WORKAROUND: In sparcv8 model, we must rename it to "sparcv8_1" to enable gdb compilation (in gdb tree there is already an architecture named sparcv8)
+  if [ "$MODELNAME" = "sparcv8" ]; then
+    MODELNAME="sparcv8_1" 
+    cd ${TESTROOT}
+    mv sparcv8 sparcv8_1
+    cd sparcv8_1
+    for MODELFILE in `find sparcv8*`
+    do
+	NEWFILENAME=`sed -e 's/sparcv8/sparcv8_1/' <<< "$MODELFILE"`
+	sed -e 's/sparcv8/sparcv8_1/' $MODELFILE > $NEWFILENAME
+    done
+  fi
+
   ### WORKAROUND: In powerpc model, we must rename it to "powerpc1" to enable acbinutils testing (in binutils tree there is already an architecture named powerpc)
   if [ "$MODELNAME" = "powerpc" ]; then
     MODELNAME="powerpc1" 
@@ -145,7 +163,7 @@ build_binary_tools() {
   mkdir binutils
   echo -ne "Building ${MODELNAME} BINUTILS ArchC Model...\n"
   TEMPFL=${random}.out
-  ${TESTROOT}/install/bin/acbingen.sh ${MODELNAME}.ac > $TEMPFL 2>&1 &&
+  ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&
     mkdir build-binutils &&
     cd build-binutils && # D_FORTIFY used below is used to prevent a bug present in binutils 2.15 and 2.16
     CFLAGS="-g -O2 -D_FORTIFY_SOURCE=1" ${BINUTILSPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
@@ -228,34 +246,18 @@ run_tests_acsim() {
   # Preparing test script
   ARCH="${MODELNAME}"
   SIMULATOR="${TESTROOT}/${MODELNAME}/${MODELNAME}.x --load="
-  RUNSMALL=yes
-  RUNLARGE=yes
-  COMPILE=no
   GOLDENROOT=${TESTROOT}/acsim/GoldenMibench
   BENCHROOT=${MODELBENCHROOT}  
   export ARCH
   export SIMULATOR 
-  export RUNSMALL
-  export RUNLARGE
-  export COMPILE
+  export RUNSMALL   # ==================================
+  export RUNLARGE   # Definition in nightlytester.conf
+  export COMPILE    # ==================================
   export GOLDENROOT
   export BENCHROOT
+  export COLLECT_STATS
 
-  # Define which programs to test
-  BASICMATH=yes # expensive
-  BITCOUNT=yes
-  QUICKSORT=yes
-  SUSAN=yes
-  ADPCM=yes
-  CRC=yes
-  FFT=yes # expensive
-  GSM=yes
-  DIJKSTRA=yes
-  PATRICIA=yes # expensive
-  RIJNDAEL=yes
-  SHA=yes
-  JPEG=yes
-  LAME=yes # expensive
+  # Define which programs to test (definition in nightlytester.conf)  
   export BASICMATH
   export BITCOUNT
   export QUICKSORT
@@ -502,10 +504,11 @@ fi
 ### Build sparcv8 Model
 if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
   build_model "sparcv8" "${SPARCSVNLINK}" "${RUN_SPARC_ACSIM}"
+  ### in sparcv8 model we change the name of the model to "sparcv8_1" to avoid conflicts with gdb preexistent target
   SPARCREV=${MODELREV}
   if [ "$RUN_SPARC_ACASM" != "no" ]; then
-    build_binary_tools "sparcv8"
-    build_original_toolchain "sparcv8" "sparc"
+    build_binary_tools "sparcv8_1"
+    build_original_toolchain "sparcv8_1" "sparc"
   fi
 fi
 
@@ -572,7 +575,7 @@ if [ "$RUN_SPARC_ACSIM" != "no" ]; then
   tar -xjf ${SCRIPTROOT}/sources/SparcMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
 
-  run_tests_acsim "sparcv8" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}"
+  run_tests_acsim "sparcv8_1" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}"
 fi
 
 ##########################################
@@ -628,7 +631,7 @@ fi
 # SPARC
 if [ "$RUN_SPARC_ACASM" != "no" ]; then
   echo -ne "Validating binary tools generated for sparc ArchC model...\n"
-  run_tests_acasm "sparcv8" "sparc"
+  run_tests_acasm "sparcv8_1" "sparc"
 fi
 
 # POWERPC
