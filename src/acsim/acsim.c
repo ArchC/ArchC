@@ -2683,6 +2683,9 @@ void CreateMainTmpl() {
   fprintf( output, "%sac_trace(\"%s_proc1.trace\");\n", INDENT[1], project_name);
   fprintf( output, "#endif \n\n");
 
+  if (ACGDBIntegrationFlag == 1)
+    fprintf(output, "%s%s_proc1.enable_gdb();\n", INDENT[1], project_name);
+
   fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
