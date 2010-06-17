@@ -147,7 +147,7 @@ run_test() {
 		./${TESTSCRIPT} > $TEMPFL 2>&1
 		if [ "$COLLECT_STATS" != "no" ]; then
 		  # Copy output to stats folder, to be later processed by collect_stats.py
-		  cp $TEMPFL ${STATSROOT}/${TESTNAME}-${ARCH}.stats
+		  cp $TEMPFL ${STATSROOT}/${TESTNAME}.${ARCH}.stats
 		fi
 		# Process output here!
 		SIMSPEED=`sed -n -e '/Simulation speed/a\<br\>' -e '/Simulation speed/{s/.*Simulation speed: //;s/ /\&nbsp;/g;p}' <$TEMPFL`
