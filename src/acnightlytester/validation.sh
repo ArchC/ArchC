@@ -198,7 +198,7 @@ build_stats() {
   python collect_stats.py ${ARCH} &> /dev/null
   format_html_output total.${ARCH}.stats $HTMLSTATS
   finalize_html $HTMLSTATS ""
-  echo -ne "<p><B>Statistical information about instructions usage per category is available <a href=\"${HTMLSTATS}\">here</a>.</B></p>\n" >> $HTMLMAIN
+  echo -ne "<p><B>Statistical information about instructions usage per category is available <a href=\"${HTMLPREFIX}-${ARCH}-mibench-stats.htm\">here</a>.</B></p>\n" >> $HTMLMAIN
 }
 
 ### Creating HTML's headers and general structure ###
