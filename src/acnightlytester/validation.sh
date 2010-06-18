@@ -142,7 +142,7 @@ run_test() {
 	if [ "$CONDITION" != "no" ]; then
 		HTML_RUN=${LOGROOT}/${HTMLPREFIX}-${ARCH}-${TESTNAME}-run.htm
 		initialize_html $HTML_RUN "${TESTNAME} simulator output"
-		echo -ne "Testando runme_small.sh - saída em output_small.txt\n"
+		echo -ne "Running script ${TESTSCRIPT}...\n"
 		TEMPFL=${random}.out
 		./${TESTSCRIPT} > $TEMPFL 2>&1
 		if [ "$COLLECT_STATS" != "no" ]; then
@@ -215,7 +215,7 @@ echo -ne "<tr><th>Name</th><th>Compilation</th><th>Simulation (small)</th><th>Sp
 echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
 #basicmath
 [ "$BASICMATH" != "no" ] && {
-	echo -ne "BASICMATH\n\n"
+	echo -ne "\nCurrently testing: BASICMATH\n"
 	echo -ne "<tr><td>basicmath</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/automotive/basicmath
 	compile_prog "basicmath"
@@ -227,7 +227,7 @@ echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><t
 
 #bitcount
 [ "$BITCOUNT" != "no" ] && {
-	echo -ne "BITCOUNT\n\n"
+	echo -ne "\nCurrently testing: BITCOUNT\n"
 	echo -ne "<tr><td>bitcount</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/automotive/bitcount
 	compile_prog "bitcount"
@@ -240,7 +240,7 @@ echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><t
 
 #qsort  -- problemas: lembrar de corrigir o fonte, que causa falha de segmentacao se MAXARRAY for grande! (sugestao corrigir para MAXARRAY=10000)
 [ "$QUICKSORT" != "no" ] && {
-	echo -ne "QSORT\n\n"
+	echo -ne "\nCurrently testing: QSORT\n"
 	echo -ne "<tr><td>qsort</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/automotive/qsort
 	compile_prog "quicksort"
@@ -253,7 +253,7 @@ echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><t
 
 #susan
 [ "$SUSAN" != "no" ] && {
-	echo -ne "SUSAN\n\n"
+	echo -ne "\nCurrently testing: SUSAN\n"
 	echo -ne "<tr><td>susan</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/automotive/susan
 	compile_prog "susan"
@@ -267,7 +267,7 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 
 #adpcm - problema: Remover string produzida pelo "SystemC" no início do arquivo binário de saída - resolvido
 [ "$ADPCM" != "no" ] && {
-	echo -ne "ADPCM\n\n"
+	echo -ne "\nCurrently testing: ADPCM\n"
 	echo -ne "<tr><td>adpcm</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/telecomm/adpcm/src
 	compile_prog "adpcm"
@@ -279,7 +279,7 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 }
 #CRC32
 [ "$CRC" != "no" ] && {
-	echo -ne "CRC32\n\n"
+	echo -ne "\nCurrently testing: CRC32\n"
 	echo -ne "<tr><td>crc32</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/telecomm/CRC32
 	compile_prog "crc"
@@ -290,7 +290,7 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 }
 #FFT
 [ "$FFT" != "no" ] && {
-	echo -ne "FFT\n\n"
+	echo -ne "\nCurrently testing: FFT\n"
 	echo -ne "<tr><td>fft</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/telecomm/FFT
 	compile_prog "fft"
@@ -302,7 +302,7 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 
 #gsm
 [ "$GSM" != "no" ] && {
-	echo -ne "GSM\n\n"
+	echo -ne "\nCurrently testing: GSM\n"
 	echo -ne "<tr><td>gsm</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/telecomm/gsm
 	compile_prog "gsm"
@@ -316,7 +316,7 @@ echo -ne "<tr><td>Network</td><td></td><td></td><td></td><td></td><td></td><td><
 
 #dijkstra
 [ "$DIJKSTRA" != "no" ] && {
-	echo -ne "DIJKSTRA\n\n"
+	echo -ne "\nCurrently testing: DIJKSTRA\n"
 	echo -ne "<tr><td>dijkstra</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/network/dijkstra
 	compile_prog "dijkstra"
@@ -328,7 +328,7 @@ echo -ne "<tr><td>Network</td><td></td><td></td><td></td><td></td><td></td><td><
 
 #patricia
 [ "$PATRICIA" != "no" ] && {
-	echo -ne "PATRICIA\n\n"
+	echo -ne "\nCurrently testing: PATRICIA\n"
 	echo -ne "<tr><td>patricia</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/network/patricia
 	compile_prog "patricia"
@@ -342,7 +342,7 @@ echo -ne "<tr><td>Security</td><td></td><td></td><td></td><td></td><td></td><td>
 
 #rijndael
 [ "$RIJNDAEL" != "no" ] && {
-	echo -ne "RIJNDAEL\n\n"
+	echo -ne "\nCurrently testing: RIJNDAEL\n"
 	echo -ne "<tr><td>rijndael</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/security/rijndael
 	compile_prog "rijndael"
@@ -354,7 +354,7 @@ echo -ne "<tr><td>Security</td><td></td><td></td><td></td><td></td><td></td><td>
 
 #sha
 [ "$SHA" != "no" ] && {
-	echo -ne "SHA\n\n"
+	echo -ne "\nCurrently testing: SHA\n"
 	echo -ne "<tr><td>sha</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/security/sha
 	compile_prog "sha"
@@ -369,7 +369,7 @@ echo -ne "<tr><td>Consumer</td><td></td><td></td><td></td><td></td><td></td><td>
 
 #jpeg
 [ "$JPEG" != "no" ] && {
-	echo -ne "JPEG\n\n"
+	echo -ne "\nCurrently testing: JPEG\n"
 	echo -ne "<tr><td>jpeg</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/consumer/jpeg/jpeg-6a
 	compile_prog "jpeg"
@@ -382,7 +382,7 @@ echo -ne "<tr><td>Consumer</td><td></td><td></td><td></td><td></td><td></td><td>
 
 #lame
 [ "$LAME" != "no" ] && {
-	echo -ne "LAME\n\n"
+	echo -ne "\nCurrently testing: LAME\n"
 	echo -ne "<tr><td>lame</td>" >> $HTMLMAIN
 	cd ${BENCHROOT}/consumer/lame/lame3.70
 	compile_prog "lame"

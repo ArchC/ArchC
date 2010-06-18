@@ -19,8 +19,23 @@ if [ "$COLLECT_STATS" != "no" ]; then
   ACSIM_PARAMS="${ACSIM_PARAMS} --stats"
 fi
 
-# Constants 
-SYSTEMCPATH=${TESTROOT}/systemc/install
+# ********************************
+# * Software location constants **
+# ********************************
+# If user-supplied path is not present, we must compile our own software packages
+
+# SystemC
+if [ -z "$SYSTEMCPATH" ]; then
+  SYSTEMCPATH=${TESTROOT}/systemc/install
+  SYSTEMCCOMPILE=yes
+else
+  SYSTEMCCOMPILE=no
+fi
+
+# *************************************
+# * Extracted sources path constants **
+# *************************************
+
 TLMPATH=${TESTROOT}/tlm/TLM-2005-04-08/tlm
 BINUTILSPATH=${TESTROOT}/binutils/binutils-2.15
 GDBPATH=${TESTROOT}/gdb/gdb-6.4
@@ -160,7 +175,7 @@ build_model() {
 build_binary_tools() {
   MODELNAME=$1
   cd ${TESTROOT}/${MODELNAME}
-  mkdir binutils
+  mkdir -p binutils
   echo -ne "Building ${MODELNAME} BINUTILS ArchC Model...\n"
   TEMPFL=${random}.out
   ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&
@@ -168,13 +183,7 @@ build_binary_tools() {
     cd build-binutils && # D_FORTIFY used below is used to prevent a bug present in binutils 2.15 and 2.16
     CFLAGS="-g -O2 -D_FORTIFY_SOURCE=1" ${BINUTILSPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
     make >> $TEMPFL 2>&1 &&
-    make install >> $TEMPFL 2>&1 &&
-    cd .. &&
-    mkdir build-gdb &&
-    cd build-gdb &&
-    ${GDBPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
-    make >> $TEMPFL 2>&1 &&
-    make install >> $TEMPFL 2>&1
+    make install >> $TEMPFL 2>&1 
   RETCODE=$?
   HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm
   initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV acbinutils build output"
@@ -184,12 +193,50 @@ build_binary_tools() {
   if [ $RETCODE -ne 0 ]; then
     echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV binutils build failed (using acbingen). Check <a href=\"${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
     finalize_html $HTMLLOG ""
-    echo -ne "ACASM \e[31mfailed\e[m to build $MODELNAME binutils and gdb tools.\n"
+    echo -ne "ACASM \e[31mfailed\e[m to build $MODELNAME binutils tools.\n"
     do_abort
   else
-    echo -ne "<p>${MODELNAME} binutils and gdb built successfully using acbingen. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+    echo -ne "<p>${MODELNAME} binutils built successfully using acbingen. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-binutils-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
   fi  
 }
+
+#
+# This function is used to build gdb for a given model, testing acstone, which uses gdb for validation.
+#
+# Param1 is modelname (e.g. "armv5e")
+#
+# Requires: Model already fetched from SVN repository and stored in ${TESTROOT}/${MODELNAME}
+# Results: gdb for architecture $MODELNAME installed in ${TESTROOT}/${MODELNAME}/binutils
+#
+# Use example: build_binary_tools "armv5e"
+build_gdb() {
+  MODELNAME=$1
+  cd ${TESTROOT}/${MODELNAME}
+  mkdir -p binutils
+  echo -ne "Building GDB for ${MODELNAME}...\n"
+  TEMPFL=${random}.out
+  ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&    
+    mkdir build-gdb &&
+    cd build-gdb &&
+    ${GDBPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
+    make >> $TEMPFL 2>&1 &&
+    make install >> $TEMPFL 2>&1
+  RETCODE=$?
+  HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-gdb-build-log.htm
+  initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV gdb build output"
+  format_html_output $TEMPFL $HTMLBUILDLOG
+  finalize_html $HTMLBUILDLOG ""
+  rm $TEMPFL
+  if [ $RETCODE -ne 0 ]; then
+    echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV gdb build failed (using acbingen). Check <a href=\"${HTMLPREFIX}-${MODELNAME}-gdb-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
+    finalize_html $HTMLLOG ""
+    echo -ne "ACASM \e[31mfailed\e[m to build $MODELNAME gdb.\n"
+    do_abort
+  else
+    echo -ne "<p>${MODELNAME} gdb built successfully using acbingen. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-gdb-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+  fi  
+}
+
 
 #
 # This function is used to build binutils *ORIGINAL* tools for a given architecture, so we can compare and expect the results from these tools to be correct and
@@ -354,6 +401,9 @@ echo -ne "</table></p>\n" >> $HTMLLOG
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
   echo -ne "<p>Parameters used to build acsim models: ${ACSIM_PARAMS}</p>\n" >> $HTMLLOG
 fi
+if [ "$SYSTEMCCOMPILE" != "yes" ]; then
+  echo -ne "<p>Using user-supplied SystemC path: ${SYSTEMCPATH}</p>\n" >> $HTMLLOG
+fi
 
 # SVN checkout and ArchC build configuration
 mkdir ${TESTROOT}
@@ -378,33 +428,44 @@ rm $TEMPFL
 ###########################################
 ### Unpack necessary software packages
 ###########################################
-
-echo -ne "Uncompressing auxiliary software packages...\n"
+echo -ne "\n**********************************************\n"
+echo -ne "* Uncompressing auxiliary software packages **\n"
+echo -ne "**********************************************\n"
 
 # binutils
-mkdir ${TESTROOT}/binutils
-cd ${TESTROOT}/binutils
-tar -xjf ${SCRIPTROOT}/sources/binutils-2.15.tar.bz2
+if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+  echo -ne "Uncompressing binutils...\n"
+  mkdir ${TESTROOT}/binutils
+  cd ${TESTROOT}/binutils
+  tar -xjf ${SCRIPTROOT}/sources/binutils-2.15.tar.bz2
+fi
 
 # gdb
-mkdir ${TESTROOT}/gdb
-cd ${TESTROOT}/gdb
-tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
+# Only decompress if running acsim tests (gdb is used to validate correct execution of acstone benchmark)
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+  echo -ne "Uncompressing gdb...\n"
+  mkdir ${TESTROOT}/gdb
+  cd ${TESTROOT}/gdb
+  tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
+fi
 
 # gcc
-mkdir ${TESTROOT}/gcc
-cd ${TESTROOT}/gcc
-tar -xf ${SCRIPTROOT}/sources/gcc-3.3.tar.gz
+#echo -ne "Uncompressing gcc...\n"
+#mkdir ${TESTROOT}/gcc
+#cd ${TESTROOT}/gcc
+#tar -xf ${SCRIPTROOT}/sources/gcc-3.3.tar.gz
 
 # glibc
-mkdir ${TESTROOT}/glibc
-cd ${TESTROOT}/glibc
-tar -xjf ${SCRIPTROOT}/sources/glibc-2.3.2.tar.bz2
-cd ${TESTROOT}/glibc/glibc-2.3.2
-tar -xjf ${SCRIPTROOT}/sources/glibc-linuxthreads-2.3.2.tar.bz2
+#echo -ne "Uncompressing glibc...\n"
+#mkdir ${TESTROOT}/glibc
+#cd ${TESTROOT}/glibc
+#tar -xjf ${SCRIPTROOT}/sources/glibc-2.3.2.tar.bz2
+#cd ${TESTROOT}/glibc/glibc-2.3.2
+#tar -xjf ${SCRIPTROOT}/sources/glibc-linuxthreads-2.3.2.tar.bz2
 
 # tlm
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+  echo -ne "Uncompressing tlm...\n"
   # only compile SystemC if we will run ACSIM tests
   mkdir ${TESTROOT}/tlm
   cd ${TESTROOT}/tlm
@@ -413,50 +474,60 @@ fi
 
 # systemc
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  # only compile SystemC if we will run ACSIM tests
-  mkdir ${TESTROOT}/systemc
-  cd ${TESTROOT}/systemc
-  tar -xjf ${SCRIPTROOT}/sources/systemc-2.2.0.tar.bz2
+  if [ "$SYSTEMCCOMPILE" != "no" ]; then
+    echo -ne "Uncompressing SystemC...\n"
+    # only compile SystemC if we will run ACSIM tests
+    mkdir ${TESTROOT}/systemc
+    cd ${TESTROOT}/systemc
+    tar -xjf ${SCRIPTROOT}/sources/systemc-2.2.0.tar.bz2
+  fi
 fi
+
+
+echo -ne "\n**********************************************\n"
+echo -ne "* Building software packages                **\n"
+echo -ne "**********************************************\n"
 
 ###############################################
 ### Configuring SystemC and building library
 ###############################################
 mkdir install
 cd install
-# Only compile SystemC if we will run ACSIM tests
+# Only compile SystemC if we will run ACSIM tests and the user did not supply a System
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  TEMPFL=${random}.out
-  ../systemc-2.2.0/configure --prefix=${TESTROOT}/systemc/install > $TEMPFL 2>&1
-  echo -ne "Building SystemC...\n"
-  make >> $TEMPFL 2>&1
-  [ $? -ne 0 ] && {
-    HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-systemc-build-log.htm
-    initialize_html $HTMLBUILDLOG "SystemC build output"
-    format_html_output $TEMPFL $HTMLBUILDLOG
-    finalize_html $HTMLBUILDLOG ""
+  if [ "$SYSTEMCCOMPILE" != "no" ]; then
+    TEMPFL=${random}.out
+    ../systemc-2.2.0/configure --prefix=${TESTROOT}/systemc/install > $TEMPFL 2>&1
+    echo -ne "Building SystemC...\n"
+    make >> $TEMPFL 2>&1
+    [ $? -ne 0 ] && {
+      HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-systemc-build-log.htm
+      initialize_html $HTMLBUILDLOG "SystemC build output"
+      format_html_output $TEMPFL $HTMLBUILDLOG
+      finalize_html $HTMLBUILDLOG ""
+      rm $TEMPFL
+      echo -ne "<p><b><font color=\"crimson\">SystemC build failed. Check <a href=\"/${HTMLPREFIX}-systemc-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
+      finalize_html $HTMLLOG ""
+      echo -ne "SystemC build \e[31mfailed\e[m.\n"
+      do_abort
+    } 
     rm $TEMPFL
-    echo -ne "<p><b><font color=\"crimson\">SystemC build failed. Check <a href=\"/${HTMLPREFIX}-systemc-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
-    finalize_html $HTMLLOG ""
-    echo -ne "SystemC build \e[31mfailed\e[m.\n"
-    do_abort
-  } 
-  rm $TEMPFL
-  TEMPFL=${random}.out
-  echo -ne "Installing SystemC...\n"
-  make install > $TEMPFL 2>&1
-  [ $? -ne 0 ] && {
-    HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-systemc-install-log.htm
-    initialize_html $HTMLBUILDLOG "SystemC install output"
-    format_html_output $TEMPFL $HTMLBUILDLOG
-    finalize_html $HTMLBUILDLOG ""
+    TEMPFL=${random}.out
+    echo -ne "Installing SystemC...\n"
+    make install > $TEMPFL 2>&1
+    [ $? -ne 0 ] && {
+      HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-systemc-install-log.htm
+      initialize_html $HTMLBUILDLOG "SystemC install output"
+      format_html_output $TEMPFL $HTMLBUILDLOG
+      finalize_html $HTMLBUILDLOG ""
+      rm $TEMPFL
+      echo -ne "<p><b><font color=\"crimson\">SystemC install failed. Check <a href=\"${HTMLPREFIX}-systemc-install-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
+      finalize_html $HTMLLOG ""
+      echo -ne "SystemC install \e[31mfailed\e[m.\n"
+      do_abort
+    } 
     rm $TEMPFL
-    echo -ne "<p><b><font color=\"crimson\">SystemC install failed. Check <a href=\"${HTMLPREFIX}-systemc-install-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
-    finalize_html $HTMLLOG ""
-    echo -ne "SystemC install \e[31mfailed\e[m.\n"
-    do_abort
-  } 
-  rm $TEMPFL
+  fi
 fi
 ########################################
 ### Configure & install ArchC
@@ -468,18 +539,21 @@ TEMPFL=${random}.out
 # Configure script
 ./boot.sh > $TEMPFL 2>&1
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  # Configure ArchC with SystemC, because we will need acsim
-  ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1 &&
-    make >> $TEMPFL 2>&1 &&
-    make install >> $TEMPFL 2>&1
-  RETCODE=$?
+  if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+    # Configure ArchC fully (testing acsim and acasm)
+    ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1    
+  else
+    #Configure ArchC without acasm support
+    ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1
+  fi
 else
   # Configure ArchC without SystemC, because we won't need acsim
-  ./configure --prefix=${TESTROOT}/install --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1 &&
-    make >> $TEMPFL 2>&1 &&
-    make install >> $TEMPFL 2>&1
-  RETCODE=$?
+  ./configure --prefix=${TESTROOT}/install --with-binutils=${BINUTILSPATH} >> $TEMPFL 2>&1    
 fi
+# Compile
+make >> $TEMPFL 2>&1 &&
+make install >> $TEMPFL 2>&1
+RETCODE=$?
 HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-archc-build-log.htm
 initialize_html $HTMLBUILDLOG "ArchC rev $ARCHCREV build output"
 format_html_output $TEMPFL $HTMLBUILDLOG
@@ -506,6 +580,9 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
     build_binary_tools "armv5e"
     build_original_toolchain "armv5e" "arm"
   fi
+  if [ "$RUN_ARM_ACSIM" != "no" ]; then
+    build_gdb "armv5e"
+  fi
 fi
 
 ### Build sparcv8 Model
@@ -517,6 +594,9 @@ if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
     build_binary_tools "sparcv8_1"
     build_original_toolchain "sparcv8_1" "sparc"
   fi
+  if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+    build_gdb "sparcv8_1"
+  fi
 fi
 
 ### Build mips1 Model
@@ -526,6 +606,9 @@ if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
   if [ "$RUN_MIPS_ACASM" != "no" ]; then
     build_binary_tools "mips1"
     build_original_toolchain "mips1" "mips"
+  fi
+  if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+    build_gdb "mips1"
   fi
 fi
 
@@ -538,7 +621,15 @@ if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
     build_binary_tools "powerpc1"
     build_original_toolchain "powerpc1" "powerpc"
   fi
+  if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+    build_gdb "powerpc1"
+  fi
 fi
+
+echo -ne "\n**********************************************\n"
+echo -ne "* Testing                                   **\n"
+echo -ne "**********************************************\n"
+
 
 ### Test enviroment setup
 mkdir ${TESTROOT}/acsim
