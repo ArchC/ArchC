@@ -84,10 +84,10 @@ if [ -z "$BINUTILS_PATH" ]; then
   BINUTILS_PATH=`grep BINUTILS_PATH @sysconfdir@/archc.conf | cut -d = -f2`
   BINUTILS_PATH=`echo $BINUTILS_PATH`
   
-  if [ -z "$BINUTILS_PATH" ]; then
-    echo "BINUTILS_PATH environment variable not set"
-    exit 1
-  fi 
+#  if [ -z "$BINUTILS_PATH" ]; then
+#    echo "BINUTILS_PATH environment variable not set"
+#    exit 1
+#  fi 
 fi
 
 
@@ -98,10 +98,10 @@ BINUTILS_DIR=`echo "$BINUTILS_PATH" | sed -e 's/\/$//'`
 FILES_TO_PATCH="@patchfiles@" 
 FILES_TO_COPY="@copyfiles@"
 
-
-if [ "$CREATE_ONLY" -eq 0 ]; then
+if [ ! -z ${BINUTILS_DIR} ]; then
+  if [ "$CREATE_ONLY" -eq 0 ]; then
 # tell the user if the architecture name already exists in Binutils
-  $BINUTILS_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
+    $BINUTILS_DIR/config.sub ${ARCH_NAME}-elf > /dev/null 2>&1
   if [ $? -eq 0 ]; then
     if [ $FORCE_PATCH -eq 0 ]; then
       echo "==================="
@@ -121,6 +121,7 @@ if [ "$CREATE_ONLY" -eq 0 ]; then
     else
       PATCH_BINUTILS=0;
     fi
+  fi
   fi
 fi
 
@@ -201,10 +202,10 @@ if [ -z "$GDB_PATH" ]; then
   GDB_PATH=`grep GDB_PATH @sysconfdir@/archc.conf | cut -d = -f2`
   GDB_PATH=`echo $GDB_PATH`
   
-#  if [ -z "$GDB_PATH" ]; then
-#    echo "GDB_PATH environment variable not set"
-#    exit 1
-#  fi 
+  if [ -z "$GDB_PATH" -a -z "$BINUTILS_PATH" ]; then
+    echo "Neither BINUTILS_PATH nor GDB_PATH environment variables are set"
+    exit 1
+  fi 
 fi
 
 
@@ -277,7 +278,8 @@ if [ "$CREATE_ONLY" -ne 0 ]; then
 fi
 
 
-if [ "$PATCH_BINUTILS" -ne 0 ]; then
+if [ ! -z ${BINUTILS_DIR} ]; then
+  if [ "$PATCH_BINUTILS" -ne 0 ]; then
 # applies the patch 
     echo "Patching... "
     for file in $FILES_TO_PATCH
@@ -310,47 +312,48 @@ if [ "$PATCH_BINUTILS" -ne 0 ]; then
    
     chmod a+x $BINUTILS_DIR/config.sub
     chmod a+x $BINUTILS_DIR/bfd/config.bfd
-else
+  else
     echo "Skipping patching..."
-fi
+  fi
 
-# copies the generated files into binutils tree
-echo "Copying files to binutils source tree..."
-for file in $FILES_TO_COPY
-do
-  cpfile=`echo "$file" | sed -e "s/xxxxx/${ARCH_NAME}/g"`
-  cp -f binutils/${cpfile} $BINUTILS_DIR/${cpfile}
-  [ $? -ne 0 ] && exit $?
-done
+  # copies the generated files into binutils tree
+  echo "Copying files to binutils source tree..."
+  for file in $FILES_TO_COPY
+  do
+    cpfile=`echo "$file" | sed -e "s/xxxxx/${ARCH_NAME}/g"`
+    cp -f binutils/${cpfile} $BINUTILS_DIR/${cpfile}
+    [ $? -ne 0 ] && exit $?
+  done
 
 # Checks for newer versions of binutils, which requires archc generated source code changes
 # Checking whether write.c uses md_apply_fix or md_apply_fix3
-grep -e "md_apply_fix3" $BINUTILS_DIR/gas/write.c > /dev/null 2>&1
-if [ $? -ne 0 ]; then
+  grep -e "md_apply_fix3" $BINUTILS_DIR/gas/write.c > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
   # Newer binutils detected, changing from md_apply_fix3 to md_apply_fix
-  sed s/md_apply_fix3/md_apply_fix/g $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2
-  mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c
-fi
+    sed s/md_apply_fix3/md_apply_fix/g $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2
+    mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c
+  fi
 # Checking whether expr.c uses md_parse_name(x,y,z) or md_parse_name(x,y,t,z)
-grep -e 'md_parse_name *([^,]*,[^,]*,[^,]*,.*)' $BINUTILS_DIR/gas/expr.c > /dev/null 2>&1
-if [ $? -eq 0 ]; then
+  grep -e 'md_parse_name *([^,]*,[^,]*,[^,]*,.*)' $BINUTILS_DIR/gas/expr.c > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
   # Newer binutils detected, changing md_parse_name macro to ignore the third parameter
-  sed -e 's/define md_parse_name(x, y, z)/define md_parse_name(x, y, t, z)/g' $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h2
-  mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h
-fi
+    sed -e 's/define md_parse_name(x, y, z)/define md_parse_name(x, y, t, z)/g' $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h2
+    mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h
+  fi
 
 # Checking if BFD requires definition of reloc_name_lookup (binutils 2.18 or higher)
-grep -re "bfd_elfNN_bfd_reloc_name_lookup" $BINUTILS_DIR/bfd/* > /dev/null 2>&1
-if [ $? -eq 0 ]; then
+  grep -re "bfd_elfNN_bfd_reloc_name_lookup" $BINUTILS_DIR/bfd/* > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
   # BFD requires this definition
-  sed -e 's/BFD_REQUIRES_RELOC_NAME_LOOKUP/1/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
-  mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
-else
+    sed -e 's/BFD_REQUIRES_RELOC_NAME_LOOKUP/1/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
+    mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
+  else
   # BFD does not require this definition
-  sed -e 's/BFD_REQUIRES_RELOC_NAME_LOOKUP/0/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
-  mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
-fi
+    sed -e 's/BFD_REQUIRES_RELOC_NAME_LOOKUP/0/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
+    mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
+  fi
 
+fi
 
 if [ ! -z ${GDB_DIR} ]; then
   if [ "$PATCH_GDB" -ne 0 ]; then
@@ -406,14 +409,16 @@ fi
 if [ ! -z ${BINUTILS_INST_DIR} ]; then
   echo "Installing the binary utilities..."
  
-  mkdir -p build
-  cd build
-  $BINUTILS_DIR/configure --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
-  [ $? -ne 0 ] && exit $?
-  make 
-  [ $? -ne 0 ] && exit $?
-  make install
-  [ $? -ne 0 ] && exit $?
+  if [ ! -z ${BINUTILS_DIR} ]; then
+    mkdir -p build
+    cd build
+    $BINUTILS_DIR/configure --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
+    [ $? -ne 0 ] && exit $?
+    make 
+    [ $? -ne 0 ] && exit $?
+    make install
+    [ $? -ne 0 ] && exit $?
+  fi
 
   if [ ! -z ${GDB_DIR} ]; then
     cd ..
