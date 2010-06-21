@@ -384,7 +384,11 @@ echo -ne "<p>Produced by NightlyTester @ ${DATE}</p>"   >> $HTMLLOG
 echo -ne "<h3>Listing of SVN links used in this run.</h3>\n" >> $HTMLLOG
 echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
 echo -ne "<tr><th>Component</th><th>Link</th></tr>\n" >> $HTMLLOG
-echo -ne "<tr><td>ArchC</td><td>${CHECKOUTLINK}</td></tr>\n" >> $HTMLLOG
+if [ -z "$CHECKOUTLINK" ]; then
+  echo -ne "<tr><td>ArchC</td><td>${WORKINGCOPY} (private working copy)</td></tr>\n" >> $HTMLLOG
+else
+  echo -ne "<tr><td>ArchC</td><td>${CHECKOUTLINK}</td></tr>\n" >> $HTMLLOG
+fi
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
   echo -ne "<tr><td>ARM Model</td><td>${ARMSVNLINK}</td></tr>\n" >> $HTMLLOG
 fi
@@ -411,19 +415,33 @@ mkdir ${TESTROOT}/acsrc
 mkdir ${TESTROOT}/install
 cd ${TESTROOT}/acsrc
 
-echo -ne "Checking out ArchC SVN version...\n"
-TEMPFL=${random}.out
-svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
-[ $? -ne 0 ] && {
+if [ -z "$CHECKOUTLINK" ]; then
+  echo -ne "Copying ArchC source from a local directory...\n"
+  cp -a ${WORKINGCOPY} ./ &> /dev/null
+  [ $? -ne 0 ] && {
+    echo -ne "<p><b><font color=\"crimson\">ArchC source copy failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
+    finalize_html $HTMLLOG ""
+    echo -ne "Local directory copy \e[31mfailed\e[m. Check script parameters.\n"
+    do_abort
+  }
+  ARCHCREV="N/A"
+else
+  echo -ne "Checking out ArchC SVN version...\n"
+  TEMPFL=${random}.out
+  svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
+  [ $? -ne 0 ] && {
+    rm $TEMPFL
+    echo -ne "<p><b><font color=\"crimson\">ArchC SVN checkout failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
+    finalize_html $HTMLLOG ""
+    echo -ne "SVN checkout \e[31mfailed\e[m. Check script parameters.\n"
+    do_abort
+  } 
+  # Extract revision number
+  ARCHCREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
   rm $TEMPFL
-  echo -ne "<p><b><font color=\"crimson\">ArchC SVN checkout failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
-  finalize_html $HTMLLOG ""
-  echo -ne "SVN checkout \e[31mfailed\e[m. Check script parameters.\n"
-  do_abort
-} 
-# Extract revision number
-ARCHCREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
-rm $TEMPFL
+fi
+
+
 
 ###########################################
 ### Unpack necessary software packages
@@ -443,10 +461,12 @@ fi
 # gdb
 # Only decompress if running acsim tests (gdb is used to validate correct execution of acstone benchmark)
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  echo -ne "Uncompressing gdb...\n"
-  mkdir ${TESTROOT}/gdb
-  cd ${TESTROOT}/gdb
-  tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
+  if [ "$RUN_ACSTONE" != "no" ]; then
+    echo -ne "Uncompressing gdb...\n"
+    mkdir ${TESTROOT}/gdb
+    cd ${TESTROOT}/gdb
+    tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
+  fi
 fi
 
 # gcc
@@ -580,7 +600,7 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
     build_binary_tools "armv5e"
     build_original_toolchain "armv5e" "arm"
   fi
-  if [ "$RUN_ARM_ACSIM" != "no" ]; then
+  if [ "$RUN_ARM_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
     build_gdb "armv5e"
   fi
 fi
@@ -594,7 +614,7 @@ if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
     build_binary_tools "sparcv8_1"
     build_original_toolchain "sparcv8_1" "sparc"
   fi
-  if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+  if [ "$RUN_SPARC_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
     build_gdb "sparcv8_1"
   fi
 fi
@@ -607,7 +627,7 @@ if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
     build_binary_tools "mips1"
     build_original_toolchain "mips1" "mips"
   fi
-  if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+  if [ "$RUN_MIPS_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
     build_gdb "mips1"
   fi
 fi
@@ -621,7 +641,7 @@ if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
     build_binary_tools "powerpc1"
     build_original_toolchain "powerpc1" "powerpc"
   fi
-  if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+  if [ "$RUN_POWERPC_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
     build_gdb "powerpc1"
   fi
 fi
