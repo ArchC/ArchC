@@ -560,8 +560,13 @@ TEMPFL=${random}.out
 ./boot.sh > $TEMPFL 2>&1
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
   if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
-    # Configure ArchC fully (testing acsim and acasm)
-    ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1    
+    if [ "$RUN_ACSTONE" != "no" ]; then
+      # Configure ArchC fully (testing acsim and acasm) with gdb support (used by acstone)
+      ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1    
+    else
+      # Configure ArchC without gdb support (acsim and acasm supported)
+      ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} >> $TEMPFL 2>&1    
+    fi
   else
     #Configure ArchC without acasm support
     ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1
