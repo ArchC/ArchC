@@ -156,10 +156,6 @@ public:
 
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    if (!this->ac_mt_endian) {
-      oset_addr = ((sizeof(ac_word) - 1) - oset_addr);
-    }
-
     ((uint8_t*)(&aux_word))[oset_addr] = datum;
     
     delays.push_back(change_log<ac_word>(base_addr, aux_word, time));
@@ -173,14 +169,6 @@ public:
 
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    if (!this->ac_mt_endian) {
-//       oset_addr = oset_addr ? 0 : 1;
-      oset_addr = oset_addr == 0;
-    }
-    else {
-//       oset_addr = oset_addr ? 1 : 0;
-      oset_addr = oset_addr != 0;
-    }
     aux_Hword = datum;
     if (!this->ac_mt_endian) {
       aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
