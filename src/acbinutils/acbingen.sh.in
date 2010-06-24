@@ -112,7 +112,7 @@ if [ ! -z ${BINUTILS_DIR} ]; then
 #     echo "If you continue, the Binutils files will not be patched."
       echo "==================="
       echo
-      read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+      read -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
       echo
       case $USER_ANSWER in 
 	  y | yes | Y | YES) PATCH_BINUTILS=0; break;;
@@ -229,7 +229,7 @@ if [ ! -z ${GDB_DIR} ]; then
 #       echo "If you continue, the Gdb files will not be patched."
 	echo "==================="
 	echo
-	read -e -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+	read -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
 	echo
 	case $USER_ANSWER in 
 	    y | yes | Y | YES) PATCH_GDB=0; break;;
