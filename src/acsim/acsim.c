@@ -3447,7 +3447,7 @@ void CreateMakefile(){
 
   fprintf( output, "$(EXE): $(OBJS) %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
-  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n");
+  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 -Xlinker --allow-multiple-definition  | c++filt\n\n");
 
   COMMENT_MAKE("Copy from template if main.cpp not exist");
   fprintf(output, "main.cpp:\n");

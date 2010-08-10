@@ -28,12 +28,18 @@
 #include <string>
 #include <list>
 
+#ifndef COMPSIM
 #include <systemc.h>
+#endif
 
 #include "ac_log.H"
 
 using std::string;
 using std::list;
+
+#ifdef AC_COMPSIM
+extern double& time_step;
+#endif /*COMPSIM*/
 
 ////////////////////////////////////////////////////
 //!ArchC class specialized for modeling registers.//
@@ -52,7 +58,11 @@ protected:
   
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
+
+#ifndef AC_COMPSIM
   double& time_step;
+#endif /*COMPSIM*/
+
 #endif // AC_DELAY
 
 public:
@@ -79,9 +89,16 @@ public:
     Data(value), Name(name) {}
 
 #ifdef AC_DELAY
-  /// Constructor with delay parameter
+/// Constructor with delay parameter
+
+// MAX
+#ifndef AC_COMPSIM
+
   ac_reg(string name, T value, double& ts):
     Data(value), Name(name), time_step(ts) {}
+
+#endif /*AC_COMPSIM*/
+
 #endif // AC_DELAY
 
 #ifdef AC_DELAY
