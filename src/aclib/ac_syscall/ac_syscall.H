@@ -18,15 +18,10 @@
  *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
- *
- * @Modified  08-2010
- * Static Compiled Simulator compatibility  
  */
 
 #ifndef AC_SYSCALL_H
 #define AC_SYSCALL_H
-
-#ifndef AC_COMPSIM
 
 #ifdef USE_GDB
 #include "ac_gdb.H"
@@ -127,20 +122,10 @@ int * ac_syscall<ac_word, ac_Hword>::get_syscall_table() {
   return NULL;
 }
 
-#endif // ifndef AC_COMPSIM
-
-#ifndef AC_COMPSIM
-#define AC_SYSCALL template <class ac_word, class ac_Hword> void ac_syscall<ac_word, ac_Hword>
-#endif
-
-/*                                                     *
- *  The macro AC_SYSCALL is necessary to maintain      *
- *  compatibility with Static Compiled Simulator       *  
- *                                                     */              
-
 //! Processor independent functions (syscalls)
 
-AC_SYSCALL::open()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::open()
 {
 #ifdef AC_MEM_HIERARCHY
   if (!flush_cache()) return;
@@ -163,7 +148,8 @@ AC_SYSCALL::open()
   return_from_syscall();
 }
 
-AC_SYSCALL::creat()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::creat()
 {
   DEBUG_SYSCALL("creat");
   unsigned char pathname[100];
@@ -182,7 +168,8 @@ AC_SYSCALL::creat()
   return_from_syscall();
 }
 
-AC_SYSCALL::close()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::close()
 {
   DEBUG_SYSCALL("close");
   int fd = get_int(0);
@@ -204,7 +191,8 @@ AC_SYSCALL::close()
   return_from_syscall();
 }
 
-AC_SYSCALL::read()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::read()
 {
 #ifdef AC_MEM_HIERARCHY
   if (!flush_cache()) return;
@@ -228,7 +216,8 @@ AC_SYSCALL::read()
   free(buf);
 }
 
-AC_SYSCALL::write()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::write()
 {
 #ifdef AC_MEM_HIERARCHY
   if (!flush_cache()) return;
@@ -252,7 +241,8 @@ AC_SYSCALL::write()
   free(buf);
 }
 
-AC_SYSCALL::isatty()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::isatty()
 {
   DEBUG_SYSCALL("isatty");
   int desc = get_int(0);
@@ -261,9 +251,9 @@ AC_SYSCALL::isatty()
   return_from_syscall();
 }
 
-AC_SYSCALL::sbrk()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::sbrk()
 {
-#ifndef AC_COMPSIM
   DEBUG_SYSCALL("sbrk");
   unsigned int base = ref.ac_heap_ptr;
   unsigned int increment = get_int(0);
@@ -288,37 +278,11 @@ AC_SYSCALL::sbrk()
     set_int(0, base);
   }
 
-#else
-
-  DEBUG_SYSCALL("sbrk");
-  unsigned int base = ac_heap_ptr;
-  unsigned int increment = get_int(0);
-  ac_heap_ptr += increment;
-
-  // Test if there is enough space in the target memory 
-  // OBS: 1kb is reserved at the end of memory to command line parameters
-  if (ac_heap_ptr > AC_RAMSIZE-1024) {
-    // Show error only once
-    static bool show_error = true;
-    if (show_error) {
-      AC_WARN("Target application failed to allocate " << increment <<
-               " bytes: heap(=" << ac_heap_ptr << ") > ramsize(=" <<
-               AC_RAMSIZE << ")");
-      AC_WARN("If target application does not treat allocation error, it may crash.");
-    }
-    show_error = false;
-    ac_heap_ptr = base;
-    set_int(0, -1);
-  }
-  else {
-    set_int(0, base);
-  }
-#endif
-
   return_from_syscall();
 }
 
-AC_SYSCALL::lseek()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::lseek()
 {
   DEBUG_SYSCALL("lseek");
   int fd = get_int(0);
@@ -329,7 +293,8 @@ AC_SYSCALL::lseek()
   return_from_syscall();
 }
 
-AC_SYSCALL::fstat()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::fstat()
 {
   DEBUG_SYSCALL("fstat");
   static bool fstat_warn = true;
@@ -353,30 +318,19 @@ AC_SYSCALL::fstat()
   return_from_syscall();
 }
 
-AC_SYSCALL::_exit()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::_exit()
 {
-#ifndef AC_COMPSIM
-
   DEBUG_SYSCALL("_exit");
   int ac_exit_status = get_int(0);
 #ifdef USE_GDB
   if (ref.get_gdbstub()) (ref.get_gdbstub())->exit(ac_exit_status);
 #endif /* USE_GDB */
   ref.stop(ac_exit_status);
-
-#else
-
-  DEBUG_SYSCALL("_exit");
-  int ac_exit_status = get_int(0);
-#ifdef USE_GDB
-  if (get_gdbstub()) (get_gdbstub())->exit(ac_exit_status);
-#endif /* USE_GDB */
-  stop(ac_exit_status);
-
-#endif
 }
 
-AC_SYSCALL::times()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::times()
 {
   DEBUG_SYSCALL("times");
   unsigned char zeros[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -385,7 +339,8 @@ AC_SYSCALL::times()
   return_from_syscall();
 }
 
-AC_SYSCALL::time()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::time()
 {
   DEBUG_SYSCALL("time");
   int t = get_int(0);
@@ -395,7 +350,8 @@ AC_SYSCALL::time()
   return_from_syscall();
 }
 
-AC_SYSCALL::random()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::random()
 {
   DEBUG_SYSCALL("random");
   int ret = ::random();
@@ -406,7 +362,8 @@ AC_SYSCALL::random()
 
 #include <ac_syscall_codes.h>
 
-AC_SYSCALL::ac_syscall_wrapper()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_syscall_wrapper()
 {
   int ret = -1;
   unsigned char pathname[100];
@@ -494,13 +451,15 @@ AC_SYSCALL::ac_syscall_wrapper()
   return_from_syscall();
 }
 
-AC_SYSCALL::ac_syscall_geterrno()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_syscall_geterrno()
 {
   set_int(0, errno);
   return_from_syscall();
 }
 
-AC_SYSCALL::ac_syscall_stat_mode()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_syscall_stat_mode()
 {
 #if 0 /// Changed to iostream-type. --Marilia
     AC_RUN_ERROR("System Call ac_syscall_stat_mode not implemented yet.\n");
@@ -510,21 +469,23 @@ AC_SYSCALL::ac_syscall_stat_mode()
   exit(EXIT_FAILURE);
 }
 
-AC_SYSCALL::ac_forbidden()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_forbidden()
 {
   AC_ERROR("segmentation fault - PC at invalid address.");
   exit(EXIT_FAILURE);
 }
 
-AC_SYSCALL::ac_rtld_dummy()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_rtld_dummy()
 {
   set_int(0, 0);
   return_from_syscall();
 }
 
-AC_SYSCALL::ac_rtld_init()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_rtld_init()
 {  
-#ifndef AC_COMPSIM
   unsigned ac_init_vecsz = ref.ac_dyn_loader.get_init_arraysz();
   unsigned *ac_init_vec = ref.ac_dyn_loader.get_init_array();
   if (ac_init_vecsz > 0) {
@@ -546,15 +507,11 @@ AC_SYSCALL::ac_rtld_init()
     AC_RUN_ERROR << "runtime dynamic loader: no init function.";
     exit(EXIT_FAILURE);
   }
-#else
-    AC_RUN_ERROR << "runtime dynamic loader: no init function.";
-    exit(EXIT_FAILURE);
-#endif
 }
 
-AC_SYSCALL::ac_rtld_fini()
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::ac_rtld_fini()
 {
-#ifndef AC_COMPSIM
   static unsigned returnaddr = 0;
   unsigned ac_fini_vecsz = ref.ac_dyn_loader.get_fini_arraysz();
   unsigned *ac_fini_vec = ref.ac_dyn_loader.get_fini_array();
@@ -574,13 +531,9 @@ AC_SYSCALL::ac_rtld_fini()
   } else {
     set_pc(returnaddr);
   }
-#else
-    AC_RUN_ERROR << "Error Syscalls: AC_RTLD Not implemented.";
-    exit(EXIT_FAILURE);
-#endif
+ 
 }
 
-#ifndef AC_COMPSIM
 
 #include <sys/utsname.h>
 #include <sys/uio.h>
@@ -999,7 +952,5 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 #undef SET_BUFFER_CORRECT_ENDIAN
 #undef CORRECT_ENDIAN
 #undef CORRECT_STAT_STRUCT
-
-#endif // ifndef AC_COMPSIM
 
 #endif
