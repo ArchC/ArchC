@@ -1,26 +1,38 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/**
- * @file      acsim.h
- * @author    Sandro Rigo
- *
- *            The ArchC Team
- *            http://www.archc.org/
- *
- *            Computer Systems Laboratory (LSC)
- *            IC-UNICAMP
- *            http://www.lsc.ic.unicamp.br/
- *
- * @version   1.0
- * @date      Wed, 17 Jul 2002 08:07:46 -0200
- * 
- * @brief     The ArchC simulator generator.
- *            This file contains the structures and macro definitions
- *            needed by the ArchC Simulator.
- * @defgroup acsim ArchC simulator generator
- * 
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
- *
+/*  ArchC simulator generator generates simulators for the described arquitecture
+    Copyright (C) 2002-2004  The ArchC Team
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+*/
+
+/********************************************************/
+/* acsim.h: The ArchC simulator generator.              */
+/* Author: Sandro Rigo                                  */
+/* Date: 16-07-2002                                     */
+/*                                                      */
+/* The ArchC Team                                       */
+/* Computer Systems Laboratory (LSC)                    */
+/* IC-UNICAMP                                           */
+/* http://www.lsc.ic.unicamp.br                         */
+////////////////////////////////////////////////////////////////
+
+/*!\file acsim.h                                                
+  \brief ArchC Simulator Generator header file                      
+  This file contains the structures and macro definitions    
+  needed by the ArchC Simulator.                              */
+////////////////////////////////////////////////////////////////
+
+/** @defgroup acpp ArchC simulator generator
+ * @{
  */
 
 #ifndef _ACSIM_H_
@@ -84,7 +96,7 @@ enum _ac_cmd_options {
   OPABI,
 /*   OPDasm, */
   OPDebug,
-  OPDelay,
+/*  OPDelay, */
   OPDDecoder,
   OPHelp,
   /*OPQuiet,*/
@@ -100,6 +112,7 @@ enum _ac_cmd_options {
   OPOptimization,
   OPInline,
   OPRegionBlockSize,
+  OPMulticore, 
 /*   OPP4, */
 /*   OPOmitFP, */
   ACNumberOfOptions
@@ -228,3 +241,35 @@ void ReadConfFile(void);                          //!< Read archc.conf contents.
 
 
 #endif /*_ACSIM_H_*/
+
+ 
+////////////////////////////////////////////////////////////////
+//   This is used by DoxyGen !!! 
+///////////////////////////////////////////////////////////////
+/*!\mainpage The ArchC Simulator Generator Developers Guide
+
+\section Introduction Introduction
+
+<P>ArchC   is  an   architectural  description   language  based   on  <a
+href="http://www.systemc.org">SystemC</a>. The  main goal in designing
+ArchC is  to provide architecture  designers with a language  that can
+speed up the  task of specifying and verifying  a new architecture, and
+allow  automatic  synthesis of  processor  simulators, assemblers  and
+compilers starting from ArchC  descriptions.  ArchC is being developed
+at <A  HREF="http://www.lsc.ic.unicamp.br">Computer Systems Laboratory
+(LSC)</A>,       which       is       part       of       the       <A
+HREF="http://www.ic.unicamp.br">Institute  of   Computing</A>,  at  <A
+HREF="http://www.unicamp.br">University of Campinas (UNICAMP)</A>.</P>
+
+<p>This  guide  was  prepared  as  a  quick  reference  for  the  ArchC
+simulator generator (acsim) implementation. Its  main goal is to provide a
+starting point for new ArchC developers and maintainers. It is not appropriated
+for ArchC users, who should refer to ArchC Language Reference Manual.</P>
+
+\section Contact  Contact
+
+If you have any comments or doubts, please refer to the
+ArchC homepage: http://www.archc.org
+
+*/
+  ////////////////////////////////////////////////////////////////

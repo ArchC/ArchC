@@ -1,21 +1,3 @@
-/**
- * @file      accsim_extras.h
- * @author    Sandro Rigo
- *
- *            The ArchC Team
- *            http://www.archc.org/
- *
- *            Computer Systems Laboratory (LSC)
- *            IC-UNICAMP
- *            http://www.lsc.ic.unicamp.br/
- *
- * @version   1.0
- * @date      Wed, 17 Jul 2002 08:07:46 -0200
- *
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
- *
- */
-
 ////////////////////////////////
 // CONFIGURATION
 ////////////////////////////////
@@ -46,19 +28,17 @@
 int PROCESSOR_OPTIMIZATIONS=0;
 
 #ifndef REGION_SIZE
-#define REGION_SIZE 11
+#define REGION_SIZE 9
 #endif
 
 /* #ifndef REGION_BLOCK_SIZE */
 /* #define REGION_BLOCK_SIZE 30 */
 /* #endif */
-int REGION_BLOCK_SIZE=30;
+int REGION_BLOCK_SIZE=300;
 
 #ifndef EXIT_ADDRESS
 #define EXIT_ADDRESS 0x64
 #endif
-
-
 
 ////////////////////////////////
 // COUNT_SYSCALLS
@@ -117,7 +97,7 @@ void COUNT_SYSCALLS_EmitPrintStat(FILE *output)
 
 
 
-void PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(FILE *output, ac_dec_instr *pinstr)
+void PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(FILE *output, ac_dec_instr *pinstr, int j)
 {
   static int is_branch = 0;
   int index;
@@ -126,8 +106,15 @@ void PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(FILE *output, ac_dec_instr *pinstr)
     is_branch = pinstr->cflow->delay_slot + 1;
   if (is_branch > 0) {
     is_branch--;
-    fprintf( output, "      break;\n");
-  } 
+
+  if (ACMulticoreFlag == 1)
+	  {
+	    fprintf( output, "      ac_instr_counter += (0x%x - old_pc)/4 + 1;\n", j);
+	    fprintf( output, "      old_pc = ac_pc;\n");
+	  }
+	  fprintf( output, "      break;\n");
+   }
+
 }
 
 
@@ -173,12 +160,11 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr(FILE *output, int j)
 void PROCESSOR_OPTIMIZATIONS_EmitInstr_1(FILE *output, int j)
 {
   ac_dec_instr *pinstr = GetInstrByID(decoder->instructions, decode_table[j]->dec_vector[0]);
-
   fprintf( output, "    case 0x%x:\n", j);
   accs_EmitInstrExtraTop(output, j, pinstr, 6);
   accs_EmitInstrBehavior(output, j, pinstr, 6);
   accs_EmitInstrExtraBottom(output, j, pinstr, 6);
-  PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(output, pinstr);
+  PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(output, pinstr, j);
   fprintf( output, "\n");
 }
 
@@ -191,12 +177,11 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_2(FILE *output, int j)
   int jump_instr_size = pinstr->size;
 
   if (!cflow) {
-
     fprintf( output, "    case 0x%x:\n", j);
     accs_EmitInstrExtraTop(output, j, pinstr, 6);
     accs_EmitInstrBehavior(output, j, pinstr, 6);
     accs_EmitInstrExtraBottom(output, j, pinstr, 6);
-    PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(output, pinstr);
+    PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(output, pinstr, j);
     fprintf( output, "\n");
   }
   else {
@@ -213,6 +198,10 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_2(FILE *output, int j)
     fprintf( output, "      else {\n");
     fprintf( output, "        tmp_pc = %#x;\n", j + pinstr->size + (cflow->delay_slot * pinstr->size));
     fprintf( output, "      }\n");
+ 
+    if (ACMulticoreFlag == 1)
+	    fprintf( output, "      ac_instr_counter += (0x%x-old_pc)/4 + 1;\n",j);
+    	
     accs_EmitInstrExtraBottom(output, j, pinstr, 6);
   
     //Check for delay slot and execute it too
@@ -228,6 +217,10 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_2(FILE *output, int j)
         fprintf( output, "      if (%s) {\n", accs_SubstFields(cflow->delay_slot_cond, j));
         accs_EmitInstrExtraTop(output, j+jump_instr_size, pinstr, 8);
         accs_EmitInstrBehavior(output, j+jump_instr_size, pinstr, 8);
+
+	if (ACMulticoreFlag == 1)
+		fprintf( output, "        ac_instr_counter++;\n");
+
         accs_EmitInstrExtraBottom(output, j+jump_instr_size, pinstr, 8);
         fprintf( output, "      }\n");
       }
@@ -238,6 +231,8 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_2(FILE *output, int j)
     }
 
     fprintf( output, "      ac_pc = tmp_pc;\n");
+    if (ACMulticoreFlag == 1)
+	    fprintf( output, "      old_pc = ac_pc;\n");
     fprintf( output, "      break;\n");
 
     fprintf( output, "\n");
@@ -269,7 +264,7 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_3(FILE *output, int j)
   accs_EmitInstrExtraTop(output, j, pinstr, 6);
   accs_EmitInstrBehavior(output, j, pinstr, 6);
   accs_EmitInstrExtraBottom(output, j, pinstr, 6);
-  PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(output, pinstr);
+  PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(output, pinstr, j);
   fprintf( output, "\n");
 }
 

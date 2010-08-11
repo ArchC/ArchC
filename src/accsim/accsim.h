@@ -1,26 +1,25 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/**
- * @file      accsim.h
- * @author    Sandro Rigo
- *
- *            The ArchC Team
- *            http://www.archc.org/
- *
- *            Computer Systems Laboratory (LSC)
- *            IC-UNICAMP
- *            http://www.lsc.ic.unicamp.br/
- *
- * @version   1.0
- * @date      Wed, 17 Jul 2002 08:07:46 -0200
- * 
- * @brief     ArchC Pre-processor for Compiled Simulation header file
- *            This file contains the structures and macro definitions
- *            needed by the ArchC Pre-processor for Compiled Simulation
- * 
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
- *
- */
+/*  ArchC Pre-processor generates tools for the described arquitecture
+    Copyright (C) 2004  The ArchC Team
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+*/
+
+//////////////////////////////////////////////////////////////////
+/*!\file accs.h                                                
+  \brief ArchC Pre-processor for Compiled Simulation header file
+  This file contains the structures and macro definitions    
+  needed by the ArchC Pre-processor for Compiled Simulation   */
+//////////////////////////////////////////////////////////////////
 
 #ifndef _ACCS_H_
 #define _ACCS_H_
@@ -87,7 +86,6 @@ void accs_CreateARCHHeader();
 void accs_CreateARCHImpl();
 
 
-
 // fast_* functions create files using the old but faster storage class
 
 void fast_CreateMain();
@@ -110,6 +108,9 @@ void fast_CreateSyscallHeader();
 void fast_CreateSyscallImpl();
 
 void fast_CreateMakefile();
+
+void fast_CreateFileResourcesHeader();
+void fast_CreateFileResourcesImpl();
 
 
 

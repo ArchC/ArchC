@@ -75,12 +75,57 @@ void ac_init_app( int ac, char* av[]);
 #define AC_WARN( msg )     std::cerr<< "ArchC Warning: " << msg  <<'\n'
 #define AC_SAY( msg )      std::cerr<< "ArchC: " << msg  <<'\n'
 
+#ifndef AC_COMPSIM
 #define AC_RUN_ERROR( str, args...) \
   fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, get_ac_pc(), ac_instr_counter , ##args)
+#else //AC_COMPSIM
+#define AC_RUN_ERROR( str, args...) \
+  fprintf(stderr, "ArchC Runtime error (ac_pc=%#x; ac_instr_counter=%llu): " str, (int) ac_pc, ac_instr_counter , ##args)
+#endif
+
 #define AC_RUN_MSG( str )  fprintf(stderr, str);
 
 #define ac_trace( f )      extern ofstream trace_file; extern bool ac_do_trace; ac_do_trace = 1; trace_file.open( f )
 #define ac_close_trace     trace_file.close
+
+
+#ifdef AC_COMPSIM
+
+//FIXME: 
+//Signal handlers for interrupt and segmentation fault (set in ac_start() )
+#include <signal.h>
+typedef void (*sighandler_t)(int);
+void sigint_handler(int signal)
+{
+  fprintf(stderr, "ArchC: INTERUPTED BY THE SIGNAL %d\n", signal);
+//  PrintStat();
+  exit(EXIT_FAILURE);
+}
+void sigsegv_handler(int signal)
+{
+  fprintf(stderr, "ArchC Error: Segmentation fault.\n");
+//  PrintStat();
+  exit(EXIT_FAILURE);
+}
+void sigusr1_handler(int signal)
+{
+  fprintf(stderr, "ArchC: Received signal %d. Printing statistics\n", signal);
+//  PrintStat();
+  fprintf(stderr, "ArchC: -------------------- Continuing Simulation ------------------\n");
+}
+
+#ifdef USE_GDB
+void sigusr2_handler(int signal)
+{
+  fprintf(stderr, "ArchC: Received signal %d. Starting GDB support\n", signal);
+  gdbstub->enable();
+  gdbstub->connect();
+}
+#endif /* USE_GDB */
+
+
+#endif //AC_COMPSIM
+
 
 // byte_swap functions, with special assembly-language optimizations for the
 // i486 or greater processors.
@@ -119,7 +164,9 @@ inline T byte_swap(T value) {
 // endianness conversions in the future.
 unsigned int convert_endian(unsigned int size, unsigned int num, bool match_endian);
 
+#ifndef AC_COMPSIM
 #include "ac_arch_ref.H"
+#endif
 
 //Loading binary application
 // int ac_load_elf(char* filename, unsigned char* data_mem, unsigned int data_mem_size)

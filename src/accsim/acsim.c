@@ -1,28 +1,37 @@
 /* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-/**
- * @file      acsim.c
- * @author    Sandro Rigo
- *
- *            The ArchC Team
- *            http://www.archc.org/
- *
- *            Computer Systems Laboratory (LSC)
- *            IC-UNICAMP
- *            http://www.lsc.ic.unicamp.br/
- *
- * @version   1.0
- * @date      Wed, 17 Jul 2002 08:07:46 -0200
- * 
- * @brief     The ArchC pre-processor.
- *            This file contains functions to control the ArchC 
- *            to emit the source files that compose the behavioral 
- *            simulator.
- * 
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
- *
- */
+/*  ArchC Pre-processor generates tools for the described arquitecture
+    Copyright (C) 2002-2004  The ArchC Team
 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+*/
+
+/********************************************************/
+/* Acsim.c: The ArchC pre-processor.                    */
+/* Author: Sandro Rigo                                  */
+/* Date: 16-07-2002                                     */
+/*                                                      */
+/* The ArchC Team                                       */
+/* Computer Systems Laboratory (LSC)                    */
+/* IC-UNICAMP                                           */
+/* http://www.lsc.ic.unicamp.br                         */
+/********************************************************/
+//////////////////////////////////////////////////////////
+/*!\file acsim.c
+  \brief The ArchC pre-processor.
+
+  This file contains functions to control the ArchC 
+  to emit the source files that compose the behavioral 
+  simulator.
+*/
 //////////////////////////////////////////////////////////
 
 #include "acsim.h"
@@ -40,6 +49,8 @@
 //Defining Traces and Dasm strings
 #define PRINT_TRACE "%strace_file << hex << decode_pc << dec <<\"\\n\";\n"
 #define PRINT_DASM "%sdasmfile << hex << decode_pc << dec << \": \" << *instr << *format <<\"\t\t(\" << instr->get_name() << \",\" << format->get_name() << \")\" <<endl;\n"
+
+//#define ARCHC_CONFIG_PATH "/l/archc/archc-2.0/etc/archc.conf"
 
 //Command-line options flags
 int  ACP4Flag=0;                                //!<Indicates if the gcc option -march=pentium4 is on
@@ -60,8 +71,9 @@ int  ACVerifyFlag=0;                            //!<Indicates whether verificati
 int  ACVerifyTimedFlag=0;                       //!<Indicates whether verification option is turned on for a timed behavioral model
 int  ACEncoderFlag=0;                           //!<Indicates whether encoder tools will be included in the simulator
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
+int  ACMulticoreFlag=0;				//!<Indicates whether the simulator will multicore suport or not
 
-char *ACVersion = "1.5.1";                      //!<Stores ArchC version number.
+char *ACVersion = "2.1.0";                      //!<Stores ArchC version number.
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
 char *arch_filename;                            //!<Stores ArchC arquitecture file
@@ -96,7 +108,7 @@ struct option_map option_map[] = {
   {"--abi-included"  , "-abi"        ,"Indicate that an ABI for system call emulation was provided." ,"o"},
 /*   {"--disassembler"  , "-dasm"       ,"Dump executing instructions in assembly format (Not completely implemented)." ,"o"}, */
   {"--debug"         , "-g"          ,"Enable simulation debug features: trace file." ,"o"},
-  {"--delay"         , "-dy"          ,"Enable delayed assignments to storage elements." ,"o"},
+/*  {"--delay"         , "-dy"          ,"Enable delayed assignments to storage elements." ,"o"},*/
   {"--dumpdecoder"   , "-dd"         ,"Dump the decoder data structure." ,"o"},
   {"--help"          , "-h"          ,"Display this help message."       , 0},
 /*   {"--quiet"         , "-q"          ,".", "o"}, */
@@ -112,6 +124,7 @@ struct option_map option_map[] = {
   {"--optimization"  , "-opt"        ,"Use best compiled simulator optimization or set level manually.", "r"},
   {"--inline"        , "-i"          ,"Inline ISA and Syscalls (slow compilation, fast execution)", "r"},
   {"--block-size"    , "-bs"         ,"Set the maximum number of regions in a file.", "r"},
+  {"--multicore"     , "-mc"	     ,"Beta version for static Compiled Simulation multicore.", "r"},
 /*   {"--pentium4"      , "-p4"         ,"Use option for gcc: -march=pentium4.", "r"}, */
 /*   {"--omit-frame-p"  , "-omitfp"     ,"Use option for gcc: -fomit-frame-pointer.", "r"}, */
   0
@@ -187,10 +200,9 @@ int main( argc, argv )
   extern ac_dec_instr *instr_list;
   // Structures to be passed to the simulator generator 
   extern ac_stg_list *stage_list;
-  extern ac_pipe_list *pipe_list;
+  ac_pipe_list *pipe_list, *ppipe;
   extern int HaveFormattedRegs;
   extern ac_decoder_full *decoder;
-  ac_pipe_list *ppipe;
 
   //Uncomment the line bellow if you want to debug the parser.
   //extern int yydebug; 
@@ -204,7 +216,7 @@ int main( argc, argv )
   //yydebug =1; 
 
   //Initializes the pre-processor
-  acppInit(0);
+  acppInit();
 
   ++argv, --argc;  /* skip over program name */
 
@@ -234,7 +246,6 @@ int main( argc, argv )
     printf("   Try accsim --help for more information.\n");
     return EXIT_FAILURE;
   }
-
 
   ++argv, --argc;  /* skip over arch file name */
 
@@ -360,10 +371,10 @@ int main( argc, argv )
               ACDebugFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
-            case OPDelay:
+/*            case OPDelay:
               ACDelayFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
-              break;
+              break; */
             case OPDDecoder:
               ACDDecoderFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
@@ -404,6 +415,11 @@ int main( argc, argv )
 /*             case OPGDBIntegration: */
 /*               ACGDBIntegrationFlag=1; */
 /*               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]); */
+
+	    case OPMulticore:
+		ACMulticoreFlag = 1;
+		ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+		break;
 
             default:
               break;
@@ -541,6 +557,7 @@ int main( argc, argv )
     //Creating ARCH Impl File
     CreateARCHImpl();
 
+ 
     //Now, declare stages if a pipeline was declared
     //Otherwise, declare one sc_module to simulate the processor datapath
     //OBS: For pipelined architectures there must be a stage_list or a pipe_list,
@@ -568,8 +585,8 @@ int main( argc, argv )
     else{    //No pipe was declared.
 
       //Creating Processor Files
-      CreateProcessorHeader();
-      CreateProcessorImpl();
+      //CreateProcessorHeader();
+      //CreateProcessorImpl();
     }   
       
       
@@ -595,7 +612,7 @@ int main( argc, argv )
       CreateArchSyscallHeader();
 
     /* Create the template for the .cpp instruction and format behavior file */
-    CreateImplTmpl();
+    // CreateImplTmpl();
 
     /* Create the template for the main.cpp  file */
     CreateMainTmpl();
@@ -603,9 +620,9 @@ int main( argc, argv )
     /* Create the Makefile */
     CreateMakefile();
                 
-    /* Create dummy functions to use if real ones are undefined */
-    CreateDummy(1, "#include \"ac_parms.H\"\nnamespace ac_begin {void behavior(ac_stage_list a=ac_stage_list(0), unsigned b=0){};}");
-    CreateDummy(2, "#include \"ac_parms.H\"\nnamespace ac_end {void behavior(ac_stage_list a=ac_stage_list(0), unsigned b=0){};}");
+    /* Create dummy functions to use if real ones are undefined */  
+//    CreateDummy(1, "#include \"%s_parms.H\"\nnamespace ac_begin {void behavior(ac_stage_list a=ac_stage_list(0), unsigned b=0){};}", project_name);
+ //   CreateDummy(2, "#include \"%s_parms.H\"\nnamespace ac_end {void behavior(ac_stage_list a=ac_stage_list(0), unsigned b=0){};}", project_name);
                 
     //Issuing final messages to the user.
     AC_MSG("%s model files generated.\n", project_name);
@@ -623,6 +640,7 @@ int main( argc, argv )
 // All of them use structures built by the parser.                                //
 ////////////////////////////////////////////////////////////////////////////////////
 
+
 /*!Create ArchC Resources Header File */
 void CreateResourceHeader() {
 
@@ -630,6 +648,7 @@ void CreateResourceHeader() {
   extern ac_sto_list *storage_list;
   extern ac_stg_list *stage_list;
   extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, reg_width;
+  extern char *project_name;
 
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
@@ -646,12 +665,13 @@ void CreateResourceHeader() {
     exit(1);
   }
 
+ 
   print_comment( output, "ArchC Resources header file.");
   fprintf( output, "#ifndef  _AC_RESOURCES_H\n");
   fprintf( output, "#define  _AC_RESOURCES_H\n\n");
   
   fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
+  //fprintf( output, "#include  \"ac_regbank_old.H\"\n");
   fprintf( output, "#include  \"ac_reg.H\"\n");
 
   if( HaveMemHier ){
@@ -1028,7 +1048,7 @@ void CreateTypeHeader() {
   fprintf( output, "#include  <systemc.h>\n");
   fprintf( output, "#include  \"ac_storage.H\"\n");
   fprintf( output, "#include  \"ac_resources.H\"\n");
-  fprintf( output, "#include  \"archc.H\"\n\n");
+  fprintf( output, "#include  \"archc_cs.H\"\n\n");
 
   //Declaring abstract stage class.
   COMMENT(INDENT[0],"ArchC abstract class for pipeline stages.\n");
@@ -1106,6 +1126,223 @@ void CreateTypeHeader() {
 
 }
 
+  //!Creates Decoder Header File
+  void CreateParmHeader() {
+
+    extern ac_stg_list *stage_list;
+    extern ac_pipe_list *pipe_list;
+    extern ac_dec_format *format_ins_list;
+    extern int instr_num;
+    extern int declist_num;
+    extern int format_num, largest_format_size;
+    extern int wordsize, fetchsize, HaveMemHier, HaveCycleRange;
+    extern ac_sto_list* load_device;
+
+    extern ac_decoder_full *decoder;
+    extern char* project_name;
+    extern char* upper_project_name;
+    ac_stg_list *pstage;
+    ac_pipe_list *ppipe;
+
+    char filename[256];
+
+
+    //! File containing decoding structures
+    FILE *output;
+
+    sprintf(filename, "%s_parms.H", project_name);
+    if ( !(output = fopen(filename, "w"))){
+      perror("ArchC could not open output file");
+      exit(1);
+    }
+
+    print_comment( output, "ArchC Parameters header file.");
+    fprintf( output, "#ifndef  _%s_PARMS_H\n", upper_project_name);
+    fprintf( output, "#define  _%s_PARMS_H\n\n", upper_project_name);
+
+    /* options defines */
+    if( ACVerboseFlag || ACVerifyFlag )
+      fprintf( output, "#define  AC_UPDATE_LOG \t //!< Update log generation turned on.\n");
+
+    if( ACVerboseFlag )
+      fprintf( output, "#define  AC_VERBOSE \t //!< Indicates Verbose mode. Where update logs are dumped on screen.\n");
+
+    if( ACVerifyFlag )
+      fprintf( output, "#define  AC_VERIFY \t //!< Indicates that co-verification is turned on.\n");
+	
+    if( ACDebugFlag )
+      fprintf( output, "#define  AC_DEBUG \t //!< Indicates that debug option is turned on.\n\n");
+
+    if( ACDelayFlag )
+      fprintf( output, "#define  AC_DELAY \t //!< Indicates that delay option is turned on.\n\n");
+
+    if( ACStatsFlag )
+      fprintf( output, "#define  AC_STATS \t //!< Indicates that statistics collection is turned on.\n");
+
+    if( HaveMemHier )
+      fprintf( output, "#define  AC_MEM_HIERARCHY \t //!< Indicates that a memory hierarchy was declared.\n\n");
+
+    if( HaveCycleRange )
+      fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
+
+    /* parms namespace definition */
+    fprintf(output, "namespace %s_parms {\n\n", project_name);
+
+    fprintf( output, "\nstatic const unsigned int AC_DEC_FIELD_NUMBER = %d; \t //!< Number of Fields used by decoder.\n", decoder->nFields);
+    fprintf( output, "static const unsigned int AC_DEC_INSTR_NUMBER = %d; \t //!< Number of Instructions declared.\n", instr_num);
+    fprintf( output, "static const unsigned int AC_DEC_FORMAT_NUMBER = %d; \t //!< Number of Formats declared.\n", format_num);
+    fprintf( output, "static const unsigned int AC_DEC_LIST_NUMBER = %d; \t //!< Number of decodification lists used by decoder.\n", declist_num);
+    fprintf( output, "static const unsigned int AC_MAX_BUFFER = %d; \t //!< This is the size needed by decoder buffer. It is equal to the biggest instruction size.\n", largest_format_size/8);
+    fprintf( output, "static const unsigned int AC_WORDSIZE = %d; \t //!< Architecture wordsize in bits.\n", wordsize);
+    fprintf( output, "static const unsigned int AC_FETCHSIZE = %d; \t //!< Architecture fetchsize in bits.\n", fetchsize);
+    fprintf( output, "static const unsigned int AC_MATCH_ENDIAN = %d; \t //!< If the simulated arch match the endian with host.\n", ac_match_endian);
+    fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n", ac_tgt_endian);
+    fprintf( output, "static const unsigned int AC_RAMSIZE = %uU; \t //!< Architecture RAM size in bytes (storage %s).\n", load_device->size, load_device->name);
+    fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
+
+    if (ACGDBIntegrationFlag)
+    fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
+
+    fprintf( output, "\n\n");
+    COMMENT(INDENT[0],"Word type definitions.");
+
+    //Emiting ArchC word types.
+    switch( wordsize ){
+    case 8:
+      fprintf( output, "typedef  unsigned char ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned char ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  char ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  unsigned char ac_Hword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned char ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  char ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned short ac_Dword; \t //!< Signed double word.\n");
+      fprintf( output, "typedef  unsigned short ac_UDword; \t //!< Unsigned double word.\n");
+      fprintf( output, "typedef  short ac_SDword; \t //!< Signed double word.\n");
+      break;
+    case 16:
+      fprintf( output, "typedef  unsigned short int ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned short int ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  short int ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  unsigned char ac_Hword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned char ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  char ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned int ac_Dword; \t //!< Signed double word.\n");
+      fprintf( output, "typedef  unsigned int ac_UDword; \t //!< Unsigned double word.\n");
+      fprintf( output, "typedef  int ac_SDword; \t //!< Signed double word.\n");
+      break;
+    case 32:
+      fprintf( output, "typedef  unsigned int ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned int ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  int ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  short int ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned short int  ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  unsigned short int  ac_Hword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  unsigned long long ac_Dword; \t //!< Signed double word.\n");
+      fprintf( output, "typedef  unsigned long long ac_UDword; \t //!< Unsigned double word.\n");
+      fprintf( output, "typedef  long long ac_SDword; \t //!< Signed double word.\n");
+      break;
+    case 64:
+      fprintf( output, "typedef  unsigned long long ac_word; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  unsigned long long ac_Uword; \t //!< Unsigned word.\n");
+      fprintf( output, "typedef  long long ac_Sword; \t //!< Signed word.\n");
+      fprintf( output, "typedef  int ac_SHword; \t //!< Signed half word.\n");
+      fprintf( output, "typedef  unsigned int  ac_UHword; \t //!< Unsigned half word.\n");
+      fprintf( output, "typedef  unsigned int  ac_UHword; \t //!< Unsigned half word.\n");
+      break;
+    default:
+      AC_ERROR("Wordsize not supported: %d\n", wordsize);
+      break;
+    }
+	
+    fprintf( output, "typedef  char ac_byte; \t //!< Signed byte word.\n");
+    fprintf( output, "typedef  unsigned char ac_Ubyte; \t //!< Unsigned byte word.\n");
+
+    fprintf( output, "\n\n");
+    COMMENT(INDENT[0],"Fetch type definition.");
+
+    switch( fetchsize ){
+    case 8:
+      fprintf( output, "typedef  unsigned char ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    case 16:
+      fprintf( output, "typedef  unsigned short int ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    case 32:
+      fprintf( output, "typedef  unsigned int ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    case 64:
+      fprintf( output, "typedef  unsigned long long ac_fetch; \t //!< Unsigned word.\n");
+      break;
+    default:
+      AC_ERROR("Fetchsize not supported: %d\n", fetchsize);
+      break;
+    }
+
+
+    fprintf( output, "\n\n");
+
+    //This enum type is used for case identification inside the ac_behavior methods
+    fprintf( output, "enum ac_stage_list {");
+
+    if( stage_list ){   //Enum type for pipes declared through ac_stage keyword
+      fprintf( output, "%s=1,", stage_list->name);
+      pstage = stage_list->next;
+      for( pstage = stage_list->next; pstage && pstage->next != NULL; pstage=pstage->next){
+	fprintf( output, "%s,", pstage->name);
+      }
+      fprintf( output, "%s", pstage->name);
+    }
+    else if(pipe_list){  //Enum type for pipes declared through ac_pipe keyword
+
+      for(ppipe = pipe_list; ppipe!= NULL; ppipe=ppipe->next){
+
+	for(pstage=ppipe->stages; pstage && pstage->next!= NULL; pstage=pstage->next){
+
+	  //When we have just one pipe use only the stage name
+	  if( ppipe->next )
+	    fprintf( output, "%s_%s=%d,", ppipe->name, pstage->name, pstage->id);
+	  else
+	    fprintf( output, "%s=%d,", pstage->name, pstage->id);
+
+	}
+	if( ppipe->next )
+	  fprintf( output, "%s_%s=%d", ppipe->name, pstage->name, pstage->id);  //The last doesn't need a comma
+	else
+	  fprintf( output, "%s=%d", pstage->name, pstage->id);
+      }
+    }
+    else{
+      fprintf( output, "ST0");
+    }
+
+    //Closing enum declaration
+    fprintf( output, "};\n\n");
+
+    /* closing namespace declaration */
+
+    fprintf( output, "}\n\n");
+
+    //Create a compiler error if delay assignment is used without the -dy option
+    COMMENT(INDENT[0],"Create a compiler error if delay assignment is used without the -dy option");
+    fprintf( output, "#ifndef AC_DELAY\n");
+    fprintf( output, "extern %s_parms::ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n", project_name);
+    fprintf( output, "#define delay(a,b) ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___\n");
+    fprintf( output, "#endif\n\n");
+
+    //Additional definitions for compiled simulation
+    accs_EmitParmsExtra(output);
+
+
+    fprintf( output, "\n");
+    fprintf( output, "using namespace %s_parms;", project_name);
+
+    fprintf( output, "\n\n");
+    fprintf( output, "#endif  //_%s_PARMS_H\n", upper_project_name);
+
+    fclose(output);
+  }
+
+#if 0
 //!Creates Decoder Header File
 void CreateParmHeader() {
 
@@ -1312,6 +1549,7 @@ void CreateParmHeader() {
   fclose(output);
 }
 
+#endif
 
 //!Creates the ISA Header File.
 void CreateISAHeader() {
@@ -1329,7 +1567,7 @@ void CreateISAHeader() {
   // File containing ISA declaration
   FILE  *output;
 
-  sprintf( filename, "%s-isa.H", project_name);
+  sprintf( filename, "%s_isa.H", project_name);
 
   if ( !(output = fopen( filename, "w"))){
     perror("ArchC could not open output file");
@@ -1340,7 +1578,7 @@ void CreateISAHeader() {
   fprintf( output, "#ifndef _ISA_H\n");
   fprintf( output, "#define _ISA_H\n\n");
   fprintf( output, "#include \"ac_decoder.h\"\n");
-  fprintf( output, "#include \"ac_parms.H\"\n");
+  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"ac_types.H\"\n\n");
   fprintf( output, "#include \"ac_resources.H\"\n");
   fprintf( output, "\n\n");
@@ -1453,7 +1691,7 @@ void CreateARCHHeader() {
   fprintf( output, "#define  _ARCH_H\n\n");
   
   fprintf( output, "#include \"systemc.h\"\n");
-  fprintf( output, "#include \"archc.H\"\n");
+  fprintf( output, "#include \"archc_cs.H\"\n");
   fprintf( output, "#include \"ac_storage.H\"\n");
   fprintf( output, "#include \"ac_resources.H\"\n");
   
@@ -1688,8 +1926,8 @@ void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
       fprintf( output, "#define  _%s_STAGE_H\n\n", pstage->name);
     }
 
-    fprintf( output, "#include \"archc.H\"\n");
-    fprintf( output, "#include \"%s-isa.H\"\n\n", project_name);
+    fprintf( output, "#include \"archc_cs.H\"\n");
+    fprintf( output, "#include \"%s_isa.H\"\n\n", project_name);
 
     if( pstage->id == 1 && ACDecCacheFlag )
       fprintf( output, "extern unsigned dec_cache_size;\n\n");
@@ -1778,7 +2016,7 @@ void CreateStgHeader( ac_stg_list* stage_list, char* pipe_name) {
 }
 
 //!Creates Processor Module Header File
-void CreateProcessorHeader() {
+void CreateProcessorHeader_old() {
 
   extern char *project_name;
   extern int HaveMultiCycleIns;
@@ -1798,9 +2036,9 @@ void CreateProcessorHeader() {
   fprintf( output, "#ifndef  _%s_H\n", project_name);
   fprintf( output, "#define  _%s_H\n\n", project_name);
   
-  fprintf( output, "#include \"archc.H\"\n");
-  fprintf( output, "#include \"ac_parms.H\"\n");
-  fprintf( output, "#include \"%s-isa.H\"\n\n", project_name);
+  fprintf( output, "#include \"archc_cs.H\"\n");
+  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
+  fprintf( output, "#include \"%s_isa.H\"\n\n", project_name);
 
   if(ACGDBIntegrationFlag) {
     fprintf( output, "#include \"ac_gdb_interface.H\"\n");
@@ -1891,6 +2129,7 @@ void CreateProcessorHeader() {
 void CreateRegsHeader() {
   extern ac_dec_format *format_reg_list;
   extern ac_sto_list *storage_list;
+  extern char* project_name;
 
   ac_sto_list *pstorage;
   ac_dec_format *pformat;
@@ -1917,7 +2156,7 @@ void CreateRegsHeader() {
         fprintf( output, "#define  _AC_FMT_REGS_H\n\n");
         
         fprintf( output, "#include  \"ac_storage.H\"\n");
-        fprintf( output, "#include  \"ac_parms.H\"\n");
+        fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
         fprintf( output, "\n\n");
 
         COMMENT(INDENT[0],"ArchC classes for formatted registers.\n");
@@ -1970,6 +2209,7 @@ void CreateCoverifHeader(void){
  
   extern ac_sto_list *storage_list;
   ac_sto_list *pstorage;
+  extern char* project_name;
 
   FILE *output;
   char filename[] = "ac_verify.H";
@@ -1989,8 +2229,8 @@ void CreateCoverifHeader(void){
         
   fprintf( output, "#include  <fstream>\n");
   fprintf( output, "#include  <list>\n");
-  fprintf( output, "#include  \"archc.H\"\n");
-  fprintf( output, "#include  \"ac_parms.H\"\n");
+  fprintf( output, "#include  \"archc_cs.H\"\n");
+  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include  \"ac_resources.H\"\n");
   fprintf( output, "#include  \"ac_storage.H\"\n");
   fprintf( output, "\n\n");
@@ -2119,8 +2359,8 @@ void CreateStatsHeader(void){
   fprintf( output, "#define  _AC_STATS_H\n\n");
         
   fprintf( output, "#include  <fstream>\n");
-  fprintf( output, "#include  \"archc.H\"\n");
-  fprintf( output, "#include  \"ac_parms.H\"\n");
+  fprintf( output, "#include  \"archc_cs.H\"\n");
+  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include  \"ac_sto_stats.H\"\n");
   fprintf( output, "\n\n");
 
@@ -2541,7 +2781,8 @@ void CreateResourceImpl() {
   
   fprintf( output, "#include  \"ac_resources.H\"\n");
   fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
+  //fprintf( output, "#include  \"ac_regbank_old.H\"\n");
+
   fprintf( output, "#include  \"ac_reg.H\"\n");
 
   if(ACVerifyFlag){
@@ -2882,8 +3123,8 @@ void CreateARCHImpl() {
 
   print_comment( output, description);
 
-  fprintf( output, "#include \"ac_parms.H\"\n");
-  fprintf( output, "#include  \"%s-arch.H\"\n", project_name);
+  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
+//  fprintf( output, "#include  \"%s-arch.H\"\n", project_name);
   if( ACVerifyFlag ){
     fprintf( output, "#include  \"ac_msgbuf.H\"\n");
     fprintf( output, "#include  \"sys/msg.h\"\n");
@@ -3041,9 +3282,9 @@ void CreateMainTmpl(){
   fprintf( output, "\n");
 
   fprintf( output, "#include  <systemc.h>\n");
-  fprintf( output, "#include  \"archc.H\"\n");
+  fprintf( output, "#include  \"archc_cs.H\"\n");
   fprintf( output, "#include  \"ac_decoder.h\"\n");
-  fprintf( output, "#include  \"%s-isa.H\"\n", project_name);
+  fprintf( output, "#include  \"%s_isa.H\"\n", project_name);
   fprintf( output, "#include  \"%s-arch.H\"\n\n", project_name);
 
   if (ACEncoderFlag) {
@@ -3133,10 +3374,8 @@ void CreateImplTmpl(){
     exit(1);
   }
 
-
-
   print_comment( output, description);
-  fprintf( output, "#include  \"%s-isa.H\"\n", project_name);
+  fprintf( output, "#include  \"%s_isa.H\"\n", project_name);
   fprintf( output, "#include  \"%s\"\n", initfilename );
   fprintf( output, " \n");
 
@@ -3238,7 +3477,7 @@ void CreateImplTmpl(){
     
   print_comment( output, "AC_ISA Initialization File");
   //Declaring static members.
-  fprintf( output, "%s#include \"%s-isa.H\"\n", INDENT[0], project_name); 
+  fprintf( output, "%s#include \"%s_isa.H\"\n", INDENT[0], project_name); 
   COMMENT(INDENT[0],"Static member declarations.");               
   //Declaring the generic instruction object.
   fprintf( output, "%sac_instruction %s_isa::instruction(\"instruction\");\n", INDENT[0], project_name); 
@@ -3278,7 +3517,7 @@ void CreateRegsImpl() {
   print_comment( output, description);
 
   fprintf( output, "#include \"ac_fmt_regs.H\"\n");
-  fprintf( output, "#include \"archc.H\"\n");
+  fprintf( output, "#include \"archc_cs.H\"\n");
   fprintf( output, " \n");
 
   //Declaring formatted register behavior methods.
@@ -3314,8 +3553,8 @@ void CreateArchSyscallHeader()
           "#ifndef ARCH_SYSCALL_H\n"
           "#define ARCH_SYSCALL_H\n"
           "\n"
-          "#include \"ac_syscall.H\"\n"
-          "#include \"ac_parms.H\"\n"
+//          "#include \"accs_syscall.H\"\n"
+          "#include \"%s_parms.H\"\n"
           "\n"
           "//%s system calls\n"
           "class %s_syscall : public ac_syscall\n"
@@ -3334,7 +3573,7 @@ void CreateArchSyscallHeader()
           "};\n"
           "\n"
           "#endif\n"
-          , project_name, project_name);
+          , project_name, project_name, project_name);
 
   fclose( output);
 }
@@ -3381,7 +3620,7 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
   COMMENT_MAKE("Variable that points to ArchC installation path");
-  fprintf( output, "ARCHC := %s\n", ARCHC_PATH);
+  fprintf( output, "ARCHC := %s\n", ARCHCPATH);
 
   fprintf( output, "\n");
 
@@ -3390,19 +3629,22 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
         
-  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include -I$(SYSTEMC)/include\n");
-  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH)\n");
+  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include/archc -I$(SYSTEMC)/include\n");
+  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L$(ARCHC)/lib\n");
 
   fprintf( output, "\n");
  
   fprintf( output, "LIB_SYSTEMC := %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
-  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS)\n");
+  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
   fprintf( output, "CC :=  %s\n", CC_PATH);
-  fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
-  fprintf( output, "DEBUG :=  %s\n", DEBUG_FLAGS);
+  //fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
+  fprintf( output, "OPT := \n");
+  //fprintf( output, "DEBUG :=  %s\n", DEBUG_FLAGS);
+  fprintf( output, "DEBUG := \n");
   fprintf( output, "OTHER :=  %s\n", OTHER_FLAGS);
-  fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) %s\n",
+  fprintf( output, "WERROR :=  -Wno-write-strings\n");
+  fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) $(WERROR) %s\n",
            (ACGDBIntegrationFlag) ? "-DUSE_GDB" : "" );
 
   fprintf( output, "\n");
@@ -3417,7 +3659,10 @@ void CreateMakefile(){
   //Declaring ACSRCS variable
 
   COMMENT_MAKE("These are the source files automatically generated by ArchC, that must appear in the SRCS variable");
-  fprintf( output, "ACSRCS := ac_resources.cpp ");
+  if (ACMulticoreFlag)
+	fprintf( output, "ACSRCS := ");
+  else
+	fprintf( output, "ACSRCS := ac_resources.cpp ");
 
   //Checking if we have a pipelined architecture or not.
   if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
@@ -3444,7 +3689,7 @@ void CreateMakefile(){
  
   //Declaring ACINCS variable
   COMMENT_MAKE("These are the source files automatically generated  by ArchC that are included by other files in ACSRCS");
-  fprintf( output, "ACINCS := ac_isa_init.cpp");
+  fprintf( output, "ACINCS := ac_isa_init.cpp $(MODULE)_isa_init.cpp ");
   fprintf( output, " ac_progmem.bin ac_prog_regions.H");
 
   fprintf( output, "\n\n");
@@ -3452,7 +3697,7 @@ void CreateMakefile(){
   //Declaring ACHEAD variable
 
   COMMENT_MAKE("These are the header files automatically generated by ArchC");
-  fprintf( output, "ACHEAD := ac_progmem.H ac_resources.H ac_types.H ac_parms.H $(MODULE)-arch.H $(MODULE)-isa.H ");
+  fprintf( output, "ACHEAD := ac_progmem.H ac_resources.H ac_types.H $(MODULE)_parms.H $(MODULE)_isa.H $(MODULE)_bhv_macros.H ac_storage.H ");
 
   if(HaveFormattedRegs)
     fprintf( output, "ac_fmt_regs.H ");
@@ -3488,7 +3733,7 @@ void CreateMakefile(){
   //Declaring FILES variable
   COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
   COMMENT_MAKE("They are stored in the archc/src/aclib directory");
-  fprintf( output, "ACFILES := archc.cpp ac_storage.cpp %s",
+  fprintf( output, "ACFILES := ac_storage.cpp  %s",
            (ACGDBIntegrationFlag)?"ac_gdb.cpp breakpoints.cpp ":"");
 
   if( HaveMemHier )
@@ -3497,8 +3742,8 @@ void CreateMakefile(){
   if(ACStatsFlag)
     fprintf( output, "ac_stats.cpp ");
                 
-  if(ACABIFlag)
-    fprintf( output, "ac_syscall.cpp ");
+//  if(ACABIFlag)
+//    fprintf( output, "accs_syscall.cpp ");
                 
   if(ACEncoderFlag)
     fprintf( output, "ac_encoder.cpp ");
@@ -3508,14 +3753,14 @@ void CreateMakefile(){
   //Declaring FILESHEAD variable
   COMMENT_MAKE("These are the headers files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/include directory");
-  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_regbank.H ac_debug_model.H\n\n");
+  fprintf( output, "ACFILESHEAD := \n\n");
 
   //Declaring SRCS variable
   COMMENT_MAKE("These are the source files provided by the user + ArchC sources");
   fprintf( output, "SRCS := main.cpp $(ACSRCS) $(ACFILES) %s",
            (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":"");
 
-  fprintf( output, " $(if $(filter 1,$(ISA_AND_SYSCALL_TOGETHER)),,$(MODULE)-isa.cpp");
+  fprintf( output, " $(if $(filter 1,$(ISA_AND_SYSCALL_TOGETHER)),,$(MODULE)_isa.cpp");
   if(ACABIFlag)
     fprintf( output, " $(MODULE)_syscall.cpp");
   fprintf( output, ")");
@@ -3536,7 +3781,7 @@ void CreateMakefile(){
 
   fprintf( output, "$(EXE): $(OBJS) %s libdummy.a\n",
            (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
-  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(ARCHC)/lib/ac_decoder.o $(LIBS) -ldummy -Xlinker --allow-multiple-definition 2>&1 | c++filt\n\n");
+  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) -Xlinker --allow-multiple-definition 2>&1 | c++filt\n\n");
 
   COMMENT_MAKE("Create dummy library with possibly undefined functions");
   fprintf( output, "ACDUMMY := $(wildcard ac_dummy*.cpp)\n");
@@ -3583,7 +3828,7 @@ void CreateMakefile(){
     fprintf( output, "\tcp $< $@\n");
   }
 
-  fprintf( output, "%%.H: $(ARCHC)/include/%%.H\n");
+  fprintf( output, "%%.H: $(ARCHC)/include/archc/%%.H\n");
   fprintf( output, "\tcp $< $@\n");
 }
 
@@ -4687,6 +4932,7 @@ void ReadConfFile(){
 
   char *conf_filename_local;
   char *conf_filename_global;
+  //char *conf_filename;
   extern char *ARCHC_PATH;
   extern char *SYSTEMC_PATH;
   extern char *CC_PATH;
@@ -4698,24 +4944,40 @@ void ReadConfFile(){
   char line[CONF_MAX_LINE];
   char var[CONF_MAX_LINE];
   char value[CONF_MAX_LINE];
+/*
+  ARCHC_PATH = getenv("ARCHC_PATH");
 
-/*  ARCHC_PATH = getenv("ARCHC_PATH"); */
-
-/*  if(!ARCHC_PATH){ */
-/*    AC_ERROR("You should set the ARCHC_PATH environment variable.\n"); */
-/*    exit(1); */
-/*  } */
-
-  conf_filename_local = "~/.archc/archc.conf";
+  if(!ARCHC_PATH){
+    AC_ERROR("You should set the ARCHC_PATH environment variable.\n");
+    exit(1);
+  }
+*/                
+/*
+  conf_filename_local = ARCHC_CONFIG_PATH;
   conf_filename_global = malloc(strlen(SYSCONFDIR) + 12);
   strcpy(conf_filename_global, SYSCONFDIR);
   strcat(conf_filename_global, "/archc.conf");
 
   conf_file = fopen(conf_filename_local, "r");
 
-  if (!conf_file)
-    conf_file = fopen(conf_filename_global, "r");
-  
+  conf_filename = (char*) malloc( strlen(ARCHC_PATH)+20);
+  conf_filename = strcpy(conf_filename, ARCHC_PATH);
+  conf_filename = strcat(conf_filename, "/config/archc.conf");
+
+  conf_file = fopen(conf_filename, "r");
+*/
+/*
+ user_homedir = getenv("HOME");
+ conf_filename_local = malloc(strlen(user_homedir) + 19); 
+ strcpy(conf_filename_local, user_homedir);
+ strcat(conf_filename_local, "/.archc/archc.conf");
+*/
+ conf_filename_global = malloc(strlen(SYSCONFDIR) + 12); 
+ strcpy(conf_filename_global, SYSCONFDIR);
+ strcat(conf_filename_global, "/archc.conf");
+
+ conf_file = fopen(conf_filename_global, "r");
+
   if( !conf_file ){
     //ERROR
     AC_ERROR("Could not open archc.conf configuration file.\n");
