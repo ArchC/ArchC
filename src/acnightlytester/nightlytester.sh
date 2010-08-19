@@ -140,9 +140,31 @@ build_model() {
     done
   fi
 
-  if [ "$USEACSIM" != "no" ]; then
+  if [ "$USEACSIM" != "no" ]; then    
+    if [ "$RUN_ACSTONE" != "no" ]; then
+      echo -ne "Building ${MODELNAME} ArchC Model with gdb support for acstone...\n"
+      cd ${TESTROOT}/${MODELNAME}
+      mkdir -p acstone
+      cd acstone
+      find ../ -maxdepth 1 -mindepth 1 -type f -exec cp '{}' . \; 
+      TEMPFL=${random}.out
+      ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} -gdb > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
+      RETCODE=$?
+      HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm
+      initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV build output (with gdb support for acstone use)"
+      format_html_output $TEMPFL $HTMLBUILDLOG
+      finalize_html $HTMLBUILDLOG ""
+      rm $TEMPFL
+      if [ $RETCODE -ne 0 ]; then
+	echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV build with gdb support (for acstone) failed. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
+	finalize_html $HTMLLOG ""
+	echo -ne "ACSIM (gdb) \e[31mfailed\e[m to build $MODELNAME model.\n"
+	do_abort
+      else
+	echo -ne "<p>${MODELNAME} Model rev. $MODELREV with gdb support (for acstone) built successfully. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+      fi
+    fi
     echo -ne "Building ${MODELNAME} ArchC Model...\n"
-
     cd ${TESTROOT}/${MODELNAME}
     TEMPFL=${random}.out
     ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
@@ -279,13 +301,46 @@ build_original_toolchain() {
 }
 
 #
+# This functions is used to run simulations tests using ACSTONE and ArchC's generated simulator for a target architecture
+#
+# Param1 is modelname (e.g. "armv5e")
+# Param2 is model's svn revision number (e.g. "${ARMREV})
+# e.g. run_tests_acsim_acstone "armv5e" "${ARMREV}"
+run_tests_acsim_acstone() {
+  MODELNAME=$1
+  MODELREV=$2
+
+  ### WORKAROUND: In sparcv8 model, we must rename it to "sparcv8_1", see "build_model()" for more info  
+  if [ "$MODELNAME" = "sparcv8" ]; then
+    MODELNAME="sparcv8_1"     
+  fi
+  ### WORKAROUND: In powerpc model, we must rename it to "powerpc1", see "build_model()" for more info
+  if [ "$MODELNAME" = "powerpc" ]; then
+    MODELNAME="powerpc1" 
+  fi
+
+  export TESTER=${TESTROOT}/acstone/acstone_run_teste.sh
+  export SOMADOR=${TESTROOT}/acstone/collect_stats.py
+  export SIMULATOR="${TESTROOT}/${MODELNAME}/acstone/${MODELNAME}.x"
+  export STATS=${TESTROOT}/acstone/${MODELNAME}.stats.txt
+  export GDBEXEC=${TESTROOT}/${MODELNAME}/binutils/bin/${MODELNAME}-elf-gdb
+  export LOGROOT
+  export HTMLPREFIX
+
+  cd ${TESTROOT}/acstone
+  ./acstone_run_all.sh $MODELNAME
+
+  echo -ne "<tr><td>${MODELNAME} (acstone)</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}-acstone.htm\">Here</a></td></tr>\n" >> $HTMLLOG
+}
+
+#
 # This function is used to run simulation tests using Mibench and ArchC's generated simulator for a target architecture
 #
 # Param1 is modelname (e.g. "armv5e")
 # Param2 is mibench root (e.g. "${TESTROOT}/acsim/ARMMibench")
 # Param3 is model's svn revision number (e.g. "${ARMREV})
-# e.g. run_tests_acsim "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
-run_tests_acsim() {
+# e.g. run_tests_acsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
+run_tests_acsim_mibench() {
   MODELNAME=$1
   MODELBENCHROOT=$2
   MODELREV=$3
@@ -330,7 +385,7 @@ run_tests_acsim() {
   cd ${TESTROOT}/acsim
   ./validation.sh
   
-  echo -ne "<tr><td>${MODELNAME}</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}.htm\">Here</a></td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>${MODELNAME} (mibench)</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}.htm\">Here</a></td></tr>\n" >> $HTMLLOG
 }
 
 #
@@ -657,6 +712,18 @@ echo -ne "**********************************************\n"
 
 
 ### Test enviroment setup
+if [ "$RUN_ACSTONE" != "no" ]; then
+  # Extracts acstone binaries (arm, mips, powerpc and sparc) as well as the helper scripts
+  cd ${TESTROOT}
+  tar -xjf ${SCRIPTROOT}/sources/AllArchs-acstone.tar.bz2
+  [ $? -ne 0 ] && do_abort
+  cp ${SCRIPTROOT}/acstone_run_all.sh ${TESTROOT}/acstone &&
+    cp ${SCRIPTROOT}/acstone_run_teste.sh ${TESTROOT}/acstone &&
+    cp ${SCRIPTROOT}/collect_stats.py ${TESTROOT}/acstone
+  [ $? -ne 0 ] && do_abort	
+  chmod u+x ${TESTROOT}/acstone/*.sh
+  [ $? -ne 0 ] && do_abort	
+fi
 mkdir ${TESTROOT}/acsim
 cp ${SCRIPTROOT}/validation.sh ${TESTROOT}/acsim/validation.sh
 chmod u+x ${TESTROOT}/acsim/validation.sh
@@ -667,7 +734,25 @@ echo -ne "<h3>Listing of component versions tested in this run.</h3>\n" >> $HTML
 echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
 echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  echo -ne "<tr><td>ACSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+  if [ "$RUN_ACSTONE" != "no" ]; then
+    echo -ne "<tr><td>ACSIM simulating Acstone and Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+  else
+    echo -ne "<tr><td>ACSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+  fi
+fi
+
+######################################
+### ACSTONE Benchmark Testing      ###
+######################################
+if [ "$RUN_ACSTONE" != "no" ]; then  
+  [ "$RUN_ARM_ACSIM" != "no" ] &&
+    run_tests_acsim_acstone "armv5e" "${ARMREV}"
+  [ "$RUN_SPARC_ACSIM" != "no" ] &&
+    run_tests_acsim_acstone "sparcv8" "${SPARCREV}"
+  [ "$RUN_MIPS_ACSIM" != "no" ] &&
+    run_tests_acsim_acstone "mips1" "${MIPSREV}"
+  [ "$RUN_POWERPC_ACSIM" != "no" ] &&
+    run_tests_acsim_acstone "powerpc" "${PPCREV}"    
 fi
 
 ######################################
@@ -680,12 +765,12 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM"
   [ $? -ne 0 ] && do_abort
 fi
 
-if [ "$RUN_ARM_ACSIM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" ]; then  
   echo -ne "Uncompressing Mibench precompiled for ARM...\n"
   tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
 
-  run_tests_acsim "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
+  run_tests_acsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
 fi
 
 ##########################################
@@ -698,7 +783,7 @@ if [ "$RUN_SPARC_ACSIM" != "no" ]; then
   tar -xjf ${SCRIPTROOT}/sources/SparcMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
 
-  run_tests_acsim "sparcv8_1" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}"
+  run_tests_acsim_mibench "sparcv8_1" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}"
 fi
 
 ##########################################
@@ -711,7 +796,7 @@ if [ "$RUN_MIPS_ACSIM" != "no" ]; then
   tar -xjf ${SCRIPTROOT}/sources/MipsMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
 
-  run_tests_acsim "mips1" "${TESTROOT}/acsim/MipsMibench" "${MIPSREV}"
+  run_tests_acsim_mibench "mips1" "${TESTROOT}/acsim/MipsMibench" "${MIPSREV}"
 fi
 
 ##########################################
@@ -724,7 +809,7 @@ if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
   tar -xjf ${SCRIPTROOT}/sources/PowerPCMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
 
-  run_tests_acsim "powerpc1" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}"
+  run_tests_acsim_mibench "powerpc1" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}"
 fi
 
 #################################
