@@ -55,18 +55,31 @@ sleep 3
 $GDBEXEC ${BINARY} --command=${NAME}.cmd | cut -s -f 2 -d '$' | cut -f 2 -d '=' > ${NAME}.${ARCH}.out
 
 HTML_DIFF=${LOGROOT}/${HTMLPREFIX}-${ARCH}-${NAME}-acstone-diff.htm
+HTML_SIMOUT=${LOGROOT}/${HTMLPREFIX}-${ARCH}-${NAME}-acstone-simout.htm
+HTML_GDBOUT=${LOGROOT}/${HTMLPREFIX}-${ARCH}-${NAME}-acstone-gdbout.htm
 initialize_html $HTML_DIFF "Acstone ${NAME} - ${ARCH} - output compared with golden model"
+initialize_html $HTML_SIMOUT "Acstone ${NAME} - ${ARCH} - simulator output"
+initialize_html $HTML_GDBOUT "Acstone ${NAME} - ${ARCH} - GDB output (data prints)"
 TEMPFL=${random}.out
 diff ${BINARY}.out data/${NAME}.data &> $TEMPFL
 RETCODE=$?
 format_html_output $TEMPFL $HTML_DIFF
+format_html_output ${BINARY}.stats $HTML_SIMOUT
+format_html_output ${BINARY}.out $HTML_GDBOUT
 finalize_html $HTML_DIFF ""
+finalize_html $HTML_SIMOUT ""
+finalize_html $HTML_GDBOUT ""
 rm $TEMPFL
+
+
 if [ $RETCODE -ne 0 ]; then
   echo -ne "<td><b><font color=\"crimson\"> Failed </font></b>" >> $HTMLACSTONE
 else
   echo -ne "<td><b><font color=\"green\"> OK </font></b>" >> $HTMLACSTONE
 fi
-echo -ne "(<a href=\"${HTMLPREFIX}-${ARCH}-${NAME}-acstone-diff.htm\">diff output</a>)</td>\n" >> $HTMLACSTONE
+echo -ne "(<a href=\"${HTMLPREFIX}-${ARCH}-${NAME}-acstone-diff.htm\">diff output</a>, \n" >> $HTMLACSTONE
+echo -ne  "<a href=\"${HTMLPREFIX}-${ARCH}-${NAME}-acstone-simout.htm\">simulator output</a>, \n" >> $HTMLACSTONE
+echo -ne  "<a href=\"${HTMLPREFIX}-${ARCH}-${NAME}-acstone-gdbout.htm\">GDB output</a>" >> $HTMLACSTONE
+echo -ne ")</td>\n" >> $HTMLACSTONE
 
 sleep 1
