@@ -1,8 +1,8 @@
 b main
 r
 n
-b 40
-b 49
+b 54
+b 63
 c
 p resultu
 c
