@@ -962,8 +962,8 @@ void accs_CreateCompsimHeader()
 	  "	void set_pc(unsigned val);\n"
 	  "	void set_return(unsigned val);\n"
 	  "	unsigned get_return();\n"
-	  "	int *get_syscall_table();\n"
-	  "	int process_syscall(int syscall);");
+	  "	int *get_syscall_table();\n");
+	  //"	int process_syscall(int syscall);");
 
   for (j=0; j <= ((prog_size_bytes-1) >> REGION_SIZE); j++) {
     	fprintf(output, "	void Region%d();\n" , j, j);
@@ -1526,7 +1526,8 @@ fprintf( output,
 			"    buf.st_ctime   = CORRECT_ENDIAN(buf.st_ctime, sizeof(time_t));      \\\n"
 			"  } while(0)\n"
 			"\n"
-			"\n"
+			"\n")/
+#if 0
 			"\n"
 			"int %s::process_syscall(int syscall) {\n"
 			"  const int *sctbl = get_syscall_table();\n"
@@ -1897,7 +1898,7 @@ fprintf( output,
 			"  return -1;\n"
 			"}\n"
 			"\n\n", project_name);
-
+#endif
 			fprintf( output, "#undef AC_RUN_ERROR\n"
 			"#define AC_RUN_ERROR std::cerr << \"ArchC Runtime error (ac_pc=\" << std::hex << ac_pc << std::dec << \"; ac_instr_counter=\" << ac_instr_counter << \"): \" \n"
 		    	"#define AC_SYSCALL void %s\n"
