@@ -72,6 +72,7 @@ int  ACVerifyTimedFlag=0;                       //!<Indicates whether verificati
 int  ACEncoderFlag=0;                           //!<Indicates whether encoder tools will be included in the simulator
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 int  ACMulticoreFlag=0;				//!<Indicates whether the simulator will multicore suport or not
+int  ACAnnulSigFlag=0;							//!<Indicates whether one instruction may be executed or not
 
 char *ACVersion = "2.1.0";                      //!<Stores ArchC version number.
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
@@ -125,6 +126,7 @@ struct option_map option_map[] = {
   {"--inline"        , "-i"          ,"Inline ISA and Syscalls (slow compilation, fast execution)", "r"},
   {"--block-size"    , "-bs"         ,"Set the maximum number of regions in a file.", "r"},
   {"--multicore"     , "-mc"	     ,"Beta version for static Compiled Simulation multicore.", "r"},
+  {"--annul-instr"   , "-ai"         ,"Necessary in models wich the instructions may be executed or not", "r"},
 /*   {"--pentium4"      , "-p4"         ,"Use option for gcc: -march=pentium4.", "r"}, */
 /*   {"--omit-frame-p"  , "-omitfp"     ,"Use option for gcc: -fomit-frame-pointer.", "r"}, */
   0
@@ -158,6 +160,26 @@ unsigned long long GetBits_____unused_for_accsim(void *buffer, int *quant, int l
   AC_ERROR("GetBits(): This function should not be called in parser-time for interpreted simulator.\n");
   return 1;
 };
+
+/*!If target is little endian, this function inverts fields in each format. This
+  is necessary in order to the decoder works in little endian architectures.
+  \param formats The list of parsed formats containing fields to be inverted.
+ */
+void invert_fields(ac_dec_format *format)
+{
+  ac_dec_field *field;
+
+  while (format) {
+    int size = format->size;
+    field = format->fields;
+    while (field) {
+      field->first_bit = size - 2 - field->first_bit + field->size;
+      field = field->next;
+    }
+
+    format = format->next;
+  }
+}
 
 
 /**********************************************************/
@@ -420,6 +442,10 @@ int main( argc, argv )
 		ACMulticoreFlag = 1;
 		ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
 		break;
+	    case OPAnnulSig:
+	    	ACAnnulSigFlag = 1;
+	    	ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+	    break;
 
             default:
               break;
@@ -523,6 +549,10 @@ int main( argc, argv )
 
     ac_match_endian = (ac_host_endian == ac_tgt_endian);
 
+   //If target is little endian, invert the order of fields in each format. This is the
+    //way the little endian decoder expects format fields.
+    if (ac_tgt_endian == 0)
+      invert_fields(format_ins_list);
 
     //Creating decoder to get Field Number info and write its static version.
     //This object will be used by some Create functions.

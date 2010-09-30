@@ -113,6 +113,7 @@ enum _ac_cmd_options {
   OPInline,
   OPRegionBlockSize,
   OPMulticore, 
+  OPAnnulSig,
 /*   OPP4, */
 /*   OPOmitFP, */
   ACNumberOfOptions
