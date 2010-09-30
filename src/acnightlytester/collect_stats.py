@@ -15,7 +15,7 @@ import getopt
 #especifique o caminho para os arquivos stats abaixo
 stats = os.getcwd()
 filePattern = fnmatch.translate ('*.'+sys.argv[1]+'.stats' )
-cabecalho = re.compile('\[ArchC 2.0] Printing statistics from instruction (?P<inst>\w*):')
+cabecalho = re.compile('\[ArchC 2.1] Printing statistics from instruction (?P<inst>\w*):')
 count = re.compile(' *COUNT : (?P<num>\d*)')
 total = dict()
 coverage = 0

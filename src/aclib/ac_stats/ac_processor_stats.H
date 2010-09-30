@@ -91,14 +91,14 @@ ac_processor_stats<EN>::ac_processor_stats(const char* nm) :
 template <class EN>
 void ac_processor_stats<EN>::print_stats(ostream& os)
 {
-  os << "[ArchC 2.0] Printing GLOBAL statistics from processor module "
+  os << "[ArchC 2.1] Printing GLOBAL statistics from processor module "
     << proc_name_ << ":" << endl;
 
   for (int i = 0; i < number_of_stats_; i++) {
     os << "     " << stat_name_[i] << " : " << stat_[i] << endl;
   }
 
-  os << "[ArchC 2.0] Printing INSTRUCTION statistics from processor module "
+  os << "[ArchC 2.1] Printing INSTRUCTION statistics from processor module "
     << proc_name_ << ":" << endl;
 
   list<ac_printable_stats*>::iterator it;

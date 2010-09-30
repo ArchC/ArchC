@@ -93,7 +93,7 @@ ac_instruction_stats<EN>::ac_instruction_stats(const char* nm,
 template <class EN>
 void ac_instruction_stats<EN>::print_stats(ostream& os)
 {
-  os << "[ArchC 2.0] Printing statistics from instruction "
+  os << "[ArchC 2.1] Printing statistics from instruction "
     << instr_name_ << ":" << endl;
 
   for (int i = 0; i < number_of_stats_; i++) {
