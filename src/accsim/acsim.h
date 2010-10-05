@@ -110,7 +110,7 @@ enum _ac_cmd_options {
 /*   OPGDBIntegration, */
   OPCompsim,
   OPOptimization,
-  OPInline,
+/*  OPInline, */
   OPRegionBlockSize,
   OPMulticore, 
   OPAnnulSig,

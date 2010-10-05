@@ -1,5 +1,3 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
 /*  ArchC Pre-processor generates tools for the described arquitecture
     Copyright (C) 2004  The ArchC Team
 
@@ -1207,7 +1205,7 @@ void accs_CreateCompsimImpl()
     if (rblock == 0) {
 
       if (ACABIFlag) {
-        fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
+        fprintf( output, "#include \"%s_syscall_macros.H\"\n", project_name);
       }
 
       fprintf( output, "#include \"ac_prog_regions.H\"\n");
@@ -1225,13 +1223,13 @@ void accs_CreateCompsimImpl()
     fprintf( output, "//ISA instructions are compiled together for inline to work\n");
     fprintf( output, "#include \"%s_isa.cpp\"\n", project_name);
     fprintf( output, "\n");
-    if (rblock == 0) {
-      if (ACABIFlag) {
+//  if (rblock == 0) {
+//    if (ACABIFlag) {
         fprintf( output, "//Syscalls are compiled together for inline to work\n");
         fprintf( output, "#include \"%s_syscall.cpp\"\n", project_name);
         fprintf( output, "\n");
-      }
-    }
+//      }
+//    }
     fprintf( output, "#endif // defined AC_INLINE\n");
     fprintf( output, "\n");
 
@@ -3675,6 +3673,19 @@ void accs_CreateISAImpl()
   fclose( output); 
 }
 
+char *strtoupper(char *str){
+  char *string = (char *) malloc (sizeof(char) * 50);
+  int i;
+  
+  strcpy(string, str);
+
+  if(string){
+    for(i = 0; string[i]!='\0';i++)
+      string[i] = toupper(string[i]);
+  }
+
+  return string;
+}
 
 /*!Create ArchC Architecture Dependent Syscalls Header File */
 /*!Use structures built by the parser.*/
@@ -3684,42 +3695,24 @@ void accs_CreateArchSyscallHeader()
   FILE *output;
   char filename[50];
   
-  snprintf(filename, 50, "%s_syscall.H", project_name);
+  snprintf(filename, 50, "%s_syscall_macros.H", project_name);
   output = fopen(filename, "w");
   fprintf( output, "//In Compiled Simulation, no exist model_syscall class. That methods in model class.\n\n");
+  fprintf( output, "#ifndef %s_SYSCALL_H\n", project_name);
+  fprintf( output, "#define %s_SYSCALL_H\n", project_name);
   fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"%s.H\"\n", project_name);
   fprintf( output, "#define %s_syscall %s\n\n", project_name, project_name);
+  fprintf( output, "#endif \n");
 
-/*
-  print_comment( output, "ArchC Architecture Dependent Syscall header file.");
+  fclose( output);
 
-  fprintf(output,
-          "#ifndef ARCH_SYSCALL_H\n"
-          "#define ARCH_SYSCALL_H\n"
-          "\n"
-          "#include \"accs_syscall.H\"\n"
-	  "#include \"ac_resources.H\"\n"
-          "#include \"%s_bhv_macros.H\"\n"
-	  "\n"
-          "//%s system calls\n"
-          "class %s_syscall : public ac_syscall\n"
-          "{\n"
-          "public:\n"
-          "  void get_buffer(int argn, unsigned char* buf, unsigned int size);\n"
-          "  void set_buffer(int argn, unsigned char* buf, unsigned int size);\n"
-          "  void set_buffer_noinvert(int argn, unsigned char* buf, unsigned int size);\n"
-          "  int  get_int(int argn);\n"
-          "  void set_int(int argn, int val);\n"
-          "  void return_from_syscall();\n"
-          "  void set_prog_args(int argc, char **argv);\n"
-          "};\n"
-          "\n"
-          "#endif\n"
-          //cygwin don't recognize %1$s to specify an argument 'cause uses newlib
-          , project_name, project_name, project_name, project_name);
-*/
-  fclose( output); 
+  snprintf(filename, 50, "%s_syscall.H.tmpl", project_name);
+  output = fopen(filename, "w");
+  fprintf( output, "//In Compiled Simulation, this file is Empty\n\n");
+  fclose( output);
+
+ 
 }
 
 
