@@ -3832,8 +3832,14 @@ void CreateMakefile(){
   fprintf( output, ".cc.o:\n");
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) -c $<\n\n");
 
+  fprintf( output, "POWERPCSYSCALL=$(shell grep '\\#define %s_SYSCALL_H' %s_syscall.H )\n\n", project_name, project_name);
+
   fprintf( output, "clean:\n");
-  fprintf( output, "\trm -f $(OBJS) *~ $(EXE) core *.o libdummy.a\n\n");
+  fprintf( output, "\trm -f $(OBJS) *~ $(EXE) core *.o libdummy.a\n");
+  fprintf( output, "ifeq ($(POWERPCSYSCALL), )\n");
+  fprintf( output, "\trm -f %s_syscall.H\n");
+  fprintf( output, "endif\n\n");
+
 
   fprintf( output, "model_clean:\n");
   fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) $(ACFILESHEAD) $(ACFILES) *.tmpl loader.ac $(ACDUMMY)\n\n");
