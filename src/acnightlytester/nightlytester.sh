@@ -389,6 +389,73 @@ run_tests_acsim_mibench() {
 }
 
 #
+# This function is used to run simulation tests using Mibench and ArchC's generated *COMPILED* simulator for a target architecture
+#
+# Param1 is modelname (e.g. "armv5e")
+# Param2 is mibench root (e.g. "${TESTROOT}/acsim/ARMMibench")
+# Param3 is model's svn revision number (e.g. "${ARMREV})
+# Param4 is accsim flags (e.g. "-ai")
+# e.g. run_tests_accsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
+run_tests_accsim_mibench() {
+  MODELNAME=$1
+  MODELBENCHROOT=$2
+  MODELREV=$3
+  ACCSIMFLAGS=$4" "${ACCSIM_PARAMS}
+
+  # Temporary - not supporting stats collection for accsim
+  COLLECT_STATS=no
+
+  # Preparing test script
+  ARCH="${MODELNAME}"
+  SIMULATOR="${TESTROOT}/${MODELNAME}/${MODELNAME}.x"
+  GOLDENROOT=${TESTROOT}/acsim/GoldenMibench
+  BENCHROOT=${MODELBENCHROOT}  
+  STATSROOT=${BENCHROOT}/stats
+  SIMROOT=${TESTROOT}/${MODELNAME}
+  TOOLSPATH=${TESTROOT}/install/bin
+
+  # Collect statistical information 
+  if [ "$COLLECT_STATS" != "no" ]; then
+    mkdir -p ${STATSROOT}
+    cp ${SCRIPTROOT}/collect_stats.py ${STATSROOT}
+  fi
+  export ARCH
+  export SIMULATOR 
+  export RUNSMALL   # ==================================
+  export RUNLARGE   # Definition in nightlytester.conf
+  export COMPILE    # ==================================
+  export GOLDENROOT
+  export BENCHROOT
+  export STATSROOT
+  export COLLECT_STATS
+  export SIMROOT
+  export TOOLSPATH
+  export ACCSIMFLAGS
+
+  # Define which programs to test (definition in nightlytester.conf)  
+  export BASICMATH
+  export BITCOUNT
+  export QUICKSORT
+  export SUSAN
+  export ADPCM
+  export CRC
+  export FFT
+  export GSM
+  export DIJKSTRA
+  export PATRICIA
+  export RIJNDAEL
+  export SHA
+  export JPEG
+  export LAME
+
+  cd ${TESTROOT}/acsim
+  ./validation-accsim.sh
+  
+  echo -ne "<tr><td>${MODELNAME} (mibench)</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}-accsim.htm\">Here</a></td></tr>\n" >> $HTMLLOG
+}
+
+
+#
 # This function runs ACASM validation script, assembling and linking a series of .s files using both the generated assembler and a correct reference
 # assembler (binutils for a given architecture). The results are compared between these two assemblers and validation is successful if they have no
 # difference.
@@ -444,21 +511,24 @@ if [ -z "$CHECKOUTLINK" ]; then
 else
   echo -ne "<tr><td>ArchC</td><td>${CHECKOUTLINK}</td></tr>\n" >> $HTMLLOG
 fi
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" -o "$RUN_ARM_ACCSIM" != "no" ]; then
   echo -ne "<tr><td>ARM Model</td><td>${ARMSVNLINK}</td></tr>\n" >> $HTMLLOG
 fi
-if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
+if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" ]; then
   echo -ne "<tr><td>MIPS Model</td><td>${MIPSSVNLINK}</td></tr>\n" >> $HTMLLOG
 fi
-if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
+if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" ]; then
   echo -ne "<tr><td>SPARC Model</td><td>${SPARCSVNLINK}</td></tr>\n" >> $HTMLLOG
 fi
-if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   echo -ne "<tr><td>PowerPC Model</td><td>${POWERPCSVNLINK}</td></tr>\n" >> $HTMLLOG
 fi
 echo -ne "</table></p>\n" >> $HTMLLOG
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
   echo -ne "<p>Parameters used to build acsim models: ${ACSIM_PARAMS}</p>\n" >> $HTMLLOG
+fi
+if [ "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
+  echo -ne "<p>Parameters used to build accsim models: ${ACCSIM_PARAMS}</p>\n" >> $HTMLLOG
 fi
 if [ "$SYSTEMCCOMPILE" != "yes" ]; then
   echo -ne "<p>Using user-supplied SystemC path: ${SYSTEMCPATH}</p>\n" >> $HTMLLOG
@@ -539,19 +609,19 @@ fi
 #tar -xjf ${SCRIPTROOT}/sources/glibc-linuxthreads-2.3.2.tar.bz2
 
 # tlm
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   echo -ne "Uncompressing tlm...\n"
-  # only compile SystemC if we will run ACSIM tests
+  # only compile SystemC if we will run ACSIM/ACCSIM tests
   mkdir ${TESTROOT}/tlm
   cd ${TESTROOT}/tlm
   tar -xf ${SCRIPTROOT}/sources/TLM-1.0.tar.gz
 fi
 
 # systemc
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   if [ "$SYSTEMCCOMPILE" != "no" ]; then
     echo -ne "Uncompressing SystemC...\n"
-    # only compile SystemC if we will run ACSIM tests
+    # only compile SystemC if we will run ACSIM/ACCSIM tests
     mkdir ${TESTROOT}/systemc
     cd ${TESTROOT}/systemc
     tar -xjf ${SCRIPTROOT}/sources/systemc-2.2.0.tar.bz2
@@ -568,8 +638,8 @@ echo -ne "**********************************************\n"
 ###############################################
 mkdir install
 cd install
-# Only compile SystemC if we will run ACSIM tests and the user did not supply a System
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+# Only compile SystemC if we will run ACSIM/ACCSIM tests and the user did not supply a System
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   if [ "$SYSTEMCCOMPILE" != "no" ]; then
     TEMPFL=${random}.out
     ../systemc-2.2.0/configure --prefix=${TESTROOT}/systemc/install > $TEMPFL 2>&1
@@ -613,10 +683,10 @@ echo -ne "Building/Installing ArchC...\n"
 TEMPFL=${random}.out
 # Configure script
 ./boot.sh > $TEMPFL 2>&1
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
     if [ "$RUN_ACSTONE" != "no" ]; then
-      # Configure ArchC fully (testing acsim and acasm) with gdb support (used by acstone)
+      # Configure ArchC fully (testing acsim/accsim and acasm) with gdb support (used by acstone)
       ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1    
     else
       # Configure ArchC without gdb support (acsim and acasm supported)
@@ -627,7 +697,7 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM"
     ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1
   fi
 else
-  # Configure ArchC without SystemC, because we won't need acsim
+  # Configure ArchC without SystemC, because we won't need acsim/accsim
   ./configure --prefix=${TESTROOT}/install --with-binutils=${BINUTILSPATH} >> $TEMPFL 2>&1    
 fi
 # Compile
@@ -653,7 +723,7 @@ fi
 ######################
 
 ### Build ARM Model
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" -o "$RUN_ARM_ACCSIM" != "no" ]; then
   build_model "armv5e" "${ARMSVNLINK}" "${RUN_ARM_ACSIM}"
   ARMREV=${MODELREV}
   if [ "$RUN_ARM_ACASM" != "no" ]; then
@@ -666,7 +736,7 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" ]; then
 fi
 
 ### Build sparcv8 Model
-if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
+if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" ]; then
   build_model "sparcv8" "${SPARCSVNLINK}" "${RUN_SPARC_ACSIM}"
   ### in sparcv8 model we change the name of the model to "sparcv8_1" to avoid conflicts with gdb preexistent target
   SPARCREV=${MODELREV}
@@ -680,7 +750,7 @@ if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" ]; then
 fi
 
 ### Build mips1 Model
-if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
+if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" ]; then
   build_model "mips1" "${MIPSSVNLINK}" "${RUN_MIPS_ACSIM}"
   MIPSREV=${MODELREV}
   if [ "$RUN_MIPS_ACASM" != "no" ]; then
@@ -693,7 +763,7 @@ if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" ]; then
 fi
 
 ### Build powerpc Model
-if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   build_model "powerpc" "${POWERPCSVNLINK}" "${RUN_POWERPC_ACSIM}"
   ### in powerpc model we change the name of the model to "powerpc1" to avoid conflicts in acbinutils validation
   PPCREV=${MODELREV}
@@ -726,6 +796,7 @@ if [ "$RUN_ACSTONE" != "no" ]; then
 fi
 mkdir ${TESTROOT}/acsim
 cp ${SCRIPTROOT}/validation.sh ${TESTROOT}/acsim/validation.sh
+cp ${SCRIPTROOT}/validation-accsim.sh ${TESTROOT}/acsim/validation-accsim.sh
 chmod u+x ${TESTROOT}/acsim/validation.sh
 export LOGROOT
 export HTMLPREFIX
@@ -758,7 +829,7 @@ fi
 ######################################
 ### Building ARM Test Environment  ###
 ######################################
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   echo -ne "Uncompressing correct results for Mibench...\n"
   cd ${TESTROOT}/acsim
   tar -xjf ${SCRIPTROOT}/sources/GoldenMibench.tar.bz2
@@ -811,6 +882,64 @@ if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
 
   run_tests_acsim_mibench "powerpc1" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}"
 fi
+
+#################################
+### ACCSIM VALIDATION TESTS
+#################################
+
+if [ "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
+  echo -ne "<tr><td>ACCSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+fi
+
+#arm
+if [ "$RUN_ARM_ACCSIM" != "no" ]; then  
+  cd ${TESTROOT}/acsim
+  if [ "$RUN_ARM_ACSIM" != "no" ]; then
+    rm -rf ARMMibench
+  fi
+  echo -ne "Uncompressing Mibench precompiled for ARM...\n"
+  tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
+  [ $? -ne 0 ] && do_abort
+  run_tests_accsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
+fi
+
+#sparc
+if [ "$RUN_SPARC_ACCSIM" != "no" ]; then  
+  cd ${TESTROOT}/acsim
+  if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+    rm -rf SparcMibench
+  fi
+  echo -ne "Uncompressing Mibench precompiled for SPARC...\n"
+  tar -xjf ${SCRIPTROOT}/sources/SparcMibench.tar.bz2
+  [ $? -ne 0 ] && do_abort  
+  run_tests_accsim_mibench "sparcv8_1" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}" "-opt 2"
+fi
+
+#mips
+if [ "$RUN_MIPS_ACCSIM" != "no" ]; then  
+  cd ${TESTROOT}/acsim
+  if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+    rm -rf MipsMibench
+  fi
+  echo -ne "Uncompressing Mibench precompiled for MIPS...\n"
+  tar -xjf ${SCRIPTROOT}/sources/MipsMibench.tar.bz2
+  [ $? -ne 0 ] && do_abort  
+  run_tests_accsim_mibench "mips1" "${TESTROOT}/acsim/MipsMibench" "${MIPSREV}" "-opt 2"
+fi
+
+#powerpc
+if [ "$RUN_POWERPC_ACCSIM" != "no" ]; then  
+  cd ${TESTROOT}/acsim
+  if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+    rm -rf PowerPCMibench
+  fi
+  echo -ne "Uncompressing Mibench precompiled for POWERPC...\n"
+  tar -xjf ${SCRIPTROOT}/sources/PowerPCMibench.tar.bz2
+  [ $? -ne 0 ] && do_abort
+  run_tests_accsim_mibench "powerpc1" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}" "-opt 2"
+fi
+
+
 
 #################################
 ### ACASM VALIDATION TESTS
