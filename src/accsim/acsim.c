@@ -3837,7 +3837,7 @@ void CreateMakefile(){
   fprintf( output, "clean:\n");
   fprintf( output, "\trm -f $(OBJS) *~ $(EXE) core *.o libdummy.a\n");
   fprintf( output, "ifeq ($(POWERPCSYSCALL), )\n");
-  fprintf( output, "\trm -f %s_syscall.H\n");
+  fprintf( output, "\trm -f %s_syscall.H\n", project_name);
   fprintf( output, "endif\n\n");
 
 
