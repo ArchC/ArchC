@@ -1203,11 +1203,6 @@ void accs_CreateCompsimImpl()
     fprintf( output, "#include \"%s_isa.H\"\n", project_name);
 
     if (rblock == 0) {
-
-      if (ACABIFlag) {
-        fprintf( output, "#include \"%s_syscall_macros.H\"\n", project_name);
-      }
-
       fprintf( output, "#include \"ac_prog_regions.H\"\n");
     }
 
@@ -1216,6 +1211,9 @@ void accs_CreateCompsimImpl()
 //    fprintf( output, "#define AC_SAY( msg )      std::cerr<< \"ArchC: \" << msg  <<'\\n'\n");
 //    fprintf( output, "\n");
 
+      if (ACABIFlag) {
+        fprintf( output, "#include \"%s_syscall_macros.H\"\n", project_name);
+      }
 
     // Inlines for command-line option "-i"
     fprintf( output, "#ifdef AC_INLINE\n");
