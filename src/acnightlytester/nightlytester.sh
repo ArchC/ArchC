@@ -44,8 +44,8 @@ GCCPATH=${TESTROOT}/gcc/gcc-3.3
 # Functions
 
 finalize_nightly_tester() {
-  TEMPFL=${random}.out
-  HTMLLINE="<tr><td>${HTMLPREFIX}</td><td>${DATE}</td><td>${ARCHCREV}</td><td><a href=\"${HTMLPREFIX}-index.htm\">Here</a></td></tr>"
+  TEMPFL=${RANDOM}.out
+  HTMLLINE="<tr><td>${HTMLPREFIX}</td><td>${DATE}</td><td>${ARCHCREV}</td><td><a href=\"${HTMLPREFIX}-index.htm\">Here</a></td><td>${REVMESSAGE}</td><td>${HOSTNAME}</td></tr>"
   sed -e "/<tr><td>${LASTHTMLPREFIX}/i${HTMLLINE}" $HTMLINDEX > $TEMPFL
   mv ${TEMPFL} $HTMLINDEX
 
@@ -101,7 +101,7 @@ build_model() {
   mkdir ${TESTROOT}/${MODELNAME}
   echo -ne "Checking out ${MODELNAME} ArchC Model SVN...\n"
 
-  TEMPFL=${random}.out
+  TEMPFL=${RANDOM}.out
   svn co ${SVNLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
   [ $? -ne 0 ] && {
     rm $TEMPFL
@@ -147,7 +147,7 @@ build_model() {
       mkdir -p acstone
       cd acstone
       find ../ -maxdepth 1 -mindepth 1 -type f -exec cp '{}' . \; 
-      TEMPFL=${random}.out
+      TEMPFL=${RANDOM}.out
       ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} -gdb > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
       RETCODE=$?
       HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm
@@ -166,7 +166,7 @@ build_model() {
     fi
     echo -ne "Building ${MODELNAME} ArchC Model...\n"
     cd ${TESTROOT}/${MODELNAME}
-    TEMPFL=${random}.out
+    TEMPFL=${RANDOM}.out
     ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
     RETCODE=$?
     HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-log.htm
@@ -199,7 +199,7 @@ build_binary_tools() {
   cd ${TESTROOT}/${MODELNAME}
   mkdir -p binutils
   echo -ne "Building ${MODELNAME} BINUTILS ArchC Model...\n"
-  TEMPFL=${random}.out
+  TEMPFL=${RANDOM}.out
   ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&
     mkdir build-binutils &&
     cd build-binutils && # D_FORTIFY used below is used to prevent a bug present in binutils 2.15 and 2.16
@@ -236,7 +236,7 @@ build_gdb() {
   cd ${TESTROOT}/${MODELNAME}
   mkdir -p binutils
   echo -ne "Building GDB for ${MODELNAME}...\n"
-  TEMPFL=${random}.out
+  TEMPFL=${RANDOM}.out
   ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&    
     mkdir build-gdb &&
     cd build-gdb &&
@@ -279,7 +279,7 @@ build_original_toolchain() {
   mkdir build-binutils-orig
   echo -ne "Building ${ARCHNAME} toolchain for reference...\n"
   echo -ne "  Building binutils...\n"
-  TEMPFL=${random}.out
+  TEMPFL=${RANDOM}.out
   cd build-binutils-orig &&
     ${BINUTILSPATH}/configure --target=${ARCHNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils-orig >> $TEMPFL 2>&1 &&
     make >> $TEMPFL 2>&1 &&
@@ -474,8 +474,8 @@ run_tests_acasm() {
   export BENCH_ROOT="${TESTROOT}/acasm-validation/${MODELNAME}/benchmark/Mibench"
   export ACBIN_PATH="${TESTROOT}/${MODELNAME}/binutils/${MODELNAME}-elf/bin"
   export BINUTILS_PATH="${TESTROOT}/${MODELNAME}/binutils-orig/${ARCHNAME}-elf/bin"
-  LOG_FILE=l${random}.out
-  FORM_FILE=f${random}.out
+  LOG_FILE=l${RANDOM}.out
+  FORM_FILE=f${RANDOM}.out
   HTML_LOG_FILE=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-report.htm
   export LOG_FILE
   export FORM_FILE
@@ -552,7 +552,7 @@ if [ -z "$CHECKOUTLINK" ]; then
   ARCHCREV="N/A"
 else
   echo -ne "Checking out ArchC SVN version...\n"
-  TEMPFL=${random}.out
+  TEMPFL=${RANDOM}.out
   svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
   [ $? -ne 0 ] && {
     rm $TEMPFL
@@ -641,7 +641,7 @@ cd install
 # Only compile SystemC if we will run ACSIM/ACCSIM tests and the user did not supply a System
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   if [ "$SYSTEMCCOMPILE" != "no" ]; then
-    TEMPFL=${random}.out
+    TEMPFL=${RANDOM}.out
     ../systemc-2.2.0/configure --prefix=${TESTROOT}/systemc/install > $TEMPFL 2>&1
     echo -ne "Building SystemC...\n"
     make >> $TEMPFL 2>&1
@@ -657,7 +657,7 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM"
       do_abort
     } 
     rm $TEMPFL
-    TEMPFL=${random}.out
+    TEMPFL=${RANDOM}.out
     echo -ne "Installing SystemC...\n"
     make install > $TEMPFL 2>&1
     [ $? -ne 0 ] && {
@@ -680,7 +680,7 @@ fi
 cd ${TESTROOT}/acsrc
 
 echo -ne "Building/Installing ArchC...\n"
-TEMPFL=${random}.out
+TEMPFL=${RANDOM}.out
 # Configure script
 ./boot.sh > $TEMPFL 2>&1
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
