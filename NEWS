@@ -1,5 +1,17 @@
 -*- text -*-
 
+Changes in version 2.1:
+-----------------------
+
+* The loader now supports dynamically linked executables.
+
+* Instruction formats for little endian models now changed. See ARM model
+  for example.
+
+* ACCSIM is functional. See models for examples.
+
+* ARM model is functional.
+
 Changes in version 2.0beta3:
 ----------------------------
 

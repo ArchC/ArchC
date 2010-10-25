@@ -3129,6 +3129,7 @@ void CreateArchSyscallHeader()
           "  void set_int(int argn, int val);\n"
           "  void return_from_syscall();\n"
           "  void set_prog_args(int argc, char **argv);\n"
+          "  int *get_syscall_table();\n"
           "};\n"
           "\n"
           "#endif\n"
