@@ -1123,6 +1123,7 @@ void acpp_asm_new_insn() {
   current_insn = (ac_asm_insn *) malloc(sizeof(ac_asm_insn));
   current_insn->operands = NULL;
   current_insn->op_literal = NULL;
+  current_insn->op_literal_unformatted = NULL;
   current_insn->const_fields = NULL;
 }
 
@@ -1283,6 +1284,8 @@ arguments one pseudo member may have.
     if (!is_pseudo) {
       current_insn->op_literal = (char *)malloc(strlen(formatted_asm_str)+1);
       strcpy(current_insn->op_literal, formatted_asm_str);
+      current_insn->op_literal_unformatted = (char *)malloc(strlen(asm_str)+1);
+      strcpy(current_insn->op_literal_unformatted, asm_str);
     }
     return 1;
   }
@@ -1404,6 +1407,8 @@ arguments one pseudo member may have.
   if (!is_pseudo) {
     current_insn->op_literal = (char *)malloc(strlen(formatted_asm_str)+1);
     strcpy(current_insn->op_literal, formatted_asm_str);
+    current_insn->op_literal_unformatted = (char *)malloc(strlen(asm_str)+1);
+    strcpy(current_insn->op_literal_unformatted, asm_str);
     current_insn->operands = operands;
   }
 
@@ -1759,6 +1764,8 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
 
   insn->op_literal = (char *)malloc(strlen(current_insn->op_literal)+1);
   strcpy(insn->op_literal, current_insn->op_literal);
+  insn->op_literal_unformatted = (char *)malloc(strlen(current_insn->op_literal_unformatted)+1);
+  strcpy(insn->op_literal_unformatted,current_insn->op_literal_unformatted);
 
   insn->operands = current_insn->operands;
   insn->insn = p;

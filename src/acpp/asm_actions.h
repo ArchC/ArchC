@@ -234,6 +234,7 @@ typedef struct _ac_const_field_list {
 typedef struct _ac_asm_insn {
   char *mnemonic;             /*!< mnemonic part of asm syntax */
   char *op_literal;
+  char *op_literal_unformatted; /*!< Used by compiler generator to emit this insn */
   ac_operand_list *operands;
   ac_dec_instr *insn;         /*!< pointer to original ac_dec_instr - NULL if it's a pseudo insn */
   ac_const_field_list *const_fields;
