@@ -1792,14 +1792,16 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     ac_asm_insn *t = asm_insn_list;
     ac_asm_insn *last = asm_insn_list;
 
-    if (strcmp(insn->mnemonic, t->mnemonic) < 0) { /* insert in the head */
+    if ((insn->insn == NULL && strcmp(insn->mnemonic, t->mnemonic) < 0) ||
+        (insn->insn != NULL && strcmp(insn->insn->name, t->insn->name) < 0)) { /* insert in the head */
       insn->next = asm_insn_list;
       asm_insn_list = insn;
     }
     else {
       t = t->next;
       /* keep the order in the source file */
-      while ((t != NULL) && (strcmp(insn->mnemonic, t->mnemonic) >= 0)) {
+      while ((t != NULL) && ( (insn->insn == NULL && (strcmp(insn->mnemonic, t->mnemonic) >= 0)) 
+	|| (insn->insn != NULL && (strcmp(insn->insn->name, t->insn->name) >= 0)) )) {
         t = t->next;
         last = last->next;
       }
