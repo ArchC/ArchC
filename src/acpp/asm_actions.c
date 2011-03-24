@@ -252,6 +252,10 @@ static int in_error;
 /* list of insn asm syntax - Acasm tool uses this list to generate its assembler */
 static ac_asm_insn *asm_insn_list = NULL;
 
+/* Used when a backend needs the correct ordering of set_asm constructs as it appears in 
+   the ArchC source file. */
+static ac_asm_insn *asm_insn_list_original_order = NULL;
+
 /* when const fields are used, this variable will store their encoding for the current insn */
 static long int c_image;
 
@@ -275,6 +279,7 @@ extern ac_dec_format *format_ins_list;   /* list of formats declared */
 */
 
 ac_asm_insn* ac_asm_get_asm_insn_list() { return asm_insn_list; }
+ac_asm_insn* ac_asm_get_asm_insn_list_original_order() { return asm_insn_list_original_order; }
 ac_asm_symbol* ac_asm_get_mapping_list() { return symbol_list; }
 char * ac_asm_get_comment_chars() 
 {
@@ -1784,7 +1789,7 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
      It's inserted in alphabetical ordering. In case there are two or more
      insns with the same mnemonic, its order in the list is the same as they
      appear in the ArchC source file */
-
+  
   if (asm_insn_list == NULL) {
     asm_insn_list = insn;
   } else {
@@ -1792,21 +1797,64 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
     ac_asm_insn *t = asm_insn_list;
     ac_asm_insn *last = asm_insn_list;
 
-    if ((insn->insn == NULL && strcmp(insn->mnemonic, t->mnemonic) < 0) ||
-        (insn->insn != NULL && strcmp(insn->insn->name, t->insn->name) < 0)) { /* insert in the head */
+    if (strcmp(insn->mnemonic, t->mnemonic) < 0) { /* insert in the head */
       insn->next = asm_insn_list;
       asm_insn_list = insn;
     }
     else {
       t = t->next;
       /* keep the order in the source file */
-      while ((t != NULL) && ( (insn->insn == NULL && (strcmp(insn->mnemonic, t->mnemonic) >= 0)) 
-	|| (insn->insn != NULL && (strcmp(insn->insn->name, t->insn->name) >= 0)) )) {
+      while ((t != NULL) && ( (strcmp(insn->mnemonic, t->mnemonic) >= 0))) {
         t = t->next;
         last = last->next;
       }
       insn->next = t;
       last->next = insn;
+    }
+  }
+  
+  /* This code does the same as above, but keeping a second list in a
+     different ordering. */
+  
+  ac_asm_insn *insn_clone = (ac_asm_insn *) malloc(sizeof(ac_asm_insn));
+
+  insn_clone->op_literal = (char *)malloc(strlen(current_insn->op_literal)+1);
+  strcpy(insn_clone->op_literal, current_insn->op_literal);
+  insn_clone->op_literal_unformatted = (char *)malloc(strlen(current_insn->op_literal_unformatted)+1);
+  strcpy(insn_clone->op_literal_unformatted,current_insn->op_literal_unformatted);
+
+  insn_clone->operands = current_insn->operands;
+  insn_clone->insn = p;
+  insn_clone->const_fields = clone_const_fields(current_insn->const_fields);
+  insn_clone->pseudolist = pseudo_list;
+  insn_clone->num_pseudo = num_pseudo_insn;
+  insn_clone->next = NULL;
+
+  insn_clone->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+1);
+  strcpy(insn_clone->mnemonic, current_insn->mnemonic);
+
+  if (asm_insn_list_original_order == NULL) {
+    asm_insn_list_original_order = insn_clone;
+  } else {
+
+    ac_asm_insn *t = asm_insn_list_original_order;
+    ac_asm_insn *last = asm_insn_list_original_order;
+
+    if ((insn_clone->insn == NULL && strcmp(insn_clone->mnemonic, t->mnemonic) < 0) ||
+        (insn_clone->insn != NULL && strcmp(insn_clone->insn->name, t->insn->name) < 0)) { /* insert in the head */
+      insn_clone->next = asm_insn_list_original_order;
+      asm_insn_list_original_order = insn_clone;
+    }
+    else {
+      t = t->next;
+      /* keep the order in the source file */
+      while ((t != NULL) && ( (insn_clone->insn == NULL && (strcmp(insn_clone->mnemonic, t->mnemonic) >= 0)) 
+	|| (insn_clone->insn != NULL && (strcmp(insn_clone->insn->name, t->insn->name) >= 0)) )) {
+        t = t->next;
+        last = last->next;
+      }
+      insn_clone->next = t;
+      last->next = insn_clone;
     }
   }
   
