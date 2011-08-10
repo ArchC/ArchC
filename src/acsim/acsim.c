@@ -2689,7 +2689,7 @@ void CreateMainTmpl() {
   fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
-  fprintf(output, "%ssc_start(-1);\n\n", INDENT[1]);
+  fprintf(output, "%ssc_start();\n\n", INDENT[1]);
 
   fprintf(output, "%s%s_proc1.PrintStat();\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
