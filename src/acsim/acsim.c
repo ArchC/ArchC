@@ -4197,6 +4197,7 @@ void EmitInstrExec( FILE *output, int base_indent){
 void EmitFetchInit( FILE *output, int base_indent){
   extern int HaveMultiCycleIns;
 
+  fprintf(output, "%sbhv_pc = ac_pc;\n", INDENT[base_indent]);
 
   if (!ACDecCacheFlag){
     fprintf( output, "%sif( bhv_pc >= APP_MEM->get_size()){\n", INDENT[base_indent]);

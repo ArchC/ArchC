@@ -987,8 +987,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 
   } else if (syscall == sctbl[34]) { // exit_group
     DEBUG_SYSCALL("exit_group");
-    int ret = -EINVAL;
-    set_int(0, ret);
+    int ac_exit_status = get_int(0);
+#ifdef USE_GDB
+    if (ref.get_gdbstub()) (ref.get_gdbstub())->exit(ac_exit_status);
+#endif /* USE_GDB */
+    ref.stop(ac_exit_status);
     return 0;
   }
 
