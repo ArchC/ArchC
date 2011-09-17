@@ -766,7 +766,8 @@ static int parse_format(char** fieldstr, int sum_size, int size_limit, ac_dec_fi
       *fieldstr = fieldend+1;
       value = strtol(*fieldstr, &fieldend, 0);
       if (fieldend == *fieldstr) {
-        sprintf(error_msg, "Invalid size in \"%s\", character %d", str, (*fieldstr)-str);
+        sprintf(error_msg, "Invalid size in \"%s\", character %d",
+		str, (int) ((*fieldstr)-str));
         return -1;
       }
       pfield->size = value;
@@ -778,7 +779,8 @@ static int parse_format(char** fieldstr, int sum_size, int size_limit, ac_dec_fi
         if ((**fieldstr == 's') || (**fieldstr == 'S'))
           pfield->sign=1;
         else if ((**fieldstr != 'u') && (**fieldstr != 'U')) {
-          sprintf(error_msg, "Invalid sign specification in \"%s\", character %d", str, (*fieldstr)-str);
+          sprintf(error_msg, "Invalid sign specification in \"%s\", "
+		  "character %d", str, (int)((*fieldstr)-str));
           return -1;
         }
         (*fieldstr)++;

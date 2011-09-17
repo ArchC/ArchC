@@ -351,8 +351,10 @@ static int Createm4File()
   fprintf(output, "m4_define(`___word_size___', `%d')m4_dnl\n", get_arch_size());
   fprintf(output, "m4_define(`___max_format_size___', `%d')m4_dnl\n", get_max_format_size());
   fprintf(output, "m4_define(`___variable_format_size___', `%d')m4_dnl\n", get_variable_format_size());
-  fprintf(output, "m4_define(`___comment_chars___', `%s')m4_dnl\n", (char *)ac_asm_get_comment_chars());
-  fprintf(output, "m4_define(`___line_comment_chars___', `%s')m4_dnl\n", (char *)ac_asm_get_line_comment_chars());
+  fprintf(output, "m4_define(`___comment_chars___', `%s')m4_dnl\n",
+	  ac_asm_get_comment_chars());
+  fprintf(output, "m4_define(`___line_comment_chars___', `%s')m4_dnl\n",
+	  ac_asm_get_line_comment_chars());
 
   /* 1 = big, 0 = little */
   fprintf(output, "m4_define(`___endian_str___', `%s')m4_dnl\n", ac_tgt_endian ? "BIG" : "LITTLE");

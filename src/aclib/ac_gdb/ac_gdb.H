@@ -234,7 +234,7 @@ void AC_GDB<ac_word>::reg_read(char *ib, char *ob) {
   ac_word r;
 
   /* 1 byte is represented in hexadecimal by 2 chars */
-  snprintf( fmt, 5, "%%%02dx", sizeof( ac_word ) * 2 );
+  snprintf( fmt, 5, "%%%02dx", (int)sizeof( ac_word ) * 2 );
 
   for ( i = 0; i < proc->nRegs(); i ++ )
     {

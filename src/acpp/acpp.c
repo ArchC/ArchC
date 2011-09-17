@@ -54,7 +54,10 @@ void acppInit(int force_asm_syntax)
 int acppLoad(char* filename)
 {
   acppUnload();
-  return (int) (yyin = fopen(filename, "r" ));
+  yyin = fopen(filename, "r");
+  if (yyin == NULL)
+    return 0;
+  return 1;
 }
 
 
