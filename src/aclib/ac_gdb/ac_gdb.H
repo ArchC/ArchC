@@ -899,7 +899,8 @@ int AC_GDB<ac_word>::comm_putchar(const char c) {
 template <typename ac_word>
 char AC_GDB<ac_word>::comm_getchar() {
   char c;
-  read( sd, &c, 1 );
+  if (read( sd, &c, 1 ) != 1)
+    return 0; /* Error! */
   return(c);
 }
 
