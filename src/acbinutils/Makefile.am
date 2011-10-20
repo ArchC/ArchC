@@ -7,7 +7,7 @@ EXTRA_DIST = acbingen.sh.in \
              gdb
 
 ## Includes
-INCLUDES = -I. -I$(top_srcdir)/src/replace -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim
+INCLUDES = -I. -I$(top_srcdir)/src/replace -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/acsim -I$(top_srcdir)/src/aclib/ac_utils
 
 AM_CFLAGS = -DACVERSION=\"$(VERSION)\"
 
