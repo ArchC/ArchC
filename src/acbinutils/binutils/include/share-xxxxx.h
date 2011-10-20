@@ -47,6 +47,7 @@ typedef struct {
   unsigned int fields;
   unsigned int format_id;
   unsigned int reloc_id;
+  unsigned int fields_positions;
 } acasm_operand;
 
 /* List-operator API functions (available to modifier functions) */

@@ -121,6 +121,58 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr){
 
   return 1;
 }
+
+/* 
+ * Every bit set as one, marks the number encoded in the bitvector 
+ * For example: 0x80000000 => 31 
+ */ 
+unsigned int get_bit_pos(unsigned int bitvector, unsigned int pos) {
+  unsigned curr_bit = 0; pos++;
+  while(1) {
+    if (bitvector & (1 << curr_bit))
+      if (!(--pos))
+        return curr_bit;
+    curr_bit++;
+  }
+}
+
+unsigned long get_value_from_fields(unsigned int oper_id, 
+                                    unsigned long insn,
+                                    unsigned long *bit_size) {
+
+  unsigned int i=0, j=0, mask=0, size=0, final_value=0;
+  unsigned int num_fields = get_num_fields(operands[oper_id].fields);
+
+  for (; i < num_fields; i++) {
+    /* If we don't encode both start and end bits, we don't know 
+       which field a start bit is refering to */
+    unsigned field_start = get_bit_pos(operands[oper_id].fields_positions, i*2);
+    unsigned field_end = get_bit_pos(operands[oper_id].fields_positions, (i*2)+1);
+    unsigned field_size = field_end-field_start+1;
+
+    /* Create a mask to extract the needed bits from the isns, and then
+       concatenate disjoint fields and make them printable */
+    for (j=0, mask=0; j < field_size; j++)
+      mask |= (1 << (field_start + j));
+    unsigned value = (insn & mask) >> field_start;
+    
+    /* This function considers that disjoint fields need to be
+       concatenated in the order they appear. For different behavior
+       one should implement custom handling via ac_modifiers. */
+    final_value |= (value << size);
+    size += field_size;
+  }
+
+  *bit_size = size;
+  return final_value;
+}
+
+long sign_extend_to_long(long v, unsigned int bit_size) {
+  long mask = 1ULL << (bit_size - 1);
+  v = v & ((1ULL << bit_size) - 1);
+  return (v ^ mask) - mask;
+}
+
 /*------------------------------------------------------------------------------------*/
 
 /*
@@ -145,6 +197,7 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
   unsigned int FORMAT_SIZE=0;
   int nInstr=0;
   unsigned addr_value = 0;
+  long imm_value = 0;
 
   //Find the mnemonic of instruction in opcodes table
   while (nInstr < num_opcodes){
@@ -175,29 +228,11 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
 	int in = 0;
 	char symbolaux[100];
         fid = 0;
-        for (count=0; count < numf; count++){
-          fid = get_field_id(operands[acs->oper_id].fields, count);
-          size = size + get_field_size(op->format_id, fid);
-        }
 
-        unsigned int i = 0;
-        unsigned long begining = 0;
-        for (i=0; i<=fid; i++)
-          begining += get_field_size(op->format_id, i);
+        /* Get the value that should be printed from the instruction */
+        unsigned int bit_size = 0;
+        unsigned long value = get_value_from_fields(acs->oper_id, insn, &bit_size);	
 
-        unsigned long dmask = 0x00;
-        for (i=0; i<size; i++)
-          dmask = (dmask << 1) + 1;
-
-        //operand dmask
-        dmask = dmask << (FORMAT_SIZE - begining);
-
-        unsigned long value = dmask & insn;
-
-        // Align bits to the least significant position, in
-	// order to use its value
-        value = value >> (FORMAT_SIZE - begining);
-	
 	if (acs->is_list){
 	  node_list_op_results *p_list;
 	  
@@ -277,6 +312,12 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
 	    mp.address = memaddr;
 	    mp.addend = operands[acs->oper_id].mod_addend;
 	    mp.list_results = NULL;
+
+            // Put the instruction on the addend so the
+            // modifier can play around in several ways.
+            if (!mp.addend)
+              mp.addend = insn;
+
 	    decode_modifier(&mp, acs->oper_id);
 	    if (mp.output != 0)
 	      value = mp.output;	    
@@ -287,6 +328,9 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
 	    //Convert long to char
 	    sprintf( new, "0x%01lx", value );
 	    replace(ptr3,acs->type,new);
+
+            if (!(strcmp(acs->type, "imm")))
+              imm_value = sign_extend_to_long(value, bit_size);  
 	    
 	    // if type is exp or addr, save its value. it can reference a symbol, and
 	    // we want to print it as comment, eg. mov    r0, 0x10203    ; 10203 <.helloword>
@@ -313,6 +357,8 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
   if (addr_value) {
     (*info->fprintf_func) (info->stream,"\t; ", addr_value);
     info->print_address_func (addr_value, info);
+  } else if (imm_value != 0) {
+    (*info->fprintf_func) (info->stream,"\t; %ld", imm_value);
   }
   return  FORMAT_SIZE / 8;
 }

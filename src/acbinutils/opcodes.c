@@ -47,6 +47,7 @@ typedef struct _oper_list {
   unsigned int fields;
   unsigned int format_id;
   unsigned int reloc_id;
+  unsigned int fields_positions;
   struct _oper_list *next;
 } oper_list;
 
@@ -102,6 +103,7 @@ void create_operand_list()
       oper->is_list = opP->is_list;
       
       oper->fields = encode_fields(opP->fields);
+      oper->fields_positions = encode_fields_positions(opP->fields, get_insn_size(asml));
 
       oper->reloc_id = 0; /*opP->reloc_id;*/
       oper->format_id = get_format_id(asml->insn->format);
@@ -388,7 +390,8 @@ int CreateOperandTable(const char *optable_filename)
     fprintf(output, "%d,\t", opL->mod_addend);
     fprintf(output, "%u,\t", opL->fields);
     fprintf(output, "%u,\t", opL->format_id);
-    fprintf(output, "%u ", opL->reloc_id + 36);
+    fprintf(output, "%u,\t", opL->reloc_id + 36);
+    fprintf(output, "0x%08x ", opL->fields_positions);
 
     fprintf(output, "},\n"); 
 

@@ -206,3 +206,15 @@ unsigned int encode_fields(ac_asm_insn_field *fieldP)
   return encoding;
 }
 
+unsigned int encode_fields_positions(ac_asm_insn_field *fieldP, unsigned insn_size)
+{
+  unsigned int encoding = 0, endbit = 0, startbit = 0;
+
+  while (fieldP != NULL) { /* encode field */
+    startbit = insn_size - fieldP->first_bit - 1;
+    endbit = startbit + fieldP->size - 1;
+    encoding |= ((1 << startbit) | (1 << endbit));
+    fieldP = fieldP->next;
+  }
+  return encoding;
+}
