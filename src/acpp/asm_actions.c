@@ -638,7 +638,9 @@ static int create_operand(char **os, ac_operand_list **oper, int mne_mode, char 
  
   /* identifier expected */
   while ( (**st >= 'a' && **st <= 'z') ||
-          (**st >= 'A' && **st <= 'Z') ) 
+          (**st >= 'A' && **st <= 'Z') || 
+          (**st >= '0' && **st <= '9') || 
+          (**st == '_') ) 
     (*st)++;
 
 
