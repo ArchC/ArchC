@@ -104,7 +104,7 @@ int CreateRelocIds(const char *relocid_filename)
   unsigned reloc_id = 1;
   ac_relocation_type* relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
-    fprintf (output, "%sRELOC_NUMBER (%s, %d)\n", IND1, relocation->name, relocation->id + 13);
+    fprintf (output, "%sRELOC_NUMBER (%s, %d)\n", IND1, relocation->name, relocation->id + 36);
     reloc_id++;
     relocation = find_relocation_by_id(reloc_id);
   }
@@ -244,7 +244,7 @@ int CreateRelocMap(const char *relocmap_filename)
   while (relocation) {
     reloc_id++;
     ac_relocation_type* next_relocation = find_relocation_by_id(reloc_id);
-    fprintf(output,"%s{ %d, %s },\n", IND1, relocation->id + 13, relocation->name);
+    fprintf(output,"%s{ %d, %s },\n", IND1, relocation->id + 36, relocation->name);
     relocation = next_relocation;
   }
 
