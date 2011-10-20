@@ -388,7 +388,7 @@ int CreateOperandTable(const char *optable_filename)
     fprintf(output, "%d,\t", opL->mod_addend);
     fprintf(output, "%u,\t", opL->fields);
     fprintf(output, "%u,\t", opL->format_id);
-    fprintf(output, "%u ", opL->reloc_id + 13);
+    fprintf(output, "%u ", opL->reloc_id + 36);
 
     fprintf(output, "},\n"); 
 
