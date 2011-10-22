@@ -47,7 +47,7 @@ namespace ac_dynlink {
     if (envpath == NULL)
       return -1;
     /* Process environment variable containing libraries search path */
-    apath = new char[strlen(envpath) + strlen(soname) + 1];
+    apath = new char[strlen(envpath) + strlen(soname) + 2];
     for (i = 0, j = 0; i < strlen(envpath); i++)
       {
 	apath[j++] = envpath[i]; 

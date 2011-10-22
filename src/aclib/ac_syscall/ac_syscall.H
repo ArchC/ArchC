@@ -3,6 +3,7 @@
 /**
  * @file      ac_syscall.H
  * @author    Marcus Bartholomeu
+ *            Rafael Auler
  *
  *            The ArchC Team
  *            http://www.archc.org/
@@ -70,19 +71,20 @@ public:
 #include "ac_arch.H"
 
 #include <iostream>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include <sys/times.h>
 #include <time.h>
-
 
 #undef AC_RUN_ERROR
 #if 0 /// Changed to iostream-type. --Marilia
@@ -601,7 +603,7 @@ AC_SYSCALL::ac_rtld_fini()
 #define CORRECT_ENDIAN(word, size) (convert_endian((size),              \
                                                    (word), ref.ac_mt_endian))
 
-#define CORRECT_STAT_STRUCT(buf)                                           \
+#define CORRECT_STAT_STRUCT(buf)                                        \
   do{                                                                   \
     buf.st_dev     = CORRECT_ENDIAN(buf.st_dev, sizeof(dev_t));         \
     buf.st_ino     = CORRECT_ENDIAN(buf.st_ino, sizeof(ino_t));         \
@@ -617,6 +619,59 @@ AC_SYSCALL::ac_rtld_fini()
     buf.st_mtime   = CORRECT_ENDIAN(buf.st_mtime, sizeof(time_t));      \
     buf.st_ctime   = CORRECT_ENDIAN(buf.st_ctime, sizeof(time_t));      \
   } while(0)
+
+#define CORRECT_SOCKADDR_STRUCT_TO_HOST(buf)                            \
+  do{                                                                   \
+    buf.sa_family  = CORRECT_ENDIAN(buf.sa_family, sizeof(sa_family_t));\
+    if (buf.sa_family == AF_INET) {                                     \
+      struct sockaddr_in* tmp_sa_inet = (struct sockaddr_in*)&buf;      \
+      tmp_sa_inet->sin_addr.s_addr = CORRECT_ENDIAN(tmp_sa_inet         \
+                                                    ->sin_addr.s_addr,  \
+                                                    sizeof(unsigned));  \
+    } else if (buf.sa_family == AF_UNIX) {                              \
+    } else if (buf.sa_family == AF_INET6) {                             \
+      struct sockaddr_in6* tmp_sa_inet = (struct sockaddr_in6*)&buf;    \
+      tmp_sa_inet->sin6_flowinfo = CORRECT_ENDIAN(tmp_sa_inet           \
+                                                  ->sin6_flowinfo,      \
+                                                  sizeof(unsigned));    \
+      tmp_sa_inet->sin6_scope_id = CORRECT_ENDIAN(tmp_sa_inet           \
+                                                  ->sin6_scope_id,      \
+                                                  sizeof(unsigned));    \
+    }                                                                   \
+  } while(0)
+#define CORRECT_SOCKADDR_STRUCT_TO_GUEST(buf)                           \
+  do{                                                                   \
+    if (buf.sa_family == AF_INET) {                                     \
+      struct sockaddr_in* tmp_sa_inet = (struct sockaddr_in*)&buf;      \
+      tmp_sa_inet->sin_addr.s_addr = CORRECT_ENDIAN(tmp_sa_inet         \
+                                                    ->sin_addr.s_addr,  \
+                                                    sizeof(unsigned));  \
+    } else if (buf.sa_family == AF_UNIX) {                              \
+    } else if (buf.sa_family == AF_INET6) {                             \
+      struct sockaddr_in6* tmp_sa_inet = (struct sockaddr_in6*)&buf;    \
+      tmp_sa_inet->sin6_flowinfo = CORRECT_ENDIAN(tmp_sa_inet           \
+                                                  ->sin6_flowinfo,      \
+                                                  sizeof(unsigned));    \
+      tmp_sa_inet->sin6_scope_id = CORRECT_ENDIAN(tmp_sa_inet           \
+                                                  ->sin6_scope_id,      \
+                                                  sizeof(unsigned));    \
+    }                                                                   \
+    buf.sa_family  = CORRECT_ENDIAN(buf.sa_family, sizeof(sa_family_t));\
+  } while(0)
+
+#define CORRECT_TIMEVAL_STRUCT(buf)                                     \
+  do{                                                                   \
+    buf.tv_sec     = CORRECT_ENDIAN(buf.tv_sec, sizeof(time_t));        \
+    buf.tv_usec    = CORRECT_ENDIAN(buf.tv_usec, sizeof(suseconds_t));  \
+  } while(0)
+
+#define CORRECT_TIMEZONE_STRUCT(buf)                                    \
+  do{                                                                   \
+    buf.tz_minuteswest = CORRECT_ENDIAN(buf.tz_minuteswest,             \
+                                        sizeof(int));                   \
+    buf.tz_dsttime     = CORRECT_ENDIAN(buf.tz_dsttime, sizeof(int));   \
+  } while(0)
+
 
 /* This function should be called by the syscall instruction
    behavior (INT, SYSCALL, SWI, etc.) of the model. It is an alternative
@@ -993,6 +1048,87 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 #endif /* USE_GDB */
     ref.stop(ac_exit_status);
     return 0;
+  } else if (syscall == sctbl[35]) { // socketcall
+    DEBUG_SYSCALL("socketcall");
+    // See target toolchain include/linux/net.h and include/asm/unistd.h
+    // for detailed information on socketcall translation. This works
+    // form ARM.
+    int ret;
+    int call = get_int(0);
+    unsigned char tmp[256];
+    get_buffer(1, tmp, 256);
+    unsigned *args = (unsigned*) tmp;
+    switch (call) {
+    case 1: // Assuming 1 = SYS_SOCKET
+      {
+        DEBUG_SYSCALL("\tsocket");
+        ret = ::socket(args[0], args[1], args[2]);
+        break;
+      }
+    case 2: // Assuming 2 = SYS_BIND
+      {
+        DEBUG_SYSCALL("\tbind");
+        struct sockaddr buf;
+        set_int(0, args[1]);
+        get_buffer(0, (unsigned char*)&buf, sizeof(struct sockaddr));
+        CORRECT_SOCKADDR_STRUCT_TO_HOST(buf);
+        ret = ::bind(args[0], &buf, args[2]);
+        break;
+      }
+    case 3: // Assuming 3 = SYS_CONNECT
+      {
+        DEBUG_SYSCALL("\tconnect");
+        struct sockaddr buf;
+        set_int(0, args[1]);
+        get_buffer(0, (unsigned char*)&buf, sizeof(struct sockaddr));
+        CORRECT_SOCKADDR_STRUCT_TO_HOST(buf);
+        ret = ::connect(args[0], &buf, args[2]);
+        break;
+      }
+    case 4: // Assuming 4 = SYS_LISTEN
+      {
+        DEBUG_SYSCALL("\tlisten");
+        ret = ::listen(args[0], args[1]);
+        break;
+      }
+    case 5: // Assuming 5 = SYS_ACCEPT
+      {
+        struct sockaddr addr;
+        socklen_t addrlen;
+        DEBUG_SYSCALL("\taccept");
+        ret = ::accept(args[0], &addr, &addrlen);
+        CORRECT_SOCKADDR_STRUCT_TO_GUEST(addr);
+        addrlen = CORRECT_ENDIAN(addrlen, sizeof(socklen_t));
+        set_int(0, args[1]);
+        set_buffer(0, (unsigned char*)&addr, sizeof(struct sockaddr));
+        set_int(0, args[2]);
+        set_buffer(0, (unsigned char*)&addrlen, sizeof(socklen_t));
+        break;
+      }
+    default:
+      AC_WARN("Unimplemented socketcall() call number #" << call);
+      break;
+    }
+    set_int(0, ret);
+    return 0;
+  } else if (syscall == sctbl[36]) { // gettimeofday
+    DEBUG_SYSCALL("gettimeofday");
+    int ret = -EINVAL;
+    struct timezone tz;
+    struct timeval tv;
+    ret = ::gettimeofday(&tv, &tz);
+    CORRECT_TIMEVAL_STRUCT(tv);
+    CORRECT_TIMEZONE_STRUCT(tz);
+    set_buffer(0, (unsigned char*)&tv, sizeof(struct timeval));
+    set_buffer(1, (unsigned char*)&tz, sizeof(struct timezone));   
+    set_int(0, ret);
+    return 0;
+  } else if (syscall == sctbl[37]) { // settimeofday
+    DEBUG_SYSCALL("settimeofday");
+    int ret = -EPERM;
+    AC_WARN("settimeofday: Ignored attempt to change host date");
+    set_int(0, ret);
+    return 0;
   }
 
   /* Default case */
@@ -1002,6 +1138,10 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 #undef SET_BUFFER_CORRECT_ENDIAN
 #undef CORRECT_ENDIAN
 #undef CORRECT_STAT_STRUCT
+#undef CORRECT_SOCKADDR_STRUCT_TO_HOST
+#undef CORRECT_SOCKADDR_STRUCT_TO_GUEST
+#undef CORRECT_TIMEVAL_STRUCT
+#undef CORRECT_TIMEZONE_STRUCT
 
 #endif // ifndef AC_COMPSIM
 

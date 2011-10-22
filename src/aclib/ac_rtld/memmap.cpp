@@ -171,6 +171,9 @@ namespace ac_dynlink {
 
     if (start_addr + ((unsigned)size) > memsize) {
       fprintf(stderr, "ArchC memory manager error: not enough memory in target.\n");
+      fprintf(stderr, "  add_region failed: Start address = 0x%X ; Size = 0x%X",
+              start_addr, size);
+      fprintf(stderr, " ; Total Mem Size = 0x%X\n", memsize);
       exit(EXIT_FAILURE);
     }
     
@@ -222,6 +225,8 @@ namespace ac_dynlink {
         return false; // not enough space
       }
     }
+    if (addr + ((unsigned)size) > memsize)
+      return false; // not enough space
     return true;
   }
   
