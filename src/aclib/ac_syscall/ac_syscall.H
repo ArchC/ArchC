@@ -701,7 +701,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     return 0;
 
   } else if (syscall == sctbl[2]) { // fork
-
+    int ret = ::fork();
+    set_int(0, ret);
+    return 0;
   } else if (syscall == sctbl[3]) { // read
     DEBUG_SYSCALL("read");
 #ifdef AC_MEM_HIERARCHY
