@@ -909,9 +909,10 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     if (offset_high == 0) {
       ret_off = ::lseek(fd, offset_low, whence);
       if (ret_off >= 0) {
-	loff_t result = ret_off;
-	SET_BUFFER_CORRECT_ENDIAN(3, (unsigned char*)&result,
-                                  (unsigned) sizeof(loff_t));
+        // FIXME: This doesn't properly simulate llseek
+	//loff_t result = ret_off;
+	//SET_BUFFER_CORRECT_ENDIAN(3, (unsigned char*)&result,
+        //                          (unsigned) sizeof(loff_t));
 	ret = 0;
       } else {
 	ret = -1;
