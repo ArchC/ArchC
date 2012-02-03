@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "relocation.h"
 #include "utils.h"
 #include "bfd.h"
 #include "opcodes.h"
@@ -82,29 +83,29 @@ int CreateRelocIds(const char *relocid_filename)
 
   // Dynamic relocations. Put them first, so their relocation code doesn't change 
   // for different models.
-  fprintf(output, "%sRELOC_NUMBER (R_%s_RELATIVE,  %d)\n", IND1, get_arch_name(), 1);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_COPY, %d)\n", IND1, get_arch_name(), 2);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_JUMP_SLOT, %d)\n", IND1, get_arch_name(), 3);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_GLOB_DAT, %d)\n", IND1, get_arch_name(), 4);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_RELATIVE,  %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+1);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_COPY, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+2);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_JUMP_SLOT, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+3);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_GLOB_DAT, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+4);
 
   // Generic data relocations
-  fprintf(output, "%sRELOC_NUMBER (R_%s_8,  %d)\n", IND1, get_arch_name(), 5);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_16, %d)\n", IND1, get_arch_name(), 6);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_32, %d)\n", IND1, get_arch_name(), 7);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_8,  %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+5);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_16, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+6);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_32, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+7);
   
-  fprintf(output, "%sRELOC_NUMBER (R_%s_REL8,  %d)\n", IND1, get_arch_name(), 8);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_REL16, %d)\n", IND1, get_arch_name(), 9);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_REL32, %d)\n", IND1, get_arch_name(), 10);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_REL8,  %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+8);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_REL16, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+9);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_REL32, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+10);
 
   // Shared-library related relocations (static)
-  fprintf(output, "%sRELOC_NUMBER (R_%s_GOT,  %d)\n", IND1, get_arch_name(), 11);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_GOTOFF, %d)\n", IND1, get_arch_name(), 12);
-  fprintf(output, "%sRELOC_NUMBER (R_%s_PLT, %d)\n", IND1, get_arch_name(), 13);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_GOT,  %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+11);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_GOTOFF, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+12);
+  fprintf(output, "%sRELOC_NUMBER (R_%s_PLT, %d)\n", IND1, get_arch_name(), AC_GENERIC_RELOCNUM_BEGIN+13);
 
   unsigned reloc_id = 1;
   ac_relocation_type* relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
-    fprintf (output, "%sRELOC_NUMBER (%s, %d)\n", IND1, relocation->name, relocation->id + 36);
+    fprintf (output, "%sRELOC_NUMBER (%s, %d)\n", IND1, relocation->name, relocation->id + AC_USER_RELOCNUM_BEGIN);
     reloc_id++;
     relocation = find_relocation_by_id(reloc_id);
   }
@@ -218,33 +219,33 @@ int CreateRelocMap(const char *relocmap_filename)
   fprintf(output,"%s{ BFD_RELOC_NONE, R_%s_NONE },\n",IND1, get_arch_name());
 
   /* Dynamic relocations */
-  fprintf(output,"%s{ %d, R_%s_RELATIVE  },\n", IND1, 1, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_COPY  },\n", IND1, 2, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_JUMP_SLOT  },\n", IND1, 3, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_GLOB_DAT  },\n", IND1, 4, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_RELATIVE  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+1, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_COPY  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+2, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_JUMP_SLOT  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+3, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_GLOB_DAT  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+4, get_arch_name());  
 
  /* Generic data relocations
     FIXME: this should depend on the target machine!
    */
-  fprintf(output,"%s{ %d, R_%s_8  },\n", IND1, 5, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_16 },\n", IND1, 6, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_32 },\n", IND1, 7, get_arch_name());
+  fprintf(output,"%s{ %d, R_%s_8  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+5, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_16 },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+6, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_32 },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+7, get_arch_name());
 
-  fprintf(output,"%s{ %d, R_%s_REL8  },\n", IND1, 8, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_REL16 },\n", IND1, 9, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_REL32 },\n",  IND1, 10, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL8  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+8, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL16 },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+9, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_REL32 },\n",  IND1, AC_GENERIC_RELOCNUM_BEGIN+10, get_arch_name());  
 
   /* Shared-lib related relocations (static) */
-  fprintf(output,"%s{ %d, R_%s_GOT  },\n", IND1, 11, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_GOTOFF },\n", IND1, 12, get_arch_name());  
-  fprintf(output,"%s{ %d, R_%s_PLT },\n",  IND1, 13, get_arch_name()); 
+  fprintf(output,"%s{ %d, R_%s_GOT  },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+11, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_GOTOFF },\n", IND1, AC_GENERIC_RELOCNUM_BEGIN+12, get_arch_name());  
+  fprintf(output,"%s{ %d, R_%s_PLT },\n",  IND1, AC_GENERIC_RELOCNUM_BEGIN+13, get_arch_name()); 
 
   unsigned reloc_id = 1;
   ac_relocation_type *relocation = find_relocation_by_id(reloc_id);
   while (relocation) {
     reloc_id++;
     ac_relocation_type* next_relocation = find_relocation_by_id(reloc_id);
-    fprintf(output,"%s{ %d, %s },\n", IND1, relocation->id + 36, relocation->name);
+    fprintf(output,"%s{ %d, %s },\n", IND1, relocation->id + AC_USER_RELOCNUM_BEGIN, relocation->name);
     relocation = next_relocation;
   }
 
