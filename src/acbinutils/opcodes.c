@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "relocation.h"
 #include "utils.h"
 #include "opcodes.h"
 
@@ -391,7 +390,7 @@ int CreateOperandTable(const char *optable_filename)
     fprintf(output, "%d,\t", opL->mod_addend);
     fprintf(output, "%u,\t", opL->fields);
     fprintf(output, "%u,\t", opL->format_id);
-    fprintf(output, "%u,\t", opL->reloc_id + AC_USER_RELOCNUM_BEGIN);
+    fprintf(output, "%u,\t", opL->reloc_id + 36);
     fprintf(output, "0x%08x ", opL->fields_positions);
 
     fprintf(output, "},\n"); 
