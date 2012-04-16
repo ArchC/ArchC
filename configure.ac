@@ -18,6 +18,9 @@ case "$host_os" in
   *linux*)
     TARGET_ARCH="linux"
     ;;
+  *darwin*)
+    TARGET_ARCH="macosx"
+    ;;
 esac
 AC_SUBST(TARGET_ARCH)
 
