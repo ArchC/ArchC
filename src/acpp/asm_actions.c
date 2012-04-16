@@ -721,6 +721,7 @@ int acpp_set_assembler_comment_chars(char *input, char *error_msg)
     return 0;
   }
   comment_chars = strdup(input);
+  return 1;
 }
 
 int acpp_set_assembler_line_comment_chars(char *input, char *error_msg)
@@ -731,6 +732,7 @@ int acpp_set_assembler_line_comment_chars(char *input, char *error_msg)
     return 0;
   }
   line_comment_chars = strdup(input);
+  return 1;
 }
 
 
