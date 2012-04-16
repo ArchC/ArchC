@@ -932,7 +932,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
     get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      addresses[i] = (int) buf[i].iov_base;
+      addresses[i] = (int)(long) buf[i].iov_base; // FIXME: this should be checked on x64 systems
       unsigned char *tmp = (unsigned char *) malloc(buf[i].iov_len);
       buf[i].iov_base = (void *)tmp;
     }
@@ -957,9 +957,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     for (int i = 0; i < iovcnt; i++) {
       unsigned char *tmp;
       buf[i].iov_base = (void *) 
-        CORRECT_ENDIAN((unsigned) buf[i].iov_base, sizeof(void *));
+        CORRECT_ENDIAN((unsigned)(long) buf[i].iov_base, sizeof(void *)); // FIXME: this should be checked on x64 systems
       buf[i].iov_len  = CORRECT_ENDIAN(buf[i].iov_len, sizeof(size_t));
-      set_int(1, (int) buf[i].iov_base);
+      set_int(1, (int)(long) buf[i].iov_base); // FIXME: this should be checked on x64 systems
       tmp = (unsigned char *) malloc(buf[i].iov_len);
       buf[i].iov_base = (void *)tmp;
       get_buffer(1, tmp, buf[i].iov_len);
