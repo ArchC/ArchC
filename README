@@ -21,6 +21,8 @@ In brief:
   1. enter ArchC root source tree (you may as well create a new
 directory for use in the building process)
   2. execute:
+    ./boot.sh
+  3. execute:
     ./configure 
   
   NOTES:
@@ -37,8 +39,8 @@ directory for use in the building process)
     the /usr/local directory. If you want any other directory to be used,
     just use the --prefix flag.
 
-  3. make
-  4. make install
+  4. make
+  5. make install
 
 
 MORE INFO
