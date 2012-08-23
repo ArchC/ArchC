@@ -331,7 +331,7 @@ public:
       fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", storage->get_name().c_str());
       exit(EXIT_FAILURE);
     }
-    storage->write(d, 0, 8, s);
+    storage->write((ac_ptr)d, 0, 8, s);
   }
 
 
