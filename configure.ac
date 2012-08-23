@@ -14,7 +14,10 @@ AC_CONFIG_LIBOBJ_DIR([src/replace])
 # Getting system configuration - copy from SystemC
 AC_CANONICAL_HOST
 TARGET_ARCH=
-case "$host_os" in
+case "$host" in
+  x86_64*linux*)
+    TARGET_ARCH="linux64"
+    ;;
   *linux*)
     TARGET_ARCH="linux"
     ;;
