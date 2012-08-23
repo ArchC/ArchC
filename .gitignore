@@ -1,0 +1,25 @@
+# compiled objects
+*.slo
+*.lo
+*.o
+*.so
+*.lai
+*.la
+*.a
+
+# autotools generated files
+Makefile.in
+config/
+configure
+config.h*
+aclocal.m4
+autom4te.cache
+archc.conf
+
+# lex and bison generated files
+src/acpp/archc_grammar.c
+src/acpp/archc_grammar.h
+src/acpp/archc_lex.c
+
+# .orig files
+*.orig
