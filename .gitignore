@@ -27,9 +27,19 @@ Makefile
 src/acpp/archc_grammar.c
 src/acpp/archc_grammar.h
 src/acpp/archc_lex.c
+src/accsim/eval.c
+src/accsim/eval.h
 
 # .orig files
 *.orig
 
 # binutils generated file
 src/acbinutils/binutils/gas/config/tc-xxxxx.c
+
+# generated executables and scripts
+acbingen.sh
+acrelconvert
+bmdsfg
+accsim
+acsim
+actsim
