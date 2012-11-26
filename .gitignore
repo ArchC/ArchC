@@ -15,6 +15,13 @@ Makefile.in
 /aclocal.m4
 /autom4te.cache
 /archc.conf
+/Doxyfile
+/config.log
+/config.status
+/libtool
+.deps/
+Makefile
+/stamp-h1
 
 # lex and bison generated files
 src/acpp/archc_grammar.c
@@ -23,3 +30,6 @@ src/acpp/archc_lex.c
 
 # .orig files
 *.orig
+
+# binutils generated file
+src/acbinutils/binutils/gas/config/tc-xxxxx.c
