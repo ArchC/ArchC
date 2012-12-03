@@ -32,6 +32,7 @@
  * @{
 */
 #include <stdarg.h>
+#include <stdlib.h>
 #include "ac_tools_common.h"
 #include "core_actions.h"
 #include "asm_actions.h"
@@ -39,6 +40,9 @@
 #define YYDEBUG 1
 #define YYERROR_VERBOSE
 #define ADD_DEBUG 1
+
+/* yylex prototype */
+int yylex(void);
 
 /*!type used to identify which unit is being used for storage devices */
 enum _sto_unit {BYTE = 1, KBYTE = 1024, MBYTE = 1048576, GBYTE = 1073741824};

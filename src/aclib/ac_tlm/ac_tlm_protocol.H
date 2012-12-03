@@ -60,14 +60,22 @@ struct ac_tlm_req {
   ac_tlm_req_type type;
   int dev_id;
   uint32_t addr;
-  uint32_t data;
+  union {
+    uint32_t data;
+    uint16_t data16;
+    uint8_t data8;
+  };
 };
 
 /// ArchC TLM response packet.
 struct ac_tlm_rsp {
   ac_tlm_rsp_status status;
   ac_tlm_req_type req_type;
-  uint32_t data;
+  union {
+    uint32_t data;
+    uint16_t data16;
+    uint8_t data8;
+  };
 };
 
 /// ArchC TLM transport interface type.

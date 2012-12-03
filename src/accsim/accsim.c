@@ -24,6 +24,9 @@
 */
 //////////////////////////////////////////////////////////
 
+// For strdup()
+#define _XOPEN_SOURCE 700
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -72,6 +75,7 @@ extern char* eval_input;
 
 //Prototype
 ac_sto_list *accs_FindLoadDevice();
+int eval_parse (void);
 
 
 /*************************************************************************************/
@@ -358,7 +362,7 @@ int accs_ReadElf(char* elffile) {
 
   data_mem_size = accs_FindLoadDevice()->size;
   data_mem = malloc(data_mem_size);
-  instr_mem = data_mem;
+  instr_mem = (unsigned char *)data_mem;
 
   return ac_load_elf(elffile, data_mem, data_mem_size);
 }
@@ -599,7 +603,7 @@ int accs_ReadHexProgram(char* prog_filename)
   //Alocate more realistic size (2 hex digits become 1 byte)
   prog_size_bytes /= 2;
   instr_mem = calloc(prog_size_bytes,1);
-  data_mem = instr_mem;
+  data_mem = (char *)instr_mem;
 
   //Read bytes, count the real program size
   prog_size_bytes = 0;
@@ -675,7 +679,7 @@ int accs_ReadObjdumpHex(char* prog_filename) {
   //Alocate the same size of memory as the processor
   prog_size_bytes = accs_FindLoadDevice()->size;
   instr_mem = calloc(prog_size_bytes,1);
-  data_mem = instr_mem;
+  data_mem = (char *)instr_mem;
 
   //Read bytes, count the real program size
   prog_size_bytes = 0;
@@ -739,6 +743,7 @@ int accs_ReadObjdumpHex(char* prog_filename) {
   }
   data_mem_size = prog_size_bytes;
   fclose(prog);
+  return 0;
 }
 
 
@@ -803,10 +808,6 @@ void accs_CreateCompsimHeader()
   ac_dec_format *pformat;
   ac_dec_field *pfield;
   int j;
-
-  extern ac_sto_list *storage_list;
-  ac_sto_list *pstorage;
-
 
   sprintf( filename, "%s.H", project_name);
   if ( !(output = fopen( filename, "w"))){
@@ -964,13 +965,13 @@ void accs_CreateCompsimHeader()
 	  //"	int process_syscall(int syscall);");
 
   for (j=0; j <= ((prog_size_bytes-1) >> REGION_SIZE); j++) {
-    	fprintf(output, "	void Region%d();\n" , j, j);
-      }
+    fprintf(output, "	void Region%d();\n" , j);
+  }
 
   fprintf( output, "\n");
 
   //Generic instruction behavior
-  COMMENT(INDENT[3],"Generic instruction behavior","\n");
+  COMMENT(INDENT[3],"Generic instruction behavior");
 
   fprintf( output,
            "void ac_behavior_instruction (unsigned ac_instr_size " );
@@ -997,7 +998,7 @@ void accs_CreateCompsimHeader()
   fprintf(output, "%svoid ac_behavior_end();\n\n", INDENT[4]);
 
    //Arguments for formats and format behaviors
-  COMMENT(INDENT[3],"Arguments for formats and format behaviors","\n");
+  COMMENT(INDENT[3],"Arguments for formats and format behaviors");
   for (pformat = decoder->formats; pformat!= NULL; pformat=pformat->next) {
     fprintf( output, "	void ac_behavior_%s (unsigned ac_instr_size", pformat->name);
 
@@ -1011,7 +1012,7 @@ void accs_CreateCompsimHeader()
   fprintf( output, "\n\n");
 
   //Macros for instruction behaviors  
-  COMMENT(INDENT[3], "Instruction behaviors","\n");
+  COMMENT(INDENT[3], "Instruction behaviors");
   for (pinstr = decoder->instructions; pinstr != NULL; pinstr = pinstr->next) {
       for (pformat = decoder->formats;
 	   (pformat != NULL) && strcmp(pinstr->format, pformat->name);
@@ -1042,8 +1043,6 @@ void accs_CreateCompsimHeader()
 /*!Use structures built by the parser.*/
 void accs_CreateCompsimImpl()
 {
-  extern ac_dec_format *format_list;
-  extern ac_dec_instr *instr_list;
   extern int instr_num;
   extern int prog_size_instr;
   extern unsigned char *instr_mem;
@@ -1052,7 +1051,7 @@ void accs_CreateCompsimImpl()
 
   char filename[256];
   FILE *output;
-  int i,j,k, next_instr, rblock;
+  int i,j, next_instr, rblock;
   int invalid_instr_count = 0;
   int *stat_instr_used = (int *) calloc(instr_num+1, sizeof(int));
   //char *instr_mem_p;
@@ -1156,7 +1155,7 @@ void accs_CreateCompsimImpl()
     char filename[100];
     strcpy(filename, ACCompsimProg);
     strcat(filename, ".leaders");
-    if (leaders = fopen(filename, "r")) {
+    if ((leaders = fopen(filename, "r"))) {
       unsigned leader;
       AC_MSG("Loading leaders from file: %s\n", filename);
       while (fscanf(leaders, "%x", &leader) != EOF) {
@@ -1522,7 +1521,7 @@ fprintf( output,
 			"    buf.st_ctime   = CORRECT_ENDIAN(buf.st_ctime, sizeof(time_t));      \\\n"
 			"  } while(0)\n"
 			"\n"
-			"\n")/
+			"\n");
 #if 0
 			"\n"
 			"int %s::process_syscall(int syscall) {\n"
@@ -2865,7 +2864,7 @@ void fast_CreateFileResourcesHeader()
   fprintf( output, "\n// extern double& time_step;\n\n");
 
 
-  COMMENT(INDENT0,"Namespace for compatibility with interpreted ArchC.","\n");
+  COMMENT(INDENT0,"Namespace for compatibility with interpreted ArchC.");
   fprintf( output, "namespace ac_resources {\n\n");
 
   /* Declaring storage devices */
@@ -2946,7 +2945,7 @@ void fast_CreateFileResourcesHeader()
 
   fprintf( output, "\n");
 
-  COMMENT(INDENT[1],"Control Variables.","\n");
+  COMMENT(INDENT[1],"Control Variables.");
   fprintf( output, "// extern reg_uint ac_pc;\n");
   fprintf( output, "  extern ac_reg<unsigned> ac_pc;\n");
 
@@ -2980,8 +2979,6 @@ void fast_CreateFileResourcesImpl()
   extern int HaveMemHier;
   extern int ac_tgt_endian;
 
-  int i;
-
   FILE *output;
   output = fopen("ac_resources.cpp", "w");
 
@@ -2989,7 +2986,7 @@ void fast_CreateFileResourcesImpl()
 
   fprintf( output, "#include  \"ac_resources.H\"\n\n");
 
-  COMMENT(INDENT0,"Namespace for compatibility with interpreted ArchC.","\n");
+  COMMENT(INDENT0,"Namespace for compatibility with interpreted ArchC.");
   fprintf( output, "namespace ac_resources {\n\n");
 
   COMMENT(INDENT[1],"Storage Devices.");
@@ -3078,7 +3075,7 @@ void fast_CreateFileResourcesImpl()
 
   fprintf( output, "\n");
 
-  COMMENT(INDENT[1],"Control Variables","\n");
+  COMMENT(INDENT[1],"Control Variables");
   fprintf( output, "\n");
   fprintf( output, "//  reg_uint ac_pc = %d;\n", prog_entry_point);
   fprintf( output, "  ac_reg<unsigned> ac_pc (\"ac_pc\", %d);\n", prog_entry_point);
@@ -3211,7 +3208,7 @@ void fast_CreateResourcesHeader(FILE *stream)
 
   fprintf( output, "\n");
 
-  COMMENT(INDENT[6],"Control Variables.","\n");
+  COMMENT(INDENT[6],"Control Variables.");
 //  fprintf( output, "// extern reg_uint ac_pc;\n");
   fprintf( output, "%sac_reg<unsigned> ac_pc;\n", INDENT[6]);
 
@@ -3234,8 +3231,6 @@ void fast_CreateResourcesImpl(FILE *stream)
   ac_sto_list *pstorage;
   extern int HaveMemHier;
   extern int ac_tgt_endian;
-
-  int i;
 
   FILE *output = stream;
   fprintf( output, "\n");
@@ -3352,7 +3347,6 @@ void fast_CreateResourcesImpl(FILE *stream)
 /*!Create ArchC Program Memory Header File */
 void accs_CreateProgramMemoryHeader()
 {
-  int i;
   FILE *output;
   char filename[] = "ac_progmem.H";
   extern char *ACCompsimProg;
@@ -3385,7 +3379,6 @@ void accs_CreateProgramMemoryHeader()
 void accs_CreateProgramMemoryImpl()
 {
   /* Create binary file */
-  int i;
   FILE *output;
   char filename[] = "ac_progmem.bin";
 
@@ -3408,7 +3401,6 @@ void accs_CreateMain()
   extern char *ACCompsimProg;
   //extern char *ACVERSION;
   extern char ACOptions[500];
-  int virtual_RAMSIZE=0;
   char filename[] = "main.cpp.tmpl";
   char description[256];
   FILE  *output;
@@ -3435,7 +3427,7 @@ void accs_CreateMain()
 	  "\nusing namespace std;"
 	  "\n"
           "\n"
-          , project_name, project_name);
+          , project_name);
 
   fprintf( output, "const char *project_name=\"%s\";\n", project_name);
   fprintf( output, "const char *project_file=\"%s\";\n", arch_filename);
@@ -3548,7 +3540,7 @@ void accs_CreateISAHeader()
           );
 
   //Begin function
-  COMMENT(INDENT0,"Begin function","\n");
+  COMMENT(INDENT0,"Begin function");
   fprintf( output,
            "//namespace ac_begin {void behavior(ac_stage_list a=ac_stage_list(0), unsigned b=0);}\n"
            "//#define AC_ARGS_begin (ac_stage_list a, unsigned b)\n"
@@ -3557,7 +3549,7 @@ void accs_CreateISAHeader()
            );
 
   //End function
-  COMMENT(INDENT0,"End function","\n");
+  COMMENT(INDENT0,"End function");
   fprintf( output,
            "//namespace ac_end {void behavior(ac_stage_list a=ac_stage_list(0), unsigned b=0);}\n"
            "//#define AC_ARGS_end (ac_stage_list a, unsigned b)\n"
@@ -3575,7 +3567,7 @@ void accs_CreateISAHeader()
            );
 */
 
-  COMMENT(INDENT0,"Generic instruction behavior","\n");
+  COMMENT(INDENT0,"Generic instruction behavior");
   fprintf( output,
            "#define AC_ARGS_instruction (unsigned ac_instr_size " );
 
@@ -3594,7 +3586,7 @@ void accs_CreateISAHeader()
 
 
   //Arguments for formats and format behaviors
-  COMMENT(INDENT0,"Arguments for formats and format behaviors","\n");
+  COMMENT(INDENT0,"Arguments for formats and format behaviors");
   for (pformat = decoder->formats; pformat!= NULL; pformat=pformat->next) {
     fprintf( output, "#define AC_ARGS_%s (unsigned ac_instr_size", pformat->name);
 
@@ -3612,7 +3604,7 @@ void accs_CreateISAHeader()
   fprintf( output, "\n");
 
   //Macros for instruction behaviors
-  COMMENT(INDENT0,"Macros for instruction behaviors","\n");
+  COMMENT(INDENT0,"Macros for instruction behaviors");
   fprintf( output, "#define ac_behavior(instr)   AC_BEHAVIOR_##instr ()\n\n");
   for( pinstr = decoder->instructions; pinstr!= NULL; pinstr=pinstr->next) {
     fprintf( output, "#define AC_BEHAVIOR_%s() %s::ac_behavior_%s AC_ARGS_%s\n",
@@ -3655,7 +3647,7 @@ void accs_CreateISAImpl()
   fprintf( output, "#include \"%s_isa.H\"\n\n", project_name);
 
   //The global and only ISA object
-  COMMENT(INDENT0,"The global and only ISA object","\n");
+  COMMENT(INDENT0,"The global and only ISA object");
   fprintf( output, "%s_isa ISA;\n\n", project_name);
 
   /*
@@ -3877,7 +3869,7 @@ void accs_EmitParmsExtra(FILE* output)
   if( PROCESSOR_OPTIMIZATIONS != 0 )
     fprintf( output, "#define  OPT%d \t //!< Indicates what optimization is used for compiled simulation.\n", PROCESSOR_OPTIMIZATIONS);
   if( PROCESSOR_OPTIMIZATIONS == 2 )
-    fprintf( output, "#define  NO_NEED_PC_UPDATE \t //!< Indicates that simulator takes care of control flow\n", PROCESSOR_OPTIMIZATIONS);
+    fprintf( output, "#define  NO_NEED_PC_UPDATE \t //!< Indicates that simulator takes care of control flow\n");
 }
 
 
@@ -3949,8 +3941,6 @@ char *accs_Fields2Str(instr_decode_t* decoded_instr)
 char *accs_SubstFields(char* expression, int j)
 {
   char* new_exp = 0;
-  char *p_new_exp;
-  char *p_exp, *p_exp_field;
   char *exp;
 
   ac_dec_instr *pinstr = GetInstrByID(decoder->instructions, decode_table[j]->dec_vector[0]);
@@ -3984,7 +3974,7 @@ char *accs_SubstValue(char* str, char* var, unsigned val, int sign)
   p_new = new;
   p1 = str;
 
-  while (p2 = strstr(p1, var)) {
+  while ((p2 = strstr(p1, var))) {
     strncpy(p_new, p1, p2-p1);
     p_new += p2-p1;
     if (sign) p_new += sprintf(p_new, "%d", val);

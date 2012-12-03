@@ -129,9 +129,14 @@ struct option_map option_map[] = {
   {"--annul-instr"   , "-ai"         ,"Necessary in models wich the instructions may be executed or not", "r"},
 /*   {"--pentium4"      , "-p4"         ,"Use option for gcc: -march=pentium4.", "r"}, */
 /*   {"--omit-frame-p"  , "-omitfp"     ,"Use option for gcc: -fomit-frame-pointer.", "r"}, */
-  0
+  { }
 };
 
+// Forward declarations to avoid warning
+void acppInit(void);
+int acppLoad(char *filename);
+int acppRun(void);
+void acppUnload(void);
 
 /*! Display the command line options accepted by ArchC.  */
 static void DisplayHelp (){
@@ -222,7 +227,7 @@ int main( argc, argv )
   extern ac_dec_instr *instr_list;
   // Structures to be passed to the simulator generator 
   extern ac_stg_list *stage_list;
-  ac_pipe_list *pipe_list, *ppipe;
+  ac_pipe_list *pipe_list = NULL, *ppipe;
   extern int HaveFormattedRegs;
   extern ac_decoder_full *decoder;
 
@@ -337,7 +342,7 @@ int main( argc, argv )
                 ++argv, --argc, j++;  /* skip over a parameter */
               }
               //Find application name
-              ACCompsimProg = index(argv[0], '=');
+              ACCompsimProg = strchr(argv[0], '=');
               if (ACCompsimProg) ACCompsimProg++;  //remove '='
               else if (argc > 1) {
                 ACCompsimProg = argv[1];
@@ -1231,7 +1236,7 @@ void CreateTypeHeader() {
     fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
 
     if (ACGDBIntegrationFlag)
-    fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
+    fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n");
 
     fprintf( output, "\n\n");
     COMMENT(INDENT[0],"Word type definitions.");
@@ -2791,7 +2796,7 @@ void CreateResourceImpl() {
   extern int HaveMultiCycleIns, HaveMemHier, reg_width; 
   extern ac_sto_list* load_device;
 
-  ac_sto_list *pstorage, *pmem;
+  ac_sto_list *pstorage;
   ac_stg_list *pstage;
   char Globals[5000];
   char *Globals_p = Globals;
@@ -3901,7 +3906,7 @@ void CreateDummy(int id, char* content) {
 void EmitGenInstrClass(FILE *output) {
   extern ac_dec_format *format_ins_list;
   ac_dec_format *pformat;
-  ac_dec_field *pfield , *pgenfield, *pf, *ppf;
+  ac_dec_field *pfield , *pgenfield = NULL, *pf, *ppf;
   int initializing = 1;
 	
   /* Emiting generic instruction class declaration */
@@ -4757,7 +4762,7 @@ void EmitABIDefine( FILE *output){
 /***************************************/
 void EmitABIAddrList( FILE *output, int base_indent){
 
-  fprintf( output, "#include <ac_syscall.def>\n", INDENT[base_indent]);
+  fprintf( output, "#include <ac_syscall.def>\n");
   fprintf( output, "\n");
   fprintf( output, "#undef AC_SYSC\n\n");
 }
@@ -4970,10 +4975,8 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 //!Read the archc.conf configuration file
 void ReadConfFile(){
 
-  char *conf_filename_local;
   char *conf_filename_global;
   //char *conf_filename;
-  extern char *ARCHC_PATH;
   extern char *SYSTEMC_PATH;
   extern char *CC_PATH;
   extern char *OPT_FLAGS;

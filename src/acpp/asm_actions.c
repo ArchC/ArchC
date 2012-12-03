@@ -196,6 +196,8 @@ Some conventions:
 
 */
 
+// For strdup()
+#define _XOPEN_SOURCE 700
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -217,8 +219,6 @@ static char *line_comment_chars = NULL;
 
 static ac_asm_map_list *mapping_list = NULL;       /* map list header pointer */
 static ac_asm_map_list *mapping_list_tail = NULL;  /* tail pointer */
-
-static char *current_map = NULL; /* current map being parsed*/
 
 /* each mapping element has a collection of symbol-value mapping.
 this variable holds the list of the symbol-value mapping of all mapping elements
@@ -1062,55 +1062,6 @@ file.
 **********************************************/
 
 /*
-  Check if a mapping marker pointed by 's' is valid.
-
-  str -> string to be validated (after the '%')
-  marker -> string in which the marker name will be stored (must be allocated
-  by the caller) (only if returned value == 1)
-
-
-  str will always point to the next element after the marker name (if there
-  is a ']', it will point after that)
-*/
-static int validate_marker(char **str, char *marker, char *error_msg) {
-  int has_lbrack = 0;
-  char *s = marker;
-
-  *s = '\0';
-
-  if (**str == '[') {
-    has_lbrack = 1;
-    (*str)++;
-  }
-
-  while (is_identifier(*str)) { /* '-' -> special character used with modifiers */
-    *s = **str;
-    s++;
-    (*str)++;
-  }
-
-
-  if (has_lbrack && **str != ']') {
-    sprintf(error_msg, "No matching ']' found");
-    return 0;
-  }
-  else if (s == marker) {
-    sprintf(error_msg, "No marker specified");
-    return 0;
-  }
-
-
-  if (has_lbrack && **str == ']') (*str)++;
-
-  *s = '\0';
-
-  return 1;
-}
-
-
-
-
-/*
   When parsing an 'native' insn, this function should be the one called
 first. It cleans internal variables and states.
 
@@ -1450,8 +1401,6 @@ format (from left to right of the insn format) followed by ':'.
 */
 int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_concatenated, char *error_msg) {
 
-  static char *f_arg_str_p;
-
   if (pf == NULL) {
     sprintf(error_msg, "Ignoring undeclared instruction set_asm argument");
     return 0;
@@ -1466,10 +1415,6 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
     return 0;
   }
 
-
-  /* whenever we start building a new formatted_arg_str, make a pointer to its beginning */
-//  if (num_args_found == 0)
-//    f_arg_str_p = formatted_arg_str;
 
   if (!is_concatenated)
     num_args_found++;
@@ -1516,15 +1461,6 @@ int acpp_asm_parse_asm_argument(ac_dec_format *pf, char *field_str, int is_conca
     head->next = newfield;
   }
 
-
-  //  sprintf(&(formatted_arg_str[arg_str_ind]), "%d:", f_id);
-//  sprintf(f_arg_str_p, "%d:", f_id);
-
-  /* move the pointer to the end of the string */
-//  while (*f_arg_str_p != ':') f_arg_str_p++;
-
-//  f_arg_str_p++;
-//  *f_arg_str_p = '\0';
 
   return 1;
 }
@@ -1649,65 +1585,6 @@ static ac_const_field_list *clone_const_fields(ac_const_field_list *cfields)
   return fclone;
 }
 
-
-static void print_asm_insn(ac_asm_insn *insn)
-{
-  printf("\n--\nmnemonic = %s\n", insn->mnemonic);
-  printf("\nliteral operand string = %s\n", insn->op_literal);
-
-  printf("\noperands:\n\n");
-  ac_operand_list *ops = insn->operands;
-  while (ops != NULL) {
-    printf("  string: %s\n", ops->str);
-    printf("  type: ");
-
-    switch (ops->type) {
-      case op_userdef: printf("userdef\n"); break;
-      case op_exp:     printf("exp\n"); break;
-      case op_imm:     printf("imm\n"); break;
-      case op_addr:    printf("addr\n"); break;
-      default:      printf("error");
-    }
-
-    printf("\n  modifier:\n");
-    printf("    name: %s \n", ops->modifier.name);
-    printf("    addend: %d", ops->modifier.addend);
-
-
-    printf("\n\n  fields:\n");
-    ac_asm_insn_field *flist = ops->fields;
-    while (flist != NULL) {
-       printf("    name: %s (id = %d)\n", flist->name, flist->id);
-
-      flist = flist->next;
-    }
-    printf("\n");
-
-    ops = ops->next;
-  }
-
-  /* insn skipped */
-
-  printf("\nconst fields:\n");
-  ac_const_field_list *cf = insn->const_fields;
-  while (cf != NULL) {
-    printf("  value = %d | name = %s\n", cf->value, cf->field.name);
-    /* field skipped */
-    cf = cf->next;
-  }
-
-  printf("\npseudo list:\n");
-  strlist *sl = insn->pseudolist;
-  while (sl != NULL) {
-    printf("  %s\n", sl->str);
-    sl = sl->next;
-  }
-
-  printf("\nnumber of pseudos: %ld\n\n", insn->num_pseudo);
-
-}
-
-
 /*
   This should be called after the syntax string and argument field are
   processed.
@@ -1786,9 +1663,6 @@ int acpp_asm_end_insn(ac_dec_instr *p, char *error_msg)
   insn->mnemonic = (char *) malloc(strlen(current_insn->mnemonic)+1);
   strcpy(insn->mnemonic, current_insn->mnemonic);
   
-  //print_asm_insn(insn);
-
-
   /* Insert the new ac_asm_insn into the asm_insn_list
      It's inserted in alphabetical ordering. In case there are two or more
      insns with the same mnemonic, its order in the list is the same as they

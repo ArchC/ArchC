@@ -34,8 +34,8 @@ namespace ac_dynlink {
   
   version_needed::version_needed(unsigned char *strtab, unsigned char *ver_needed, bool match_endian):
     match_endian(match_endian),
-    ver_needed(ver_needed),
-    strtab(strtab) {
+    strtab(strtab),
+    ver_needed(ver_needed) {
     current_entry = NULL;
     current_aux_entry = NULL;
   }

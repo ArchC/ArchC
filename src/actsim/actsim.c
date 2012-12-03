@@ -36,6 +36,7 @@
 //////////////////////////////////////////////////////////
 
 #include "actsim.h"
+#include "acpp.h"
 #include "stdlib.h"
 #include "ctype.h"
 #include "string.h"
@@ -137,7 +138,7 @@ struct option_map option_map[] =
  {"--encoder"       , "-enc"        , "Use encoder tools with the simulator (beta version).", 0},
 #endif
  {"--gdb-integration", "-gdb"       , "Enable support for debbuging programs running on the simulator.", 0},
- 0
+ { }
 };
 
 /*! Display the command line options accepted by ArchC. */
@@ -223,11 +224,9 @@ int main(int argc, char** argv)
  // Uncomment the line bellow if you want to debug the parser.
  //extern int yydebug;
  ac_pipe_list* ppipe;
- ac_stg_list* pstage;
  int argn, i, j;
  endian a, b;
  int error_flag = 0;
- char* dummy;
 
  // Uncomment the line bellow if you want to debug the parser.
  //yydebug = 1;
@@ -539,16 +538,10 @@ void CreateArchHeader(void)
  extern ac_sto_list* storage_list;
  extern ac_sto_list* fetch_device;
  extern ac_sto_list* load_device;
- extern ac_dec_format* format_reg_list;
  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts,
-            HaveTLMIntrPorts, reg_width, stage_num;
- ac_pipe_list* ppipe;
- ac_stg_list* pstage;
+            HaveTLMIntrPorts;
  ac_sto_list* pstorage;
- ac_dec_format* pformat;
- ac_dec_field* pfield;
  char* cache_str;
- char* prev_stage_name;
  FILE* output;
  char* filename;
 
@@ -908,15 +901,9 @@ void CreateArchRefHeader(void)
  extern char* project_name;
  extern ac_pipe_list* pipe_list;
  extern ac_sto_list* storage_list;
- extern ac_dec_format* format_reg_list;
  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts,
             HaveTLMIntrPorts, reg_width;
- ac_pipe_list* ppipe;
- ac_stg_list* pstage;
  ac_sto_list* pstorage;
- ac_dec_format* pformat;
- ac_dec_field* pfield;
- char* cache_str;
  FILE* output;
  char* filename;
 
@@ -1353,11 +1340,9 @@ void CreateISAHeader(void)
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
    for (pstage = ppipe->stages; pstage != NULL; pstage = pstage->next)
    {
-    fprintf(output, "%s_%s_ref", ppipe->name, pstage->name, ppipe->name,
-            pstage->name);
+    fprintf(output, "%s_%s_ref", ppipe->name, pstage->name);
     if ((pstage->id != stage_num) && (pstage->next != NULL))
      fprintf(output, ", pr_%s_%s_%s_%s_ref",
-             ppipe->name, pstage->name, ppipe->name, pstage->next->name,
              ppipe->name, pstage->name, ppipe->name, pstage->next->name);
     if (ppipe->next || pstage->next)
      fprintf(output, ", ");
@@ -1949,8 +1934,7 @@ void CreateStgHeader(ac_stg_list* stage_list, char* pipe_name)
   else
 #endif
    fprintf(output, "%sclass %s_%s: public sc_module, public ac_stage< ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> >, public %s_arch_ref\n",
-           INDENT[1], project_name, stage_name, project_name, project_name, project_name,
-           project_name);
+           INDENT[1], project_name, stage_name, project_name, project_name);
   // Declaring stage module.
   // It already includes the behavior method.
   // Regins and regouts are now pointers and belong in the parent class. --Marilia
@@ -2422,7 +2406,6 @@ void CreateMakefile(void)
  extern ac_pipe_list* pipe_list;
  extern char *project_name;
  extern int HaveMemHier, HaveFormattedRegs, HaveTLMPorts, HaveTLMIntrPorts;
- ac_dec_format* pformat;
  ac_stg_list* pstage;
  ac_pipe_list* ppipe;
  FILE* output;
@@ -2606,11 +2589,7 @@ void CreateArchRefImpl(void)
  extern ac_sto_list* storage_list;
  extern ac_dec_format* format_reg_list;
  extern int HaveMultiCycleIns;
- ac_pipe_list* ppipe;
- ac_stg_list* pstage;
  ac_sto_list* pstorage;
- ac_dec_format* pformat;
- ac_dec_field* pfield;
  FILE* output;
  char* filename;
 
@@ -3137,8 +3116,6 @@ void CreateMainTmpl(void)
 {
  extern char* project_name;
  extern ac_pipe_list* pipe_list;
- ac_pipe_list* ppipe;
- ac_stg_list* pstage;
  char* description;
  FILE* output;
 
@@ -3176,8 +3153,7 @@ void CreateMainTmpl(void)
  COMMENT(INDENT[1], "ISA simulator.");
  fprintf(output, "%s%s %s_p0(\"%s\", clk.period().to_double());\n\n", INDENT[1], project_name,
          project_name, project_name);
- fprintf(output, "%s%s_p0.clock(clk.signal());\n", INDENT[1], project_name,
-         project_name);
+ fprintf(output, "%s%s_p0.clock(clk.signal());\n", INDENT[1], project_name);
 #if 0 // GDB integration is currently not supported for the cycle-accurate simulator. --Marilia
  if (ACGDBIntegrationFlag)
  {
@@ -3202,7 +3178,7 @@ void CreateMainTmpl(void)
          INDENT[1], project_name);
  fprintf(output, "%ssc_start(-1); // Starts SystemC simulation.\n", INDENT[1]);
  fprintf(output, "#ifdef AC_STATS\n");
- fprintf(output, "%sac_stats_base::print_all_stats(std::cerr);\n", INDENT[1], project_name);
+ fprintf(output, "%sac_stats_base::print_all_stats(std::cerr);\n", INDENT[1]);
  fprintf(output, "#endif\n");
  fprintf(output, "#ifdef AC_DEBUG\n");
  fprintf(output, "%sac_close_trace();\n", INDENT[1]);
@@ -3332,9 +3308,8 @@ void CreateArchGDBImplTmpl(void)
  ac_stg_list* pstage;
  ac_pipe_list* ppipe;
  char* filename;
- char* if_name;
+ char* if_name = NULL;
  FILE* output;
- int i;
 
  filename = malloc(sizeof(char) * (19 + strlen(project_name)));
  sprintf(filename, "%s_gdb_functions.cpp", project_name);
@@ -3344,7 +3319,6 @@ void CreateArchGDBImplTmpl(void)
   exit(1);
  }
  free(filename);
- i = 0;
  if (pipe_list)
  {
   for (ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next)
@@ -3373,7 +3347,7 @@ void CreateArchGDBImplTmpl(void)
  fprintf(output, "%svoid %s::mem_write()\n%s{\n", INDENT[0], if_name,
          INDENT[0]);
  fprintf(output, "%s}\n", INDENT[0]);
- if (if_name != project_name)
+ if (if_name && if_name != project_name)
   free(if_name);
  fclose(output);
  return;
@@ -3515,8 +3489,6 @@ void CreateRegsImpl(void)
  extern ac_dec_format* format_reg_list;
  extern char* project_name;
  ac_dec_format* pformat;
- ac_dec_field* pfield;
- int flag = 1;
  FILE* output;
  char* filename;
 
@@ -3760,7 +3732,7 @@ void EmitDecodification(FILE* output, int base_indent)
  {
   fprintf(output,
           "%sins_cache->instr_p = new ac_instr_t((isa.decoder)->Decode(reinterpret_cast<unsigned char*>(ap.buffer), ap.quant));\n",
-          INDENT[base_indent], project_name);
+          INDENT[base_indent]);
   fprintf(output, "%sins_cache->valid = 1;\n", INDENT[base_indent]);
   base_indent--;
   fprintf(output, "%s}\n", INDENT[base_indent]);
@@ -3772,7 +3744,7 @@ void EmitDecodification(FILE* output, int base_indent)
           "%sinstr_dec = (isa.decoder)->Decode(reinterpret_cast<unsigned char*>(ap.buffer), ap.quant);\n",
           INDENT[base_indent]);
   fprintf(output, "%sinstr_vec = new ac_instr_t(instr_dec);\n",
-          INDENT[base_indent], project_name);
+          INDENT[base_indent]);
  }
  // Checking if it is a valid instruction.
  fprintf(output, "%sins_id = instr_vec->get(IDENT);\n",
@@ -4143,7 +4115,7 @@ void EmitABIDefine(FILE* output, int base_indent)
 /***************************************/
 void EmitABIAddrList(FILE* output, int base_indent)
 {
- fprintf(output, "#include <ac_syscall.def>\n", INDENT[base_indent]);
+ fprintf(output, "#include <ac_syscall.def>\n");
  fprintf(output, "#undef AC_SYSC\n");
  return;
 }

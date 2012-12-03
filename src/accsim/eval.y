@@ -1,12 +1,15 @@
 /* Evaluate C expressions in unsigned type */
 
 %{
+#include <stdlib.h>
 #define YYSTYPE unsigned
 
 unsigned eval_result = 0;
 char *   eval_input;
 
 void yyerror (const char *s) {}
+
+int yylex(void);
 
 %}
 
@@ -80,10 +83,7 @@ yylex (void)
 
   /* process numbers   */
   if (isdigit (*eval_input)) {
-    unsigned size;
     yylval = strtoll (eval_input, &eval_input, 0);
-/*     sscanf (eval_input, "%u%n", &yylval, &size); */
-/*     eval_input += size; */
     return NUM;
   }
 

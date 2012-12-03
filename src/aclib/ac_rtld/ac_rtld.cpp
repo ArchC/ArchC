@@ -174,7 +174,7 @@ namespace ac_dynlink {
     initvec = root->get_start_vector();
     initvecn = root->get_start_vector_n();
     if (initvecn != 0) {
-      int i;
+      unsigned i;
       Elf32_Addr tmp = start_addr;
       start_addr = initvec[0];
       for (i =0; i < initvecn-1; i++)

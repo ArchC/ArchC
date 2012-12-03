@@ -65,7 +65,7 @@ namespace ac_dynlink {
   
   Elf32_Addr dynamic_relocations::read_offset (unsigned int ndx) {
     if (ndx >= size)
-      return NULL;
+      return 0;
     if (use == AC_USE_REL)
       return convert_endian(4, rel[ndx].r_offset, match_endian);
     else if (use == AC_USE_RELA)

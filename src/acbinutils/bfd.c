@@ -330,7 +330,6 @@ static void process_instruction_relocation(ac_asm_insn *asml)
        continue;
     }
      
-    ac_asm_insn_field *fieldP = opP->fields;
     ac_relocation_type* reloc = (ac_relocation_type*) malloc(sizeof(ac_relocation_type));
 
     reloc->operand_id = opP->oper_id; 

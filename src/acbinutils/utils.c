@@ -92,6 +92,9 @@ unsigned int get_insn_size(ac_asm_insn *insn)
     else return pfrm->size;
   }
   else internal_error();
+
+  // hack to avoid warning
+  exit(-1);
 }
 
 void set_arch_name(char *str) 

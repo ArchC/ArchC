@@ -737,7 +737,7 @@ static int parse_format(char** fieldstr, int sum_size, int size_limit, ac_dec_fi
       ac_dec_field *pfield = (ac_dec_field*) malloc( sizeof(ac_dec_field));
 
       //Is it a constant number?
-      value == strtol(*fieldstr, &fieldend, 0);
+      value = strtol(*fieldstr, &fieldend, 0);
       if (fieldend != *fieldstr) {
         //Set name
         pfield->name = (char*) calloc(10,sizeof(char));

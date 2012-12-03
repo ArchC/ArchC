@@ -395,7 +395,7 @@ unsigned *Decode(ac_decoder_full *decoder, unsigned char *buffer, int quant)
 {
   ac_decoder *d = decoder -> decoder;
   ac_dec_field *field = 0;
-  long long field_value;
+  long long field_value = 0;
   ac_dec_instr *instruction = NULL;
   static unsigned *fields = 0;
 

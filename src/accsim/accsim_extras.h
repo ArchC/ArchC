@@ -100,7 +100,6 @@ void COUNT_SYSCALLS_EmitPrintStat(FILE *output)
 void PROCESSOR_OPTIMIZATIONS_PutBreakOrNot(FILE *output, ac_dec_instr *pinstr, int j)
 {
   static int is_branch = 0;
-  int index;
 
   if (pinstr->cflow)
     is_branch = pinstr->cflow->delay_slot + 1;
@@ -171,7 +170,6 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_1(FILE *output, int j)
 
 void PROCESSOR_OPTIMIZATIONS_EmitInstr_2(FILE *output, int j)
 {
-  int instr_index;
   ac_dec_instr *pinstr = GetInstrByID(decoder->instructions, decode_table[j]->dec_vector[0]);
   ac_control_flow *cflow = pinstr->cflow;
   int jump_instr_size = pinstr->size;
@@ -213,7 +211,7 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_2(FILE *output, int j)
 
       //If delay slot instruction is decoded
       if (pinstr) {
-        char *args = accs_Fields2Str(decode_table[j+jump_instr_size]);
+        accs_Fields2Str(decode_table[j+jump_instr_size]);
         fprintf( output, "      if (%s) {\n", accs_SubstFields(cflow->delay_slot_cond, j));
         accs_EmitInstrExtraTop(output, j+jump_instr_size, pinstr, 8);
         accs_EmitInstrBehavior(output, j+jump_instr_size, pinstr, 8);
@@ -244,7 +242,7 @@ void PROCESSOR_OPTIMIZATIONS_EmitInstr_3(FILE *output, int j)
 {
   static unsigned NEXT_START_REGION=0;
   ac_dec_instr *pinstr = GetInstrByID(decoder->instructions, decode_table[j]->dec_vector[0]);
-  char *args = accs_Fields2Str(decode_table[j]);
+  accs_Fields2Str(decode_table[j]);
 
   //put case in leaders
   if (decode_table[j]->is_leader) {

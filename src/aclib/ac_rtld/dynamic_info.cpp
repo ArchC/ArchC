@@ -227,7 +227,6 @@ old and can't be used (version mismatch).\n");
   Elf32_Word dynamic_info::load_library (Elf32_Addr load_addr, unsigned char *mem, unsigned char *soname,
 					 Elf32_Addr& dyn_addr, Elf32_Word& dyn_size, Elf32_Word mem_size) {
     Elf32_Ehdr    ehdr;
-    Elf32_Shdr    shdr;
     Elf32_Phdr    phdr;
     int           fd;
     unsigned int  i;
@@ -281,12 +280,10 @@ old and can't be used (version mismatch).\n");
 	dyn_size = convert_endian(4, phdr.p_memsz, match_endian);
 	/* Fall through. */
       case PT_LOAD: { // Loadable segment type - load dynamic segments as well
-	Elf32_Word j;
 	Elf32_Addr p_vaddr = convert_endian(4,phdr.p_vaddr, match_endian);
 	Elf32_Word p_memsz = convert_endian(4,phdr.p_memsz, match_endian);
 	Elf32_Word p_filesz = convert_endian(4,phdr.p_filesz, match_endian);
 	Elf32_Off  p_offset = convert_endian(4,phdr.p_offset, match_endian);
-        ssize_t rbytes;
 	
 	//Error if segment greater then memory
 	if (mem_size < p_vaddr + p_memsz + load_addr) {

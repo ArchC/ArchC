@@ -24,6 +24,7 @@
  */
 
 #include "acsim.h"
+#include "acpp.h"
 #include "stdlib.h"
 #include "string.h"
 
@@ -90,7 +91,7 @@ struct option_map option_map[] = {
   {"--version"       , "-vrs"        ,"Display ACSIM version.", 0},
   {"--gdb-integration", "-gdb"       ,"Enable support for debbuging programs running on the simulator.", 0},
   {"--no-wait"       , "-nw"        ,"Disable wait() at execution thread.", 0},
-  0
+  { }
 };
 
 
@@ -483,12 +484,10 @@ int main(int argc, char** argv) {
     extern char* project_name;
     extern char* upper_project_name;
 
-    extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+    extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
 
     ac_sto_list *pstorage;
     ac_stg_list *pstage;
-    char Globals[5000];
-    char *Globals_p = Globals;
     ac_pipe_list *ppipe;
 
     FILE *output;
@@ -719,13 +718,9 @@ int main(int argc, char** argv) {
     extern char* project_name;
     extern char* upper_project_name;
 
-    extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts;
+    extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts;
 
     ac_sto_list *pstorage;
-    ac_stg_list *pstage;
-    char Globals[5000];
-    char *Globals_p = Globals;
-    ac_pipe_list *ppipe;
 
     FILE *output;
     char filename[256];
@@ -885,13 +880,9 @@ int main(int argc, char** argv) {
     extern ac_stg_list *stage_list;
     extern char* project_name;
 
-    extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, reg_width;
+    extern int HaveFormattedRegs, HaveMemHier;
 
     ac_sto_list *pstorage;
-    ac_stg_list *pstage;
-    char Globals[5000];
-    char *Globals_p = Globals;
-    ac_pipe_list *ppipe;
 
     FILE *output;
     char filename[256];
@@ -1006,7 +997,7 @@ int main(int argc, char** argv) {
     fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n", load_device->size, load_device->name);
 
     if (ACGDBIntegrationFlag)
-    fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n", load_device->size, load_device->name);
+    fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n");
 
     fprintf( output, "\n\n");
     COMMENT(INDENT[0],"Word type definitions.");
@@ -1151,13 +1142,12 @@ int main(int argc, char** argv) {
     extern char *upper_project_name;
     extern char* helper_contents;
     extern ac_dec_instr *instr_list;
-    extern int HaveMultiCycleIns;
     extern int wordsize;
     extern ac_dec_field *common_instr_field_list;
     ac_grp_list* pgroup;
     ac_dec_format *pformat;
     ac_dec_instr *pinstr;
-    ac_dec_field *pfield, *pf;
+    ac_dec_field *pfield;
 
     char filename[256];
     char description[] = "Instruction Set Architecture header file.";
@@ -1524,10 +1514,7 @@ int main(int argc, char** argv) {
     extern int HaveMultiCycleIns;
     extern int HaveTLMIntrPorts;
     extern ac_sto_list *tlm_intr_port_list;
-    ac_stg_list *pstage;
-    ac_pipe_list *ppipe;
     ac_sto_list *pport;
-    int i;
     char filename[256];
     char description[] = "Architecture Module header file.";
 
@@ -1733,7 +1720,7 @@ void CreateRegsHeader() {
   ac_dec_field *pfield;
 
   int flag = 1;
-  FILE *output;
+  FILE *output = NULL;
   char filename[256];
 
   sprintf( filename, "%s_fmt_regs.H", project_name);
@@ -2475,16 +2462,12 @@ void CreateArchImpl() {
   extern ac_pipe_list *pipe_list;
   extern ac_sto_list *storage_list, *fetch_device;
   extern ac_stg_list *stage_list;
-  extern int HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, reg_width;
+  extern int HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
   extern ac_sto_list* load_device;
 
   extern char *project_name;
 
-  ac_sto_list *pstorage, *pmem;
-  ac_stg_list *pstage;
-  char Globals[5000];
-  char *Globals_p = Globals;
-	ac_pipe_list *ppipe;
+  ac_sto_list *pstorage;
 
   FILE *output;
   char filename[256];
@@ -2695,7 +2678,7 @@ void CreateMainTmpl() {
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf( output, "#ifdef AC_STATS\n");
-  fprintf( output, "%sac_stats_base::print_all_stats(std::cerr);\n", INDENT[1], project_name);
+  fprintf( output, "%sac_stats_base::print_all_stats(std::cerr);\n", INDENT[1]);
   fprintf( output, "#endif \n\n");
 
   fprintf( output, "#ifdef AC_DEBUG\n");
@@ -2715,7 +2698,6 @@ void CreateImplTmpl(){
   extern ac_dec_format *format_ins_list;
   extern ac_stg_list *stage_list;
   extern ac_dec_instr *instr_list;
-  extern ac_dec_field *field_list;
   extern ac_grp_list* group_list;
   extern char *project_name;
   extern int wordsize;
@@ -3240,7 +3222,6 @@ void CreateMakefile(){
   extern int HaveTLMIntrPorts;
   ac_stg_list *pstage;
   ac_pipe_list *ppipe;
-  ac_dec_format *pformat;
   FILE *output;
   char filename[] = "Makefile.archc";
 
@@ -3507,7 +3488,7 @@ void CreateMakefile(){
 void EmitGenInstrClass(FILE *output) {
   extern ac_dec_format *format_ins_list;
   ac_dec_format *pformat;
-  ac_dec_field *pfield , *pgenfield, *pf, *ppf;
+  ac_dec_field *pfield , *pgenfield = NULL, *pf, *ppf;
   int initializing = 1;
 	
   /* Emiting generic instruction class declaration */
@@ -4098,7 +4079,7 @@ void EmitInstrExec( FILE *output, int base_indent){
 
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
-  ac_dec_field *pfield, *pf;
+  ac_dec_field *pfield;
 
   if( ACGDBIntegrationFlag )
     fprintf( output, "%sif (gdbstub && gdbstub->stop(decode_pc)) gdbstub->process_bp();\n\n", INDENT[base_indent]);
@@ -4435,7 +4416,7 @@ void EmitABIDefine( FILE *output){
 /***************************************/
 void EmitABIAddrList( FILE *output, int base_indent){
 
-  fprintf( output, "#include <ac_syscall.def>\n", INDENT[base_indent]);
+  fprintf( output, "#include <ac_syscall.def>\n");
   fprintf( output, "\n");
   fprintf( output, "#undef AC_SYSC\n\n");
 }

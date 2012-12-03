@@ -39,8 +39,8 @@ namespace ac_dynlink {
    */
   memmap_node::memmap_node(memmap_node * _next, memmap_status _status, Elf32_Addr _addr):
     next(_next),
-    status(_status),
-    addr(_addr) {
+    addr(_addr),
+    status(_status) {
   }
     
   memmap_node* memmap_node::get_next() {

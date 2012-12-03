@@ -72,13 +72,13 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address, int wordsize) {
   if (rsp.status == SUCCESS) {
     switch (wordsize) {
     case 8:
-      *(buf.ptr8) = ((uint8_t*)&rsp.data)[0];
+      *(buf.ptr8) = rsp.data8;
       break;
     case 16:
-      *(buf.ptr16) = ((uint16_t*)&rsp.data)[0];
+      *(buf.ptr16) = rsp.data16;
       break;
     case 32:
-      *(buf.ptr32) = ((uint32_t*)&rsp.data)[0];
+      *(buf.ptr32) = rsp.data;
       break;
     case 64:
       *(buf.ptr64) = rsp.data;
@@ -115,7 +115,7 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
       
       if (rsp.status == SUCCESS) {
 	for (int j = 0; (i < n_words) && (j < 4); i++, j++) { 
-	  (buf.ptr8)[i] = ((uint8_t*)&rsp.data)[j];
+	  (buf.ptr8)[i] = ((uint8_t*)&rsp.data8)[j];
 	}
         i--;
       }
@@ -130,7 +130,7 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
       
       if (rsp.status == SUCCESS) {
 	for (int j = 0; (i < n_words) && (j < 2); i++, j++) { 
-	  (buf.ptr16)[i] = ((uint16_t*)&rsp.data)[j];
+	  (buf.ptr16)[i] = ((uint16_t*)&rsp.data16)[j];
 	}
         i--;
       }
@@ -194,8 +194,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
-    req.data = rsp.data;
-    ((uint8_t*)&(req.data))[0] = *(buf.ptr8);
+    ((uint8_t*)&(req.data8))[0] = *(buf.ptr8);
     rsp = (*this)->transport(req);
     break;
   case 16:
@@ -204,8 +203,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
     rsp = (*this)->transport(req);
 
     req.type = WRITE;
-    req.data = rsp.data;
-    ((uint16_t*)&(req.data))[0] =
+    ((uint16_t*)&(req.data16))[0] =
       *(buf.ptr16);
     rsp = (*this)->transport(req);
     break;
@@ -215,7 +213,6 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
  //   rsp = (*this)->transport(req);
 
     req.type = WRITE;
-    req.data = rsp.data;
     ((uint32_t*)&(req.data))[0] =
       *(buf.ptr32);
     rsp = (*this)->transport(req);
@@ -259,7 +256,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
       req.data = rsp.data;
 
       for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
-	((uint8_t*)&req.data)[j] = (buf.ptr8)[i];
+	((uint8_t*)&req.data8)[j] = (buf.ptr8)[i];
       }
       i--;
       (*this)->transport(req);
@@ -276,7 +273,7 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
       req.data = rsp.data;
 
       for (int j = 0; (i < n_words) && (j < 2); j++, i++) {
-	((uint16_t*)&req.data)[j] = (buf.ptr16)[i];
+	((uint16_t*)&req.data16)[j] = (buf.ptr16)[i];
       }
       i--;
       (*this)->transport(req);

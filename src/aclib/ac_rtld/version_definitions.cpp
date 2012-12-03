@@ -30,8 +30,8 @@ namespace ac_dynlink  {
 
   version_definitions::version_definitions(unsigned char *strtab, unsigned char *ver_def, bool match_endian):
     match_endian(match_endian),
-    ver_def(ver_def),
-    strtab(strtab) {
+    strtab(strtab),
+    ver_def(ver_def) {
     current_entry = NULL;
   }
   version_definitions::~version_definitions() {}

@@ -193,7 +193,6 @@ void update_oper_list(int oper_id, unsigned int reloc_id)
 */
 int CreateOpcodeTable(const char *table_filename)
 {
-  char *strP;
   FILE *output;
 
   if ((output = fopen(table_filename, "w")) == NULL) 
@@ -404,7 +403,6 @@ int CreateOperandTable(const char *optable_filename)
 
 int CreateModifierEnum(const char *filename)
 {
-  char *strP;
   FILE *output;
 
   if ((output = fopen(filename, "w")) == NULL) 
@@ -428,7 +426,6 @@ int CreateModifierEnum(const char *filename)
 
 int CreateModifierProt(const char *filename)
 {
-  char *strP;
   FILE *output;
 
   if ((output = fopen(filename, "w")) == NULL) 
@@ -450,7 +447,6 @@ int CreateModifierProt(const char *filename)
 
 int CreateFormatStruct(const char *filename)
 {
-  char *strP;
   FILE *output;
 
   if ((output = fopen(filename, "w")) == NULL) 
@@ -481,7 +477,6 @@ int CreateFormatStruct(const char *filename)
 /* which: 0 = encode modifiers, 1 = decode modifiers */
 int CreateModifierPtr(const char *filename, int which)
 {
-  char *strP;
   FILE *output;
 
   if ((output = fopen(filename, "w")) == NULL) 
@@ -590,8 +585,8 @@ static unsigned int encode_dmask_field(unsigned insn_size, unsigned fbit, unsign
   unsigned int mask2 = 0xffffffff;
   unsigned int field_value=0;
   
-  int i=0;
-  for (i;i<fsize;i++){
+  int i;
+  for (i=0;i<fsize;i++){
     field_value = (field_value<<1) + 1;
   }
 

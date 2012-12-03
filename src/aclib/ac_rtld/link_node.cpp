@@ -123,7 +123,7 @@ namespace ac_dynlink {
 
   void link_node::add_to_start_vector(unsigned int addr) {
     if (root == NULL || root == this) {
-      int i;
+      unsigned i;
       unsigned *tmp = new unsigned[++startvecn];
       for (i = 0; i < startvecn-1; i++)
         tmp[i] = startvec[i];
@@ -152,7 +152,7 @@ namespace ac_dynlink {
 
   void link_node::add_to_fini_vector(unsigned int addr) {
     if (root == NULL || root == this) {
-      int i;
+      unsigned i;
       unsigned *tmp = new unsigned[++finivecn];
       for (i = 0; i < finivecn-1; i++)
         tmp[i] = finivec[i];
@@ -643,7 +643,6 @@ namespace ac_dynlink {
     Elf_Symndx symndx;
     Elf32_Sym *elf_symbol;
     symbol_wrapper *symbol;
-    Elf32_Word symsize;
     
     if (!has_relocations)
       return;
@@ -659,7 +658,7 @@ namespace ac_dynlink {
 	elf_symbol = dyn_table.get_symbol(symndx);
 	symbol = new symbol_wrapper(elf_symbol, match_endian);
 	target = symbol->read_value();
-	symsize = symbol->read_size();
+	symbol->read_size();
 	delete symbol;
 	target += dyn_relocs.read_addend(i);
 	location = dyn_relocs.read_offset(i);

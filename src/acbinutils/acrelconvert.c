@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 //Fix for Cygwin users, that do not have elf.h
 #if defined(__CYGWIN__) || defined(__APPLE__)
@@ -158,8 +159,6 @@ int hash_get_value (hash_node **hashtable, unsigned int index, unsigned int *val
 
 int process_parameters(int argc, char **argv, char *reverse_mode)
 {
-  unsigned int i = 0, j = 0, size = 0;
-
   *reverse_mode = FALSE;
   
   /* Is anything missing? We always need 3 parameters: map file indicator(--map-file or -m),
@@ -293,7 +292,7 @@ int process_map_file(unsigned int fd, hash_node **hashtable, char reverse_mode)
 	  return ACRELCONVERT_FUNC_ERROR;
 	}
 
-      /* Parse the second number at num = num statement *
+      /* Parse the second number at num = num statement */
 	 /* Not a number */
       if (buffer[0] < '0' || buffer[0] > '9')
 	{
@@ -641,7 +640,6 @@ int process_elf(char* filename, hash_node **hashtable)
 		  if (segment_type == PT_LOAD)
 		    {
 		      Elf32_Addr p_vaddr = convert_endian(4,phdr.p_vaddr, match_endian);
-		      Elf32_Word p_memsz = convert_endian(4,phdr.p_memsz, match_endian);
 		      Elf32_Word p_filesz = convert_endian(4,phdr.p_filesz, match_endian);
 		      Elf32_Off  p_offset = convert_endian(4,phdr.p_offset, match_endian);
 

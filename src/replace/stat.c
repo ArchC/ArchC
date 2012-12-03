@@ -22,6 +22,9 @@
 
 /* written by Jim Meyering */
 
+// For lstat()
+#define _XOPEN_SOURCE 700
+
 #include <config.h>
 
 #include <sys/types.h>

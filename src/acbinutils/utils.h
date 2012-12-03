@@ -59,6 +59,8 @@ extern unsigned int get_max_number_fields();
 extern void set_arch_name(char *str);
 extern char *get_arch_name();
 extern void internal_error();
+extern unsigned int encode_fields_positions(ac_asm_insn_field *fieldP,
+	unsigned insn_size);
 
 extern int log_table[];
 
