@@ -136,3 +136,22 @@ AC_CONFIG_FILES(
 
 # Output
 AC_OUTPUT
+AC_MSG_RESULT([
+        $PACKAGE $VERSION
+        ======
+
+        prefix:                 ${prefix}
+        sysconfdir:             ${sysconfdir}
+        libdir:                 ${libdir}
+        bindir:                 ${bindir}
+        systemcdir:		${SC_DIR}
+        tlmdir:                 ${TLM_DIR}
+        binutilsdir:            ${BINUTILS_DIR}
+        gdbdir:                 ${GDB_DIR}
+
+        cc:                     ${CC}
+        cxx:                    ${CXX}
+        cflags:                 ${CFLAGS}
+        cxxflags:               ${CXXFLAGS}
+        ldflags:                ${LDFLAGS}
+])
