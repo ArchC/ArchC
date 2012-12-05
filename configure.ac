@@ -32,6 +32,7 @@ AC_DISABLE_SHARED
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_PROG_LEX
@@ -75,6 +76,10 @@ AC_SUBST(GDB_DIR)
 
 AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
 AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
+
+# Sets global flags
+CFLAGS="$CFLAGS -Wall"
+CXXFLAGS="$CXXFLAGS -Wall"
 
 # Checks for libraries.
 
