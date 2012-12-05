@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-INCLUDES = -I. -I.. -I./ac_core -I./ac_decoder -I./ac_gdb -I./ac_rtld -I./ac_storage -I ./ac_stats -I./ac_syscall -I./ac_utils -I$(SC_DIR)/include
+AM_CPPFLAGS = -I. -I.. -I./ac_core -I./ac_decoder -I./ac_gdb -I./ac_rtld -I./ac_storage -I ./ac_stats -I./ac_syscall -I./ac_utils -I$(SC_DIR)/include
 
 
 if TLM_SUPPORT

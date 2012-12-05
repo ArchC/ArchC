@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-INCLUDES = -I. 
+AM_CPPFLAGS = -I.
 
 ## The ArchC library
 noinst_LTLIBRARIES = libacdecoder.la

@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-INCLUDES = -I. -I$(top_srcdir)/src/aclib/ac_decoder
+AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder
 
 ## yacc options
 AM_YFLAGS = -d
