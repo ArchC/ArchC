@@ -235,7 +235,7 @@ public:
 #endif
 
   //!Method to provide the name of the device.
-  inline char* get_name() {
+  inline const char* get_name() {
     return "";
   }
 
@@ -331,7 +331,7 @@ public:
       fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", storage->get_name().c_str());
       exit(EXIT_FAILURE);
     }
-    storage->write((ac_ptr)d, 0, 8, s);
+    storage->write((ac_ptr)const_cast<uint8_t *>(d), 0, 8, s);
   }
 
 
