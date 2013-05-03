@@ -71,12 +71,12 @@ DIFF="diff"
 #filtro para remover o aviso do SystemC dos arquivos de saída
 #Apenas deverá ser usado se o SystemC produz um aviso "deprecated"
 #quando o simulador é executado.
-FILTRO="sed 1,2d"
+#FILTRO="sed 1,2d"
 # Script
 
 aplicafiltro() {
-	${FILTRO} $1 > ${1}.temp
-	mv ${1}.temp $1
+	#${FILTRO} $1 > ${1}.temp
+	#mv ${1}.temp $1
 	return
 }
 

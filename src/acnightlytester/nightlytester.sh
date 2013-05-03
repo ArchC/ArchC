@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # NightlyTester script for ArchC.
-# Checkout ArchC source in SVN and tests current version
+# Clone ArchC source in GIT and tests current version
 #
 # ArchC Team
 
@@ -91,28 +91,45 @@ format_html_output() {
 # This function is used to build a model using ArchC's simulator generator ACSIM 
 #
 # Param1 is modelname (e.g. "armv5e")
-# Param2 is SVN link (e.g. "$ARMSVNLINK")
+# Param2 is GIT link (e.g. "$ARMGITLINK")
 # Param3 says if we really should build using ACSIM, or just do the svn checkout (e.g. "$RUN_ARM_ACSIM")
-# e.g. ARMREV=build_model "armv5e" "$ARMSVNLINK" "$RUN_ARM_ACSIM"
+# e.g. ARMREV=build_model "armv5e" "$ARMGITLINK" "$RUN_ARM_ACSIM"
 build_model() {
   MODELNAME=$1
-  SVNLINK=$2
+  GITLINK=$2
   USEACSIM=$3
   mkdir ${TESTROOT}/${MODELNAME}
-  echo -ne "Checking out ${MODELNAME} ArchC Model SVN...\n"
+  echo -ne "Cloning ${MODELNAME} ArchC Model GIT...\n"
 
   TEMPFL=${RANDOM}.out
-  svn co ${SVNLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
+  #svn co ${SVNLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
+  git clone ${GITLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
   [ $? -ne 0 ] && {
     rm $TEMPFL
-    echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model SVN checkout failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
+    echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model GIT clone failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
     finalize_html $HTMLLOG ""
-    echo -ne "SVN checkout \e[31mfailed\e[m. Check script parameters.\n"
+    echo -ne "GIT clone \e[31mfailed\e[m. Check script parameters.\n"
     do_abort
   } 
   # Extract model revision number
-  MODELREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
+  cd ${TESTROOT}/${MODELNAME}
+  MODELREV=".."$(git log | head -n1 | cut -c40-)
+  cd -
+  #MODELREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
   rm $TEMPFL
+
+  ### WORKAROUND: In armv5e model, we must rename it to from "arm" to "armv5e" to enable gdb compilation (in gdb tree there is already an architecture named sparcv8)
+  if [ "$MODELNAME" = "armv5e" ]; then
+    MODELNAME="arm_1" 
+    cd ${TESTROOT}
+    mv armv5e arm_1
+    cd arm_1
+    for MODELFILE in `find arm*`
+    do
+	NEWFILENAME=`sed -e 's/arm/arm_1/' <<< "$MODELFILE"`
+    sed -e 's/\([^p]arm\)/\1_1/g' $MODELFILE > $NEWFILENAME
+    done
+  fi
 
   ### WORKAROUND: In sparcv8 model, we must rename it to "sparcv8_1" to enable gdb compilation (in gdb tree there is already an architecture named sparcv8)
   if [ "$MODELNAME" = "sparcv8" ]; then
@@ -190,7 +207,7 @@ build_model() {
 #
 # Param1 is modelname (e.g. "armv5e")
 #
-# Requires: Model already fetched from SVN repository and stored in ${TESTROOT}/${MODELNAME}
+# Requires: Model already fetched from GIT repository and stored in ${TESTROOT}/${MODELNAME}
 # Results: Binary tools for architecture $MODELNAME installed in ${TESTROOT}/${MODELNAME}/binutils
 #
 # Use example: build_binary_tools "armv5e"
@@ -227,7 +244,7 @@ build_binary_tools() {
 #
 # Param1 is modelname (e.g. "armv5e")
 #
-# Requires: Model already fetched from SVN repository and stored in ${TESTROOT}/${MODELNAME}
+# Requires: Model already fetched from GIT repository and stored in ${TESTROOT}/${MODELNAME}
 # Results: gdb for architecture $MODELNAME installed in ${TESTROOT}/${MODELNAME}/binutils
 #
 # Use example: build_binary_tools "armv5e"
@@ -310,6 +327,10 @@ run_tests_acsim_acstone() {
   MODELNAME=$1
   MODELREV=$2
 
+  ### WORKAROUND: In armv5e model, we must rename it to "arm", see "build_model()" for more info  
+  if [ "$MODELNAME" = "armv5e" ]; then
+    MODELNAME="arm_1"     
+  fi
   ### WORKAROUND: In sparcv8 model, we must rename it to "sparcv8_1", see "build_model()" for more info  
   if [ "$MODELNAME" = "sparcv8" ]; then
     MODELNAME="sparcv8_1"     
@@ -470,8 +491,13 @@ run_tests_accsim_mibench() {
 run_tests_acasm() {
   MODELNAME=$1
   ARCHNAME=$2
-  cd ${TESTROOT}/acasm-validation/${MODELNAME}/runtest
-  export BENCH_ROOT="${TESTROOT}/acasm-validation/${MODELNAME}/benchmark/Mibench"
+  if [ "$MODELNAME" = "arm_1" ]; then
+    cd ${TESTROOT}/acasm-validation/armv5e/runtest
+    export BENCH_ROOT="${TESTROOT}/acasm-validation/armv5e/benchmark/Mibench"
+  else
+    cd ${TESTROOT}/acasm-validation/${MODELNAME}/runtest
+    export BENCH_ROOT="${TESTROOT}/acasm-validation/${MODELNAME}/benchmark/Mibench"
+  fi
   export ACBIN_PATH="${TESTROOT}/${MODELNAME}/binutils/${MODELNAME}-elf/bin"
   export BINUTILS_PATH="${TESTROOT}/${MODELNAME}/binutils-orig/${ARCHNAME}-elf/bin"
   LOG_FILE=l${RANDOM}.out
@@ -503,25 +529,25 @@ HTMLLOG=${LOGROOT}/${HTMLPREFIX}-index.htm
 initialize_html $HTMLLOG "NightlyTester ${NIGHTLYVERSION} Run #${HTMLPREFIX}"
 DATE=`date '+%a %D %r'`
 echo -ne "<p>Produced by NightlyTester @ ${DATE}</p>"   >> $HTMLLOG
-echo -ne "<h3>Listing of SVN links used in this run.</h3>\n" >> $HTMLLOG
+echo -ne "<h3>Listing of GIT links used in this run.</h3>\n" >> $HTMLLOG
 echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
 echo -ne "<tr><th>Component</th><th>Link</th></tr>\n" >> $HTMLLOG
-if [ -z "$CHECKOUTLINK" ]; then
+if [ -z "$CLONELINK" ]; then
   echo -ne "<tr><td>ArchC</td><td>${WORKINGCOPY} (private working copy)</td></tr>\n" >> $HTMLLOG
 else
-  echo -ne "<tr><td>ArchC</td><td>${CHECKOUTLINK}</td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>ArchC</td><td>${CLONELINK}</td></tr>\n" >> $HTMLLOG
 fi
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" -o "$RUN_ARM_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>ARM Model</td><td>${ARMSVNLINK}</td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>ARM Model</td><td>${ARMGITLINK}</td></tr>\n" >> $HTMLLOG
 fi
 if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>MIPS Model</td><td>${MIPSSVNLINK}</td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>MIPS Model</td><td>${MIPSGITLINK}</td></tr>\n" >> $HTMLLOG
 fi
 if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>SPARC Model</td><td>${SPARCSVNLINK}</td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>SPARC Model</td><td>${SPARCGITLINK}</td></tr>\n" >> $HTMLLOG
 fi
 if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>PowerPC Model</td><td>${POWERPCSVNLINK}</td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>PowerPC Model</td><td>${POWERPCGITLINK}</td></tr>\n" >> $HTMLLOG
 fi
 echo -ne "</table></p>\n" >> $HTMLLOG
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
@@ -534,13 +560,13 @@ if [ "$SYSTEMCCOMPILE" != "yes" ]; then
   echo -ne "<p>Using user-supplied SystemC path: ${SYSTEMCPATH}</p>\n" >> $HTMLLOG
 fi
 
-# SVN checkout and ArchC build configuration
+# GIT clone and ArchC build configuration
 mkdir ${TESTROOT}
 mkdir ${TESTROOT}/acsrc
 mkdir ${TESTROOT}/install
 cd ${TESTROOT}/acsrc
 
-if [ -z "$CHECKOUTLINK" ]; then
+if [ -z "$CLONELINK" ]; then
   echo -ne "Copying ArchC source from a local directory...\n"
   cp -a ${WORKINGCOPY} ./ &> /dev/null
   [ $? -ne 0 ] && {
@@ -551,19 +577,23 @@ if [ -z "$CHECKOUTLINK" ]; then
   }
   ARCHCREV="N/A"
 else
-  echo -ne "Checking out ArchC SVN version...\n"
-  TEMPFL=${RANDOM}.out
-  svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
+  echo -ne "Cloning ArchC GIT version...\n"
+  #TEMPFL=${RANDOM}.out
+  #svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
+  git clone $CLONELINK . > /dev/null 2>&1 
   [ $? -ne 0 ] && {
     rm $TEMPFL
-    echo -ne "<p><b><font color=\"crimson\">ArchC SVN checkout failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
+    echo -ne "<p><b><font color=\"crimson\">ArchC GIT clone failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
     finalize_html $HTMLLOG ""
-    echo -ne "SVN checkout \e[31mfailed\e[m. Check script parameters.\n"
+    echo -ne "GIT clone \e[31mfailed\e[m. Check script parameters.\n"
     do_abort
   } 
   # Extract revision number
-  ARCHCREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
-  rm $TEMPFL
+  # ARCHCREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
+  cd ${TESTROOT}/acsrc
+  ARCHCREV=".."$(git log | head -n1 | cut -c40-)
+  cd -
+  #rm $TEMPFL
 fi
 
 
@@ -591,6 +621,9 @@ if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM"
     mkdir ${TESTROOT}/gdb
     cd ${TESTROOT}/gdb
     tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
+    cd gdb-6.4
+    wget http://www.ic.unicamp.br/~auler/fix-gdb-6.4.patch > /dev/null 2>&1
+    patch -p1 < ./fix-gdb-6.4.patch 
   fi
 fi
 
@@ -724,20 +757,20 @@ fi
 
 ### Build ARM Model
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" -o "$RUN_ARM_ACCSIM" != "no" ]; then
-  build_model "armv5e" "${ARMSVNLINK}" "${RUN_ARM_ACSIM}"
+  build_model "armv5e" "${ARMGITLINK}" "${RUN_ARM_ACSIM}"
   ARMREV=${MODELREV}
   if [ "$RUN_ARM_ACASM" != "no" ]; then
-    build_binary_tools "armv5e"
-    build_original_toolchain "armv5e" "arm"
+    build_binary_tools "arm_1"
+    build_original_toolchain "arm_1" "arm"
   fi
   if [ "$RUN_ARM_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
-    build_gdb "armv5e"
+    build_gdb "arm_1"
   fi
 fi
 
 ### Build sparcv8 Model
 if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" ]; then
-  build_model "sparcv8" "${SPARCSVNLINK}" "${RUN_SPARC_ACSIM}"
+  build_model "sparcv8" "${SPARCGITLINK}" "${RUN_SPARC_ACSIM}"
   ### in sparcv8 model we change the name of the model to "sparcv8_1" to avoid conflicts with gdb preexistent target
   SPARCREV=${MODELREV}
   if [ "$RUN_SPARC_ACASM" != "no" ]; then
@@ -751,7 +784,7 @@ fi
 
 ### Build mips1 Model
 if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" ]; then
-  build_model "mips1" "${MIPSSVNLINK}" "${RUN_MIPS_ACSIM}"
+  build_model "mips1" "${MIPSGITLINK}" "${RUN_MIPS_ACSIM}"
   MIPSREV=${MODELREV}
   if [ "$RUN_MIPS_ACASM" != "no" ]; then
     build_binary_tools "mips1"
@@ -764,7 +797,7 @@ fi
 
 ### Build powerpc Model
 if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  build_model "powerpc" "${POWERPCSVNLINK}" "${RUN_POWERPC_ACSIM}"
+  build_model "powerpc" "${POWERPCGITLINK}" "${RUN_POWERPC_ACSIM}"
   ### in powerpc model we change the name of the model to "powerpc1" to avoid conflicts in acbinutils validation
   PPCREV=${MODELREV}
   if [ "$RUN_POWERPC_ACASM" != "no" ]; then
@@ -793,6 +826,15 @@ if [ "$RUN_ACSTONE" != "no" ]; then
   [ $? -ne 0 ] && do_abort	
   chmod u+x ${TESTROOT}/acstone/*.sh
   [ $? -ne 0 ] && do_abort	
+  # Fix arm names
+  cd ${TESTROOT}/acstone
+  for MODELFILE in `find *armv5e*`
+    do
+	NEWFILENAME=`sed -e 's/armv5e/arm_1/' <<< "$MODELFILE"`
+	cp $MODELFILE $NEWFILENAME
+    done
+  cd -
+
 fi
 mkdir ${TESTROOT}/acsim
 cp ${SCRIPTROOT}/validation.sh ${TESTROOT}/acsim/validation.sh
@@ -841,7 +883,7 @@ if [ "$RUN_ARM_ACSIM" != "no" ]; then
   tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
 
-  run_tests_acsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
+  run_tests_acsim_mibench "arm_1" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
 fi
 
 ##########################################
@@ -900,7 +942,7 @@ if [ "$RUN_ARM_ACCSIM" != "no" ]; then
   echo -ne "Uncompressing Mibench precompiled for ARM...\n"
   tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
-  run_tests_accsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
+  run_tests_accsim_mibench "arm_1" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
 fi
 
 #sparc
@@ -956,7 +998,7 @@ fi
 # ARM
 if [ "$RUN_ARM_ACASM" != "no" ]; then
   echo -ne "Validating binary tools generated for arm ArchC model...\n"
-  run_tests_acasm "armv5e" "arm"
+  run_tests_acasm "arm_1" "arm"
 fi
 
 # MIPS
