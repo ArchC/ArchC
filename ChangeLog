@@ -1,0 +1,64 @@
+ArchC Change Log, May 2013
+=============================================
+
+
+*------------ Version 2.2 -------------------- 
+*
+* + Added a instruction ./boot.sh in files README and INSTALL
+*
+* = Fix compilation with gcc 4.7
+*           An explicit conversion between uint8_t * and ac_ptr was needed to
+*           correctly match the overloaded function load_array
+*
+* = Fix compilation to work with std=c99 -std=c++03. Tested with:
+*           - gcc 4.7.2:    
+*           - gcc 4.6.3
+*           - clang 3.0
+*           - SystemC 2.3.0
+*           - eglibc 2.15
+*
+* = SystemC:   
+*			- Eliminate deprecation warning caused when running with SystemC 2.2.0 
+*			- Full support for System 2.3.0
+*
+* = Switch INCLUDES to AM_CPPFLAGS in Makefile.am. INCLUDE in Makefile.am is deprecated.
+*
+* + Add descriptive message to configure output. Example:
+*           prefix:                 /opt/archc
+*           sysconfdir:             ${prefix}/etc
+*           libdir:                 ${exec_prefix}/lib
+*           bindir:                 ${exec_prefix}/bin
+*           systemcdir:		/opt/systemc
+*           tlmdir:                 /opt/systemc/include
+*           binutilsdir:
+*           gdbdir:
+*           c compiler:             clang
+*           c++ compiler:           clang++
+*           cflags:                 -Werror -std=c99 -Wall
+*           cxxflags:               -Werror -std=c++03 -Wall
+*           ldflags:
+*
+* = Fix random const issues in ac_storage
+*
+* = Fix warning when running libtoolize
+*           The two or three argument AM_INIT_AUTOMAKE call was deprecated. Part
+*           of it was fixed in previous commits, this patch only suppresses the
+*           warning message about  it.
+*
+* = Updating nightlytester to work with GIT and the new ARM model (which has a different model name).
+*
+* + Implemented fork syscall
+*
+* + MacOSX partially supported 
+*           -  Adding macosx as a possible target to systemc in autoconf script
+*           -  Small fix in boot script to support MacOSX libtoolize
+*           -  ac_syscall modifications to support mac platforms
+*           -  Add support for compiling ARCHC in MacOSX
+
+
+
+
+
+
+
+
