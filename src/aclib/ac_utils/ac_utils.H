@@ -129,7 +129,7 @@ void sigusr2_handler(int signal)
 
 // byte_swap functions, with special assembly-language optimizations for the
 // i486 or greater processors.
-#if __i486__ && __i586__ && __i686__
+#if __i486__ || __i586__ || __i686__ || __x86_64__
 inline uint16_t byte_swap(uint16_t value) {
   asm ("rol $8, %0"
        : "=r" (value)
@@ -145,7 +145,7 @@ inline uint32_t byte_swap(uint32_t value) {
       );
   return value;
 }
-#endif // __i486__ && __i586__ && __i686__
+#endif // __i486__ || __i586__ || __i686__ || __x86_64__
 
 template <typename T>
 inline T byte_swap(T value) {
