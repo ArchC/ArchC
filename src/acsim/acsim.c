@@ -393,12 +393,7 @@ int main(int argc, char** argv) {
     //     but never both of them.
 
     if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
-
-      //Creating Stage Module Header Files
-      CreateStgHeader(stage_list, NULL);
-      //Creating Stage Module Implementation Files
-      CreateStgImpl(stage_list, NULL);
-
+      AC_MSG("Warning: stage_list is no more used by acsim.\n");
     }
     else if( pipe_list ){  //Pipeline list exist. Used for ac_pipe declarations.
 
@@ -474,7 +469,6 @@ int main(int argc, char** argv) {
 
     extern ac_pipe_list *pipe_list;
     extern ac_sto_list *storage_list;
-    extern ac_stg_list *stage_list;
     extern char* project_name;
     extern char* upper_project_name;
 
@@ -644,22 +638,7 @@ int main(int argc, char** argv) {
     fprintf( output, "\n");
 
     //We have different methods for pipelined and non-pipelined archs
-    if(stage_list){
-      COMMENT(INDENT[1],"Stall method.");
-      fprintf( output, "%svoid ac_stall( char *stage ){\n", INDENT[1]);
-		
-      for( pstage = stage_list; pstage != NULL; pstage=pstage->next)
-	if( pstage->next ){
-	  if( pstage->id ==1 )
-	    fprintf( output, "%sif( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
-	  else
-	    fprintf( output, "%selse if( !strcmp( \"%s\", stage ) )\n", INDENT[2], pstage->name);
-				
-	  fprintf( output, "%s%s_stall = 1;\n", INDENT[3], pstage->name);
-	}
-      fprintf( output, "%s};\n", INDENT[1]);
-    }
-    else  if(pipe_list){
+    if(pipe_list){
       COMMENT(INDENT[1],"Stall method.");
       fprintf( output, "%svoid ac_stall( char *stage ){\n", INDENT[1]);
       for( ppipe = pipe_list; ppipe!=NULL; ppipe= ppipe->next ){
@@ -703,7 +682,6 @@ int main(int argc, char** argv) {
 
     extern ac_pipe_list *pipe_list;
     extern ac_sto_list *storage_list;
-    extern ac_stg_list *stage_list;
     extern char* project_name;
     extern char* upper_project_name;
 
@@ -866,7 +844,6 @@ int main(int argc, char** argv) {
 
     extern ac_pipe_list *pipe_list;
     extern ac_sto_list *storage_list;
-    extern ac_stg_list *stage_list;
     extern char* project_name;
 
     extern int HaveFormattedRegs, HaveMemHier;
@@ -914,7 +891,6 @@ int main(int argc, char** argv) {
   //!Creates Decoder Header File
   void CreateParmHeader() {
 
-    extern ac_stg_list *stage_list;
     extern ac_pipe_list *pipe_list;
     extern ac_dec_format *format_ins_list;
     extern int instr_num;
@@ -1065,15 +1041,7 @@ int main(int argc, char** argv) {
     //This enum type is used for case identification inside the ac_behavior methods
     fprintf( output, "enum ac_stage_list {");
 
-    if( stage_list ){   //Enum type for pipes declared through ac_stage keyword
-      fprintf( output, "%s=1,", stage_list->name);
-      pstage = stage_list->next;
-      for( pstage = stage_list->next; pstage && pstage->next != NULL; pstage=pstage->next){
-	fprintf( output, "%s,", pstage->name);
-      }
-      fprintf( output, "%s", pstage->name);
-    }
-    else if(pipe_list){  //Enum type for pipes declared through ac_pipe keyword
+    if(pipe_list){  //Enum type for pipes declared through ac_pipe keyword
 
       for(ppipe = pipe_list; ppipe!= NULL; ppipe=ppipe->next){
 
@@ -1491,7 +1459,6 @@ int main(int argc, char** argv) {
   //!Creates Processor Module Header File
   void CreateProcessorHeader() {
 
-    extern ac_stg_list *stage_list;
     extern ac_pipe_list *pipe_list;
     extern char *project_name;
     extern char *upper_project_name;
@@ -2075,9 +2042,7 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name) {
 //!Creates Processor Module Implementation File
 void CreateProcessorImpl() {
 
-  extern ac_stg_list *stage_list;
   extern ac_pipe_list *pipe_list;
-  extern ac_stg_list *stage_list;
   extern ac_sto_list *storage_list;
   extern char *project_name;
   extern int stage_num;
@@ -2086,7 +2051,6 @@ void CreateProcessorImpl() {
   ac_sto_list *pstorage;
   ac_stg_list *pstage;
   ac_pipe_list *ppipe;
-  int i;
 
   char* filename;
   FILE* output;
@@ -2147,9 +2111,7 @@ void CreateProcessorImpl() {
   }
 
   //!Emit update method.
-  if( stage_list )
-    EmitPipeUpdateMethod( output);
-  else if ( pipe_list )
+  if ( pipe_list )
     EmitMultiPipeUpdateMethod( output);
   else
     EmitUpdateMethod( output);
@@ -2165,12 +2127,7 @@ void CreateProcessorImpl() {
 
     fprintf( output, "%sif( ", INDENT[1]);
 
-    if(stage_list){
-      for( i =1; i<= stage_num-1; i++)
-        fprintf( output, "st%d_done.read() && \n%s", i, INDENT[2]);
-      fprintf( output, "st%d_done.read() )\n", stage_num);
-    }
-    else if ( pipe_list ){
+    if ( pipe_list ){
 
       for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
 
@@ -2207,18 +2164,11 @@ void CreateProcessorImpl() {
 
     fprintf( output, "#endif\n");
 
-
-    if(stage_list){
-      for( i =1; i<= stage_num; i++)
-        fprintf( output, "%sst%d_done.write(0);\n", INDENT[3], i);
-    }
-    else  if ( pipe_list ){
+    if ( pipe_list ){
 
       for( ppipe = pipe_list; ppipe != NULL; ppipe = ppipe->next ){
-	
         for( pstage = ppipe->stages; pstage != NULL; pstage=pstage->next)
           fprintf( output, "%s%s_%s_done.write(0);\n", INDENT[1], ppipe->name, pstage->name);
-
       }
     }
     else{
@@ -2383,7 +2333,6 @@ void CreateArchImpl() {
 
   extern ac_pipe_list *pipe_list;
   extern ac_sto_list *storage_list, *fetch_device;
-  extern ac_stg_list *stage_list;
   extern int HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
   extern ac_sto_list* load_device;
 
@@ -2610,7 +2559,6 @@ void CreateMainTmpl() {
 void CreateImplTmpl(){
 
   extern ac_dec_format *format_ins_list;
-  extern ac_stg_list *stage_list;
   extern ac_dec_instr *instr_list;
   extern ac_grp_list* group_list;
   extern char *project_name;
@@ -2620,7 +2568,6 @@ void CreateImplTmpl(){
   ac_instr_ref_list* pref;
   ac_dec_format *pformat;
   ac_dec_instr *pinstr;
-  ac_stg_list *pstage;
   ac_dec_field *pdecfield;
   ac_dec_list* pdeclist;
 
@@ -2661,76 +2608,20 @@ void CreateImplTmpl(){
 
   //Declaring ac_instruction behavior method.
   COMMENT(INDENT[0],"Generic instruction behavior method.");
-  //Testing if should emit a switch or not.
-  if( stage_list ){
-    fprintf( output, "%svoid ac_behavior( instruction ){;\n\n", INDENT[0]);
-    fprintf( output, "%sswitch( stage ) {\n", INDENT[1]);
-
-    for( pstage = stage_list; pstage != NULL; pstage=pstage->next){
-      fprintf( output, "%scase _%s:\n", INDENT[1], pstage->name);
-      fprintf( output, "%sbreak;\n", INDENT[1]);
-    }
-
-    fprintf( output, "%sdefault:\n", INDENT[1]);
-                          fprintf( output, "%sbreak;\n", INDENT[1]);
-                          fprintf( output, "%s}\n", INDENT[1]);
-                          fprintf( output, "};\n\n");
-  }
-  else{
-    fprintf( output, "%svoid ac_behavior( instruction ){};\n", INDENT[0]);
-  }
-
+  fprintf( output, "%svoid ac_behavior( instruction ){};\n", INDENT[0]);
   fprintf( output, " \n");
-
 
   //Declaring Instruction Format behavior methods.
   COMMENT(INDENT[0]," Instruction Format behavior methods.");
   for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next)
-    //Testing if should emit a switch or not.
-    if( stage_list ){
-      fprintf( output, "%svoid ac_behavior( %s ){\n\n", INDENT[0], pformat->name);
-      fprintf( output, "%sswitch( stage ) {\n", INDENT[1]);
-
-      for( pstage = stage_list; pstage != NULL; pstage=pstage->next){
-        fprintf( output, "%scase _%s:\n", INDENT[1], pstage->name);
-        fprintf( output, "%sbreak;\n", INDENT[1]);
-      }
-
-      fprintf( output, "%sdefault:\n", INDENT[1]);
-                            fprintf( output, "%sbreak;\n", INDENT[1]);
-                            fprintf( output, "%s}\n", INDENT[1]);
-                            fprintf( output, "};\n\n");
-    }
-    else{
-      fprintf( output, "%svoid ac_behavior( %s ){}\n", INDENT[0], pformat->name);
-    }
+    fprintf( output, "%svoid ac_behavior( %s ){}\n", INDENT[0], pformat->name);
 
   fprintf( output, " \n");
 
-
   //Declaring each instruction behavior method.
   for( pinstr = instr_list; pinstr!= NULL; pinstr=pinstr->next){
-
-    //Testing if should emit a switch or not.
-    if( stage_list ){
-      COMMENT(INDENT[0],"Instruction %s behavior method.",pinstr->name);
-      fprintf( output, "%svoid ac_behavior( %s ){\n\n", INDENT[0], pinstr->name);
-      fprintf( output, "%sswitch( stage ) {\n", INDENT[1]);
-
-      for( pstage = stage_list; pstage != NULL; pstage=pstage->next){
-        fprintf( output, "%scase _%s:\n", INDENT[1], pstage->name);
-        fprintf( output, "%sbreak;\n", INDENT[1]);
-      }
-
-      fprintf( output, "%sdefault:\n", INDENT[1]);
-                            fprintf( output, "%sbreak;\n", INDENT[1]);
-                            fprintf( output, "%s}\n", INDENT[1]);
-                            fprintf( output, "};\n\n");
-    }
-    else{
-      COMMENT(INDENT[0],"Instruction %s behavior method.",pinstr->name);
-      fprintf( output, "%svoid ac_behavior( %s ){}\n\n", INDENT[0], pinstr->name);
-    }
+    COMMENT(INDENT[0],"Instruction %s behavior method.",pinstr->name);
+    fprintf( output, "%svoid ac_behavior( %s ){}\n\n", INDENT[0], pinstr->name);
   }
 
   //!END OF FILE.
@@ -3128,7 +3019,6 @@ void CreateMakefile(){
 
   extern ac_dec_format *format_ins_list;
   extern ac_pipe_list* pipe_list;
-  extern ac_stg_list* stage_list;
   extern char *project_name;
   extern int HaveMemHier;
   extern int HaveFormattedRegs;
@@ -3204,12 +3094,7 @@ void CreateMakefile(){
   fprintf( output, "ACSRCS := $(MODULE)_arch.cpp $(MODULE)_arch_ref.cpp ");
 
   //Checking if we have a pipelined architecture or not.
-  if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
-
-    for( pstage = stage_list; pstage!= NULL; pstage = pstage->next)
-      fprintf( output, "%s.cpp ", pstage->name);
-  }
-  else if( pipe_list ){  //Pipeline list exist. Used for ac_pipe declarations.
+  if( pipe_list ){  //Pipeline list exist. Used for ac_pipe declarations.
 
     for(ppipe = pipe_list; ppipe!= NULL; ppipe=ppipe->next){
 
@@ -3242,12 +3127,7 @@ void CreateMakefile(){
     fprintf( output, "%s_stats.H ", project_name);
 
   //Checking if we have a pipelined architecture or not.
-  if( stage_list  ){  //List of ac_stage declarations. Used only for single pipe archs
-
-    for( pstage = stage_list; pstage!= NULL; pstage = pstage->next)
-      fprintf( output, "%s.H ", pstage->name);
-  }
-  else if( pipe_list ){  //Pipeline list exist. Used for ac_pipe declarations.
+  if( pipe_list ){  //Pipeline list exist. Used for ac_pipe declarations.
 
     for(ppipe = pipe_list; ppipe!= NULL; ppipe=ppipe->next){
 
@@ -3723,57 +3603,6 @@ void EmitDecStruct( FILE* output){
       count_fields++;
     i++;
   }
-
-}
-
-
-
-/**************************************/
-/*! Emits a method to update pipe regs
-  Used by CreateArchImpl function     */
-/***************************************/
-void EmitPipeUpdateMethod( FILE *output){
-  extern ac_stg_list *stage_list;
-  extern char *project_name;
-  ac_stg_list *pstage;
-  extern ac_sto_list *storage_list;
-  ac_sto_list *pstorage;
-
-  //Emiting Update Method.
-  COMMENT(INDENT[0],"Updating Pipe Regs for behavioral simulation.");
-  fprintf( output, "%svoid %s_arch::ac_update_regs(){\n", INDENT[0], project_name);
-  fprintf( output, "%sstatic ac_instr nop;\n\n", INDENT[1]);
-
-  for( pstage = stage_list; pstage->next != NULL; pstage=pstage->next){
-
-    fprintf( output, "%sif( !%s_stall )\n", INDENT[1], pstage->name);
-
-    fprintf( output, "%sif( %s_flush ){\n", INDENT[2], pstage->name);
-    fprintf( output, "%s%s_regin.write( nop );\n", INDENT[3], pstage->next->name);
-    fprintf( output, "%s%s_flush = 0;\n", INDENT[3], pstage->name);
-    fprintf( output, "%s}\n", INDENT[2]);
-
-    fprintf( output, "%selse\n", INDENT[2]);
-    fprintf( output, "%s%s_regin.write( %s_regout.read() );\n", INDENT[3], pstage->next->name, pstage->name);
-
-    fprintf( output, "%selse\n", INDENT[1]);
-    fprintf( output, "%s%s_stall = 0;\n", INDENT[2], pstage->name);
-    fprintf( output, "\n");
-
-  }
-
-  if( ACDelayFlag ){
-    for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next )
-      //TODO: Support Delayed assignment for formatted regs
-      if( pstorage->format == NULL )
-        fprintf( output, "%s%s.commit_delays( sc_simulation_time() );\n", INDENT[1], pstorage->name);
-
-    fprintf( output, "%sac_pc.commit_delays( sc_simulation_time() );\n", INDENT[1]);
-  }
-
-  fprintf( output, "%sbhv_pc = ac_pc;\n", INDENT[1]);
-
-  fprintf( output, "%s}\n", INDENT[0]);
 }
 
 /**************************************/
@@ -3982,7 +3811,6 @@ void EmitDecodification( FILE *output, int base_indent){
   \brief Used by EmitProcessorBhv, EmitMultCycleProcessorBhv and CreateStgImpl functions      */
 /***************************************/
 void EmitInstrExec( FILE *output, int base_indent){
-  extern ac_stg_list *stage_list;
   extern ac_pipe_list *pipe_list;
   extern ac_dec_instr *instr_list;
   extern ac_dec_format *format_ins_list;
@@ -4004,7 +3832,7 @@ void EmitInstrExec( FILE *output, int base_indent){
   fprintf(output, "%sif (!ac_annul_sig) ", INDENT[base_indent]);
 
   //Pipelined archs can annul an instruction through pipelining flushing.
-  if(stage_list || pipe_list ){
+  if( pipe_list ){
     fprintf( output, "ISA._behavior_instruction( (ac_stage_list) id );\n");
 /*     fprintf( output, "%s(ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_type_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name, project_name); */
 /*     fprintf( output, "%s(ISA.*(%s_parms::%s_isa::instr_table[ins_id].ac_instr_behavior))((ac_stage_list) id);\n", INDENT[base_indent], project_name, project_name); */
@@ -4072,7 +3900,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf( output, PRINT_TRACE, INDENT[base_indent+1]);
   }
 
-  if( stage_list || pipe_list )
+  if( pipe_list )
     fprintf( output, "%sregout.write( *instr_vec);\n", INDENT[base_indent]);
 
   if(!ACDecCacheFlag){
