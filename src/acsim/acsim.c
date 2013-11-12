@@ -43,7 +43,6 @@ int  ACDDecoderFlag=0;                          //!<Indicates whether decoder st
 //int  ACQuietFlag=0;                             //!<Indicates whether storage update logs are displayed during simulation or not
 int  ACStatsFlag=0;                             //!<Indicates whether statistics collection is enable or not
 int  ACVerboseFlag=0;                           //!<Indicates whether verbose option is turned on or not
-int  ACVerifyFlag=0;                            //!<Indicates whether verification option is turned on or not
 int  ACVerifyTimedFlag=0;                       //!<Indicates whether verification option is turned on for a timed behavioral model
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
@@ -432,11 +431,7 @@ int main(int argc, char** argv) {
       CreateIntrMacrosHeader();
       CreateIntrTmpl();
     }
-
-    //Creating co-verification class header file.
-    //if( ACVerifyFlag )
-    //  CreateCoverifHeader();
-
+    
     //Creating Simulation Statistics class header file.
     if (ACStatsFlag) {
       CreateStatsHeaderTmpl();
@@ -680,11 +675,6 @@ int main(int argc, char** argv) {
 	  }
       }
       fprintf( output, "%s};\n", INDENT[1]);
-    }
-
-    if(ACVerifyFlag){
-      COMMENT(INDENT[1],"Set co-verification msg queue.");
-      fprintf( output, "%svoid set_queue(char *exec_name);\n", INDENT[1]);
     }
 
     COMMENT(INDENT[1],"Module initialization method.");
@@ -957,15 +947,11 @@ int main(int argc, char** argv) {
     fprintf( output, "#define  _%s_PARMS_H\n\n", upper_project_name);
 
     /* options defines */
-    if( ACVerboseFlag || ACVerifyFlag )
+    if( ACVerboseFlag ) {
       fprintf( output, "#define  AC_UPDATE_LOG \t //!< Update log generation turned on.\n");
-
-    if( ACVerboseFlag )
       fprintf( output, "#define  AC_VERBOSE \t //!< Indicates Verbose mode. Where update logs are dumped on screen.\n");
-
-    if( ACVerifyFlag )
-      fprintf( output, "#define  AC_VERIFY \t //!< Indicates that co-verification is turned on.\n");
-	
+    }
+    
     if( ACDebugFlag )
       fprintf( output, "#define  AC_DEBUG \t //!< Indicates that debug option is turned on.\n\n");
 
@@ -1576,7 +1562,7 @@ int main(int argc, char** argv) {
 
     fprintf( output, " \n");
 
-    if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+    if (ACVerboseFlag || ACVerifyTimedFlag)
       fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
 
     fprintf( output, "\n");
@@ -1610,7 +1596,7 @@ int main(int argc, char** argv) {
     COMMENT(INDENT[1], "Behavior execution method.");
     fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
 
-    if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+    if (ACVerboseFlag || ACVerifyTimedFlag) {
       COMMENT(INDENT[1], "Verification method.");
       fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
       fprintf( output, " \n");
@@ -1637,7 +1623,7 @@ int main(int argc, char** argv) {
 
     fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
 
-    if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+    if (ACVerboseFlag || ACVerifyTimedFlag) {
       fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
       fprintf( output, "%ssensitive<< done;\n", INDENT[2]);
       fprintf( output, " \n");
@@ -1979,12 +1965,6 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name) {
     if( pstage->id == 1 && ACABIFlag )
       fprintf( output, "#include  \"%s_syscall.H\"\n\n", project_name);
 
-    if( pstage->id == 1 && ACVerifyFlag ){
-      fprintf( output, "#include  \"ac_msgbuf.H\"\n");
-      fprintf( output, "#include  \"sys/msg.h\"\n");
-    }
-
-
     //Emiting stage behavior method implementation.
     if( pstage->id != 1 ){
 
@@ -2036,11 +2016,6 @@ void CreateStgImpl(ac_stg_list* stage_list, char* pipe_name) {
         /*fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name);*/
         fprintf( output, "%sstatic int flushes_left=7;\n", INDENT[1]);
         fprintf( output, "%sstatic ac_instr *the_nop = new ac_instr;\n", INDENT[1]);
-      }			
-			
-      if( ACVerifyFlag ){
-        fprintf( output, "%sextern int msqid;\n", INDENT[1]);
-        fprintf( output, "%sstruct log_msgbuf end_log;\n", INDENT[1]);
       }
 
       if( ac_host_endian == 0 ){
@@ -2129,11 +2104,6 @@ void CreateProcessorImpl() {
   fprintf( output, "#include  \"%s.H\"\n", project_name);
   fprintf( output, "#include  \"%s_isa.cpp\"\n\n", project_name);
 
-  if( ACVerifyFlag ){
-    fprintf( output, "#include  \"ac_msgbuf.H\"\n");
-    fprintf( output, "#include  \"sys/msg.h\"\n");
-  }
-
   if( ACABIFlag )
     fprintf( output, "#include  \"%s_syscall.H\"\n\n", project_name);
 		
@@ -2144,10 +2114,6 @@ void CreateProcessorImpl() {
   }
   fprintf( output, "%sunsigned ins_id;\n", INDENT[1]);
 
-  if( ACVerifyFlag ){
-    fprintf( output, "%sextern int msqid;\n", INDENT[1]);
-    fprintf( output, "%sstruct log_msgbuf end_log;\n", INDENT[1]);
-  }
 /*   if( ACABIFlag ) */
 /*     fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name); */
 
@@ -2192,19 +2158,9 @@ void CreateProcessorImpl() {
   fprintf( output, " \n");
 
   //Emiting Verification Method.
-  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag) {
+  if (ACVerboseFlag || ACVerifyTimedFlag) {
     COMMENT(INDENT[0],"Verification method.\n");
     fprintf( output, "%svoid %s::ac_verify(){\n", INDENT[0], project_name);
-
-    if( ACVerifyFlag ){
-
-      fprintf( output, "extern int msqid;\n");
-      fprintf( output, "struct log_msgbuf lbuf;\n");
-      fprintf( output, "log_list::iterator itor;\n");
-      fprintf( output, "log_list *plog;\n");
-    }
-    fprintf( output, " \n");
-
 
     fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
 
@@ -2245,39 +2201,6 @@ void CreateProcessorImpl() {
 
     fprintf( output, "#ifdef AC_UPDATE_LOG\n");
 
-    if( ACVerifyFlag ){
-
-      int next_type = 3;
-
-      fprintf( output, "%sif( sc_simulation_time() ){\n", INDENT[3]);
-
-      //Sending logs for every storage device. We just consider for co-verification caches, regbanks and memories
-      for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-
-        if( pstorage->type == MEM ||
-            pstorage->type == ICACHE ||
-            pstorage->type == DCACHE ||
-            pstorage->type == CACHE ||
-            pstorage->type == REGBANK ){
-
-          fprintf( output, "%splog = %s.get_changes();\n", INDENT[4],pstorage->name );
-          fprintf( output, "%sif( plog->size()){\n", INDENT[4] );
-          fprintf( output, "%sitor = plog->begin();\n", INDENT[5] );
-          fprintf( output, "%slbuf.mtype = %d;\n", INDENT[5], next_type );
-          fprintf( output, "%swhile( itor != plog->end()){\n\n", INDENT[5] );
-          fprintf( output, "%slbuf.log = *itor;\n", INDENT[6] );
-          fprintf( output, "%sif( msgsnd(msqid, (struct log_msgbuf *)&lbuf, sizeof(lbuf), 0) == -1)\n", INDENT[6] );
-          fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[7] );
-          fprintf( output, "%sitor = plog->erase(itor);\n", INDENT[6] );
-          fprintf( output, "%s}\n", INDENT[5] );
-          fprintf( output, "%s}\n\n", INDENT[4] );
-
-          next_type++;
-        }
-      }
-      fprintf( output, "%s}\n\n", INDENT[3] );
-
-    }
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
       //fprintf( output, "%s%s.change_save();\n", INDENT[3],pstorage->name );
       fprintf( output, "%s%s.reset_log();\n", INDENT[3],pstorage->name );
@@ -2484,14 +2407,6 @@ void CreateArchImpl() {
   print_comment( output, "ArchC Resources Implementation file.");
 
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
-
-  if(ACVerifyFlag){
-    fprintf( output, "#include  \"ac_msgbuf.H\"\n");
-    fprintf( output, "#include  <sys/ipc.h>\n");
-    fprintf( output, "#include  <unistd.h>\n");
-    fprintf( output, "#include  <sys/msg.h>\n");
-    fprintf( output, "#include  <sys/types.h>\n");
-  }
 
   fprintf(output, "\n");
 
@@ -4189,12 +4104,6 @@ void EmitFetchInit( FILE *output, int base_indent){
   fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << bhv_pc << \").\" << endl;\n", INDENT[base_indent+1]);
 	//  fprintf( output, "%scout = cerr;\n", INDENT[base_indent+1]);
 
-  if( ACVerifyFlag ){
-    fprintf( output, "%send_log.mtype = 1;\n", INDENT[base_indent+1]);
-    fprintf( output, "%send_log.log.time = -1;\n", INDENT[base_indent+1]);
-    fprintf( output, "%sif(msgsnd(msqid, (struct log_msgbuf *)&end_log, sizeof(end_log), 0) == -1)\n", INDENT[base_indent+1]);
-    fprintf( output, "%sperror(\"msgsnd\");\n", INDENT[base_indent+2]);
-  }
 /*   fprintf( output, "%sac_stop();\n", INDENT[base_indent+1]); */
   fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
   fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
@@ -4236,7 +4145,7 @@ void EmitProcessorBhv( FILE *output){
 
   fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
   fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
-  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+  if (ACVerboseFlag || ACVerifyTimedFlag)
     fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
   fprintf( output, "%s}\n", INDENT[1]);
 
@@ -4281,7 +4190,7 @@ void EmitProcessorBhv_ABI( FILE *output){
 
   fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
   fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
-  if (ACVerboseFlag || ACVerifyFlag || ACVerifyTimedFlag)
+  if (ACVerboseFlag || ACVerifyTimedFlag)
     fprintf( output, "%sdone.write(1);\n", INDENT[2]);
 
   //Closing for.
