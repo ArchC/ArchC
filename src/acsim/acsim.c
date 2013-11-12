@@ -43,7 +43,6 @@ int  ACDDecoderFlag=0;                          //!<Indicates whether decoder st
 //int  ACQuietFlag=0;                             //!<Indicates whether storage update logs are displayed during simulation or not
 int  ACStatsFlag=0;                             //!<Indicates whether statistics collection is enable or not
 int  ACVerboseFlag=0;                           //!<Indicates whether verbose option is turned on or not
-int  ACVerifyTimedFlag=0;                       //!<Indicates whether verification option is turned on for a timed behavioral model
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
 
@@ -1562,7 +1561,7 @@ int main(int argc, char** argv) {
 
     fprintf( output, " \n");
 
-    if (ACVerboseFlag || ACVerifyTimedFlag)
+    if (ACVerboseFlag)
       fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
 
     fprintf( output, "\n");
@@ -1596,7 +1595,7 @@ int main(int argc, char** argv) {
     COMMENT(INDENT[1], "Behavior execution method.");
     fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
 
-    if (ACVerboseFlag || ACVerifyTimedFlag) {
+    if (ACVerboseFlag) {
       COMMENT(INDENT[1], "Verification method.");
       fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
       fprintf( output, " \n");
@@ -1623,7 +1622,7 @@ int main(int argc, char** argv) {
 
     fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
 
-    if (ACVerboseFlag || ACVerifyTimedFlag) {
+    if (ACVerboseFlag) {
       fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
       fprintf( output, "%ssensitive<< done;\n", INDENT[2]);
       fprintf( output, " \n");
@@ -2158,7 +2157,7 @@ void CreateProcessorImpl() {
   fprintf( output, " \n");
 
   //Emiting Verification Method.
-  if (ACVerboseFlag || ACVerifyTimedFlag) {
+  if (ACVerboseFlag) {
     COMMENT(INDENT[0],"Verification method.\n");
     fprintf( output, "%svoid %s::ac_verify(){\n", INDENT[0], project_name);
 
@@ -4145,7 +4144,7 @@ void EmitProcessorBhv( FILE *output){
 
   fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
   fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
-  if (ACVerboseFlag || ACVerifyTimedFlag)
+  if (ACVerboseFlag)
     fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
   fprintf( output, "%s}\n", INDENT[1]);
 
@@ -4190,7 +4189,7 @@ void EmitProcessorBhv_ABI( FILE *output){
 
   fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
   fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
-  if (ACVerboseFlag || ACVerifyTimedFlag)
+  if (ACVerboseFlag)
     fprintf( output, "%sdone.write(1);\n", INDENT[2]);
 
   //Closing for.
