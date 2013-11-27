@@ -58,11 +58,7 @@ template<typename ac_word, typename ac_Hword> class ac_memport :
 
 private:
   ac_inout_if* storage;
-
-  ac_word aux_word;
-  ac_Hword aux_Hword;
-  uint8_t aux_byte;
-
+  
 protected:
   typedef list<change_log<ac_word> > log_list;
 #ifdef AC_UPDATE_LOG
@@ -86,41 +82,29 @@ public:
 
   ///Reads a word
   inline ac_word read(uint32_t address) {
+    ac_word aux_word;
     storage->read(&aux_word, address, sizeof(ac_word) * 8);
-    if (!this->ac_mt_endian) {
-      aux_word = byte_swap(aux_word);
-    }
-    return aux_word;
+    return byte_swap(aux_word);
   }
 
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
+    uint8_t aux_byte;
     storage->read(&aux_byte, address, 8);
     return aux_byte;
   }
 
   ///Reads half word
   inline ac_Hword read_half(uint32_t address) {
-
-    if (!this->ac_mt_endian) {
-      storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
-      aux_Hword = convert_endian(sizeof(ac_Hword), aux_Hword, 0);
-      return aux_Hword;
-    }
-    else {
-      storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
-      return aux_Hword;
-    } 
-
+    ac_Hword aux_Hword;
+    storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
+    return byte_swap(aux_Hword);
   }
   
   //!Writing a word
   inline void write(uint32_t address, ac_word datum) {
-    aux_word = datum;
-    if (!this->ac_mt_endian) {
-      aux_word = byte_swap(datum);
-    }
-    storage->write(&aux_word, address, sizeof(ac_word) * 8);
+    datum = byte_swap(datum);
+    storage->write(&datum, address, sizeof(ac_word) * 8);
   }
 
   //!Writing a byte 
@@ -130,22 +114,14 @@ public:
 
   //!Writing a short int 
   inline void write_half(uint32_t address, ac_Hword datum) {
-    if (!this->ac_mt_endian) {
-      aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
-      storage->write(&aux_Hword, address, sizeof(ac_Hword) * 8);
-    }
-    else {
-      storage->write(&datum, address, sizeof(ac_Hword) * 8);
-    }
+    datum = byte_swap(datum);
+    storage->write(&datum, address, sizeof(ac_Hword) * 8);
   }
 
 #ifdef AC_DELAY
   //!Writing a word
   inline void write(uint32_t address, ac_word datum, uint32_t time) {
-    if (!this->ac_mt_endian)
-      delays.push_back(change_log<ac_word>(address, byte_swap(datum), time));
-    else
-      delays.push_back(change_log<ac_word>(address, datum, time));
+    delays.push_back(change_log<ac_word>(address, byte_swap(datum), time));
   }
 
   //!Writing a byte 
@@ -153,7 +129,8 @@ public:
 			 uint32_t time) {
     uint32_t oset_addr = address % sizeof(ac_word);
     uint32_t base_addr = address - oset_addr;
-
+    
+    ac_word aux_word;
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
     ((uint8_t*)(&aux_word))[oset_addr] = datum;
@@ -167,16 +144,12 @@ public:
     uint32_t oset_addr = address % sizeof(ac_word);
     uint32_t base_addr = address - oset_addr;
 
+    ac_word aux_word;
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    aux_Hword = datum;
-    if (!this->ac_mt_endian) {
-      aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
-    }
-    ((ac_Hword*)(&aux_word))[oset_addr] = aux_Hword;
+    ((ac_Hword*)(&aux_word))[oset_addr] = byte_swap(datum);
     
     delays.push_back(change_log<ac_word>(base_addr, aux_word, time));
-    
   }
 
 #endif

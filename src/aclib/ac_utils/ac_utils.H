@@ -126,29 +126,36 @@ void sigusr2_handler(int signal)
 
 #endif //AC_COMPSIM
 
-
-// byte_swap functions, with special assembly-language optimizations for the
-// i486 or greater processors.
-#if __i486__ || __i586__ || __i686__ || __x86_64__
+// Byte Swap functions
 inline uint16_t byte_swap(uint16_t value) {
-  asm ("rol $8, %0"
-       : "=r" (value)
-       : "r"  (value)
-      );
-  return value;
+#if AC_GUEST_BIG_ENDIAN
+  return be16toh(value);
+#else
+  return le16toh(value);
+#endif
 }
 
 inline uint32_t byte_swap(uint32_t value) {
-  asm ("bswap %0"
-       : "=r" (value)
-       : "r"  (value)
-      );
-  return value;
+#if AC_GUEST_BIG_ENDIAN
+  return be32toh(value);
+#else
+  return le32toh(value);
+#endif
 }
-#endif // __i486__ || __i586__ || __i686__ || __x86_64__
+
+inline uint64_t byte_swap(uint64_t value) {
+#if AC_GUEST_BIG_ENDIAN
+  return be64toh(value);
+#else
+  return le64toh(value);
+#endif
+}
 
 template <typename T>
 inline T byte_swap(T value) {
+#if AC_MATCH_ENDIANNESS
+  return value;
+#else 
   unsigned int aux;
   T result = 0;
   for (unsigned int i = 0; i < sizeof(T); i++) {
@@ -158,6 +165,7 @@ inline T byte_swap(T value) {
     result |=  aux;
   }
   return result;
+#endif
 }
 
 // convert_endian is redundant, the idea is to use byte_swap for all

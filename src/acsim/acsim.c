@@ -2678,7 +2678,14 @@ void CreateMakefile(){
   fprintf( output, "CC :=  %s\n", CC_PATH);
   fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
   fprintf( output, "DEBUG :=  %s\n", DEBUG_FLAGS);
-  fprintf( output, "OTHER :=  %s\n", OTHER_FLAGS);
+  fprintf( output, "OTHER := ");
+  //!< The guest arch is big endian?
+  if ( ac_tgt_endian )
+    fprintf( output, " -DAC_GUEST_BIG_ENDIAN");
+  //!< The guest and host arch is the same endianness?
+  if ( ac_match_endian )
+    fprintf( output, " -DAC_MATCH_ENDIANNESS");
+  fprintf( output, " %s\n", OTHER_FLAGS);
   fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) %s\n",
            (ACGDBIntegrationFlag) ? "-DUSE_GDB" : "" );
 
