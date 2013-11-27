@@ -1096,23 +1096,23 @@ int main(int argc, char** argv) {
     fprintf( output,"%s}\n\n", INDENT[1] );
 
     /* getter methods for current instruction */
-    fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
-    fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
-    fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
-    fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
-    fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
-    fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", INDENT[1]);
     // Group query methods.
     for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
     {
-     fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
+     fprintf(output, "%sinline __attribute__((always_inline)) const bool belongs_to_%s()\n%s{\n",
              INDENT[2], pgroup->name, INDENT[2]);
      fprintf(output, "%sreturn group_%s[cur_instr_id];\n%s}\n", INDENT[3], pgroup->name, INDENT[2]);
      fprintf(output, "\n");
     }
     /* Instruction Behavior Method declarations */
     /* instruction */
-    fprintf(output, "%svoid _behavior_instruction(", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_instruction(", INDENT[1]);
     /* common_instr_field_list has the list of fields for the generic instruction. */
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
       if( pfield->sign )
@@ -1125,12 +1125,12 @@ int main(int argc, char** argv) {
     fprintf(output, ");\n\n");
 
     /* begin & end */
-    fprintf(output, "%svoid _behavior_begin();\n", INDENT[1]);
-    fprintf(output, "%svoid _behavior_end();\n\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_begin();\n", INDENT[1]);
+    fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_end();\n\n", INDENT[1]);
 
     /* types/formats */
     for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-      fprintf(output, "%svoid _behavior_%s_%s(",
+      fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_%s_%s(",
 	      INDENT[1], project_name, pformat->name);
       for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
 	if (pfield -> sign)
@@ -1149,7 +1149,7 @@ int main(int argc, char** argv) {
       for (pformat = format_ins_list;
 	   (pformat != NULL) && strcmp(pinstr->format, pformat->name);
 	   pformat = pformat->next);
-      fprintf(output, "%svoid behavior_%s(",
+      fprintf(output, "%sinline __attribute__((always_inline)) void behavior_%s(",
 	      INDENT[1], pinstr->name);
       for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
 	if (pfield -> sign)
