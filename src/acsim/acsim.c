@@ -1302,60 +1302,53 @@ int main(int argc, char** argv) {
 
     fprintf(output, " {\n");
 
-    fprintf(output, "private:\n");
-    fprintf(output, "%stypedef cache_item<%s_parms::AC_DEC_FIELD_NUMBER> cache_item_t;\n", INDENT[1], project_name);
-    fprintf(output, "%stypedef ac_instr<%s_parms::AC_DEC_FIELD_NUMBER> ac_instr_t;\n", INDENT[1], project_name);
+    if( ACDecCacheFlag ) {
+      fprintf(output, "private:\n");
+      EmitDecCache(output, 1);
+    }
 
-    fprintf( output, "public:\n\n");
-
+    fprintf( output, "public:\n");
     fprintf( output, "%sunsigned bhv_pc;\n", INDENT[1]);
 
     if( HaveMultiCycleIns)
       fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
 
-    fprintf( output, " \n");
-
     if (ACVerboseFlag)
       fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
 
-    fprintf( output, "\n");
-
     fprintf(output, "%sbool has_delayed_load;\n", INDENT[1]);
-    fprintf(output, "%schar* delayed_load_program;\n\n", INDENT[1]);
-
+    fprintf(output, "%schar* delayed_load_program;\n", INDENT[1]);
     fprintf( output, "%s%s_parms::%s_isa ISA;\n", INDENT[1], project_name, project_name);
     /*    if (ACABIFlag)
           fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );*/
-
     if (HaveTLMIntrPorts) {
       for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-	fprintf(output, "%s%s_%s_handler %s_hnd;\n", INDENT[1], project_name, pport->name, pport->name);
-	fprintf(output, "%sac_tlm_intr_port %s;\n\n", INDENT[1], pport->name);
+        fprintf(output, "%s%s_%s_handler %s_hnd;\n", INDENT[1], project_name, pport->name, pport->name);
+        fprintf(output, "%sac_tlm_intr_port %s;\n\n", INDENT[1], pport->name);
       }
     }
 
     if(ACDecCacheFlag){
-      fprintf( output, "%scache_item_t* DEC_CACHE;\n\n", INDENT[1]);
+      fprintf( output, "%sDecCacheItem* DEC_CACHE;\n", INDENT[1]);
+      fprintf( output, "%sDecCacheItem* instr_dec;\n", INDENT[1]);
     }
+    else
+      fprintf( output, "%sac_instr<%s_parms::AC_DEC_FIELD_NUMBER>* ins_cache;\n", INDENT[1], project_name);
 
-    fprintf( output, "%sunsigned id;\n\n", INDENT[1]);
+    fprintf( output, "%sunsigned id;\n", INDENT[1]);
     fprintf( output, "%sbool start_up;\n", INDENT[1]);
-    fprintf( output, "%sunsigned* instr_dec;\n", INDENT[1]);
-    fprintf( output, "%sac_instr_t* instr_vec;\n\n", INDENT[1]);
 
     if (ACGDBIntegrationFlag)
       fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n\n", INDENT[1], project_name);
-
+    
+    fprintf( output, "\n");
     COMMENT(INDENT[1], "Behavior execution method.");
     fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
 
     if (ACVerboseFlag) {
       COMMENT(INDENT[1], "Verification method.");
-      fprintf( output, "%svoid ac_verify();\n", INDENT[1]);
-      fprintf( output, " \n");
+      fprintf( output, "%svoid ac_verify();\n\n", INDENT[1]);
     }
-
-    fprintf( output, " \n");
 
     fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], project_name);
 
@@ -1367,36 +1360,35 @@ int main(int argc, char** argv) {
 
     if (HaveTLMIntrPorts) {
       for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-	fprintf(output, ", %s_hnd(*this)", pport->name);
-	fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
+        fprintf(output, ", %s_hnd(*this)", pport->name);
+        fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
       }
     }
 
-    fprintf(output, " {\n\n");
+    fprintf(output, " {\n");
 
     fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
 
     if (ACVerboseFlag) {
       fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
-      fprintf( output, "%ssensitive<< done;\n", INDENT[2]);
-      fprintf( output, " \n");
+      fprintf( output, "%ssensitive<< done;\n\n", INDENT[2]);
     }
 
     fprintf( output,"%sbhv_pc = 0; \n", INDENT[2]);
     fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
     fprintf( output, "%sstart_up=1;\n", INDENT[2]);
-    fprintf( output, "%sid = %d;\n\n", INDENT[2], 1);
+    fprintf( output, "%sid = %d;\n", INDENT[2], 1);
 
     if (ACGDBIntegrationFlag)
       fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", INDENT[2], project_name, project_name);
 
-    fprintf( output, "%s}\n", INDENT[1]);  //end constructor
+    fprintf( output, "%s}\n\n", INDENT[1]);  //end constructor
 
     if(ACDecCacheFlag){
-      fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);  //end constructor
-      fprintf( output, "%sDEC_CACHE = (cache_item_t*) calloc(sizeof(cache_item_t),dec_cache_size);\n", INDENT[2]);  //end constructor
-      fprintf( output, "%s}\n", INDENT[1]);  //end init_dec_cache
+      fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);
+      fprintf( output, "%sDEC_CACHE = (DecCacheItem*) calloc(sizeof(DecCacheItem),dec_cache_size);\n", INDENT[2]);  //end constructor
+      fprintf( output, "%s}\n\n", INDENT[1]);  //end init_dec_cache
     }
 
     if(ACGDBIntegrationFlag) {
@@ -1422,12 +1414,9 @@ int main(int argc, char** argv) {
       fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", INDENT[1], project_name);
     }
 
-
-    fprintf( output, "\n%sunsigned get_ac_pc();\n\n", INDENT[1]);
+    fprintf( output, "%sunsigned get_ac_pc();\n\n", INDENT[1]);
     fprintf( output, "%svoid set_ac_pc( unsigned int value );\n\n", INDENT[1]);
-
     fprintf( output, "%svirtual void PrintStat();\n\n", INDENT[1]);
-
     fprintf( output, "%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
     fprintf( output, "%svoid init();\n\n", INDENT[1]);
     fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
@@ -1713,9 +1702,6 @@ void CreateProcessorImpl() {
 
 /*   if( ACABIFlag ) */
 /*     fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name); */
-
-  if(ACDecCacheFlag)
-    fprintf( output, "%scache_item_t* ins_cache;\n", INDENT[1]);
 
 /*   if( ac_host_endian == 0 ){ */
 /*     fprintf( output, "%schar fetch[AC_WORDSIZE/8];\n\n", INDENT[1]); */
@@ -2300,9 +2286,10 @@ void CreateImplTmpl(){
   i = 0;
   count_fields = 0;
   for( pformat = format_ins_list; pformat!= NULL; pformat = pformat->next){
-    /* fprintf char* name, int size, ac_dec_field* fields, next */
-    fprintf(output, "%s{\"%s\", %d, &(%s_parms::%s_isa::fields[%d]), ",
+    /* fprintf int id, char* name, int size, ac_dec_field* fields, next */
+    fprintf(output, "%s{%d, \"%s\", %d, &(%s_parms::%s_isa::fields[%d]), ",
             INDENT[1],
+            pformat->id,
             pformat->name,
             pformat->size,
             project_name,
@@ -3282,8 +3269,9 @@ void EmitDecodification( FILE *output, int base_indent){
   }
 
   if( ACDecCacheFlag ){
-    fprintf( output, "%sins_cache = (DEC_CACHE+decode_pc);\n", INDENT[base_indent]);
-    fprintf( output, "%sif ( !ins_cache->valid ){\n", INDENT[base_indent]);
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + decode_pc);\n", INDENT[base_indent]);
+    fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
+    fprintf( output, "%sac_instr<%s_parms::AC_DEC_FIELD_NUMBER>* ins_cache;\n", INDENT[base_indent+1], project_name);
   }
 
   if( !HaveMemHier ){
@@ -3302,7 +3290,7 @@ void EmitDecodification( FILE *output, int base_indent){
 
     /*   fprintf( output, "%squant = AC_FETCHSIZE/8;\n", INDENT[base_indent+1]); */
   fprintf( output, "%squant = 0;\n", INDENT[base_indent+1]);
-
+  
     //The Decoder uses a big endian bit stream. So if the host is little endian, convert it!
     /*   if( ac_host_endian == 0 ){ */
     /*     fprintf( output, "%sfor (i=0; i< AC_FETCHSIZE/8; i++) {\n", INDENT[base_indent+1]); */
@@ -3310,19 +3298,19 @@ void EmitDecodification( FILE *output, int base_indent){
     /*     fprintf( output, "%s}\n", INDENT[base_indent+1]); */
     /*   } */
 
+  fprintf( output, "%sins_cache = new ac_instr<%s_parms::AC_DEC_FIELD_NUMBER>((ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant));\n", INDENT[base_indent+1], project_name);
+  
   if( ACDecCacheFlag ){
-    fprintf( output, "%sins_cache->instr_p = new ac_instr<%s_parms::AC_DEC_FIELD_NUMBER>((ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant));\n", INDENT[base_indent+1], project_name);
-    fprintf( output, "%sins_cache->valid = 1;\n", INDENT[base_indent+1]);
+    fprintf( output, "%sinstr_dec->valid = true;\n", INDENT[base_indent+1]);
+    fprintf( output, "%sinstr_dec->id = ins_cache->get(IDENT);\n", INDENT[base_indent+1]);
+    EmitDecCacheAt( output, base_indent + 1);
     fprintf( output, "%s}\n", INDENT[base_indent]);
-    fprintf( output, "%sinstr_vec = ins_cache->instr_p;\n", INDENT[base_indent]);
+    fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
-  else{
-    fprintf( output, "%sinstr_dec = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n", INDENT[base_indent]);
-    fprintf( output, "%sinstr_vec = new ac_instr<%s_parms::AC_DEC_FIELD_NUMBER>( instr_dec);\n", INDENT[base_indent], project_name);
-  }
+  else
+    fprintf( output, "%sins_id = ins_cache->get(IDENT);\n\n", INDENT[base_indent]);
 
   //Checking if it is a valid instruction
-  fprintf( output, "%sins_id = instr_vec->get(IDENT);\n\n", INDENT[base_indent]);
   fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
   fprintf( output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", INDENT[base_indent+1]);
   fprintf( output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", INDENT[base_indent+1]);
@@ -3360,10 +3348,19 @@ void EmitInstrExec( FILE *output, int base_indent){
 
   fprintf(output, "ISA._behavior_instruction(");
   /* common_instr_field_list has the list of fields for the generic instruction. */
-  for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-    fprintf(output, "instr_vec->get(%d)", pfield->id);
-    if (pfield->next != NULL)
-      fprintf(output, ", ");
+  if( ACDecCacheFlag ){
+    for( pfield = common_instr_field_list, pformat = format_ins_list; pfield != NULL; pfield = pfield->next){
+      fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
+  }
+  else {
+    for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
+      fprintf(output, "ins_cache->get(%d)", pfield->id + 1);
+      if (pfield->next != NULL)
+        fprintf(output, ", ");
+    }
   }
   fprintf(output, ");\n");
 
@@ -3382,7 +3379,10 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf(output, "%sif (!ac_annul_sig) ISA._behavior_%s_%s(", INDENT[base_indent + 1],
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      fprintf(output, "instr_vec->get(%d)", pfield->id);
+      if( ACDecCacheFlag )
+        fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
+      else
+        fprintf(output, "ins_cache->get(%d)", pfield->id + 1);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3391,7 +3391,10 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf(output, "%sif (!ac_annul_sig) ISA.behavior_%s(", INDENT[base_indent + 1],
             pinstr->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      fprintf(output, "instr_vec->get(%d)", pfield->id);
+      if( ACDecCacheFlag )
+        fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
+      else
+        fprintf(output, "ins_cache->get(%d)", pfield->id + 1);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3420,7 +3423,7 @@ void EmitInstrExec( FILE *output, int base_indent){
   }
 
   if(!ACDecCacheFlag){
-    fprintf( output, "%sdelete instr_vec;\n", INDENT[base_indent]);
+    fprintf( output, "%sdelete ins_cache;\n", INDENT[base_indent]);
     //    fprintf( output, "%sfree(instr_dec);\n", INDENT[base_indent]);
   }
   //  fprintf( output, "%s}\n", INDENT[base_indent-1]);
@@ -3837,6 +3840,60 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
   //Printing cache declaration.
   fprintf( output, "%sac_cache ac_resources::%s(\"%s\", %s, %s, %s, %s, 0x%x);\n",
            INDENT[base_indent], pstorage->name, pstorage->name, parm2, parm3, parm4, parm5, wp);
+}
+
+/**************************************/
+/*!  Emits a Decoder Cache Structure.
+  \brief Used by CreateProcessorHeader function */
+/***************************************/
+void EmitDecCache(FILE *output, int base_indent) {
+  extern ac_dec_format *format_ins_list;
+  ac_dec_format *pformat;
+  ac_dec_field *pfield;
+  
+  for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
+    fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
+      fprintf(output, "%s", INDENT[base_indent + 1]);
+      if (pfield->sign) fprintf(output, "signed");
+      else fprintf(output, "unsigned");
+      fprintf(output, " long %s:%d;\n", pfield->name, pfield->size);
+    }
+    fprintf(output, "%s} T_%s;\n\n", INDENT[base_indent], pformat->name);
+  }
+  
+  fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
+  fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
+  fprintf(output, "%sunsigned id;\n", INDENT[base_indent + 1]);
+  fprintf(output, "%sunion {\n", INDENT[base_indent + 1]);
+  for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
+    fprintf(output, "%sT_%s F_%s;\n", INDENT[base_indent + 2], pformat->name, pformat->name);
+  }
+  fprintf(output, "%s};\n", INDENT[base_indent + 1]);
+  fprintf(output, "%s} DecCacheItem ;\n\n", INDENT[base_indent]);
+}
+
+/**************************************/
+/*!  Emits a Decoder Cache Attribution.
+  \brief Used by EmitDecodification function */
+/***************************************/
+void EmitDecCacheAt(FILE *output, int base_indent) {
+  extern ac_dec_format *format_ins_list;
+  ac_dec_format *pformat;
+  ac_dec_field *pfield;
+  
+  fprintf(output, "%sswitch (ins_cache->get(1)) {\n", INDENT[base_indent]);
+  for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
+    fprintf(output, "%scase %d:\n", INDENT[base_indent + 1], pformat->id);
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) 
+      fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache->get(%d);\n", 
+              INDENT[base_indent + 2], pformat->name, pfield->name, pfield->id + 1);
+    fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
+  }
+  fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
+  fprintf(output, "%sinstr_dec->id = 0;\n", INDENT[base_indent + 2]);
+  fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
+  fprintf(output, "%s}\n", INDENT[base_indent]);
 }
 
 ////////////////////////////////////

@@ -144,20 +144,22 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
  * These functions are used by Create functions to emit code.
  * @{
 */
-void EmitGenInstrClass(FILE *output);             //!< Emit class declaration for generic instruction.
-void EmitFormatClasses(FILE *output);             //!< Emit class declarations for formats.
-void EmitInstrClasses(FILE *output);              //!< Emit class declarations for instructions.
-void EmitDecStruct( FILE* output);                //!< Emit decoder structure initialization.
-void EmitUpdateMethod( FILE *output);             //!< Emit reg update method for non-pipelined architectures.
-void EmitMultiCycleProcessorBhv(FILE *output);    //!< Emit processor behavior for a multicycle processor.
-void EmitProcessorBhv( FILE *output);             //!< Emit processor behavior for a single-cycle processor.
-void EmitProcessorBhv_ABI( FILE *output);         //!< Emit processor behavior for a single-cycle processor with ABI provided.
-void EmitABIAddrList( FILE *output, int base_indent);           //!< Emit the calls for macros containing the list o address used for system calls
-void EmitABIDefine( FILE *output);                //!< Emit the define that implements the ABI control for non-pipelined architectures
-void EmitInstrExec(FILE *output, int base_indent);              //!< Emit code for executing an instruction behavior
-void EmitDecodification(FILE *output, int base_indent);         //!< Emit for instruction decodification
-void EmitFetchInit(FILE *output, int base_indent);              //!< Emit code used for initializing fetchs
-void EmitCacheDeclaration(FILE *output, ac_sto_list* pstorage, int base_indent);       //!< Emit code for ac_cache object declaration
+void EmitGenInstrClass(FILE *output);                                              //!< Emit class declaration for generic instruction.
+void EmitFormatClasses(FILE *output);                                              //!< Emit class declarations for formats.
+void EmitInstrClasses(FILE *output);                                               //!< Emit class declarations for instructions.
+void EmitDecStruct( FILE* output);                                                 //!< Emit decoder structure initialization.
+void EmitUpdateMethod( FILE *output);                                              //!< Emit reg update method for non-pipelined architectures.
+void EmitMultiCycleProcessorBhv(FILE *output);                                     //!< Emit processor behavior for a multicycle processor.
+void EmitProcessorBhv( FILE *output);                                              //!< Emit processor behavior for a single-cycle processor.
+void EmitProcessorBhv_ABI( FILE *output);                                          //!< Emit processor behavior for a single-cycle processor with ABI provided.
+void EmitABIAddrList( FILE *output, int base_indent);                              //!< Emit the calls for macros containing the list o address used for system calls
+void EmitABIDefine( FILE *output);                                                 //!< Emit the define that implements the ABI control for non-pipelined architectures
+void EmitInstrExec(FILE *output, int base_indent);                                 //!< Emit code for executing an instruction behavior
+void EmitDecodification(FILE *output, int base_indent);                            //!< Emit for instruction decodification
+void EmitFetchInit(FILE *output, int base_indent);                                 //!< Emit code used for initializing fetchs
+void EmitCacheDeclaration(FILE *output, ac_sto_list* pstorage, int base_indent);   //!< Emit code for ac_cache object declaration
+void EmitDecCache(FILE *output, int base_indent);                                  //!< Emits a Decoder Cache Structure
+void EmitDecCacheAt(FILE *output, int base_indent);                                //!< Emits a Decoder Cache Attribution
 //@}
 
 /** @defgroup utilitfunc Utility Functions

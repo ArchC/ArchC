@@ -44,6 +44,7 @@ typedef struct _ac_dec_field{
 
 //! Format type used to build the decoder
 typedef struct _ac_dec_format{
+  unsigned id;                 //!< Unique id that identifies this format
   char *name;                  //!< Format name
   int size;                    //!< Format size in bits
   ac_dec_field *fields;        //!< List of fields in this format
