@@ -1333,7 +1333,7 @@ int main(int argc, char** argv) {
       fprintf( output, "%sDecCacheItem* instr_dec;\n", INDENT[1]);
     }
     else
-      fprintf( output, "%sac_instr<%s_parms::AC_DEC_FIELD_NUMBER>* ins_cache;\n", INDENT[1], project_name);
+      fprintf( output, "%sunsigned* ins_cache;\n", INDENT[1]);
 
     fprintf( output, "%sunsigned id;\n", INDENT[1]);
     fprintf( output, "%sbool start_up;\n", INDENT[1]);
@@ -3271,7 +3271,7 @@ void EmitDecodification( FILE *output, int base_indent){
   if( ACDecCacheFlag ){
     fprintf( output, "%sinstr_dec = (DEC_CACHE + decode_pc);\n", INDENT[base_indent]);
     fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
-    fprintf( output, "%sac_instr<%s_parms::AC_DEC_FIELD_NUMBER>* ins_cache;\n", INDENT[base_indent+1], project_name);
+    fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent+1]);
   }
 
   if( !HaveMemHier ){
@@ -3298,17 +3298,17 @@ void EmitDecodification( FILE *output, int base_indent){
     /*     fprintf( output, "%s}\n", INDENT[base_indent+1]); */
     /*   } */
 
-  fprintf( output, "%sins_cache = new ac_instr<%s_parms::AC_DEC_FIELD_NUMBER>((ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant));\n", INDENT[base_indent+1], project_name);
+  fprintf( output, "%sins_cache = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n", INDENT[base_indent+1]);
   
   if( ACDecCacheFlag ){
     fprintf( output, "%sinstr_dec->valid = true;\n", INDENT[base_indent+1]);
-    fprintf( output, "%sinstr_dec->id = ins_cache->get(IDENT);\n", INDENT[base_indent+1]);
+    fprintf( output, "%sinstr_dec->id = ins_cache[IDENT];\n", INDENT[base_indent+1]);
     EmitDecCacheAt( output, base_indent + 1);
     fprintf( output, "%s}\n", INDENT[base_indent]);
     fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
   else
-    fprintf( output, "%sins_id = ins_cache->get(IDENT);\n\n", INDENT[base_indent]);
+    fprintf( output, "%sins_id = ins_cache[IDENT];\n\n", INDENT[base_indent]);
 
   //Checking if it is a valid instruction
   fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
@@ -3357,7 +3357,7 @@ void EmitInstrExec( FILE *output, int base_indent){
   }
   else {
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-      fprintf(output, "ins_cache->get(%d)", pfield->id + 1);
+      fprintf(output, "ins_cache[%d]", pfield->id + 1);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3382,7 +3382,7 @@ void EmitInstrExec( FILE *output, int base_indent){
       if( ACDecCacheFlag )
         fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
       else
-        fprintf(output, "ins_cache->get(%d)", pfield->id + 1);
+        fprintf(output, "ins_cache[%d]", pfield->id + 1);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3394,7 +3394,7 @@ void EmitInstrExec( FILE *output, int base_indent){
       if( ACDecCacheFlag )
         fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
       else
-        fprintf(output, "ins_cache->get(%d)", pfield->id + 1);
+        fprintf(output, "ins_cache[%d]", pfield->id + 1);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3421,13 +3421,6 @@ void EmitInstrExec( FILE *output, int base_indent){
     fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent]);
     fprintf( output, PRINT_TRACE, INDENT[base_indent+1]);
   }
-
-  if(!ACDecCacheFlag){
-    fprintf( output, "%sdelete ins_cache;\n", INDENT[base_indent]);
-    //    fprintf( output, "%sfree(instr_dec);\n", INDENT[base_indent]);
-  }
-  //  fprintf( output, "%s}\n", INDENT[base_indent-1]);
-
 }
 
 
@@ -3882,11 +3875,11 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
   ac_dec_format *pformat;
   ac_dec_field *pfield;
   
-  fprintf(output, "%sswitch (ins_cache->get(1)) {\n", INDENT[base_indent]);
+  fprintf(output, "%sswitch (ins_cache[1]) {\n", INDENT[base_indent]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
     fprintf(output, "%scase %d:\n", INDENT[base_indent + 1], pformat->id);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) 
-      fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache->get(%d);\n", 
+      fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache[%d];\n", 
               INDENT[base_indent + 2], pformat->name, pfield->name, pfield->id + 1);
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
   }
