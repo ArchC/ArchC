@@ -1720,6 +1720,8 @@ void CreateProcessorImpl() {
     fprintf( output, "%sreturn;\n", INDENT[2]);
     fprintf( output, "%s}\n\n", INDENT[1]);
   }
+  
+  fprintf( output, "%ssetjmp(ac_env);\n\n", INDENT[1]);
 
   //Emiting processor behavior method implementation.
   if( HaveMultiCycleIns )
@@ -3355,9 +3357,8 @@ void EmitInstrExec( FILE *output, int base_indent){
   fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
 
   fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
-  fprintf(output, "%sif (!ac_annul_sig) ", INDENT[base_indent]);
 
-  fprintf(output, "ISA._behavior_instruction(");
+  fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
   /* common_instr_field_list has the list of fields for the generic instruction. */
   if( ACDecCacheFlag ){
     for( pfield = common_instr_field_list, pformat = format_ins_list; pfield != NULL; pfield = pfield->next){
@@ -3387,7 +3388,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     for (pformat = format_ins_list;
          (pformat != NULL) && strcmp(pinstr->format, pformat->name);
          pformat = pformat->next);
-    fprintf(output, "%sif (!ac_annul_sig) ISA._behavior_%s_%s(", INDENT[base_indent + 1],
+    fprintf(output, "%sISA._behavior_%s_%s(", INDENT[base_indent + 1],
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       if( ACDecCacheFlag )
@@ -3399,7 +3400,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     }
     fprintf(output, ");\n");
     /* emits instruction behavior method call */
-    fprintf(output, "%sif (!ac_annul_sig) ISA.behavior_%s(", INDENT[base_indent + 1],
+    fprintf(output, "%sISA.behavior_%s(", INDENT[base_indent + 1],
             pinstr->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       if( ACDecCacheFlag )
@@ -3415,7 +3416,7 @@ void EmitInstrExec( FILE *output, int base_indent){
   fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent]);
 
   if( ACStatsFlag ){
-    fprintf( output, "%sif((!ac_annul_sig) && (!ac_wait_sig)) {\n", INDENT[base_indent]);
+    fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
     fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", INDENT[base_indent+1], project_name);
     fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", INDENT[base_indent+1], project_name);
 
@@ -3493,8 +3494,8 @@ void EmitProcessorBhv( FILE *output){
   EmitDecodification(output, 2);
   EmitInstrExec(output, 2);
 
-  fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
-  fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
+  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", INDENT[2]);
+  
   if (ACVerboseFlag)
     fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
   fprintf( output, "%s}\n", INDENT[1]);
@@ -3538,8 +3539,8 @@ void EmitProcessorBhv_ABI( FILE *output){
   //Closing switch.
   fprintf( output, "%s}\n", INDENT[2]);
 
-  fprintf( output, "%sif ((!ac_wait_sig) && (!ac_annul_sig)) ac_instr_counter+=1;\n", INDENT[2]);
-  fprintf( output, "%sac_annul_sig = 0;\n", INDENT[2]);
+  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", INDENT[2]);
+  
   if (ACVerboseFlag)
     fprintf( output, "%sdone.write(1);\n", INDENT[2]);
 
