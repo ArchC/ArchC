@@ -372,13 +372,13 @@ unsigned* ac_decoder_full::Decode(unsigned char *buffer, int quant)
     if (field_value == d -> check -> value) {
       if (d -> found) {
         //fprintf(stderr, "Instruction %s has been found.\n", d -> found -> name);
-        fields[d->check->id + 1] = field_value;
+        fields[d->check->id] = field_value;
         instruction = d->found;
         break;
       } else {
         //fprintf(stderr, "Following d -> subcheck branch in the decoder tree. \n");
         chosenPath[++chosenPathPos] = d -> subcheck;
-        fields[d->check->id + 1] = field_value;
+        fields[d->check->id] = field_value;
         d = d -> subcheck;
         field = 0;
       }
@@ -406,11 +406,10 @@ unsigned* ac_decoder_full::Decode(unsigned char *buffer, int quant)
     while (d) {
       field = decoder->fields->FindDecField(d -> check -> id);
       field_value = decoder->prog_source->GetBits(buffer, &quant, field -> first_bit, field -> size, field -> sign);
-      fields[d->check->id + 1] = field_value;
+      fields[d->check->id] = field_value;
       d = d->subcheck;
     }
     fields[0] = instruction->id;
-    fields[1] = (decoder->formats->FindFormat(decoder->formats, instruction->format.c_str()))->id;
     return fields;
   }
 

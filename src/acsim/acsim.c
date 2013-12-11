@@ -1067,6 +1067,7 @@ int main(int argc, char** argv) {
     fprintf(output, "%sstatic ac_dec_list dec_list[AC_DEC_LIST_NUMBER];\n", INDENT[1]);
     fprintf(output, "%sstatic ac_dec_instr instructions[AC_DEC_INSTR_NUMBER];\n", INDENT[1]);
     fprintf(output, "%sstatic const ac_instr_info instr_table[AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1]);
+    fprintf(output, "%sstatic const unsigned instr_format_table[AC_DEC_INSTR_NUMBER + 1];\n\n", INDENT[1]);
 
     fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
     if (ACABIFlag)
@@ -2383,8 +2384,18 @@ void CreateImplTmpl(){
     if (pinstr->next)
       fprintf(output, ",\n");
   }
-  fprintf(output, "\n};\n");
+  fprintf(output, "\n};\n\n");
 
+  /* Creating instruction format table */
+  fprintf(output, "const unsigned %s_parms::%s_isa::instr_format_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] = {\n",
+          project_name, project_name, project_name);
+  fprintf(output, "%s0,\n", INDENT[1]);
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    fprintf(output, "%s%d", INDENT[1], (FindFormat(format_ins_list, pinstr->format))->id);
+    if (pinstr->next) fprintf(output, ",\n");
+  }
+  fprintf(output, "\n};\n");
+  
   //!END OF FILE.
   fclose(output);
 
@@ -3357,7 +3368,7 @@ void EmitInstrExec( FILE *output, int base_indent){
   }
   else {
     for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-      fprintf(output, "ins_cache[%d]", pfield->id + 1);
+      fprintf(output, "ins_cache[%d]", pfield->id);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3382,7 +3393,7 @@ void EmitInstrExec( FILE *output, int base_indent){
       if( ACDecCacheFlag )
         fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
       else
-        fprintf(output, "ins_cache[%d]", pfield->id + 1);
+        fprintf(output, "ins_cache[%d]", pfield->id);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3394,7 +3405,7 @@ void EmitInstrExec( FILE *output, int base_indent){
       if( ACDecCacheFlag )
         fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
       else
-        fprintf(output, "ins_cache[%d]", pfield->id + 1);
+        fprintf(output, "ins_cache[%d]", pfield->id);
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3875,12 +3886,12 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
   ac_dec_format *pformat;
   ac_dec_field *pfield;
   
-  fprintf(output, "%sswitch (ins_cache[1]) {\n", INDENT[base_indent]);
+  fprintf(output, "%sswitch (ISA.instr_format_table[instr_dec->id]) {\n", INDENT[base_indent]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
     fprintf(output, "%scase %d:\n", INDENT[base_indent + 1], pformat->id);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) 
       fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache[%d];\n", 
-              INDENT[base_indent + 2], pformat->name, pfield->name, pfield->id + 1);
+              INDENT[base_indent + 2], pformat->name, pfield->name, pfield->id);
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
   }
   fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
