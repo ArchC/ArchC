@@ -2855,63 +2855,6 @@ void CreateMakefile(){
 // These Functions are used by the Create functions declared above to write files //
 ////////////////////////////////////////////////////////////////////////////////////
 
-/**************************************/
-/*!Emit one class for each format declared.
-  Used by CreateTypesHeader function. */
-/***************************************/
-void EmitFormatClasses(FILE *output) {
-  extern ac_dec_format *format_ins_list;
-  ac_dec_format *pformat;
-  ac_dec_field *pfield;
-
-  /* Emiting format class declaration */
-  COMMENT(INDENT[0],"Instruction Format class declarations.\n");
-
-  for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next){
-
-    fprintf( output, "class ac_%s: public ac_instruction {\n", pformat->name);
-    fprintf( output, "protected:\n");
-
-    for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next){
-      if( pfield->sign )
-        fprintf( output,"%sint %s;\n",INDENT[1],pfield->name );
-      else
-        fprintf( output,"%sunsigned %s;\n",INDENT[1],pfield->name );
-    }
-
-    fprintf( output, "public:\n");
-    fprintf( output, "%sac_%s( char* name, char* mnemonic, unsigned min, unsigned max ):ac_instruction(name, mnemonic, min, max){};\n", INDENT[1], pformat->name);
-    fprintf( output, "%sac_%s( char* name, char *mnemonic ):ac_instruction(name, mnemonic) {};\n", INDENT[1], pformat->name);
-    fprintf( output, "%sac_%s( char* name ):ac_instruction(name) {};\n", INDENT[1], pformat->name);
-    fprintf( output, "%sac_%s( ):ac_instruction() {};\n", INDENT[1], pformat->name);
-    fprintf( output, "%svoid set_fields( ac_instr instr ){\n",INDENT[1]);
-
-    for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
-      fprintf( output,"%s%s = instr.get(%d); \n", INDENT[2],pfield->name, pfield->id );
-
-    fprintf( output,"%sac_instr_size = %d; \n", INDENT[2], pformat->size );
-
-    fprintf( output, "%s}\n", INDENT[1]);
-
-    fprintf( output, "%svirtual void behavior( ac_stage_list stage=(ac_stage_list)0, unsigned cycle=0 );\n", INDENT[1]);
-
-
-    //Print method
-    fprintf( output, "%svirtual void print (ostream & os) const{\n", INDENT[1]);
-    fprintf( output, "%sos ", INDENT[2]);
-
-    for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
-      if(pfield->next)
-        fprintf( output, " << \"%s: \" << %s << \", \" ",  pfield->name,  pfield->name);
-      else
-        fprintf( output, " << \"%s: \" << %s;", pfield->name,  pfield->name);
-
-    fprintf( output, "\n}\n");
-
-    fprintf( output, "};\n\n");
-  }
-}
-
 /*!*************************************/
 /*! Emit  instruction class declarations
   Used by CreateTypesHeader function. */
