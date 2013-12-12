@@ -2855,36 +2855,6 @@ void CreateMakefile(){
 // These Functions are used by the Create functions declared above to write files //
 ////////////////////////////////////////////////////////////////////////////////////
 
-/*!*************************************/
-/*! Emit  instruction class declarations
-  Used by CreateTypesHeader function. */
-/***************************************/
-void EmitInstrClasses( FILE *output){
-
-  extern ac_dec_instr *instr_list;
-  ac_dec_instr *pinstr;
-
-  COMMENT(INDENT[0],"Instruction class declarations.\n");
-
-  for( pinstr = instr_list; pinstr!= NULL; pinstr=pinstr->next){
-    fprintf( output, "class ac_%s: public ac_%s {\n", pinstr->name, pinstr->format);
-    fprintf( output, "%spublic:\n", INDENT[0]);
-    fprintf( output, "%sac_%s( char* name, char* mnemonic, unsigned min, unsigned max ):ac_%s(name, mnemonic, min, max){};\n", INDENT[1], pinstr->name, pinstr->format);
-    fprintf( output, "%sac_%s( char* name, char *mnemonic ):ac_%s(name, mnemonic) {};\n", INDENT[1], pinstr->name, pinstr->format);
-    fprintf( output, "%sac_%s( char* name ):ac_%s(name) {};\n", INDENT[1], pinstr->name, pinstr->format);
-    fprintf( output, "%sac_%s( ):ac_%s() {};\n", INDENT[1], pinstr->name, pinstr->format);
-    fprintf( output, "%svoid behavior( ac_stage_list  stage = (ac_stage_list)0, unsigned cycle=0 );\n", INDENT[1]);
-
-    //Print method
-    fprintf( output, "%svoid print (ostream & os) const{\n", INDENT[1]);
-    fprintf( output, "%sos << ac_instr_mnemonic << \"\t\";", INDENT[2]);
-    fprintf( output, "}\n");
-
-    fprintf( output, "};\n\n");
-  }
-}
-
-
 /**************************************/
 /*!  Emits a method to update pipe regs
   \brief Used by CreateArchImpl function      */
