@@ -147,7 +147,6 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
 void EmitGenInstrClass(FILE *output);                                              //!< Emit class declaration for generic instruction.
 void EmitFormatClasses(FILE *output);                                              //!< Emit class declarations for formats.
 void EmitInstrClasses(FILE *output);                                               //!< Emit class declarations for instructions.
-void EmitDecStruct( FILE* output);                                                 //!< Emit decoder structure initialization.
 void EmitUpdateMethod( FILE *output);                                              //!< Emit reg update method for non-pipelined architectures.
 void EmitMultiCycleProcessorBhv(FILE *output);                                     //!< Emit processor behavior for a multicycle processor.
 void EmitProcessorBhv( FILE *output);                                              //!< Emit processor behavior for a single-cycle processor.
