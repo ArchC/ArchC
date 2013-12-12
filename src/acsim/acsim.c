@@ -1721,7 +1721,8 @@ void CreateProcessorImpl() {
     fprintf( output, "%s}\n\n", INDENT[1]);
   }
   
-  fprintf( output, "%ssetjmp(ac_env);\n\n", INDENT[1]);
+  fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
+  fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
 
   //Emiting processor behavior method implementation.
   if( HaveMultiCycleIns )
@@ -1851,6 +1852,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_stopped();\n", INDENT[1]);
   fprintf(output, "#endif\n");
+  fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[1]);
   fprintf(output, "}\n\n");
 
   /* Program loading functions */
@@ -3230,13 +3232,8 @@ void EmitUpdateMethod( FILE *output){
         fprintf( output, "%s%s.process_request( );\n", INDENT[1], pstorage->name);
     }
   }
-  fprintf(output, "%sif (ac_stop_flag) {\n", INDENT[1]);
-  fprintf( output, "%sreturn;\n", INDENT[2]);
-  fprintf( output, "%s}\n", INDENT[1]);
-
+  
   if (ACWaitFlag) {
-    fprintf( output, "%selse {\n", INDENT[1]);
-
     fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", INDENT[2]);
     fprintf( output, "%sinstr_in_batch++;\n", INDENT[3]);
     fprintf( output, "%s}\n", INDENT[2]);
@@ -3245,11 +3242,9 @@ void EmitUpdateMethod( FILE *output){
     fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[3]);
     fprintf( output, "%swait(1, SC_NS);\n", INDENT[3]);
     fprintf( output, "%s}\n", INDENT[2]);
-
-    fprintf(output, "%s}\n\n", INDENT[1]);
   }
 
-  fprintf( output, "%s} // for (;;)\n", INDENT[0]);
+  fprintf( output, "%s} // for (;;)\n", INDENT[1]);
   fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
 }
 
