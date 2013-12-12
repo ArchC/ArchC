@@ -144,7 +144,6 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
  * These functions are used by Create functions to emit code.
  * @{
 */
-void EmitGenInstrClass(FILE *output);                                              //!< Emit class declaration for generic instruction.
 void EmitFormatClasses(FILE *output);                                              //!< Emit class declarations for formats.
 void EmitInstrClasses(FILE *output);                                               //!< Emit class declarations for instructions.
 void EmitUpdateMethod( FILE *output);                                              //!< Emit reg update method for non-pipelined architectures.
