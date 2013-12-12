@@ -1309,7 +1309,6 @@ int main(int argc, char** argv) {
     }
 
     fprintf( output, "public:\n");
-    fprintf( output, "%sunsigned bhv_pc;\n", INDENT[1]);
 
     if( HaveMultiCycleIns)
       fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
@@ -1375,7 +1374,6 @@ int main(int argc, char** argv) {
       fprintf( output, "%ssensitive<< done;\n\n", INDENT[2]);
     }
 
-    fprintf( output,"%sbhv_pc = 0; \n", INDENT[2]);
     fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
     fprintf( output, "%sstart_up=1;\n", INDENT[2]);
@@ -3205,7 +3203,9 @@ void EmitUpdateMethod( FILE *output){
 //
 //   fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
 
-  fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
+  if ( ACDelayFlag || HaveMultiCycleIns )
+    fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
+      
   if( ACDelayFlag ){
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next )
       fprintf( output, "%s%s.commit_delays( (double)ac_cycle_counter );\n", INDENT[2], pstorage->name);
@@ -3218,10 +3218,11 @@ void EmitUpdateMethod( FILE *output){
 
   }
 
-  fprintf( output, "%sbhv_pc = ac_pc;\n", INDENT[2]);
   if( HaveMultiCycleIns)
     fprintf( output, "%sbhv_cycle.write( ac_cycle );\n", INDENT[2]);
-  fprintf( output, "%s}\n", INDENT[1]);
+  
+  if ( ACDelayFlag || HaveMultiCycleIns )
+    fprintf( output, "%s}\n", INDENT[1]);
   /*   fprintf( output, "%selse{\n", INDENT[1]); */
   /*   fprintf( output, "%sdo_it = do_it.read()^1;\n", INDENT[2]); */
   /*   fprintf( output, "%s}\n", INDENT[1]); */
@@ -3439,15 +3440,13 @@ void EmitInstrExec( FILE *output, int base_indent){
 void EmitFetchInit( FILE *output, int base_indent){
   extern int HaveMultiCycleIns;
 
-  fprintf(output, "%sbhv_pc = ac_pc;\n", INDENT[base_indent]);
-
   if (!ACDecCacheFlag){
-    fprintf( output, "%sif( bhv_pc >= APP_MEM->get_size()){\n", INDENT[base_indent]);
+    fprintf( output, "%sif( ac_pc >= APP_MEM->get_size()){\n", INDENT[base_indent]);
   }
   else
-    fprintf( output, "%sif( bhv_pc >= dec_cache_size){\n", INDENT[base_indent]);
+    fprintf( output, "%sif( ac_pc >= dec_cache_size){\n", INDENT[base_indent]);
 
-  fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << bhv_pc << \").\" << endl;\n", INDENT[base_indent+1]);
+  fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << ac_pc << \").\" << endl;\n", INDENT[base_indent+1]);
 	//  fprintf( output, "%scout = cerr;\n", INDENT[base_indent+1]);
 
 /*   fprintf( output, "%sac_stop();\n", INDENT[base_indent+1]); */
@@ -3457,8 +3456,8 @@ void EmitFetchInit( FILE *output, int base_indent){
 
   fprintf( output, "%selse {\n", INDENT[base_indent]);
 
+  fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent+1]);
   fprintf( output, "%sif( start_up ){\n", INDENT[base_indent+1]);
-  fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent+2]);
   if(ACABIFlag)
     fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", INDENT[3]);
   fprintf( output, "%sstart_up=0;\n", INDENT[base_indent+2]);
@@ -3466,14 +3465,12 @@ void EmitFetchInit( FILE *output, int base_indent){
     fprintf( output, "%sinit_dec_cache();\n", INDENT[base_indent+2]);
   fprintf( output, "%s}\n", INDENT[base_indent+1]);
 
-  fprintf( output, "%selse{ \n", INDENT[base_indent+1]);
   if(HaveMultiCycleIns && !ACDecCacheFlag ){
+    fprintf( output, "%selse{ \n", INDENT[base_indent+1]);
     //fprintf( output, "%sfree(instr_dec);\n", INDENT[base_indent+2]);
     fprintf( output, "%sdelete(instr_vec);\n", INDENT[base_indent+2]);
+    fprintf( output, "%s}\n \n", INDENT[base_indent+1]);
   }
-  fprintf( output, "%sdecode_pc = bhv_pc;\n", INDENT[base_indent+2]);
-  fprintf( output, "%s}\n \n", INDENT[base_indent+1]);
-
 }
 
 /**************************************/
