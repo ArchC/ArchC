@@ -2850,7 +2850,9 @@ void EmitUpdateMethod( FILE *output){
   ac_sto_list *pstorage;
 
   //Emiting Update Method.
-  COMMENT(INDENT[0],"Updating Regs for behavioral simulation.");
+  if( ACDelayFlag || HaveMemHier || ACWaitFlag) {
+    COMMENT(INDENT[0],"Updating Regs for behavioral simulation.");
+  }
 
   if( ACDelayFlag ){
     fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
@@ -3070,15 +3072,15 @@ void EmitFetchInit( FILE *output, int base_indent){
   fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
   fprintf( output, "%s}\n", INDENT[base_indent]);
 
-  fprintf( output, "%selse {\n", INDENT[base_indent]);
-  fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent+1]);
-  fprintf( output, "%sif( start_up ){\n", INDENT[base_indent+1]);
+  fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent]);
+  fprintf( output, "%sif( start_up ){\n", INDENT[base_indent]);
   if(ACABIFlag)
-    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", INDENT[3]);
-  fprintf( output, "%sstart_up=0;\n", INDENT[base_indent+2]);
+    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", 
+             INDENT[base_indent + 1]);
+  fprintf( output, "%sstart_up = 0;\n", INDENT[base_indent + 1]);
   if( ACDecCacheFlag )
-    fprintf( output, "%sinit_dec_cache();\n", INDENT[base_indent+2]);
-  fprintf( output, "%s}\n", INDENT[base_indent+1]);
+    fprintf( output, "%sinit_dec_cache();\n", INDENT[base_indent + 1]);
+  fprintf( output, "%s}\n", INDENT[base_indent]);
 }
 
 
@@ -3090,7 +3092,7 @@ void EmitFetchInit( FILE *output, int base_indent){
 void EmitProcessorBhv( FILE *output){
   fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
 
-  EmitFetchInit(output, 1);
+  EmitFetchInit(output, 2);
   EmitDecodification(output, 2);
   EmitInstrExec(output, 2);
 
@@ -3098,7 +3100,6 @@ void EmitProcessorBhv( FILE *output){
   
   if (ACVerboseFlag)
     fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
-  fprintf( output, "%s}\n", INDENT[1]);
 }
 
 
@@ -3111,7 +3112,7 @@ void EmitProcessorBhv( FILE *output){
 void EmitProcessorBhv_ABI( FILE *output){
   fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
 
-  EmitFetchInit(output, 1);
+  EmitFetchInit(output, 2);
 
   //Emiting system calls handler.
   COMMENT(INDENT[2],"Handling System calls.")
@@ -3136,9 +3137,6 @@ void EmitProcessorBhv_ABI( FILE *output){
   
   if (ACVerboseFlag)
     fprintf( output, "%sdone.write(1);\n", INDENT[2]);
-
-  //Closing for.
-  fprintf( output, "%s}\n", INDENT[1]);
 }
 
 
