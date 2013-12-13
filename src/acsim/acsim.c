@@ -1767,9 +1767,20 @@ void CreateProcessorImpl() {
     fprintf( output, "%s}\n\n", INDENT[1]);
   }
   
+  // Starting
+  fprintf( output, "%sif( start_up ){\n", INDENT[1]);
+  if(ACABIFlag)
+    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", 
+             INDENT[2]);
+  fprintf( output, "%sstart_up = 0;\n", INDENT[2]);
+  if( ACDecCacheFlag )
+    fprintf( output, "%sinit_dec_cache();\n", INDENT[2]);
+  fprintf( output, "%s}\n\n", INDENT[1]);
+  
+  // Longjmp of ac_annul_sig and ac_stop_flag  
   fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
   fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
-
+  
   //Emiting processor behavior method implementation.
   if( ACABIFlag )
     EmitProcessorBhv_ABI(output);
@@ -3073,14 +3084,6 @@ void EmitFetchInit( FILE *output, int base_indent){
   fprintf( output, "%s}\n", INDENT[base_indent]);
 
   fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent]);
-  fprintf( output, "%sif( start_up ){\n", INDENT[base_indent]);
-  if(ACABIFlag)
-    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", 
-             INDENT[base_indent + 1]);
-  fprintf( output, "%sstart_up = 0;\n", INDENT[base_indent + 1]);
-  if( ACDecCacheFlag )
-    fprintf( output, "%sinit_dec_cache();\n", INDENT[base_indent + 1]);
-  fprintf( output, "%s}\n", INDENT[base_indent]);
 }
 
 
