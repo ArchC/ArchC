@@ -2940,18 +2940,19 @@ void EmitDecodification( FILE *output, int base_indent) {
     fprintf( output, "%s}\n", INDENT[base_indent]);
     fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
-  else
+  else {
     fprintf( output, "%sins_id = ins_cache[IDENT];\n\n", INDENT[base_indent]);
 
-  //Checking if it is a valid instruction
-  fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
-  fprintf( output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
-           INDENT[base_indent+1]);
-  fprintf( output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
-           INDENT[base_indent+1]);
-  fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
-  fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
-  fprintf( output, "%s}\n\n", INDENT[base_indent]);
+    //Checking if it is a valid instruction
+    fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
+    fprintf( output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
+            INDENT[base_indent+1]);
+    fprintf( output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
+            INDENT[base_indent+1]);
+    fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
+    fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
+    fprintf( output, "%s}\n\n", INDENT[base_indent]);
+  }
 }
 
 
@@ -3435,8 +3436,12 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
   }
   fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
-  fprintf(output, "%sinstr_dec->id = 0;\n", INDENT[base_indent + 2]);
-  fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
+  fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
+          INDENT[base_indent + 2]);
+  fprintf(output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
+          INDENT[base_indent + 2]);
+  fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
+  fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
   fprintf(output, "%s}\n", INDENT[base_indent]);
 }
 

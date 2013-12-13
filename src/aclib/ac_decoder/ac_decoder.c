@@ -354,7 +354,7 @@ ac_decoder_full *CreateDecoder(ac_dec_format *formats, ac_dec_instr *instruction
   ac_dec_instr *instr = instructions;
   ac_decoder *dec;
   ac_decoder_full *full;
-  unsigned nFields = 0, nFormats = 0;
+  unsigned nFields = 0, nFormats = 1;
 
   while (format) {
 /*     int format_size = 0; */
