@@ -1306,7 +1306,6 @@ void CreateISAHeader() {
 void CreateProcessorHeader() {
   extern char *project_name;
   extern char *upper_project_name;
-  extern int HaveMultiCycleIns;
   extern int HaveTLMIntrPorts;
   extern ac_sto_list *tlm_intr_port_list;
   ac_sto_list *pport;
@@ -1361,9 +1360,6 @@ void CreateProcessorHeader() {
   }
 
   fprintf( output, "public:\n");
-
-  if( HaveMultiCycleIns)
-    fprintf( output, "%ssc_signal<unsigned> bhv_cycle;\n", INDENT[1]);
 
   if (ACVerboseFlag)
     fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
@@ -1729,7 +1725,7 @@ void CreateStatsImplTmpl() {
 void CreateProcessorImpl() {
   extern ac_sto_list *storage_list;
   extern char *project_name;
-  extern int HaveMultiCycleIns, HaveMemHier;
+  extern int HaveMemHier;
   extern int ACGDBIntegrationFlag;
   ac_sto_list *pstorage;
   
@@ -1775,9 +1771,7 @@ void CreateProcessorImpl() {
   fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
 
   //Emiting processor behavior method implementation.
-  if( HaveMultiCycleIns )
-    EmitMultiCycleProcessorBhv(output);
-  else if( ACABIFlag )
+  if( ACABIFlag )
     EmitProcessorBhv_ABI(output);
   else
     EmitProcessorBhv(output);
@@ -1964,7 +1958,7 @@ void CreateProcessorImpl() {
 /** Creates the _arch.cpp Implementation File. */
 void CreateArchImpl() {
   extern ac_sto_list *storage_list, *fetch_device;
-  extern int HaveMultiCycleIns, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+  extern int HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
   extern ac_sto_list* load_device;
 
   extern char *project_name;
@@ -2850,7 +2844,7 @@ void CreateMakefile(){
 /***************************************/
 void EmitUpdateMethod( FILE *output){
   extern char *project_name;
-  extern int HaveMultiCycleIns, HaveMemHier;
+  extern int HaveMemHier;
   extern ac_sto_list *storage_list;
 
   ac_sto_list *pstorage;
@@ -2858,10 +2852,8 @@ void EmitUpdateMethod( FILE *output){
   //Emiting Update Method.
   COMMENT(INDENT[0],"Updating Regs for behavioral simulation.");
 
-  if ( ACDelayFlag || HaveMultiCycleIns )
-    fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
-      
   if( ACDelayFlag ){
+    fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next )
       fprintf( output, "%s%s.commit_delays( (double)ac_cycle_counter );\n", 
                INDENT[2], pstorage->name);
@@ -2872,13 +2864,8 @@ void EmitUpdateMethod( FILE *output){
     fprintf( output, "%sac_cycle_counter+=1;\n", INDENT[3]);
     fprintf( output, "%selse\n", INDENT[2]);
     fprintf( output, "%sac_parallel_sig = 0;\n\n", INDENT[3]);
-  }
-
-  if( HaveMultiCycleIns)
-    fprintf( output, "%sbhv_cycle.write( ac_cycle );\n", INDENT[2]);
-  
-  if ( ACDelayFlag || HaveMultiCycleIns )
     fprintf( output, "%s}\n", INDENT[1]);
+  }
 
   if( HaveMemHier ) {
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next ) {
@@ -3070,8 +3057,6 @@ void EmitInstrExec( FILE *output, int base_indent){
   \brief Used by EmitProcessorBhv functions */
 /***************************************/
 void EmitFetchInit( FILE *output, int base_indent){
-  extern int HaveMultiCycleIns;
-
   if (!ACDecCacheFlag)
     fprintf( output, "%sif( ac_pc >= APP_MEM->get_size()){\n", 
              INDENT[base_indent]);
@@ -3093,11 +3078,6 @@ void EmitFetchInit( FILE *output, int base_indent){
   if( ACDecCacheFlag )
     fprintf( output, "%sinit_dec_cache();\n", INDENT[base_indent+2]);
   fprintf( output, "%s}\n", INDENT[base_indent+1]);
-  if(HaveMultiCycleIns && !ACDecCacheFlag ){
-    fprintf( output, "%selse{ \n", INDENT[base_indent+1]);
-    fprintf( output, "%sdelete(instr_vec);\n", INDENT[base_indent+2]);
-    fprintf( output, "%s}\n \n", INDENT[base_indent+1]);
-  }
 }
 
 
@@ -3158,67 +3138,6 @@ void EmitProcessorBhv_ABI( FILE *output){
 
   //Closing for.
   fprintf( output, "%s}\n", INDENT[1]);
-}
-
-
-/**************************************/
-/*!  Emits the body of a processor implementation for
-  a multicycle processor
-  \brief Used by CreateProcessorImpl function      */
-/***************************************/
-void EmitMultiCycleProcessorBhv( FILE *output){
-  fprintf( output, "%sif( ac_cycle == 1 ){\n\n", INDENT[1]);
-
-  EmitFetchInit(output, 2);
-  EmitDecodification(output, 3);
-
-  //Multicycle execution demands a different control. Do not use EmitInstrExec.
-  fprintf( output, "%sac_pc = decode_pc;\n", INDENT[3]);
-  fprintf( output, "%sac_cycle = 1;\n", INDENT[3]);
-  fprintf( output, "%sinstr = (ac_instruction *)ISA.instr_table[ins_id][1];\n", 
-           INDENT[3]);
-  fprintf( output, "%sformat = (ac_instruction *)ISA.instr_table[ins_id][2];\n", 
-           INDENT[3]);
-  fprintf( output, "%sformat->set_fields( *instr_vec  );\n", INDENT[3]);
-  fprintf( output, "%sinstr->set_fields( *instr_vec  );\n", INDENT[3]);
-
-  if( ACDebugFlag ){
-    fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[3]);
-    fprintf( output, PRINT_TRACE, INDENT[4]);
-  }
-
-  if( ACStatsFlag ){
-    fprintf( output, "%sac_sim_stats.instr_executed++;;\n", INDENT[3]);
-    fprintf( output, "%sac_sim_stats.instr_table[ins_id].count++;\n", 
-             INDENT[3]);
-    fprintf( output, "%sac_sim_stats.ac_min_cycle_count += instr->get_min_latency();\n", 
-             INDENT[3]);
-    fprintf( output, "%sac_sim_stats.ac_max_cycle_count += instr->get_max_latency();\n", 
-             INDENT[3]);
-  }
-
-  fprintf( output, "%sISA.instruction.set_cycles( instr->get_cycles());\n", 
-           INDENT[3]);
-  fprintf( output, "%sISA.instruction.set_size( instr->get_size());\n", 
-           INDENT[3]);
-
-  fprintf( output, "%s}\n", INDENT[2]);
-  fprintf( output, "%sac_instr_counter+= 1;\n", INDENT[2]);
-
-  fprintf( output, "%s}\n", INDENT[1]);
-
-  fprintf( output, "%sISA.instruction.behavior( (ac_stage_list)0, ac_cycle );\n", 
-           INDENT[1]);
-  fprintf( output, "%sformat->behavior((ac_stage_list)0, ac_cycle );\n", 
-           INDENT[1]);
-  fprintf( output, "%sinstr->behavior((ac_stage_list)0, ac_cycle );\n", 
-           INDENT[1]);
-
-  fprintf( output, "%sif( ac_cycle > instr->get_cycles())\n", INDENT[1]);
-  fprintf( output, "%sac_cycle=1;\n\n", INDENT[2]);
-
-  fprintf( output, "%sbhv_done.write(1);\n", INDENT[1]);
-  fprintf( output, "}\n\n");
 }
 
 
