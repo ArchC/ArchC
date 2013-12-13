@@ -145,7 +145,6 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
  * @{
 */
 void EmitUpdateMethod( FILE *output);                                              //!< Emit reg update method for non-pipelined architectures.
-void EmitMultiCycleProcessorBhv(FILE *output);                                     //!< Emit processor behavior for a multicycle processor.
 void EmitProcessorBhv( FILE *output);                                              //!< Emit processor behavior for a single-cycle processor.
 void EmitProcessorBhv_ABI( FILE *output);                                          //!< Emit processor behavior for a single-cycle processor with ABI provided.
 void EmitABIAddrList( FILE *output, int base_indent);                              //!< Emit the calls for macros containing the list o address used for system calls
