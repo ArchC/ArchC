@@ -1782,14 +1782,9 @@ void CreateProcessorImpl() {
   fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
   
   //Emiting processor behavior method implementation.
-  if( ACABIFlag )
-    EmitProcessorBhv_ABI(output);
-  else
-    EmitProcessorBhv(output);
-
-  //!Emit update method.
-  EmitUpdateMethod( output);
-  fprintf( output, "\n");
+  EmitProcessorBhv(output);
+  
+  fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
 
   //Emiting Verification Method.
   if (ACVerboseFlag) {
@@ -2851,7 +2846,7 @@ void CreateMakefile(){
 
 /**************************************/
 /*!  Emits a method to update pipe regs
-  \brief Used by CreateArchImpl function      */
+  \brief Used by EmitProcessorBhv function      */
 /***************************************/
 void EmitUpdateMethod( FILE *output){
   extern char *project_name;
@@ -2898,15 +2893,12 @@ void EmitUpdateMethod( FILE *output){
     fprintf( output, "%swait(1, SC_NS);\n", INDENT[3]);
     fprintf( output, "%s}\n", INDENT[2]);
   }
-
-  fprintf( output, "%s} // for (;;)\n", INDENT[1]);
-  fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
 }
 
 
 /**************************************/
 /*!  Emits the if statement that handles instruction decodification
-  \brief Used by EmitProcessorBhv and EmitMultCycleProcessorBhv functions */
+  \brief Used by EmitProcessorBhv function */
 /***************************************/
 void EmitDecodification( FILE *output, int base_indent) {
   extern int wordsize, fetchsize, HaveMemHier;
@@ -2971,7 +2963,7 @@ void EmitDecodification( FILE *output, int base_indent) {
 
 /**************************************/
 /*!  Emit code for executing instructions
-  \brief Used by EmitProcessorBhv and EmitMultCycleProcessorBhv functions */
+  \brief Used by EmitProcessorBhv function */
 /***************************************/
 void EmitInstrExec( FILE *output, int base_indent){
   extern ac_dec_instr *instr_list;
@@ -3068,7 +3060,7 @@ void EmitInstrExec( FILE *output, int base_indent){
 /**************************************/
 /*!  Emits the if statement executed before
   fetches are performed.
-  \brief Used by EmitProcessorBhv functions */
+  \brief Used by EmitProcessorBhv function */
 /***************************************/
 void EmitFetchInit( FILE *output, int base_indent){
   if (!ACDecCacheFlag)
@@ -3093,93 +3085,60 @@ void EmitFetchInit( FILE *output, int base_indent){
   \brief Used by CreateProcessorImpl function      */
 /***************************************/
 void EmitProcessorBhv( FILE *output){
+  extern char* project_name;
+  
   fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
 
   EmitFetchInit(output, 2);
+  if( ACABIFlag ) {
+    //Emiting system calls handler.
+    COMMENT(INDENT[2],"Handling System calls.")
+    fprintf( output, "%sswitch( decode_pc ){\n\n", INDENT[2]);  
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[0]);
+    fprintf( output, "%scase LOCATION: \\\n", INDENT[2]);
+
+    if( ACStatsFlag ){
+      fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
+              INDENT[4], project_name);
+    }
+
+    if( ACDebugFlag ){
+      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[4]);
+      fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
+              INDENT[5]);
+    }
+
+    fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[4]);
+    fprintf( output, "%sbreak;  \\\n", INDENT[3]);
+    fprintf( output, "\n\n");
+    fprintf( output, "#include <ac_syscall.def>\n");
+    fprintf( output, "\n");
+    fprintf( output, "#undef AC_SYSC\n\n");
+    
+    fprintf( output, "%sdefault:\n\n", INDENT[2]);
+  }
   EmitDecodification(output, 2);
   EmitInstrExec(output, 2);
 
+  if( ACABIFlag ) {
+    //Closing default case.
+    fprintf( output, "%sbreak;\n", INDENT[3]);
+    //Closing switch.
+    fprintf( output, "%s}\n", INDENT[2]);
+  }
+  
   fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", INDENT[2]);
   
   if (ACVerboseFlag)
-    fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
-}
-
-
-/**************************************/
-/*!  Emits the body of a processor implementation for
-  a processor without pipeline, with single cycle instruction and
-  with an ABI provided.
-  \brief Used by CreateProcessorImpl function      */
-/***************************************/
-void EmitProcessorBhv_ABI( FILE *output){
-  fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
-
-  EmitFetchInit(output, 2);
-
-  //Emiting system calls handler.
-  COMMENT(INDENT[2],"Handling System calls.")
-    fprintf( output, "%sswitch( decode_pc ){\n\n", INDENT[2]);
-
-  EmitABIDefine(output);
-  fprintf( output, "\n\n");
-  EmitABIAddrList(output,2);
-
-  fprintf( output, "%sdefault:\n\n", INDENT[2]);
-
-  EmitDecodification(output, 2);
-  EmitInstrExec(output, 3);
-
-  //Closing default case.
-  fprintf( output, "%sbreak;\n", INDENT[3]);
-
-  //Closing switch.
-  fprintf( output, "%s}\n", INDENT[2]);
-
-  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", INDENT[2]);
+    if( ACABIFlag )
+      fprintf( output, "%sdone.write(1);\n", INDENT[2]);
+    else
+      fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
+    
+  //!Emit update method.
+  EmitUpdateMethod( output);
   
-  if (ACVerboseFlag)
-    fprintf( output, "%sdone.write(1);\n", INDENT[2]);
-}
-
-
-/**************************************/
-/*!  Emits the define that implements the ABI control
-  for non-pipelined architectures
-  \brief Used by EmitProcessorBhv_ABI function      */
-/***************************************/
-void EmitABIDefine( FILE *output){
-  extern char* project_name;
-
-  fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[0]);
-  fprintf( output, "%scase LOCATION: \\\n", INDENT[2]);
-
-  if( ACStatsFlag ){
-    fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
-             INDENT[4], project_name);
-  }
-
-  if( ACDebugFlag ){
-    fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[4]);
-    fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
-             INDENT[5]);
-  }
-
-  fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[4]);
-  fprintf( output, "%sbreak;  \\\n", INDENT[3]);
-}
-
-
-/**************************************/
-/*!  Emits the ABI special address list
-  to be used inside the ABI switchs
-  \brief Used by EmitProcessorBhv_ABI function      */
-/***************************************/
-void EmitABIAddrList( FILE *output, int base_indent){
-
-  fprintf( output, "#include <ac_syscall.def>\n");
-  fprintf( output, "\n");
-  fprintf( output, "#undef AC_SYSC\n\n");
+  fprintf( output, "%s} // for (;;)\n", INDENT[1]);
 }
 
 
