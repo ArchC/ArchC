@@ -3075,7 +3075,7 @@ void EmitFetchInit( FILE *output, int base_indent){
   fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
   fprintf( output, "%s}\n", INDENT[base_indent]);
 
-  fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent]);
+  fprintf( output, "%sdecode_pc = ac_pc;\n\n", INDENT[base_indent]);
 }
 
 
@@ -3091,50 +3091,52 @@ void EmitProcessorBhv( FILE *output){
 
   EmitFetchInit(output, 2);
   if( ACABIFlag ) {
+    
+    fprintf( output, "%sbool exec = true;\n\n", INDENT[2]);  
+    fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[2]);  
+    
     //Emiting system calls handler.
-    COMMENT(INDENT[2],"Handling System calls.")
-    fprintf( output, "%sswitch( decode_pc ){\n\n", INDENT[2]);  
-    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[0]);
-    fprintf( output, "%scase LOCATION: \\\n", INDENT[2]);
+    COMMENT(INDENT[3],"Handling System calls.")
+    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[3]);  
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[3]);
+    fprintf( output, "%scase LOCATION: \\\n", INDENT[3]);
 
     if( ACStatsFlag ){
       fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
-              INDENT[4], project_name);
+              INDENT[5], project_name);
     }
 
     if( ACDebugFlag ){
-      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[4]);
+      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[5]);
       fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
-              INDENT[5]);
+              INDENT[6]);
     }
 
-    fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[4]);
-    fprintf( output, "%sbreak;  \\\n", INDENT[3]);
-    fprintf( output, "\n\n");
-    fprintf( output, "#include <ac_syscall.def>\n");
-    fprintf( output, "\n");
-    fprintf( output, "#undef AC_SYSC\n\n");
+    fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[5]);
+    fprintf( output, "%sexec = false; \\\n", INDENT[5]);
+    fprintf( output, "%sbreak;\n", INDENT[4]);
+    fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[3]);
+    fprintf( output, "%s#undef AC_SYSC\n", INDENT[3]);
     
-    fprintf( output, "%sdefault:\n\n", INDENT[2]);
+    fprintf( output, "%s} // switch( decode_pc )\n", INDENT[3]);
+    fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", INDENT[2]);
+    fprintf( output, "%sif (exec) {\n", INDENT[2]);
   }
   EmitDecodification(output, 2);
   EmitInstrExec(output, 2);
 
-  if( ACABIFlag ) {
-    //Closing default case.
-    fprintf( output, "%sbreak;\n", INDENT[3]);
-    //Closing switch.
-    fprintf( output, "%s}\n", INDENT[2]);
-  }
+  if( ACABIFlag )
+    fprintf( output, "%s} // if (exec)\n", INDENT[2]);
   
   fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", INDENT[2]);
   
-  if (ACVerboseFlag)
+  if (ACVerboseFlag) {
     if( ACABIFlag )
       fprintf( output, "%sdone.write(1);\n", INDENT[2]);
     else
       fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
-    
+  }
+  
   //!Emit update method.
   EmitUpdateMethod( output);
   
