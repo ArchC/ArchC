@@ -97,6 +97,7 @@ enum _ac_cmd_options {
   OPVersion,
   OPGDBIntegration,
   OPWait,
+  OPDTC,
   ACNumberOfOptions
 };
 
@@ -144,7 +145,7 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
  * These functions are used by Create functions to emit code.
  * @{
 */
-void EmitUpdateMethod( FILE *output);                                              //!< Emit reg update method for non-pipelined architectures.
+void EmitUpdateMethod( FILE *output, int base_indent );                                              //!< Emit reg update method for non-pipelined architectures.
 void EmitProcessorBhv( FILE *output);                                              //!< Emit processor behavior for a single-cycle processor.
 void EmitInstrExec(FILE *output, int base_indent);                                 //!< Emit code for executing an instruction behavior
 void EmitDecodification(FILE *output, int base_indent);                            //!< Emit for instruction decodification
@@ -152,6 +153,8 @@ void EmitFetchInit(FILE *output, int base_indent);                              
 void EmitCacheDeclaration(FILE *output, ac_sto_list* pstorage, int base_indent);   //!< Emit code for ac_cache object declaration
 void EmitDecCache(FILE *output, int base_indent);                                  //!< Emits a Decoder Cache Structure
 void EmitDecCacheAt(FILE *output, int base_indent);                                //!< Emits a Decoder Cache Attribution
+void EmitDispatch(FILE *output, int base_indent);                                  //!< Emits the Dispatch Function used by Threading
+void EmitVetLabelAt(FILE *output, int base_indent);                                //!< Emits the Vector with Address of the Interpretation Routines used by Threading
 //@}
 
 /** @defgroup utilitfunc Utility Functions

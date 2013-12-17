@@ -44,6 +44,7 @@ int  ACStatsFlag=0;                             //!<Indicates whether statistics
 int  ACVerboseFlag=0;                           //!<Indicates whether verbose option is turned on or not
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
+int  ACThreading=1;                             //!<Indicates if Direct Threading Code is turned on or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -76,17 +77,18 @@ ac_sto_list* load_device=0;
 /*! This is the table of mappings.  Mappings are tried sequentially
   for each option encountered; the first one that matches, wins.  */
 struct option_map option_map[] = {
-  {"--abi-included"  , "-abi"        ,"Indicate that an ABI for system call emulation was provided." ,"o"},
-  {"--debug"         , "-g"          ,"Enable simulation debug features: traces, update logs." ,"o"},
-  {"--delay"         , "-dy"          ,"Enable delayed assignments to storage elements." ,"o"},
-  {"--dumpdecoder"   , "-dd"         ,"Dump the decoder data structure." ,"o"},
-  {"--help"          , "-h"          ,"Display this help message."       , 0},
-  {"--no-dec-cache"  , "-ndc"        ,"Disable cache of decoded instructions." ,"o"},
-  {"--stats"         , "-s"          ,"Enable statistics collection during simulation." ,"o"},
-  {"--verbose"       , "-vb"         ,"Display update logs for storage devices during simulation.", "o"},
-  {"--version"       , "-vrs"        ,"Display ACSIM version.", 0},
-  {"--gdb-integration", "-gdb"       ,"Enable support for debbuging programs running on the simulator.", 0},
-  {"--no-wait"       , "-nw"        ,"Disable wait() at execution thread.", 0},
+  {"--abi-included"   , "-abi","Indicate that an ABI for system call emulation was provided." ,"o"},
+  {"--debug"          , "-g"  ,"Enable simulation debug features: traces, update logs." ,"o"},
+  {"--delay"          , "-dy" ,"Enable delayed assignments to storage elements." ,"o"},
+  {"--dumpdecoder"    , "-dd" ,"Dump the decoder data structure." ,"o"},
+  {"--help"           , "-h"  ,"Display this help message."       , 0},
+  {"--no-dec-cache"   , "-ndc","Disable cache of decoded instructions." ,"o"},
+  {"--stats"          , "-s"  ,"Enable statistics collection during simulation." ,"o"},
+  {"--verbose"        , "-vb" ,"Display update logs for storage devices during simulation.", "o"},
+  {"--version"        , "-vrs","Display ACSIM version.", 0},
+  {"--gdb-integration", "-gdb","Enable support for debbuging programs running on the simulator.", 0},
+  {"--no-wait"        , "-nw" ,"Disable wait() at execution thread.", 0},
+  {"--no-threading"   , "-nt" ,"Disable Direct Threading Code.", 0},
   { }
 };
 
@@ -271,6 +273,10 @@ int main(int argc, char** argv) {
               break;
             case OPWait:
               ACWaitFlag = 0;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPDTC:
+              ACThreading = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -1377,7 +1383,12 @@ void CreateProcessorHeader() {
               INDENT[1], pport->name);
     }
   }
-
+  
+  if (ACThreading) {
+    COMMENT(INDENT[1], "Address of Interpretation Routines.");
+    fprintf( output, "%svoid** IntRoutine;\n\n", INDENT[1]);
+  }
+  
   if(ACDecCacheFlag){
     fprintf( output, "%sDecCacheItem* DEC_CACHE;\n", INDENT[1]);
     fprintf( output, "%sDecCacheItem* instr_dec;\n", INDENT[1]);
@@ -1393,6 +1404,14 @@ void CreateProcessorHeader() {
             INDENT[1], project_name);
   
   fprintf( output, "\n");
+  
+  if (ACThreading) {
+    COMMENT(INDENT[1], "Dispatch Method.");
+    fprintf( output, 
+             "%sinline __attribute__((always_inline)) void* dispatch();\n\n", 
+             INDENT[1]);
+  }
+  
   COMMENT(INDENT[1], "Behavior execution method.");
   fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
 
@@ -1747,12 +1766,19 @@ void CreateProcessorImpl() {
   if( ACABIFlag )
     fprintf( output, "#include  \"%s_syscall.H\"\n\n", project_name);
 
+  if( ACThreading )
+    EmitDispatch(output, 0);
+  
   fprintf( output, "void %s::behavior() {\n\n", project_name);
   if( ACDebugFlag ){
     fprintf( output, "%sextern bool ac_do_trace;\n", INDENT[1]);
     fprintf( output, "%sextern ofstream trace_file;\n", INDENT[1]);
   }
-  fprintf( output, "%sunsigned ins_id;\n", INDENT[1]);
+  
+  if( ACThreading ) 
+    EmitVetLabelAt(output, 1);
+  else
+    fprintf( output, "%sunsigned ins_id;\n", INDENT[1]);
 
   /* Delayed program loading */
   fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
@@ -1782,7 +1808,10 @@ void CreateProcessorImpl() {
   fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
   
   //Emiting processor behavior method implementation.
-  EmitProcessorBhv(output);
+  if( ACThreading )
+    EmitInstrExec(output, 1);
+  else
+    EmitProcessorBhv(output);
   
   fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
 
@@ -2846,9 +2875,9 @@ void CreateMakefile(){
 
 /**************************************/
 /*!  Emits a method to update pipe regs
-  \brief Used by EmitProcessorBhv function      */
+  \brief Used by EmitProcessorBhv and EmitDispatch functions      */
 /***************************************/
-void EmitUpdateMethod( FILE *output){
+void EmitUpdateMethod( FILE *output, int base_indent ) {
   extern char *project_name;
   extern int HaveMemHier;
   extern ac_sto_list *storage_list;
@@ -2857,22 +2886,22 @@ void EmitUpdateMethod( FILE *output){
 
   //Emiting Update Method.
   if( ACDelayFlag || HaveMemHier || ACWaitFlag) {
-    COMMENT(INDENT[0],"Updating Regs for behavioral simulation.");
+    COMMENT(INDENT[base_indent],"Updating Regs for behavioral simulation.");
   }
 
   if( ACDelayFlag ){
-    fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[1]);
+    fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[base_indent]);
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next )
       fprintf( output, "%s%s.commit_delays( (double)ac_cycle_counter );\n", 
-               INDENT[2], pstorage->name);
+               INDENT[base_indent + 1], pstorage->name);
       
     fprintf( output, "%sac_pc.commit_delays(  (double)ac_cycle_counter );\n", 
-             INDENT[2]);
-    fprintf( output, "%sif(!ac_parallel_sig)\n", INDENT[2]);
-    fprintf( output, "%sac_cycle_counter+=1;\n", INDENT[3]);
-    fprintf( output, "%selse\n", INDENT[2]);
-    fprintf( output, "%sac_parallel_sig = 0;\n\n", INDENT[3]);
-    fprintf( output, "%s}\n", INDENT[1]);
+             INDENT[base_indent + 1]);
+    fprintf( output, "%sif(!ac_parallel_sig)\n", INDENT[base_indent + 1]);
+    fprintf( output, "%sac_cycle_counter++;\n", INDENT[base_indent + 2]);
+    fprintf( output, "%selse\n", INDENT[base_indent + 1]);
+    fprintf( output, "%sac_parallel_sig = 0;\n\n", INDENT[base_indent + 2]);
+    fprintf( output, "%s}\n", INDENT[base_indent]);
   }
 
   if( HaveMemHier ) {
@@ -2880,25 +2909,26 @@ void EmitUpdateMethod( FILE *output){
       if( pstorage->type == CACHE || pstorage->type == ICACHE || 
           pstorage->type == DCACHE || pstorage->type == MEM )
         fprintf( output, "%s%s.process_request( );\n", 
-                 INDENT[1], pstorage->name);
+                 INDENT[base_indent], pstorage->name);
     }
   }
   
   if (ACWaitFlag) {
-    fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", INDENT[2]);
-    fprintf( output, "%sinstr_in_batch++;\n", INDENT[3]);
-    fprintf( output, "%s}\n", INDENT[2]);
-    fprintf( output, "%selse {\n", INDENT[2]);
-    fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[3]);
-    fprintf( output, "%swait(1, SC_NS);\n", INDENT[3]);
-    fprintf( output, "%s}\n", INDENT[2]);
+    fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", 
+             INDENT[base_indent]);
+    fprintf( output, "%sinstr_in_batch++;\n", INDENT[base_indent + 1]);
+    fprintf( output, "%s}\n", INDENT[base_indent]);
+    fprintf( output, "%selse {\n", INDENT[base_indent]);
+    fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[base_indent + 1]);
+    fprintf( output, "%swait(1, SC_NS);\n", INDENT[base_indent + 1]);
+    fprintf( output, "%s}\n", INDENT[base_indent]);
   }
 }
 
 
 /**************************************/
 /*!  Emits the if statement that handles instruction decodification
-  \brief Used by EmitProcessorBhv function */
+  \brief Used by EmitProcessorBhv and EmitDispatch functions */
 /***************************************/
 void EmitDecodification( FILE *output, int base_indent) {
   extern int wordsize, fetchsize, HaveMemHier;
@@ -2921,7 +2951,10 @@ void EmitDecodification( FILE *output, int base_indent) {
     }
 
     fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[base_indent]);
-    fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
+    if (ACThreading)
+      fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 1]);
+    else 
+      fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
     fprintf( output, "%s}\n", INDENT[base_indent]);
   }
 
@@ -2929,19 +2962,27 @@ void EmitDecodification( FILE *output, int base_indent) {
     fprintf( output, "%sinstr_dec = (DEC_CACHE + decode_pc);\n", 
              INDENT[base_indent]);
     fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
-    fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent+1]);
+    base_indent++;
+    fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent]);
   }
 
-  fprintf( output, "%squant = 0;\n", INDENT[base_indent+1]);
+  fprintf( output, "%squant = 0;\n", INDENT[base_indent]);
   fprintf( output, "%sins_cache = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n", 
-           INDENT[base_indent+1]);
+           INDENT[base_indent]);
   
   if( ACDecCacheFlag ){
     fprintf( output, "%sinstr_dec->valid = true;\n", 
-             INDENT[base_indent+1]);
+             INDENT[base_indent]);
     fprintf( output, "%sinstr_dec->id = ins_cache[IDENT];\n", 
-             INDENT[base_indent+1]);
-    EmitDecCacheAt( output, base_indent + 1);
+             INDENT[base_indent]);
+    
+    if (ACThreading)
+      fprintf( output, "%sinstr_dec->end_rot = IntRoutine[instr_dec->id];\n", 
+               INDENT[base_indent]);
+    
+    EmitDecCacheAt( output, base_indent);
+    
+    base_indent--;
     fprintf( output, "%s}\n", INDENT[base_indent]);
     fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
@@ -2955,27 +2996,26 @@ void EmitDecodification( FILE *output, int base_indent) {
     fprintf( output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
             INDENT[base_indent+1]);
     fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
-    fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
+    if (ACThreading)
+      fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 1]);
+    else 
+      fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
     fprintf( output, "%s}\n\n", INDENT[base_indent]);
   }
 }
 
 
 /**************************************/
-/*!  Emit code for executing instructions
-  \brief Used by EmitProcessorBhv function */
+/*!  Emit initial code for executing instructions
+  \brief Used by EmitInstrExec and EmitDispatch functions */
 /***************************************/
-void EmitInstrExec( FILE *output, int base_indent){
-  extern ac_dec_instr *instr_list;
-  extern ac_dec_format *format_ins_list;
+void EmitInstrExecIni( FILE *output, int base_indent) {
   extern ac_dec_field *common_instr_field_list;
-  extern int HaveCycleRange;
-  extern char* project_name;
-
+  extern ac_dec_format *format_ins_list;
+  
   ac_dec_format *pformat;
-  ac_dec_instr *pinstr;
   ac_dec_field *pfield;
-
+  
   if( ACGDBIntegrationFlag )
     fprintf( output, "%sif (gdbstub && gdbstub->stop(decode_pc)) gdbstub->process_bp();\n\n", 
              INDENT[base_indent]);
@@ -3002,13 +3042,41 @@ void EmitInstrExec( FILE *output, int base_indent){
     }
   }
   fprintf(output, ");\n");
+}
 
-  /* Switch statement for instruction selection */
-  fprintf(output, "%sswitch (ins_id) {\n", INDENT[base_indent]);
+
+/**************************************/
+/*!  Emit code for executing instructions
+  \brief Used by EmitProcessorBhv function */
+/***************************************/
+void EmitInstrExec( FILE *output, int base_indent){
+  extern ac_dec_instr *instr_list;
+  extern ac_dec_format *format_ins_list;
+  extern char* project_name;
+
+  ac_dec_format *pformat;
+  ac_dec_instr *pinstr;
+  ac_dec_field *pfield;
+
+  if( ACThreading ) {
+    fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent]);
+  }
+  else {
+    EmitInstrExecIni( output, base_indent );
+  
+    /* Switch statement for instruction selection */
+    fprintf(output, "%sswitch (ins_id) {\n", INDENT[base_indent]);
+  }
+  
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    /* opens case statement */
-    fprintf(output, "%scase %d: // Instruction %s\n", 
-            INDENT[base_indent], pinstr->id, pinstr->name);
+    if( ACThreading )
+      fprintf(output, "%sI_%s: // Instruction %s\n", 
+            INDENT[base_indent], pinstr->name, pinstr->name);
+    else
+      /* opens case statement */
+      fprintf(output, "%scase %d: // Instruction %s\n", 
+              INDENT[base_indent], pinstr->id, pinstr->name);
+      
     /* emits format behavior method call */
     for (pformat = format_ins_list;
          (pformat != NULL) && strcmp(pinstr->format, pformat->name);
@@ -3037,22 +3105,29 @@ void EmitInstrExec( FILE *output, int base_indent){
         fprintf(output, ", ");
     }
     fprintf(output, ");\n");
-    fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
+    
+    if( ACThreading )
+      fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
+    else
+      fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
-  fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent]);
+  
+  if( !ACThreading ) {
+    fprintf(output, "%s} // switch (ins_id)\n", INDENT[base_indent]);
 
-  if( ACStatsFlag ){
-    fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
-    fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
-             INDENT[base_indent+1], project_name);
-    fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
-             INDENT[base_indent+1], project_name);
-    fprintf( output, "%s}\n", INDENT[base_indent]);
-  }
+    if( ACStatsFlag ){
+      fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
+      fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
+              INDENT[base_indent+1], project_name);
+      fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
+              INDENT[base_indent+1], project_name);
+      fprintf( output, "%s}\n", INDENT[base_indent]);
+    }
 
-  if( ACDebugFlag ){
-    fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent]);
-    fprintf( output, PRINT_TRACE, INDENT[base_indent+1]);
+    if( ACDebugFlag ){
+      fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent]);
+      fprintf( output, PRINT_TRACE, INDENT[base_indent+1]);
+    }
   }
 }
 
@@ -3060,7 +3135,7 @@ void EmitInstrExec( FILE *output, int base_indent){
 /**************************************/
 /*!  Emits the if statement executed before
   fetches are performed.
-  \brief Used by EmitProcessorBhv function */
+  \brief Used by EmitProcessorBhv and EmitDispatch functions */
 /***************************************/
 void EmitFetchInit( FILE *output, int base_indent){
   if (!ACDecCacheFlag)
@@ -3072,7 +3147,10 @@ void EmitFetchInit( FILE *output, int base_indent){
   fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << ac_pc << \").\" << endl;\n", 
            INDENT[base_indent+1]);
   fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
-  fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
+  if (ACThreading)
+    fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 1]);
+  else
+    fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
   fprintf( output, "%s}\n", INDENT[base_indent]);
 
   fprintf( output, "%sdecode_pc = ac_pc;\n\n", INDENT[base_indent]);
@@ -3138,7 +3216,7 @@ void EmitProcessorBhv( FILE *output){
   }
   
   //!Emit update method.
-  EmitUpdateMethod( output);
+  EmitUpdateMethod( output, 2);
   
   fprintf( output, "%s} // for (;;)\n", INDENT[1]);
 }
@@ -3367,6 +3445,8 @@ void EmitDecCache(FILE *output, int base_indent) {
   
   fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
   fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
+  if (ACThreading)
+    fprintf(output, "%svoid* end_rot;\n", INDENT[base_indent + 1]);
   fprintf(output, "%sunsigned id;\n", INDENT[base_indent + 1]);
   fprintf(output, "%sunion {\n", INDENT[base_indent + 1]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
@@ -3403,8 +3483,139 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
   fprintf(output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
           INDENT[base_indent + 2]);
   fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
-  fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
+
+  if (ACThreading)
+    fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 2]);
+  else 
+    fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
+
   fprintf(output, "%s}\n", INDENT[base_indent]);
+}
+
+/**************************************/
+/*!  Emits the Dispatch Function used by Threading
+  \brief Used by CreateProcessorImpl function */
+/***************************************/
+void EmitDispatch(FILE *output, int base_indent) {
+
+  fprintf( output, "%svoid* %s::dispatch() {\n", 
+           INDENT[base_indent], project_name);
+  
+  EmitFetchInit(output, base_indent + 1);
+  
+  fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent + 1]);
+  
+  if( ACABIFlag ) {  
+    fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent + 1]);  
+    fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent + 1]);  
+    
+    //Emiting system calls handler.
+    COMMENT(INDENT[base_indent + 2],"Handling System calls.")
+    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[base_indent + 2]);  
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
+             INDENT[base_indent + 3]);
+    fprintf( output, "%scase LOCATION: \\\n", INDENT[base_indent + 3]);
+
+    if( ACStatsFlag ){
+      fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
+              INDENT[base_indent + 5], project_name);
+    }
+
+    if( ACDebugFlag ){
+      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", 
+               INDENT[base_indent + 5]);
+      fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
+              INDENT[base_indent + 6]);
+    }
+
+    fprintf( output, "%sISA.syscall.NAME(); \\\n", 
+             INDENT[base_indent + 5]);
+    fprintf( output, "%sexec = false; \\\n", 
+             INDENT[base_indent + 5]);
+    fprintf( output, "%sbreak;\n", 
+             INDENT[base_indent + 4]);
+    fprintf( output, "%s#include <ac_syscall.def>\n", 
+             INDENT[base_indent + 3]);
+    fprintf( output, "%s#undef AC_SYSC\n", 
+             INDENT[base_indent + 3]);
+    
+    fprintf( output, "%s} // switch( decode_pc )\n", 
+             INDENT[base_indent + 2]);
+    fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", 
+             INDENT[base_indent + 1]);
+    fprintf( output, "%sif (exec) {\n", 
+             INDENT[base_indent + 1]);
+    
+    base_indent++;
+  }
+  
+  EmitDecodification(output, base_indent);  
+  
+  EmitInstrExecIni(output, base_indent + 1);
+  
+  if( ACStatsFlag ){
+    fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent + 1]);
+    fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
+            INDENT[base_indent + 2], project_name);
+    fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
+            INDENT[base_indent + 2], project_name);
+    fprintf( output, "%s}\n", INDENT[base_indent + 1]);
+  }
+
+  if( ACDebugFlag ){
+    fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent + 1]);
+    fprintf( output, PRINT_TRACE, INDENT[base_indent + 2]);
+  }
+  
+  if( ACABIFlag ) {
+    fprintf( output, "%s} // if (exec)\n", INDENT[base_indent]);
+    base_indent--;
+  }
+  
+  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", 
+           INDENT[base_indent + 1]);
+  
+  if (ACVerboseFlag) {
+    if( ACABIFlag )
+      fprintf( output, "%sdone.write(1);\n", INDENT[base_indent + 1]);
+    else
+      fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent + 1]);
+  }
+  
+  //!Emit update method.
+  EmitUpdateMethod( output, base_indent + 1);
+  
+  if(ACDecCacheFlag)
+    fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent + 1]);  
+  else
+    fprintf( output, "%sreturn IntRoutine[ISA.cur_instr_id];\n", INDENT[base_indent + 1]);  
+  
+  fprintf( output, "%s}\n\n", INDENT[base_indent]);  
+}
+
+
+/**************************************/
+/*!  Emits the Vector with Address of the 
+ * Interpretation Routines used by Threading
+  \brief Used by CreateProcessorImpl function */
+/***************************************/
+void EmitVetLabelAt(FILE *output, int base_indent) {
+  extern ac_dec_instr *instr_list;
+  ac_dec_instr *pinstr;
+  unsigned cont = 0;
+  
+  fprintf( output, "%svoid* vet[] = {NULL", INDENT[base_indent]);
+  for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    fprintf(output, ", ");
+    if (cont++ >= 4) {
+      fprintf(output, "\n%s", INDENT[base_indent + 6]);
+      cont = 0;
+    }
+    fprintf(output, "&&I_%s", pinstr->name);
+  }
+  fprintf(output, "};\n\n");
+  
+  fprintf(output, "%sIntRoutine = vet;\n\n", INDENT[base_indent]);
 }
 
 
