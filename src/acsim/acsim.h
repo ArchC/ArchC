@@ -98,6 +98,7 @@ enum _ac_cmd_options {
   OPGDBIntegration,
   OPWait,
   OPDTC,
+  OPSysJump,
   ACNumberOfOptions
 };
 
@@ -145,8 +146,8 @@ void CreateProcessorImpl(void);                   //!< Creates the .cpp file for
  * These functions are used by Create functions to emit code.
  * @{
 */
-void EmitUpdateMethod( FILE *output, int base_indent );                                              //!< Emit reg update method for non-pipelined architectures.
-void EmitProcessorBhv( FILE *output);                                              //!< Emit processor behavior for a single-cycle processor.
+void EmitUpdateMethod( FILE *output, int base_indent );                            //!< Emit reg update method for non-pipelined architectures.
+void EmitProcessorBhv( FILE *output, int base_indent);                             //!< Emit processor behavior for a single-cycle processor.
 void EmitInstrExec(FILE *output, int base_indent);                                 //!< Emit code for executing an instruction behavior
 void EmitDecodification(FILE *output, int base_indent);                            //!< Emit for instruction decodification
 void EmitFetchInit(FILE *output, int base_indent);                                 //!< Emit code used for initializing fetchs

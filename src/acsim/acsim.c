@@ -45,6 +45,7 @@ int  ACVerboseFlag=0;                           //!<Indicates whether verbose op
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
 int  ACThreading=1;                             //!<Indicates if Direct Threading Code is turned on or not
+int  ACSyscallJump=1;                           //!<Indicates if Syscall Jump Optimization is turned on or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -89,6 +90,7 @@ struct option_map option_map[] = {
   {"--gdb-integration", "-gdb","Enable support for debbuging programs running on the simulator.", 0},
   {"--no-wait"        , "-nw" ,"Disable wait() at execution thread.", 0},
   {"--no-threading"   , "-nt" ,"Disable Direct Threading Code.", 0},
+  {"--no-syscall-jump", "-nsj","Disable Syscall Jump Optimization.", 0},
   { }
 };
 
@@ -277,6 +279,10 @@ int main(int argc, char** argv) {
               break;
             case OPDTC:
               ACThreading = 0;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPSysJump:
+              ACSyscallJump = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -1811,7 +1817,7 @@ void CreateProcessorImpl() {
   if( ACThreading )
     EmitInstrExec(output, 1);
   else
-    EmitProcessorBhv(output);
+    EmitProcessorBhv(output, 1);
   
   fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
 
@@ -2934,7 +2940,6 @@ void EmitDecodification( FILE *output, int base_indent) {
   extern int wordsize, fetchsize, HaveMemHier;
   extern char* project_name;
 
-  base_indent++;
   if( HaveMemHier ){
     if (fetchsize == wordsize)
       fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read( decode_pc );\n\n", 
@@ -3109,7 +3114,7 @@ void EmitInstrExec( FILE *output, int base_indent){
     if( ACThreading )
       fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
     else
-      fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
+      fprintf(output, "%sbreak;\n", INDENT[base_indent]);
   }
   
   if( !ACThreading ) {
@@ -3162,63 +3167,95 @@ void EmitFetchInit( FILE *output, int base_indent){
   a processor without pipeline and with single cycle instruction.
   \brief Used by CreateProcessorImpl function      */
 /***************************************/
-void EmitProcessorBhv( FILE *output){
+void EmitProcessorBhv( FILE *output, int base_indent ) {
   extern char* project_name;
   
-  fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
-
-  EmitFetchInit(output, 2);
-  if( ACABIFlag ) {
-    
-    fprintf( output, "%sbool exec = true;\n\n", INDENT[2]);  
-    fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[2]);  
+  fprintf(output, "%sfor (;;) {\n\n", INDENT[base_indent]);
+  base_indent++;
+  
+  EmitFetchInit(output, base_indent);
+  
+  if( ACABIFlag ) {  
+    if (ACSyscallJump) {
+      fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);  
+      fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent]);
+      base_indent++;
+    }
     
     //Emiting system calls handler.
-    COMMENT(INDENT[3],"Handling System calls.")
-    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[3]);  
-    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[3]);
-    fprintf( output, "%scase LOCATION: \\\n", INDENT[3]);
-
+    COMMENT(INDENT[base_indent],"Handling System calls.")
+    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[base_indent]);
+    base_indent++;
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
+             INDENT[base_indent]);
+    fprintf( output, "%scase LOCATION: \\\n", INDENT[base_indent]);
+    base_indent++;
+    
     if( ACStatsFlag ){
       fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
-              INDENT[5], project_name);
+              INDENT[base_indent], project_name);
     }
 
     if( ACDebugFlag ){
-      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[5]);
+      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
       fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
-              INDENT[6]);
+              INDENT[base_indent + 1]);
     }
 
-    fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[5]);
-    fprintf( output, "%sexec = false; \\\n", INDENT[5]);
-    fprintf( output, "%sbreak;\n", INDENT[4]);
-    fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[3]);
-    fprintf( output, "%s#undef AC_SYSC\n", INDENT[3]);
+    fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
     
-    fprintf( output, "%s} // switch( decode_pc )\n", INDENT[3]);
-    fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", INDENT[2]);
-    fprintf( output, "%sif (exec) {\n", INDENT[2]);
+    if (ACSyscallJump)
+      fprintf( output, "%sexec = false; \\\n", INDENT[base_indent]);
+    
+    base_indent--;
+    fprintf( output, "%sbreak;\n", INDENT[base_indent]);
+    fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[base_indent]);
+    fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[base_indent]);
+    
+    
+    if (ACSyscallJump) {
+      base_indent--;
+      fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
+      base_indent--;
+      fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", INDENT[base_indent]);
+      fprintf( output, "%sif (exec) {\n", INDENT[base_indent]);
+      base_indent++;
+    }
+    else {
+      fprintf( output, "%sdefault:\n", INDENT[base_indent]);
+      base_indent++;
+    }
   }
-  EmitDecodification(output, 2);
-  EmitInstrExec(output, 2);
+  EmitDecodification(output, base_indent);
+  EmitInstrExec(output, base_indent);
 
-  if( ACABIFlag )
-    fprintf( output, "%s} // if (exec)\n", INDENT[2]);
+  if( ACABIFlag ) {
+      base_indent--;
+    if( ACSyscallJump ) {
+      fprintf( output, "%s} // if (exec)\n", INDENT[base_indent]);
+    }
+    else{
+      fprintf( output, "%sbreak;\n", INDENT[base_indent]);
+      base_indent--;
+      fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
+    }
+  }
   
-  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", INDENT[2]);
+  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", 
+           INDENT[base_indent]);
   
   if (ACVerboseFlag) {
     if( ACABIFlag )
-      fprintf( output, "%sdone.write(1);\n", INDENT[2]);
+      fprintf( output, "%sdone.write(1);\n", INDENT[base_indent]);
     else
-      fprintf( output, "%sbhv_done.write(1);\n", INDENT[2]);
+      fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent]);
   }
   
   //!Emit update method.
-  EmitUpdateMethod( output, 2);
+  EmitUpdateMethod( output, base_indent);
   
-  fprintf( output, "%s} // for (;;)\n", INDENT[1]);
+  base_indent--;
+  fprintf( output, "%s} // for (;;)\n", INDENT[base_indent]);
 }
 
 
@@ -3475,7 +3512,7 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
       fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache[%d];\n", 
               INDENT[base_indent + 2], pformat->name, 
               pfield->name, pfield->id);
-    fprintf(output, "%sbreak;\n", INDENT[base_indent + 2]);
+    fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
   fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
   fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
@@ -3501,57 +3538,67 @@ void EmitDispatch(FILE *output, int base_indent) {
   fprintf( output, "%svoid* %s::dispatch() {\n", 
            INDENT[base_indent], project_name);
   
-  EmitFetchInit(output, base_indent + 1);
+  base_indent++;
+  EmitFetchInit(output, base_indent);
   
-  fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent + 1]);
+  fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent]);
   
-  if( ACABIFlag ) {  
-    fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent + 1]);  
-    fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent + 1]);  
+  if( ACABIFlag ) {
+    if (ACSyscallJump) {
+      fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);  
+      fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent]);
+      base_indent++;
+    }
     
     //Emiting system calls handler.
-    COMMENT(INDENT[base_indent + 2],"Handling System calls.")
-    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[base_indent + 2]);  
+    COMMENT(INDENT[base_indent],"Handling System calls.")
+    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[base_indent]);  
+    base_indent++;
     fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
-             INDENT[base_indent + 3]);
-    fprintf( output, "%scase LOCATION: \\\n", INDENT[base_indent + 3]);
+             INDENT[base_indent]);
+    fprintf( output, "%scase LOCATION: \\\n", INDENT[base_indent]);
+    base_indent++;
 
     if( ACStatsFlag ){
       fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
-              INDENT[base_indent + 5], project_name);
+              INDENT[base_indent], project_name);
     }
 
     if( ACDebugFlag ){
-      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", 
-               INDENT[base_indent + 5]);
+      fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
       fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
-              INDENT[base_indent + 6]);
+              INDENT[base_indent + 1]);
     }
 
-    fprintf( output, "%sISA.syscall.NAME(); \\\n", 
-             INDENT[base_indent + 5]);
-    fprintf( output, "%sexec = false; \\\n", 
-             INDENT[base_indent + 5]);
-    fprintf( output, "%sbreak;\n", 
-             INDENT[base_indent + 4]);
-    fprintf( output, "%s#include <ac_syscall.def>\n", 
-             INDENT[base_indent + 3]);
-    fprintf( output, "%s#undef AC_SYSC\n", 
-             INDENT[base_indent + 3]);
+    fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
     
-    fprintf( output, "%s} // switch( decode_pc )\n", 
-             INDENT[base_indent + 2]);
-    fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", 
-             INDENT[base_indent + 1]);
-    fprintf( output, "%sif (exec) {\n", 
-             INDENT[base_indent + 1]);
+    if (ACSyscallJump)
+      fprintf( output, "%sexec = false; \\\n", INDENT[base_indent]);
     
-    base_indent++;
+    base_indent--;
+    fprintf( output, "%sbreak;\n", INDENT[base_indent]);
+    fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[base_indent]);
+    fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[base_indent]);
+    
+    if (ACSyscallJump) {
+      base_indent--;
+      fprintf( output, "%s} // switch( decode_pc )\n", 
+               INDENT[base_indent]);
+      base_indent--;
+      fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", 
+               INDENT[base_indent]);
+      fprintf( output, "%sif (exec) {\n", INDENT[base_indent]);
+      base_indent++;
+    }
+    else {
+      fprintf( output, "%sdefault:\n", INDENT[base_indent]);
+      base_indent++;
+    }
   }
   
   EmitDecodification(output, base_indent);  
   
-  EmitInstrExecIni(output, base_indent + 1);
+  EmitInstrExecIni(output, base_indent);
   
   if( ACStatsFlag ){
     fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent + 1]);
@@ -3568,28 +3615,36 @@ void EmitDispatch(FILE *output, int base_indent) {
   }
   
   if( ACABIFlag ) {
-    fprintf( output, "%s} // if (exec)\n", INDENT[base_indent]);
-    base_indent--;
+      base_indent--;
+    if( ACSyscallJump ) {
+      fprintf( output, "%s} // if (exec)\n", INDENT[base_indent]);
+    }
+    else{
+      fprintf( output, "%sbreak;\n", INDENT[base_indent]);
+      base_indent--;
+      fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
+    }
   }
   
   fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", 
-           INDENT[base_indent + 1]);
+           INDENT[base_indent]);
   
   if (ACVerboseFlag) {
     if( ACABIFlag )
-      fprintf( output, "%sdone.write(1);\n", INDENT[base_indent + 1]);
+      fprintf( output, "%sdone.write(1);\n", INDENT[base_indent]);
     else
-      fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent + 1]);
+      fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent]);
   }
   
   //!Emit update method.
-  EmitUpdateMethod( output, base_indent + 1);
+  EmitUpdateMethod( output, base_indent);
   
   if(ACDecCacheFlag)
-    fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent + 1]);  
+    fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent]);  
   else
-    fprintf( output, "%sreturn IntRoutine[ISA.cur_instr_id];\n", INDENT[base_indent + 1]);  
+    fprintf( output, "%sreturn IntRoutine[ISA.cur_instr_id];\n", INDENT[base_indent]);  
   
+  base_indent--;
   fprintf( output, "%s}\n\n", INDENT[base_indent]);  
 }
 
