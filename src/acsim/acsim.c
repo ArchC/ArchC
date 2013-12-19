@@ -46,6 +46,7 @@ int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb suppor
 int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
 int  ACThreading=1;                             //!<Indicates if Direct Threading Code is turned on or not
 int  ACSyscallJump=1;                           //!<Indicates if Syscall Jump Optimization is turned on or not
+int  ACForcedInline=1;                          //!<Indicates if Forced Inline in Interpretation Routines is turned on or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -78,19 +79,20 @@ ac_sto_list* load_device=0;
 /*! This is the table of mappings.  Mappings are tried sequentially
   for each option encountered; the first one that matches, wins.  */
 struct option_map option_map[] = {
-  {"--abi-included"   , "-abi","Indicate that an ABI for system call emulation was provided." ,"o"},
-  {"--debug"          , "-g"  ,"Enable simulation debug features: traces, update logs." ,"o"},
-  {"--delay"          , "-dy" ,"Enable delayed assignments to storage elements." ,"o"},
-  {"--dumpdecoder"    , "-dd" ,"Dump the decoder data structure." ,"o"},
-  {"--help"           , "-h"  ,"Display this help message."       , 0},
-  {"--no-dec-cache"   , "-ndc","Disable cache of decoded instructions." ,"o"},
-  {"--stats"          , "-s"  ,"Enable statistics collection during simulation." ,"o"},
-  {"--verbose"        , "-vb" ,"Display update logs for storage devices during simulation.", "o"},
-  {"--version"        , "-vrs","Display ACSIM version.", 0},
-  {"--gdb-integration", "-gdb","Enable support for debbuging programs running on the simulator.", 0},
-  {"--no-wait"        , "-nw" ,"Disable wait() at execution thread.", 0},
-  {"--no-threading"   , "-nt" ,"Disable Direct Threading Code.", 0},
-  {"--no-syscall-jump", "-nsj","Disable Syscall Jump Optimization.", 0},
+  {"--abi-included"    , "-abi","Indicate that an ABI for system call emulation was provided." ,"o"},
+  {"--debug"           , "-g"  ,"Enable simulation debug features: traces, update logs." ,"o"},
+  {"--delay"           , "-dy" ,"Enable delayed assignments to storage elements." ,"o"},
+  {"--dumpdecoder"     , "-dd" ,"Dump the decoder data structure." ,"o"},
+  {"--help"            , "-h"  ,"Display this help message."       , 0},
+  {"--no-dec-cache"    , "-ndc","Disable cache of decoded instructions." ,"o"},
+  {"--stats"           , "-s"  ,"Enable statistics collection during simulation." ,"o"},
+  {"--verbose"         , "-vb" ,"Display update logs for storage devices during simulation.", "o"},
+  {"--version"         , "-vrs","Display ACSIM version.", 0},
+  {"--gdb-integration" , "-gdb","Enable support for debbuging programs running on the simulator.", 0},
+  {"--no-wait"         , "-nw" ,"Disable wait() at execution thread.", 0},
+  {"--no-threading"    , "-nt" ,"Disable Direct Threading Code.", 0},
+  {"--no-syscall-jump" , "-nsj","Disable Syscall Jump Optimization.", 0},
+  {"--no-forced-inline", "-nfi","Disable Forced Inline in Interpretation Routines.", 0},
   { }
 };
 
@@ -110,7 +112,7 @@ static void DisplayHelp (){
   printf ("Options:\n");
 
   for( i=0; i< ACNumberOfOptions; i++)
-    printf ("    %-17s, %-11s %s\n", option_map[i].name, 
+    printf ("    %-18s, %-7s %s\n", option_map[i].name, 
             option_map[i].equivalent, option_map[i].arg_desc);
 
   printf ("\nFor more information please visit www.archc.org\n\n");
@@ -283,6 +285,10 @@ int main(int argc, char** argv) {
               break;
             case OPSysJump:
               ACSyscallJump = 0;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPForcedInline:
+              ACForcedInline = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -1143,33 +1149,37 @@ void CreateISAHeader() {
   fprintf( output,"%s}\n\n", INDENT[1] );
 
   /* getter methods for current instruction */
-  fprintf(output, "%sinline __attribute__((always_inline)) const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", 
+  fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", 
           INDENT[1]);
-  fprintf(output, "%sinline __attribute__((always_inline)) const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", 
+  fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", 
           INDENT[1]);
-  fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", 
+  fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", 
           INDENT[1]);
-  fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", 
+  fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", 
           INDENT[1]);
-  fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", 
+  fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", 
           INDENT[1]);
-  fprintf(output, "%sinline __attribute__((always_inline)) unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", 
+  fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", 
           INDENT[1]);
   
   // Group query methods.
   for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
   {
-    fprintf(output, "%sinline __attribute__((always_inline)) const bool belongs_to_%s()\n%s{\n",
+    fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
             INDENT[2], pgroup->name, INDENT[2]);
     fprintf(output, "%sreturn group_%s[cur_instr_id];\n%s}\n", 
             INDENT[3], pgroup->name, INDENT[2]);
     fprintf(output, "\n");
   }
   
+  //Turn-on or off Forced Inline in Interpretation Routines
+  char finline[64] = "";
+  if (ACForcedInline)
+    strcpy(finline, "inline __attribute__((always_inline)) ");
+  
   /* Instruction Behavior Method declarations */
   /* instruction */
-  fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_instruction(", 
-          INDENT[1]);
+  fprintf(output, "%s%svoid _behavior_instruction(", INDENT[1], finline);
   
   /* common_instr_field_list has the list of fields for the generic instruction. */
   for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
@@ -1183,15 +1193,13 @@ void CreateISAHeader() {
   fprintf(output, ");\n\n");
 
   /* begin & end */
-  fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_begin();\n", 
-          INDENT[1]);
-  fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_end();\n\n", 
-          INDENT[1]);
+  fprintf(output, "%s%svoid _behavior_begin();\n", INDENT[1], finline);
+  fprintf(output, "%s%svoid _behavior_end();\n\n", INDENT[1], finline);
 
   /* types/formats */
   for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "%sinline __attribute__((always_inline)) void _behavior_%s_%s(",
-            INDENT[1], project_name, pformat->name);
+    fprintf(output, "%s%svoid _behavior_%s_%s(", INDENT[1], finline, 
+            project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       if (pfield -> sign)
         fprintf(output, "int %s", pfield->name);
@@ -1209,8 +1217,7 @@ void CreateISAHeader() {
     for (pformat = format_ins_list;
           (pformat != NULL) && strcmp(pinstr->format, pformat->name);
           pformat = pformat->next);
-    fprintf(output, "%sinline __attribute__((always_inline)) void behavior_%s(",
-            INDENT[1], pinstr->name);
+    fprintf(output, "%s%svoid behavior_%s(", INDENT[1], finline, pinstr->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       if (pfield -> sign)
         fprintf(output, "int %s", pfield->name);
