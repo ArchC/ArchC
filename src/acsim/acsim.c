@@ -47,6 +47,7 @@ int  ACWaitFlag=1;                              //!<Indicates whether the instru
 int  ACThreading=1;                             //!<Indicates if Direct Threading Code is turned on or not
 int  ACSyscallJump=1;                           //!<Indicates if Syscall Jump Optimization is turned on or not
 int  ACForcedInline=1;                          //!<Indicates if Forced Inline in Interpretation Routines is turned on or not
+int  ACLongJmpStop=1;                           //!<Indicates if New Stop using longjmp is turned on or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -93,6 +94,7 @@ struct option_map option_map[] = {
   {"--no-threading"    , "-nt" ,"Disable Direct Threading Code.", 0},
   {"--no-syscall-jump" , "-nsj","Disable Syscall Jump Optimization.", 0},
   {"--no-forced-inline", "-nfi","Disable Forced Inline in Interpretation Routines.", 0},
+  {"--no-new-stop"     , "-nns","Disable New Stop Optimization.", 0},
   { }
 };
 
@@ -289,6 +291,10 @@ int main(int argc, char** argv) {
               break;
             case OPForcedInline:
               ACForcedInline = 0;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPLongJmpStop:
+              ACLongJmpStop = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -1818,7 +1824,8 @@ void CreateProcessorImpl() {
   
   // Longjmp of ac_annul_sig and ac_stop_flag  
   fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
-  fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
+  if (ACLongJmpStop || ACThreading)
+    fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
   
   //Emiting processor behavior method implementation.
   if( ACThreading )
@@ -1929,7 +1936,8 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_stopped();\n", INDENT[1]);
   fprintf(output, "#endif\n");
-  fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[1]);
+  if (ACLongJmpStop)
+    fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[1]);
   fprintf(output, "}\n\n");
 
   /* Program loading functions */
@@ -2901,7 +2909,15 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   if( ACDelayFlag || HaveMemHier || ACWaitFlag) {
     COMMENT(INDENT[base_indent],"Updating Regs for behavioral simulation.");
   }
-
+  
+  if (!ACLongJmpStop) {
+    fprintf( output, "%sif (ac_stop_flag) ", INDENT[base_indent]);
+    if (ACThreading)
+      fprintf(output, "longjmp(ac_env, 2);\n\n");
+    else
+      fprintf(output, "return;\n\n");
+  }
+  
   if( ACDelayFlag ){
     fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[base_indent]);
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next )

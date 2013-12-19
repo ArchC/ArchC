@@ -100,6 +100,7 @@ enum _ac_cmd_options {
   OPDTC,
   OPSysJump,
   OPForcedInline,
+  OPLongJmpStop,
   ACNumberOfOptions
 };
 
