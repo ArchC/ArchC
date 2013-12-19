@@ -925,7 +925,10 @@ void CreateParmHeader() {
 
   if( HaveCycleRange )
     fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
-
+  
+  if( ACLongJmpStop || ACThreading )
+    fprintf( output, "#define  AC_ACTION_STOP 2\t //!< Indicates action value to stop used by longjmp.\n\n");
+  
   /* parms namespace definition */
   fprintf(output, "namespace %s_parms {\n\n", project_name);
 
@@ -1825,7 +1828,7 @@ void CreateProcessorImpl() {
   // Longjmp of ac_annul_sig and ac_stop_flag  
   fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
   if (ACLongJmpStop || ACThreading)
-    fprintf( output, "%sif (action == 2) return;\n\n", INDENT[1]);
+    fprintf( output, "%sif (action == AC_ACTION_STOP) return;\n\n", INDENT[1]);
   
   //Emiting processor behavior method implementation.
   if( ACThreading )
@@ -1937,7 +1940,7 @@ void CreateProcessorImpl() {
   fprintf(output, "%sset_stopped();\n", INDENT[1]);
   fprintf(output, "#endif\n");
   if (ACLongJmpStop)
-    fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[1]);
+    fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", INDENT[1]);
   fprintf(output, "}\n\n");
 
   /* Program loading functions */
@@ -2913,7 +2916,7 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   if (!ACLongJmpStop) {
     fprintf( output, "%sif (ac_stop_flag) ", INDENT[base_indent]);
     if (ACThreading)
-      fprintf(output, "longjmp(ac_env, 2);\n\n");
+      fprintf(output, "longjmp(ac_env, AC_ACTION_STOP);\n\n");
     else
       fprintf(output, "return;\n\n");
   }
@@ -2980,7 +2983,8 @@ void EmitDecodification( FILE *output, int base_indent) {
 
     fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[base_indent]);
     if (ACThreading)
-      fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 1]);
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+              INDENT[base_indent + 1]);
     else 
       fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
     fprintf( output, "%s}\n", INDENT[base_indent]);
@@ -3025,7 +3029,8 @@ void EmitDecodification( FILE *output, int base_indent) {
             INDENT[base_indent+1]);
     fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
     if (ACThreading)
-      fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 1]);
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+              INDENT[base_indent + 1]);
     else 
       fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
     fprintf( output, "%s}\n\n", INDENT[base_indent]);
@@ -3176,7 +3181,8 @@ void EmitFetchInit( FILE *output, int base_indent){
            INDENT[base_indent+1]);
   fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
   if (ACThreading)
-    fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 1]);
+    fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+            INDENT[base_indent + 1]);
   else
     fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
   fprintf( output, "%s}\n", INDENT[base_indent]);
@@ -3545,7 +3551,8 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
   fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
 
   if (ACThreading)
-    fprintf(output, "%slongjmp(ac_env, 2);\n", INDENT[base_indent + 2]);
+    fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+            INDENT[base_indent + 2]);
   else 
     fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
 
