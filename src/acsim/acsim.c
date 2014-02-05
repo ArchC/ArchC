@@ -3300,8 +3300,7 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
     }
   }
   
-  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", 
-           INDENT[base_indent]);
+  fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   
   if (ACVerboseFlag) {
     if( ACABIFlag )
@@ -3691,8 +3690,7 @@ void EmitDispatch(FILE *output, int base_indent) {
     }
   }
   
-  fprintf( output, "%sif (!ac_wait_sig) ac_instr_counter++;\n", 
-           INDENT[base_indent]);
+  fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   
   if (ACVerboseFlag) {
     if( ACABIFlag )
