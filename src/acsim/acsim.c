@@ -2932,7 +2932,6 @@ void CreateMakefile(){
   \brief Used by EmitProcessorBhv and EmitDispatch functions      */
 /***************************************/
 void EmitUpdateMethod( FILE *output, int base_indent ) {
-  extern char *project_name;
   extern int HaveMemHier;
   extern ac_sto_list *storage_list;
 
@@ -2976,14 +2975,11 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   }
   
   if (ACWaitFlag) {
-    fprintf( output, "%sif (instr_in_batch < instr_batch_size) {\n", 
+    fprintf( output, "%sif (instr_in_batch++ >= instr_batch_size) {\n", 
              INDENT[base_indent]);
-    fprintf( output, "%sinstr_in_batch++;\n", INDENT[base_indent + 1]);
-    fprintf( output, "%s}\n", INDENT[base_indent]);
-    fprintf( output, "%selse {\n", INDENT[base_indent]);
     fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[base_indent + 1]);
     fprintf( output, "%swait(1, SC_NS);\n", INDENT[base_indent + 1]);
-    fprintf( output, "%s}\n", INDENT[base_indent]);
+    fprintf( output, "%s}\n\n", INDENT[base_indent]);
   }
 }
 
@@ -2994,7 +2990,6 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
 /***************************************/
 void EmitDecodification( FILE *output, int base_indent) {
   extern int wordsize, fetchsize, HaveMemHier;
-  extern char* project_name;
 
   if( HaveMemHier ){
     if (fetchsize == wordsize)
@@ -3603,6 +3598,10 @@ void EmitDispatch(FILE *output, int base_indent) {
            INDENT[base_indent], project_name);
   
   base_indent++;
+  
+  //!Emit update method.
+  EmitUpdateMethod( output, base_indent);
+  
   EmitFetchInit(output, base_indent);
   
   fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent]);
@@ -3698,9 +3697,6 @@ void EmitDispatch(FILE *output, int base_indent) {
     else
       fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent]);
   }
-  
-  //!Emit update method.
-  EmitUpdateMethod( output, base_indent);
   
   if(ACDecCacheFlag)
     fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent]);  
