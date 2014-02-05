@@ -1192,10 +1192,15 @@ void CreateISAHeader() {
   
   /* common_instr_field_list has the list of fields for the generic instruction. */
   for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-    if( pfield->sign )
-      fprintf(output, "int %s", pfield->name);
-    else
-      fprintf(output, "unsigned int %s", pfield->name);
+    if (!pfield->sign) fprintf(output, "u");
+
+    if (pfield->size < 9) fprintf(output, "int8_t");
+    else if (pfield->size < 17) fprintf(output, "int16_t");
+    else if (pfield->size < 33) fprintf(output, "int32_t");
+    else fprintf(output, "int64_t");
+    
+    fprintf(output, " %s", pfield->name);
+    
     if (pfield->next != NULL)
       fprintf(output, ", ");
   }
@@ -1210,10 +1215,15 @@ void CreateISAHeader() {
     fprintf(output, "%s%svoid _behavior_%s_%s(", INDENT[1], finline, 
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
+      if (!pfield->sign) fprintf(output, "u");
+
+      if (pfield->size < 9) fprintf(output, "int8_t");
+      else if (pfield->size < 17) fprintf(output, "int16_t");
+      else if (pfield->size < 33) fprintf(output, "int32_t");
+      else fprintf(output, "int64_t");
+      
+      fprintf(output, " %s", pfield->name);
+      
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1228,10 +1238,15 @@ void CreateISAHeader() {
           pformat = pformat->next);
     fprintf(output, "%s%svoid behavior_%s(", INDENT[1], finline, pinstr->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
+      if (!pfield->sign) fprintf(output, "u");
+
+      if (pfield->size < 9) fprintf(output, "int8_t");
+      else if (pfield->size < 17) fprintf(output, "int16_t");
+      else if (pfield->size < 33) fprintf(output, "int32_t");
+      else fprintf(output, "int64_t");
+      
+      fprintf(output, " %s", pfield->name);
+      
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1272,10 +1287,15 @@ void CreateISAHeader() {
   
   /* common_instr_field_list has the list of fields for the generic instruction. */
   for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
-    if( pfield->sign )
-      fprintf(output, "int %s", pfield->name);
-    else
-      fprintf(output, "unsigned int %s", pfield->name);
+    if (!pfield->sign) fprintf(output, "u");
+
+    if (pfield->size < 9) fprintf(output, "int8_t");
+    else if (pfield->size < 17) fprintf(output, "int16_t");
+    else if (pfield->size < 33) fprintf(output, "int32_t");
+    else fprintf(output, "int64_t");
+    
+    fprintf(output, " %s", pfield->name);
+    
     if (pfield->next != NULL)
       fprintf(output, ", ");
   }
@@ -1295,10 +1315,15 @@ void CreateISAHeader() {
             pformat->name, project_name, project_name, 
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
+      if (!pfield->sign) fprintf(output, "u");
+
+      if (pfield->size < 9) fprintf(output, "int8_t");
+      else if (pfield->size < 17) fprintf(output, "int16_t");
+      else if (pfield->size < 33) fprintf(output, "int32_t");
+      else fprintf(output, "int64_t");
+      
+      fprintf(output, " %s", pfield->name);
+      
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1314,10 +1339,15 @@ void CreateISAHeader() {
           (pformat != NULL) && strcmp(pinstr->format, pformat->name);
           pformat = pformat->next);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-      if (pfield -> sign)
-        fprintf(output, "int %s", pfield->name);
-      else
-        fprintf(output, "unsigned int %s", pfield->name);
+      if (!pfield->sign) fprintf(output, "u");
+
+      if (pfield->size < 9) fprintf(output, "int8_t");
+      else if (pfield->size < 17) fprintf(output, "int16_t");
+      else if (pfield->size < 33) fprintf(output, "int32_t");
+      else fprintf(output, "int64_t");
+      
+      fprintf(output, " %s", pfield->name);
+      
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -3502,9 +3532,14 @@ void EmitDecCache(FILE *output, int base_indent) {
     fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       fprintf(output, "%s", INDENT[base_indent + 1]);
-      if (pfield->sign) fprintf(output, "signed");
-      else fprintf(output, "unsigned");
-      fprintf(output, " long %s:%d;\n", pfield->name, pfield->size);
+      if (!pfield->sign) fprintf(output, "u");
+
+      if (pfield->size < 9) fprintf(output, "int8_t");
+      else if (pfield->size < 17) fprintf(output, "int16_t");
+      else if (pfield->size < 33) fprintf(output, "int32_t");
+      else fprintf(output, "int64_t");
+      
+      fprintf(output, " %s;\n", pfield->name);
     }
     fprintf(output, "%s} T_%s;\n\n", INDENT[base_indent], pformat->name);
   }
