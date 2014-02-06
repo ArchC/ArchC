@@ -101,6 +101,7 @@ enum _ac_cmd_options {
   OPSysJump,
   OPForcedInline,
   OPLongJmpStop,
+  OPIndexFix,
   ACNumberOfOptions
 };
 

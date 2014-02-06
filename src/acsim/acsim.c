@@ -48,6 +48,7 @@ int  ACThreading=1;                             //!<Indicates if Direct Threadin
 int  ACSyscallJump=1;                           //!<Indicates if Syscall Jump Optimization is turned on or not
 int  ACForcedInline=1;                          //!<Indicates if Forced Inline in Interpretation Routines is turned on or not
 int  ACLongJmpStop=1;                           //!<Indicates if New Stop using longjmp is turned on or not
+int  ACIndexFix=0;                              //!<Indicates if Index Decode Cache Fix Optimization is turned on or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -95,6 +96,7 @@ struct option_map option_map[] = {
   {"--no-syscall-jump" , "-nsj","Disable Syscall Jump Optimization.", 0},
   {"--no-forced-inline", "-nfi","Disable Forced Inline in Interpretation Routines.", 0},
   {"--no-new-stop"     , "-nns","Disable New Stop Optimization.", 0},
+  {"--index-fix"       , "-idx","Enable Index Decode Cache Fix Optimization.", 0},
   { }
 };
 
@@ -295,6 +297,10 @@ int main(int argc, char** argv) {
               break;
             case OPLongJmpStop:
               ACLongJmpStop = 0;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPIndexFix:
+              ACIndexFix = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -1364,7 +1370,7 @@ void CreateISAHeader() {
 void CreateProcessorHeader() {
   extern char *project_name;
   extern char *upper_project_name;
-  extern int HaveTLMIntrPorts;
+  extern int HaveTLMIntrPorts, largest_format_size;
   extern ac_sto_list *tlm_intr_port_list;
   ac_sto_list *pport;
   char filename[256];
@@ -1509,8 +1515,10 @@ void CreateProcessorHeader() {
 
   if(ACDecCacheFlag) {
     fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);
-    fprintf( output, "%sDEC_CACHE = (DecCacheItem*) calloc(sizeof(DecCacheItem),dec_cache_size);\n", 
+    fprintf( output, "%sDEC_CACHE = (DecCacheItem*) calloc(sizeof(DecCacheItem), (dec_cache_size", 
              INDENT[2]);
+    if( ACIndexFix ) fprintf( output, " / %d", largest_format_size / 8);
+    fprintf( output, "));\n");
     fprintf( output, "%s}\n\n", INDENT[1]);  //end init_dec_cache
   }
 
@@ -2989,7 +2997,7 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   \brief Used by EmitProcessorBhv and EmitDispatch functions */
 /***************************************/
 void EmitDecodification( FILE *output, int base_indent) {
-  extern int wordsize, fetchsize, HaveMemHier;
+  extern int wordsize, fetchsize, HaveMemHier, largest_format_size;
 
   if( HaveMemHier ){
     if (fetchsize == wordsize)
@@ -3016,8 +3024,12 @@ void EmitDecodification( FILE *output, int base_indent) {
   }
 
   if( ACDecCacheFlag ){
-    fprintf( output, "%sinstr_dec = (DEC_CACHE + decode_pc);\n", 
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (decode_pc", 
              INDENT[base_indent]);
+    if( ACIndexFix ) 
+      fprintf( output, " / %d", largest_format_size / 8);
+    fprintf( output, "));\n");
+    
     fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
     base_indent++;
     fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent]);
