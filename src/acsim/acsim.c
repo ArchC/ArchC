@@ -49,6 +49,7 @@ int  ACSyscallJump=1;                           //!<Indicates if Syscall Jump Op
 int  ACForcedInline=1;                          //!<Indicates if Forced Inline in Interpretation Routines is turned on or not
 int  ACLongJmpStop=1;                           //!<Indicates if New Stop using longjmp is turned on or not
 int  ACIndexFix=0;                              //!<Indicates if Index Decode Cache Fix Optimization is turned on or not
+int  ACPCAddress=1;                             //!<Indicates if PC bounds is verified or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -97,6 +98,7 @@ struct option_map option_map[] = {
   {"--no-forced-inline", "-nfi","Disable Forced Inline in Interpretation Routines.", 0},
   {"--no-new-stop"     , "-nns","Disable New Stop Optimization.", 0},
   {"--index-fix"       , "-idx","Enable Index Decode Cache Fix Optimization.", 0},
+  {"--no-pc-addr-ver"  , "-npv","Disable PC address verification.", 0},
   { }
 };
 
@@ -301,6 +303,10 @@ int main(int argc, char** argv) {
               break;
             case OPIndexFix:
               ACIndexFix = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPPCAddress:
+              ACPCAddress = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -3208,22 +3214,25 @@ void EmitInstrExec( FILE *output, int base_indent){
   \brief Used by EmitProcessorBhv and EmitDispatch functions */
 /***************************************/
 void EmitFetchInit( FILE *output, int base_indent){
-  if (!ACDecCacheFlag)
-    fprintf( output, "%sif( ac_pc >= APP_MEM->get_size()){\n", 
-             INDENT[base_indent]);
-  else
-    fprintf( output, "%sif( ac_pc >= dec_cache_size){\n", 
-             INDENT[base_indent]);
-  fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << ac_pc << \").\" << endl;\n", 
-           INDENT[base_indent+1]);
-  fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
-  if (ACThreading)
-    fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
-            INDENT[base_indent + 1]);
-  else
-    fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
-  fprintf( output, "%s}\n", INDENT[base_indent]);
-
+  
+  if (ACPCAddress) {
+    if (!ACDecCacheFlag)
+      fprintf( output, "%sif( ac_pc >= APP_MEM->get_size()){\n", 
+              INDENT[base_indent]);
+    else
+      fprintf( output, "%sif( ac_pc >= dec_cache_size){\n", 
+              INDENT[base_indent]);
+    fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << ac_pc << \").\" << endl;\n", 
+            INDENT[base_indent+1]);
+    fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
+    if (ACThreading)
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+              INDENT[base_indent + 1]);
+    else
+      fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
+    fprintf( output, "%s}\n", INDENT[base_indent]);
+  }
+  
   fprintf( output, "%sdecode_pc = ac_pc;\n\n", INDENT[base_indent]);
 }
 
