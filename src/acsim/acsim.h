@@ -103,6 +103,7 @@ enum _ac_cmd_options {
   OPLongJmpStop,
   OPIndexFix,
   OPPCAddress,
+  OPFullDecode,
   ACNumberOfOptions
 };
 

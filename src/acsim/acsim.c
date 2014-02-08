@@ -50,6 +50,7 @@ int  ACForcedInline=1;                          //!<Indicates if Forced Inline i
 int  ACLongJmpStop=1;                           //!<Indicates if New Stop using longjmp is turned on or not
 int  ACIndexFix=0;                              //!<Indicates if Index Decode Cache Fix Optimization is turned on or not
 int  ACPCAddress=1;                             //!<Indicates if PC bounds is verified or not
+int  ACFullDecode=0;                            //!<Indicates if Full Decode Optimization is turned on or not
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -99,6 +100,7 @@ struct option_map option_map[] = {
   {"--no-new-stop"     , "-nns","Disable New Stop Optimization.", 0},
   {"--index-fix"       , "-idx","Enable Index Decode Cache Fix Optimization.", 0},
   {"--no-pc-addr-ver"  , "-npv","Disable PC address verification.", 0},
+  {"--full-decode"     , "-fdc","Enable Full Decode Optimization.", 0},
   { }
 };
 
@@ -309,6 +311,10 @@ int main(int argc, char** argv) {
               ACPCAddress = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
+            case OPFullDecode:
+              ACFullDecode = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
             default:
               break;
           }
@@ -323,6 +329,8 @@ int main(int argc, char** argv) {
     AC_ERROR("Invalid argument %s.\n", argv[0]);
     return EXIT_FAILURE;
   }
+  
+  if ( !ACDecCacheFlag ) ACFullDecode = 0;
 
   //Loading Configuration Variables
   ReadConfFile();
@@ -1810,8 +1818,7 @@ void CreateStatsImplTmpl() {
 void CreateProcessorImpl() {
   extern ac_sto_list *storage_list;
   extern char *project_name;
-  extern int HaveMemHier;
-  extern int ACGDBIntegrationFlag;
+  extern int HaveMemHier, ACGDBIntegrationFlag, largest_format_size;
   ac_sto_list *pstorage;
   
   char* filename;
@@ -1868,6 +1875,13 @@ void CreateProcessorImpl() {
   if( ACDecCacheFlag )
     fprintf( output, "%sinit_dec_cache();\n", INDENT[2]);
   fprintf( output, "%s}\n\n", INDENT[1]);
+  
+  if( ACFullDecode ) {
+    fprintf(output, "%sfor (decode_pc = ac_pc; decode_pc < dec_cache_size; decode_pc += %d) {\n", 
+            INDENT[1], largest_format_size / 8);
+    EmitDecodification(output, 2);
+    fprintf( output, "%s}\n\n", INDENT[1]);
+  }
   
   // Longjmp of ac_annul_sig and ac_stop_flag  
   fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
@@ -3036,8 +3050,11 @@ void EmitDecodification( FILE *output, int base_indent) {
       fprintf( output, " / %d", largest_format_size / 8);
     fprintf( output, "));\n");
     
-    fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
-    base_indent++;
+    if( !ACFullDecode ) {
+      fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
+      base_indent++;
+    }
+    
     fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent]);
   }
 
@@ -3046,8 +3063,15 @@ void EmitDecodification( FILE *output, int base_indent) {
            INDENT[base_indent]);
   
   if( ACDecCacheFlag ){
-    fprintf( output, "%sinstr_dec->valid = true;\n", 
-             INDENT[base_indent]);
+    if( ACFullDecode ) {
+      fprintf( output, "%sif( ins_cache ) {\n", 
+               INDENT[base_indent]);
+      base_indent++;
+    }
+    else
+      fprintf( output, "%sinstr_dec->valid = true;\n", 
+               INDENT[base_indent]);
+      
     fprintf( output, "%sinstr_dec->id = ins_cache[IDENT];\n", 
              INDENT[base_indent]);
     
@@ -3059,7 +3083,9 @@ void EmitDecodification( FILE *output, int base_indent) {
     
     base_indent--;
     fprintf( output, "%s}\n", INDENT[base_indent]);
-    fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
+    
+    if( !ACFullDecode )
+      fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
   else {
     fprintf( output, "%sins_id = ins_cache[IDENT];\n\n", INDENT[base_indent]);
@@ -3301,7 +3327,17 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
       base_indent++;
     }
   }
-  EmitDecodification(output, base_indent);
+  
+  if( ACFullDecode ) {
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (ac_pc", 
+             INDENT[base_indent]);
+    if( ACIndexFix ) 
+      fprintf( output, " / %d", largest_format_size / 8);
+    fprintf( output, "));\n");
+    fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
+  }
+  else EmitDecodification(output, base_indent);
+    
   EmitInstrExec(output, base_indent);
 
   if( ACABIFlag ) {
@@ -3560,7 +3596,8 @@ void EmitDecCache(FILE *output, int base_indent) {
   }
   
   fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
-  fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
+  if( !ACFullDecode ) 
+    fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
   if (ACThreading)
     fprintf(output, "%svoid* end_rot;\n", INDENT[base_indent + 1]);
   fprintf(output, "%sunsigned id;\n", INDENT[base_indent + 1]);
@@ -3593,19 +3630,22 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
               pfield->name, pfield->id);
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
-  fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
-  fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
-          INDENT[base_indent + 2]);
-  fprintf(output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
-          INDENT[base_indent + 2]);
-  fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
-
-  if (ACThreading)
-    fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+  
+  if( !ACFullDecode ) {
+    fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
+    fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
             INDENT[base_indent + 2]);
-  else 
-    fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
+    fprintf(output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
+            INDENT[base_indent + 2]);
+    fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
 
+    if (ACThreading)
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+              INDENT[base_indent + 2]);
+    else 
+      fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
+  }
+  
   fprintf(output, "%s}\n", INDENT[base_indent]);
 }
 
@@ -3680,7 +3720,15 @@ void EmitDispatch(FILE *output, int base_indent) {
     }
   }
   
-  EmitDecodification(output, base_indent);  
+  if( ACFullDecode ) {
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (ac_pc", 
+             INDENT[base_indent]);
+    if( ACIndexFix ) 
+      fprintf( output, " / %d", largest_format_size / 8);
+    fprintf( output, "));\n");
+    fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
+  }
+  else EmitDecodification(output, base_indent);
   
   EmitInstrExecIni(output, base_indent);
   
