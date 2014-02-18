@@ -3161,7 +3161,8 @@ void EmitInstrExec( FILE *output, int base_indent){
   ac_dec_field *pfield;
 
   if( ACThreading ) {
-    fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent]);
+    fprintf(output, "%sI_Init:\n", INDENT[base_indent]);
+    fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
   }
   else {
     EmitInstrExecIni( output, base_indent );
@@ -3665,6 +3666,7 @@ void EmitDispatch(FILE *output, int base_indent) {
   
   EmitFetchInit(output, base_indent);
   
+  fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent]);
   
   if( ACABIFlag ) {
@@ -3698,6 +3700,9 @@ void EmitDispatch(FILE *output, int base_indent) {
     
     if (ACSyscallJump)
       fprintf( output, "%sexec = false; \\\n", INDENT[base_indent]);
+    
+    if (ACThreading)
+      fprintf( output, "%sreturn IntRoutine[0]; \\\n", INDENT[base_indent]);
     
     base_indent--;
     fprintf( output, "%sbreak;\n", INDENT[base_indent]);
@@ -3733,12 +3738,12 @@ void EmitDispatch(FILE *output, int base_indent) {
   EmitInstrExecIni(output, base_indent);
   
   if( ACStatsFlag ){
-    fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent + 1]);
+    fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
     fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
-            INDENT[base_indent + 2], project_name);
+            INDENT[base_indent + 1], project_name);
     fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
-            INDENT[base_indent + 2], project_name);
-    fprintf( output, "%s}\n", INDENT[base_indent + 1]);
+            INDENT[base_indent + 1], project_name);
+    fprintf( output, "%s}\n", INDENT[base_indent]);
   }
 
   if( ACDebugFlag ){
@@ -3757,8 +3762,6 @@ void EmitDispatch(FILE *output, int base_indent) {
       fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
     }
   }
-  
-  fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   
   if (ACVerboseFlag) {
     if( ACABIFlag )
@@ -3787,7 +3790,7 @@ void EmitVetLabelAt(FILE *output, int base_indent) {
   ac_dec_instr *pinstr;
   unsigned cont = 0;
   
-  fprintf( output, "%svoid* vet[] = {NULL", INDENT[base_indent]);
+  fprintf( output, "%svoid* vet[] = {&&I_Init", INDENT[base_indent]);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     fprintf(output, ", ");
     if (cont++ >= 4) {
