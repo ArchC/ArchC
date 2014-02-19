@@ -1883,6 +1883,22 @@ void CreateProcessorImpl() {
     fprintf( output, "%s}\n\n", INDENT[1]);
   }
   
+  if ( ACThreading && ACABIFlag && ACDecCacheFlag) {
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[1]);
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (LOCATION", INDENT[1]);
+    if( ACIndexFix ) 
+      fprintf( output, " / %d", largest_format_size / 8);
+    fprintf( output, ")); \\\n");
+    
+    if ( !ACFullDecode )
+      fprintf( output, "%sinstr_dec->valid = true; \\\n", INDENT[1]);
+    
+    fprintf( output, "%sinstr_dec->end_rot = &&Sys_##LOCATION;\n\n", INDENT[1]);
+
+    fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[1]);
+    fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[1]);
+  }
+  
   // Longjmp of ac_annul_sig and ac_stop_flag  
   fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
   if (ACLongJmpStop || ACThreading)
@@ -3124,26 +3140,28 @@ void EmitInstrExecIni( FILE *output, int base_indent) {
 
   fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
   fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
-  fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
-
-  /* common_instr_field_list has the list of fields for the generic instruction. */
-  if( ACDecCacheFlag ){
-    for( pfield = common_instr_field_list, pformat = format_ins_list; 
-        pfield != NULL; pfield = pfield->next) {
-      fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
-      if (pfield->next != NULL)
-        fprintf(output, ", ");
+  
+  if (!(ACThreading && ACABIFlag)) {
+    fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
+    /* common_instr_field_list has the list of fields for the generic instruction. */
+    if( ACDecCacheFlag ){
+      for( pfield = common_instr_field_list, pformat = format_ins_list; 
+          pfield != NULL; pfield = pfield->next) {
+        fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
+        if (pfield->next != NULL)
+          fprintf(output, ", ");
+      }
     }
-  }
-  else {
-    for( pfield = common_instr_field_list; 
-         pfield != NULL; pfield = pfield->next){
-      fprintf(output, "ins_cache[%d]", pfield->id);
-      if (pfield->next != NULL)
-        fprintf(output, ", ");
+    else {
+      for( pfield = common_instr_field_list; 
+          pfield != NULL; pfield = pfield->next){
+        fprintf(output, "ins_cache[%d]", pfield->id);
+        if (pfield->next != NULL)
+          fprintf(output, ", ");
+      }
     }
+    fprintf(output, ");\n");
   }
-  fprintf(output, ");\n");
 }
 
 
@@ -3163,6 +3181,31 @@ void EmitInstrExec( FILE *output, int base_indent){
   if( ACThreading ) {
     fprintf(output, "%sI_Init:\n", INDENT[base_indent]);
     fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
+    
+    if ( ACABIFlag && ACDecCacheFlag ) {
+      fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
+             INDENT[base_indent]);
+      fprintf( output, "%sSys_##LOCATION: \\\n", INDENT[base_indent]);
+      base_indent++;
+      
+      if( ACStatsFlag ){
+        fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
+                INDENT[base_indent], project_name);
+      }
+
+      if( ACDebugFlag ){
+        fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
+        fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
+                INDENT[base_indent + 1]);
+      }
+
+      fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
+      fprintf( output, "%sgoto *dispatch();\n\n", INDENT[base_indent]);
+      base_indent--;
+      
+      fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[base_indent]);
+      fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[base_indent]);
+    }
   }
   else {
     EmitInstrExecIni( output, base_indent );
@@ -3172,9 +3215,34 @@ void EmitInstrExec( FILE *output, int base_indent){
   }
   
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    if( ACThreading )
+    if( ACThreading ) {
       fprintf(output, "%sI_%s: // Instruction %s\n", 
             INDENT[base_indent], pinstr->name, pinstr->name);
+      if ( ACABIFlag ) {
+        fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent + 1]);
+        /* common_instr_field_list has the list of fields for the generic instruction. */
+        if( ACDecCacheFlag ){
+          for (pformat = format_ins_list;
+              (pformat != NULL) && strcmp(pinstr->format, pformat->name);
+              pformat = pformat->next);
+          for( pfield = common_instr_field_list; 
+               pfield != NULL; pfield = pfield->next) {
+            fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
+            if (pfield->next != NULL)
+              fprintf(output, ", ");
+          }
+        }
+        else {
+          for( pfield = common_instr_field_list; 
+              pfield != NULL; pfield = pfield->next){
+            fprintf(output, "ins_cache[%d]", pfield->id);
+            if (pfield->next != NULL)
+              fprintf(output, ", ");
+          }
+        }
+        fprintf(output, ");\n");
+      }
+    }
     else
       /* opens case statement */
       fprintf(output, "%scase %d: // Instruction %s\n", 
@@ -3669,7 +3737,7 @@ void EmitDispatch(FILE *output, int base_indent) {
   fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent]);
   
-  if( ACABIFlag ) {
+  if( ACABIFlag && !ACDecCacheFlag) {
     if (ACSyscallJump) {
       fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);  
       fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent]);
@@ -3751,7 +3819,7 @@ void EmitDispatch(FILE *output, int base_indent) {
     fprintf( output, PRINT_TRACE, INDENT[base_indent + 2]);
   }
   
-  if( ACABIFlag ) {
+  if( ACABIFlag && !ACDecCacheFlag ) {
       base_indent--;
     if( ACSyscallJump ) {
       fprintf( output, "%s} // if (exec)\n", INDENT[base_indent]);
