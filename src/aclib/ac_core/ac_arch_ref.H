@@ -27,6 +27,7 @@
 
 // Standard includes
 #include <iostream>
+#include <setjmp.h>
 
 // SystemC includes
 
@@ -54,10 +55,12 @@ public:
   /// Indicates the storage device where applications are loaded.
   ac_memport<ac_word, ac_Hword>*& APP_MEM;
 
+  /// Used by longjmp for ac_annul_sig.
+  jmp_buf& ac_env;
+  
   // Control Variables.
   bool& ac_wait_sig;
   bool& ac_parallel_sig;
-  bool& ac_annul_sig;
   bool& ac_mt_endian;
   bool& ac_tgt_endian;
   unsigned& ac_start_addr;
@@ -82,7 +85,7 @@ public:
     APP_MEM(arch.APP_MEM),
     ac_wait_sig(arch.ac_wait_sig),
     ac_parallel_sig(arch.ac_parallel_sig),
-    ac_annul_sig(arch.ac_annul_sig),
+    ac_env(arch.ac_env),
     ac_mt_endian(arch.ac_mt_endian),
     ac_tgt_endian(arch.ac_tgt_endian),
     ac_start_addr(arch.ac_start_addr),
@@ -122,7 +125,7 @@ public:
 
   /// Annul the current instruction.
   void ac_annul() {
-    ac_annul_sig = 1;
+    longjmp(ac_env, 1);
   }
 
   /// Force Paralelism.

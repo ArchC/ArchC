@@ -302,11 +302,11 @@ ac_decoder_full *ac_decoder_full::CreateDecoder(ac_dec_format *formats, ac_dec_i
   ac_dec_instr *instr = instructions;
   ac_decoder *dec = 0;
   ac_decoder_full *full = 0;
-  unsigned nFields = 0, nFormats = 0;
+  unsigned nFields = 0, nFormats = 1;
 
   while (format) {
 /*     int format_size = 0; */
-    nFormats ++;
+    format->id = nFormats++;
     field = format -> fields;
     while (field) {
 /*       format_size += field->size; */

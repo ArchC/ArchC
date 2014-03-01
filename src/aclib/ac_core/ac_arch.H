@@ -21,6 +21,7 @@
 
 #include <sys/times.h>
 #include <stdio.h>
+#include <setjmp.h>
 
 #include  "ac_regbank.H"
 #include  "ac_rtld.H"
@@ -45,10 +46,12 @@ public:
   /// Indicates the storage device where applications are loaded.
   ac_memport<ac_word, ac_Hword>* APP_MEM;
 
+  /// Used by longjmp for ac_annul_sig.
+  jmp_buf ac_env;
+  
   /// Control Variables.
   bool ac_wait_sig;
   bool ac_parallel_sig;
-  bool ac_annul_sig;
   bool ac_mt_endian;
   bool ac_tgt_endian;
   unsigned ac_start_addr;
@@ -82,7 +85,6 @@ public:
   explicit ac_arch(int max_buffer) :
     ac_wait_sig(0),
     ac_parallel_sig(0),
-    ac_annul_sig(0),
     ac_mt_endian(0),
     ac_tgt_endian(0),
     ac_start_addr(0),
@@ -124,7 +126,7 @@ public:
 
   /// Annulates the current instruction.
   void ac_annul(){
-    ac_annul_sig = 1;
+    longjmp(ac_env, 1);
   };
 
   /// Forces Paralelism.

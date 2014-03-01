@@ -82,6 +82,7 @@ public:
 
 //! Format type used to build the decoder
 struct ac_dec_format {
+  unsigned id;                 //!< Unique id that identifies this format
   string name;                 //!< Format name
   int size;                    //!< Format size in bits
   ac_dec_field* fields;        //!< List of fields in this format
