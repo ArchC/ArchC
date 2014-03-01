@@ -51,6 +51,7 @@ int  ACLongJmpStop=1;                           //!<Indicates if New Stop using 
 int  ACIndexFix=0;                              //!<Indicates if Index Decode Cache Fix Optimization is turned on or not
 int  ACPCAddress=1;                             //!<Indicates if PC bounds is verified or not
 int  ACFullDecode=0;                            //!<Indicates if Full Decode Optimization is turned on or not
+int  ACCurInstrID=1;                            //!<Indicates if Current Instruction ID is save in dispatch
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -101,6 +102,7 @@ struct option_map option_map[] = {
   {"--index-fix"       , "-idx","Enable Index Decode Cache Fix Optimization.", 0},
   {"--no-pc-addr-ver"  , "-npv","Disable PC address verification.", 0},
   {"--full-decode"     , "-fdc","Enable Full Decode Optimization.", 0},
+  {"--no-curr-instr-id", "-nci","Disable Current Instruction ID save in dispatch.", 0},
   { }
 };
 
@@ -313,6 +315,10 @@ int main(int argc, char** argv) {
               break;
             case OPFullDecode:
               ACFullDecode = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPCurInstrID:
+              ACCurInstrID = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             default:
@@ -1153,7 +1159,8 @@ void CreateISAHeader() {
     fprintf( output, "%s%s_syscall syscall;\n", INDENT[1], project_name );
 
   /* current instruction ID */
-  fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
+  if ( ACCurInstrID )
+    fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
   
   /* ac_helper */
   if (helper_contents)
@@ -1177,28 +1184,30 @@ void CreateISAHeader() {
   /* Closing constructor declaration. */
   fprintf( output,"%s}\n\n", INDENT[1] );
 
-  /* getter methods for current instruction */
-  fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", 
-          INDENT[1]);
-  fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", 
-          INDENT[1]);
-  fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", 
-          INDENT[1]);
-  fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", 
-          INDENT[1]);
-  fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", 
-          INDENT[1]);
-  fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", 
-          INDENT[1]);
+  if ( ACCurInstrID ) {
+    /* getter methods for current instruction */
+    fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", 
+            INDENT[1]);
+    fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", 
+            INDENT[1]);
+    fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", 
+            INDENT[1]);
+    fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", 
+            INDENT[1]);
+    fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", 
+            INDENT[1]);
+    fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", 
+            INDENT[1]);
   
-  // Group query methods.
-  for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
-  {
-    fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
-            INDENT[2], pgroup->name, INDENT[2]);
-    fprintf(output, "%sreturn group_%s[cur_instr_id];\n%s}\n", 
-            INDENT[3], pgroup->name, INDENT[2]);
-    fprintf(output, "\n");
+    // Group query methods.
+    for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
+    {
+      fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
+              INDENT[2], pgroup->name, INDENT[2]);
+      fprintf(output, "%sreturn group_%s[cur_instr_id];\n%s}\n", 
+              INDENT[3], pgroup->name, INDENT[2]);
+      fprintf(output, "\n");
+    }
   }
   
   //Turn-on or off Forced Inline in Interpretation Routines
@@ -3139,7 +3148,9 @@ void EmitInstrExecIni( FILE *output, int base_indent) {
              INDENT[base_indent]);
 
   fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
-  fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
+  
+  if ( ACCurInstrID )
+    fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
   
   if (!(ACThreading && ACABIFlag)) {
     fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
@@ -3841,7 +3852,7 @@ void EmitDispatch(FILE *output, int base_indent) {
   if(ACDecCacheFlag)
     fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent]);  
   else
-    fprintf( output, "%sreturn IntRoutine[ISA.cur_instr_id];\n", INDENT[base_indent]);  
+    fprintf( output, "%sreturn IntRoutine[ins_id];\n", INDENT[base_indent]);  
   
   base_indent--;
   fprintf( output, "%s}\n\n", INDENT[base_indent]);  

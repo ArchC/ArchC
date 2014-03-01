@@ -104,6 +104,7 @@ enum _ac_cmd_options {
   OPIndexFix,
   OPPCAddress,
   OPFullDecode,
+  OPCurInstrID,
   ACNumberOfOptions
 };
 
