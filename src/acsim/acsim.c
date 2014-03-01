@@ -32,7 +32,7 @@
 //#define DEBUG_STORAGE
 
 //Defining Traces and Dasm strings
-#define PRINT_TRACE "%strace_file << hex << decode_pc << dec <<\"\\n\";\n"
+#define PRINT_TRACE "%strace_file << hex << ac_pc << dec <<\"\\n\";\n"
 
 //Command-line options flags
 int  ACABIFlag=0;                               //!<Indicates whether an ABI was provided or not
@@ -3046,13 +3046,13 @@ void EmitDecodification( FILE *output, int base_indent) {
 
   if( HaveMemHier ){
     if (fetchsize == wordsize)
-      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read( decode_pc );\n\n", 
+      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read( ac_pc );\n\n", 
                INDENT[base_indent]);
     else if (fetchsize == wordsize/2)
-      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_half( decode_pc );\n\n", 
+      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_half( ac_pc );\n\n", 
                INDENT[base_indent]);
     else if (fetchsize == 8)
-      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_byte( decode_pc );\n\n", 
+      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_byte( ac_pc );\n\n", 
                INDENT[base_indent]);
     else {
       AC_ERROR("Fetchsize differs from wordsize or (wordsize/2) or 8: not implemented.");
@@ -3069,8 +3069,12 @@ void EmitDecodification( FILE *output, int base_indent) {
   }
 
   if( ACDecCacheFlag ){
-    fprintf( output, "%sinstr_dec = (DEC_CACHE + (decode_pc", 
-             INDENT[base_indent]);
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (", INDENT[base_indent]);
+    if (ACFullDecode)
+      fprintf( output, "decode_pc");
+    else
+      fprintf( output, "ac_pc");
+    
     if( ACIndexFix ) 
       fprintf( output, " / %d", largest_format_size / 8);
     fprintf( output, "));\n");
@@ -3082,7 +3086,10 @@ void EmitDecodification( FILE *output, int base_indent) {
     
     fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent]);
   }
-
+  
+  if( !ACFullDecode )
+    fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent]);
+  
   fprintf( output, "%squant = 0;\n", INDENT[base_indent]);
   fprintf( output, "%sins_cache = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n", 
            INDENT[base_indent]);
@@ -3119,7 +3126,7 @@ void EmitDecodification( FILE *output, int base_indent) {
     fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
     fprintf( output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
             INDENT[base_indent+1]);
-    fprintf( output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
+    fprintf( output, "%scerr << \"PC = \" << hex << ac_pc << dec << endl;\n", 
             INDENT[base_indent+1]);
     fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
     if (ACThreading)
@@ -3144,11 +3151,9 @@ void EmitInstrExecIni( FILE *output, int base_indent) {
   ac_dec_field *pfield;
   
   if( ACGDBIntegrationFlag )
-    fprintf( output, "%sif (gdbstub && gdbstub->stop(decode_pc)) gdbstub->process_bp();\n\n", 
+    fprintf( output, "%sif (gdbstub && gdbstub->stop(ac_pc)) gdbstub->process_bp();\n\n", 
              INDENT[base_indent]);
 
-  fprintf( output, "%sac_pc = decode_pc;\n\n", INDENT[base_indent]);
-  
   if ( ACCurInstrID )
     fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
   
@@ -3206,7 +3211,7 @@ void EmitInstrExec( FILE *output, int base_indent){
 
       if( ACDebugFlag ){
         fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
-        fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
+        fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
                 INDENT[base_indent + 1]);
       }
 
@@ -3338,8 +3343,6 @@ void EmitFetchInit( FILE *output, int base_indent){
       fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
     fprintf( output, "%s}\n", INDENT[base_indent]);
   }
-  
-  fprintf( output, "%sdecode_pc = ac_pc;\n\n", INDENT[base_indent]);
 }
 
 
@@ -3365,7 +3368,7 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
     
     //Emiting system calls handler.
     COMMENT(INDENT[base_indent],"Handling System calls.")
-    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[base_indent]);
+    fprintf( output, "%sswitch( ac_pc ){\n", INDENT[base_indent]);
     base_indent++;
     fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
              INDENT[base_indent]);
@@ -3379,7 +3382,7 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
 
     if( ACDebugFlag ){
       fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
-      fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
+      fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
               INDENT[base_indent + 1]);
     }
 
@@ -3396,7 +3399,7 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
     
     if (ACSyscallJump) {
       base_indent--;
-      fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
+      fprintf( output, "%s} // switch( ac_pc )\n", INDENT[base_indent]);
       base_indent--;
       fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", INDENT[base_indent]);
       fprintf( output, "%sif (exec) {\n", INDENT[base_indent]);
@@ -3428,7 +3431,7 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
     else{
       fprintf( output, "%sbreak;\n", INDENT[base_indent]);
       base_indent--;
-      fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
+      fprintf( output, "%s} // switch( ac_pc )\n", INDENT[base_indent]);
     }
   }
   
@@ -3715,7 +3718,7 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
     fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
     fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
             INDENT[base_indent + 2]);
-    fprintf(output, "%scerr << \"PC = \" << hex << decode_pc << dec << endl;\n", 
+    fprintf(output, "%scerr << \"PC = \" << hex << ac_pc << dec << endl;\n", 
             INDENT[base_indent + 2]);
     fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
 
@@ -3757,7 +3760,7 @@ void EmitDispatch(FILE *output, int base_indent) {
     
     //Emiting system calls handler.
     COMMENT(INDENT[base_indent],"Handling System calls.")
-    fprintf( output, "%sswitch( decode_pc ){\n", INDENT[base_indent]);  
+    fprintf( output, "%sswitch( ac_pc ){\n", INDENT[base_indent]);  
     base_indent++;
     fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
              INDENT[base_indent]);
@@ -3771,7 +3774,7 @@ void EmitDispatch(FILE *output, int base_indent) {
 
     if( ACDebugFlag ){
       fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
-      fprintf( output, "%strace_file << hex << decode_pc << dec << endl; \\\n", 
+      fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
               INDENT[base_indent + 1]);
     }
 
@@ -3790,7 +3793,7 @@ void EmitDispatch(FILE *output, int base_indent) {
     
     if (ACSyscallJump) {
       base_indent--;
-      fprintf( output, "%s} // switch( decode_pc )\n", 
+      fprintf( output, "%s} // switch( ac_pc )\n", 
                INDENT[base_indent]);
       base_indent--;
       fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", 
@@ -3838,7 +3841,7 @@ void EmitDispatch(FILE *output, int base_indent) {
     else{
       fprintf( output, "%sbreak;\n", INDENT[base_indent]);
       base_indent--;
-      fprintf( output, "%s} // switch( decode_pc )\n", INDENT[base_indent]);
+      fprintf( output, "%s} // switch( ac_pc )\n", INDENT[base_indent]);
     }
   }
   
