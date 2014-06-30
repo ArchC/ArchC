@@ -147,6 +147,37 @@ void ac_storage::write(ac_ptr buf, uint32_t address,
   }
 }
 
+// Just for TLM2 support and compatibility
+
+void ac_storage::read(ac_ptr buf, uint32_t address,
+          int wordsize,sc_core::sc_time &time_info) {
+
+
+  this->read(buf,address,wordsize);
+
+}
+
+void ac_storage::read(ac_ptr buf, uint32_t address,
+          int wordsize, int n_words,sc_core::sc_time &time_info) {
+
+  this->read(buf,address,wordsize,n_words);
+}
+
+void ac_storage::write(ac_ptr buf, uint32_t address,
+           int wordsize,sc_core::sc_time &time_info) {
+
+
+  this->write(buf,address,wordsize);
+}
+
+void ac_storage::write(ac_ptr buf, uint32_t address,
+           int wordsize, int n_words,sc_core::sc_time &time_info) {
+
+  this->write(buf,address,wordsize,n_words);
+}
+
+
+
 /** 
  * Locks the device.
  * 

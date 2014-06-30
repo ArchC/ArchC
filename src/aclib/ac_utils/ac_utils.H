@@ -48,6 +48,29 @@
 #include <iostream>
 #include <fstream>
 
+
+#ifdef AC_GUEST_BIG_ENDIAN
+#define byte_swap_16 be16toh
+#else 
+#define byte_swap_16 le16toh  
+#endif 
+
+
+#ifdef AC_GUEST_BIG_ENDIAN
+#define byte_swap be32toh
+#else 
+#define byte_swap le32toh  
+#endif 
+
+#ifdef AC_GUEST_BIG_ENDIAN
+#define byte_swap_64 be64toh
+#else 
+#define byte_swap_64 le64toh  
+#endif 
+
+
+
+
 // Forward declarations of ac_arch and ac_arch_ref.
 template<class ac_word, class ac_Hword> class ac_arch;
 template<class ac_word, class ac_Hword> class ac_arch_ref;
@@ -127,29 +150,31 @@ void sigusr2_handler(int signal)
 #endif //AC_COMPSIM
 
 // Byte Swap functions
-inline uint16_t byte_swap(uint16_t value) {
-#if AC_GUEST_BIG_ENDIAN
-  return be16toh(value);
-#else
-  return le16toh(value);
-#endif
-}
 
-inline uint32_t byte_swap(uint32_t value) {
-#if AC_GUEST_BIG_ENDIAN
-  return be32toh(value);
-#else
-  return le32toh(value);
-#endif
-}
 
-inline uint64_t byte_swap(uint64_t value) {
-#if AC_GUEST_BIG_ENDIAN
-  return be64toh(value);
-#else
-  return le64toh(value);
-#endif
-}
+//inline uint16_t byte_swap(uint16_t value) {
+//#ifdef AC_GUEST_BIG_ENDIAN
+//  return be16toh(value);
+//#else
+// return le16toh(value);
+//#endif
+//}
+
+//inline uint32_t byte_swap(uint32_t value) {
+//#ifdef AC_GUEST_BIG_ENDIAN
+//  return be32toh(value);
+//#else
+//  return le32toh(value);
+//#endif
+//}
+
+//inline uint64_t byte_swap(uint64_t value) {
+//#ifdef AC_GUEST_BIG_ENDIAN
+//  return be64toh(value);
+//#else
+//  return le64toh(value);
+//#endif
+//}
 
 template <typename T>
 inline T byte_swap(T value) {
@@ -167,6 +192,7 @@ inline T byte_swap(T value) {
   return result;
 #endif
 }
+
 
 // convert_endian is redundant, the idea is to use byte_swap for all
 // endianness conversions in the future.

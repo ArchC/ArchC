@@ -1,3 +1,4 @@
+
 /* ex: set tabstop=2 expandtab:
    -*- Mode: C; tab-width: 2; indent-tabs-mode nil -*-
 */
@@ -86,6 +87,9 @@ extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveCycleRange;
 extern int ControlInstrInfoLevel;
 extern int HaveTLMPorts;
 extern int HaveTLMIntrPorts;
+extern int HaveTLM2Ports;
+extern int HaveTLM2NBPorts;
+extern int HaveTLM2IntrPorts;
 
 extern int instr_num;    //!< Number of Instructions
 extern int declist_num;  //!< Number of Decodification lists

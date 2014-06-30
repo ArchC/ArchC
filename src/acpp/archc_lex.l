@@ -443,6 +443,37 @@ HEXA_DIGIT [0-9A-Fa-f]
   return AC_TLM_INTR_PORT;
  }
 
+<ARCH>"ac_tlm2_intr_port" {
+  #if DEBUG_LEX
+  printf("AC_TLM2_INTR_PORT: %s\n", yytext);
+  #endif
+  return AC_TLM2_INTR_PORT;
+ }
+
+
+<ARCH>"ac_tlm2_port" {
+  #if DEBUG_LEX
+  printf("AC_TLM2_PORT: %s\n", yytext);
+  #endif
+  return AC_TLM2_PORT;
+ }
+
+<ARCH>"ac_tlm2_nb_port" {
+  #if DEBUG_LEX
+  printf("AC_TLM2_NB_PORT: %s\n", yytext);
+  #endif
+  return AC_TLM2_NB_PORT;
+ }
+
+<ARCH>"ac_tlm2_intr_port" {
+  #if DEBUG_LEX
+  printf("AC_TLM2_INTR_PORT: %s\n", yytext);
+  #endif
+  return AC_TLM2_INTR_PORT;
+ }
+
+
+
 <ARCH>"ac_cache" {
   #if DEBUG_LEX
   printf("AC_CACHE: %s\n", yytext);

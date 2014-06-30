@@ -55,11 +55,16 @@ ac_sto_list* storage_list;
 ac_sto_list* storage_list_tail;
 ac_sto_list* tlm_intr_port_list;
 ac_sto_list* tlm_intr_port_list_tail;
+ac_sto_list* tlm2_intr_port_list;
+ac_sto_list* tlm2_intr_port_list_tail;
 
 int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveCycleRange;
 int ControlInstrInfoLevel;
 int HaveTLMPorts;
 int HaveTLMIntrPorts;
+int HaveTLM2Ports;
+int HaveTLM2NBPorts;
+int HaveTLM2IntrPorts;
 
 int instr_num;
 int declist_num;
@@ -104,6 +109,8 @@ void init_core_actions()
   storage_list = NULL;
   tlm_intr_port_list = NULL;
   tlm_intr_port_list_tail = NULL;
+  tlm2_intr_port_list = NULL;
+  tlm2_intr_port_list_tail = NULL;
   group_list = NULL;
 
   HaveFormattedRegs = 0;
@@ -113,6 +120,9 @@ void init_core_actions()
   ControlInstrInfoLevel = 0;
   HaveTLMPorts = 0;
   HaveTLMIntrPorts = 0;
+  HaveTLM2Ports = 0;
+  HaveTLM2NBPorts = 0;
+  HaveTLM2IntrPorts = 0;
 
   instr_num = 0;
   declist_num = 0;
@@ -570,6 +580,19 @@ int add_storage(char* name, unsigned size, ac_sto_types type, char* typestr, cha
       tlm_intr_port_list_tail = tlm_intr_port_list = pstorage;
     }
   }
+  else if (type == TLM2_INTR_PORT) /* Adding TLM 2 Interrupt port to the Interrupt port list */
+  {
+     if (tlm2_intr_port_list_tail) {
+       tlm2_intr_port_list_tail->next = pstorage;
+       tlm2_intr_port_list_tail = pstorage;
+     }
+     else {
+       tlm2_intr_port_list_tail = tlm_intr_port_list = pstorage;
+     }
+
+  }
+
+
   else { /* Adding to normal storage list */
     if( storage_list_tail ){
       storage_list_tail->next = pstorage;

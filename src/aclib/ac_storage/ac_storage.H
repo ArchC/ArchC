@@ -10,7 +10,9 @@
  *            http://www.lsc.ic.unicamp.br/
  *
  * @version   1.0
+ 
  * @date      Tue Sep 13 17:16:51 2005
+ *            TLM 2.0 time info: November, 2013
  *
  * @brief     Defines a class modeling a basic storage device (memory).
  *
@@ -76,6 +78,22 @@ public:
 
   void write(ac_ptr buf, uint32_t address,
 		    int wordsize, int n_words);
+
+
+// Just for TLM2 support and compatibility
+  void read(ac_ptr buf, uint32_t address,
+         int wordsize,sc_core::sc_time &time_info);
+
+  void read(ac_ptr buf, uint32_t address,
+         int wordsize, int n_words,sc_core::sc_time &time_info);
+
+  void write(ac_ptr buf, uint32_t address,
+          int wordsize,sc_core::sc_time &time_info);
+
+  void write(ac_ptr buf, uint32_t address,
+          int wordsize, int n_words,sc_core::sc_time &time_info);
+
+
 
   /** 
    * Locks the device.

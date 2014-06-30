@@ -32,7 +32,7 @@
 
 //! Enumeration type for storage device types
 enum _ac_sto_types {MEM, CACHE, ICACHE, DCACHE, REG, REGBANK, TLM_PORT,
-                    TLM_INTR_PORT};
+                    TLM_INTR_PORT, TLM2_PORT, TLM2_NB_PORT, TLM2_INTR_PORT};
 
 typedef enum _ac_sto_types ac_sto_types;
 

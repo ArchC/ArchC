@@ -26,7 +26,7 @@
 // ArchC includes
 #include "ac_arch.H"
 #include "ac_decoder_rt.H"
-#include "ac_memport.H"
+//#include "ac_memport.H"
 
 //////////////////////////////////////////////////////////////////////////////
 

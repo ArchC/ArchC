@@ -147,6 +147,11 @@ void CreateIntrTmpl(void);                        //!< Creates the .cpp template
 void CreateMainTmpl(void);                        //!< Creates the .cpp template file for the main function.
 void CreateProcessorImpl(void);                   //!< Creates the .cpp file for processor module.
 
+
+void CreateIntrTLM2Header(void); /******/
+void CreateIntrTLM2MacrosHeader(void); /*****/
+void CreateIntrTLM2Tmpl(void); /*****/
+
 /** @defgroup emitfunc Emit Functions
  * @ingroup acsim
  * These functions are used by Create functions to emit code.

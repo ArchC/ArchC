@@ -34,6 +34,9 @@
 
 // ArchC includes
 
+ // TLM 2.0 payload structure
+#include "ac_tlm2_payload.H"
+
 //////////////////////////////////////////////////////////////////////////////
 
 // using statements
@@ -78,10 +81,26 @@ struct ac_tlm_rsp {
   };
 };
 
-/// ArchC TLM transport interface type.
+/// ArchC TLM 1.0 transport interface type.
 typedef tlm_transport_if<ac_tlm_req, ac_tlm_rsp> ac_tlm_transport_if;
 
 //////////////////////////////////////////////////////////////////////////////
 
+
+// TLM 2 payload and blocking interface
+using  tlm::tlm_blocking_transport_if;    // TLM 2 blocking interface
+using  tlm::tlm_fw_nonblocking_transport_if;  // TLM 2 forwarding non-blocking interface
+using  tlm::tlm_bw_nonblocking_transport_if;  // TLM 2 backarding non-blocking interface
+using  tlm::tlm_command;
+
+typedef ac_tlm2_payload tlm_payload_type;
+typedef tlm_blocking_transport_if<ac_tlm2_payload> ac_tlm2_blocking_transport_if;
+typedef tlm_fw_nonblocking_transport_if<ac_tlm2_payload> ac_tlm2_fw_nonblocking_transport_if;
+typedef tlm_bw_nonblocking_transport_if<ac_tlm2_payload> ac_tlm2_bw_nonblocking_transport_if;
+
 #endif // _AC_TLM_PROTOCOL_H_
+
+
+
+
 

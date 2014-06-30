@@ -198,6 +198,9 @@ int main(int argc, char** argv) {
   extern ac_pipe_list *pipe_list;
   extern int HaveFormattedRegs;
   extern int HaveTLMIntrPorts;
+/***/
+  extern int HaveTLM2IntrPorts;
+
   extern ac_decoder_full *decoder;
 
   //Uncomment the line bellow if you want to debug the parser.
@@ -449,6 +452,14 @@ int main(int argc, char** argv) {
     CreateIntrMacrosHeader();
     CreateIntrTmpl();
   }
+
+/****/
+  if (HaveTLM2IntrPorts) {
+    CreateIntrTLM2Header();
+    CreateIntrTLM2MacrosHeader();
+    CreateIntrTLM2Tmpl();
+  }
+
   
   //Creating Simulation Statistics class header file.
   if (ACStatsFlag) {
@@ -490,7 +501,10 @@ void CreateArchHeader() {
   extern ac_sto_list *storage_list;
   extern char* project_name;
   extern char* upper_project_name;
-  extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+  //extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts,
+                   HaveTLMIntrPorts, HaveTLM2NBPorts, HaveTLM2Ports, HaveTLM2IntrPorts;
+
   ac_sto_list *pstorage;
 
   FILE *output;
@@ -519,6 +533,16 @@ void CreateArchHeader() {
 
   if (HaveTLMIntrPorts)
     fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
+
+  if (HaveTLM2Ports)
+         fprintf(output, "#include  \"ac_tlm2_port.H\"\n");
+
+  if (HaveTLM2NBPorts)
+         fprintf(output, "#include  \"ac_tlm2_nb_port.H\"\n");
+
+  if (HaveTLM2IntrPorts)
+         fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
+
 
   if( HaveFormattedRegs )
     fprintf( output, "#include  \"%s_fmt_regs.H\"\n", project_name);
@@ -650,6 +674,16 @@ void CreateArchHeader() {
                 INDENT[1], project_name, project_name, pstorage->name);
         break;
 
+      case TLM2_PORT:
+        fprintf(output, "%sac_tlm2_port %s_port;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+        break;
+
+      case TLM2_NB_PORT:
+          fprintf(output, "%sac_tlm2_nb_port %s_port;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+          break;
+
       default:
         fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
         fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", 
@@ -692,7 +726,8 @@ void CreateArchRefHeader() {
   extern char* project_name;
   extern char* upper_project_name;
 
-  extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts;
+  //extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts;
+  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts, HaveTLM2IntrPorts;
 
   ac_sto_list *pstorage;
 
@@ -720,6 +755,11 @@ void CreateArchRefHeader() {
     fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
 
   fprintf(output, "\n");
+
+  if (HaveTLM2IntrPorts)
+         fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
+
+  fprintf(output, "\n");       
 
   COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
   fprintf(output, "class %s_arch;\n\n", project_name);
@@ -1394,6 +1434,10 @@ void CreateProcessorHeader() {
   extern char *project_name;
   extern char *upper_project_name;
   extern int HaveTLMIntrPorts, largest_format_size;
+  
+  extern int HaveTLM2IntrPorts;
+  extern ac_sto_list *tlm2_intr_port_list;
+
   extern ac_sto_list *tlm_intr_port_list;
   ac_sto_list *pport;
   char filename[256];
@@ -1428,6 +1472,11 @@ void CreateProcessorHeader() {
     fprintf(output, "#include \"ac_tlm_intr_port.H\"\n");
     fprintf(output, "#include \"%s_intr_handlers.H\"\n", project_name);
   }
+
+if (HaveTLM2IntrPorts) {
+         fprintf(output, "#include \"ac_tlm2_intr_port.H\"\n");
+         fprintf(output, "#include \"%s_intr_handlers.H\"\n", project_name);
+       }
 
   if(ACGDBIntegrationFlag) {
     fprintf( output, "#include \"ac_gdb_interface.H\"\n");
@@ -1465,6 +1514,16 @@ void CreateProcessorHeader() {
     }
   }
   
+ /******/
+        if (HaveTLM2IntrPorts) {
+          for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
+      fprintf(output, "%s%s_%s_handler %s_hnd;\n", INDENT[1], project_name, pport->name, pport->name);
+      fprintf(output, "%sac_tlm2_intr_port %s;\n\n", INDENT[1], pport->name);
+          }
+        }
+
+
+
   if (ACThreading) {
     COMMENT(INDENT[1], "Address of Interpretation Routines.");
     fprintf( output, "%svoid** IntRoutine;\n\n", INDENT[1]);
@@ -1515,6 +1574,16 @@ void CreateProcessorHeader() {
               pport->name, pport->name, pport->name);
     }
   }
+
+
+   
+    if (HaveTLM2IntrPorts) {
+         for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, ", %s_hnd(*this)", pport->name);
+    fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
+         }
+       }
+
 
   fprintf(output, " {\n");
 
@@ -2100,7 +2169,14 @@ void CreateProcessorImpl() {
 /** Creates the _arch.cpp Implementation File. */
 void CreateArchImpl() {
   extern ac_sto_list *storage_list, *fetch_device;
-  extern int HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+  
+  //extern int HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
+
+
+  extern int HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, HaveTLM2Ports, HaveTLM2NBPorts, HaveTLM2IntrPorts;
+
+
+
   extern ac_sto_list* load_device;
 
   extern char *project_name;
@@ -2189,6 +2265,17 @@ void CreateArchImpl() {
         fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
         break;
 
+case TLM2_PORT:
+                 fprintf(output, "%s%s_port(\"%s_port\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                 fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
+                  break;
+
+    case TLM2_NB_PORT:
+                 fprintf(output, "%s%s_port(\"%s_port\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                 fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
+                 break;
+
+
       default:
         fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
         fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
@@ -2215,7 +2302,7 @@ void CreateArchImpl() {
     //In this case, look for the object with the lowest (zero) hierarchy level.
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
       if( pstorage->level == 0 && pstorage->type != REG && 
-          pstorage->type != REGBANK && pstorage->type != TLM_INTR_PORT)
+          pstorage->type != REGBANK && pstorage->type != TLM_INTR_PORT && pstorage->type != TLM2_INTR_PORT )
         fetch_device = pstorage;
 
     if( !fetch_device ) { //Couldn't find a fetch device. Error!
@@ -2587,8 +2674,48 @@ void CreateImplTmpl(){
 
 
 ///Creates the .cpp template file for interrupt handlers.
+void CreateIntrTLM2Tmpl() {
+  extern ac_sto_list *tlm2_intr_port_list;
+  extern char* project_name;
+
+  ac_sto_list *pport;
+
+  FILE *output;
+  char filename[256];
+  char description[] = "Interrupt Handlers implementation file.";
+
+  sprintf(filename, "%s_intr_handlers.cpp.tmpl", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment( output, description);
+
+  fprintf(output, "#include \"ac_intr_handler.H\"\n");
+  fprintf(output, "#include \"%s_intr_handlers.H\"\n\n", project_name);
+  fprintf(output, "#include \"%s_ih_bhv_macros.H\"\n\n", project_name);
+
+  COMMENT(INDENT[0], "'using namespace' statement to allow access to all %s-specific datatypes", project_name);
+  fprintf( output, "using namespace %s_parms;\n\n", project_name);
+
+  //Declaring formatted register behavior methods.
+  for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", pport->name);
+    fprintf(output, "void ac_behavior(%s, value) {\n}\n\n", pport->name);
+  }
+
+  //END OF FILE.
+  fclose(output);
+}
+
+
+
+///Creates the .cpp template file for interrupt handlers.
 void CreateIntrTmpl() {
   extern ac_sto_list *tlm_intr_port_list;
+
   extern char* project_name;
 
   ac_sto_list *pport;
@@ -2625,6 +2752,51 @@ void CreateIntrTmpl() {
   //END OF FILE.
   fclose(output);
 }
+
+
+///Creates the .cpp template file for interrupt handlers.
+void CreateIntr2Tmpl() {
+  extern ac_sto_list *tlm2_intr_port_list;
+
+  extern char* project_name;
+
+  ac_sto_list *pport;
+
+  FILE *output;
+  char filename[256];
+  char description[] = "Interrupt Handlers implementation file.";
+
+  sprintf(filename, "%s_intr_handlers.cpp.tmpl", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment( output, description);
+
+  fprintf(output, "#include \"ac_intr_handler.H\"\n");
+  fprintf(output, "#include \"%s_intr_handlers.H\"\n\n", project_name);
+  fprintf(output, "#include \"%s_ih_bhv_macros.H\"\n\n", project_name);
+
+  COMMENT(INDENT[0], 
+          "'using namespace' statement to allow access to all %s-specific datatypes", 
+          project_name);
+  fprintf( output, "using namespace %s_parms;\n\n", project_name);
+
+  //Declaring formatted register behavior methods.
+  for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", 
+            pport->name);
+    fprintf(output, "void ac_behavior(%s, value) {\n}\n\n", pport->name);
+  }
+
+  //END OF FILE.
+  fclose(output);
+}
+
+
+
 
 
 //!Create ArchC model syscalls
@@ -2676,6 +2848,62 @@ void CreateArchSyscallHeader()
 
   fclose( output);
 }
+
+
+
+///Creates the header file for interrupt handlers.
+void CreateIntrTLM2Header() {
+
+  extern ac_sto_list *tlm2_intr_port_list;
+  extern char *project_name;
+  extern char *upper_project_name;
+
+  ac_sto_list *pport;
+
+  char filename[256];
+  char description[] = "Interrupt Handlers header file.";
+
+  // Header File.
+  FILE  *output;
+
+  sprintf(filename, "%s_intr_handlers.H", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment(output, description);
+  fprintf(output, "#ifndef _%s_INTR_HANDLERS_H\n", upper_project_name);
+  fprintf(output, "#define _%s_INTR_HANDLERS_H\n\n", upper_project_name);
+  fprintf(output, "#include \"ac_intr_handler.H\"\n");
+  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
+  fprintf(output, "#include \"%s_arch.H\"\n", project_name);
+  fprintf(output, "#include \"%s_arch_ref.H\"\n", project_name);
+  fprintf(output, "\n");
+
+  // TODO: see what we need to do for tlm2 ports below
+  /* Creating interrupt handler classes for each ac_tlm_intr_port */
+  for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, "class %s_%s_handler :\n", project_name, pport->name);
+    fprintf(output, "%spublic ac_intr_handler,\n", INDENT[1]);
+    fprintf(output, "%spublic %s_arch_ref\n", INDENT[1], project_name);
+    fprintf(output, "{\n");
+    fprintf(output, " public:\n\n");
+    fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",
+            INDENT[1], project_name, pport->name, project_name, project_name);
+    fprintf(output, "%svoid handle(uint32_t value);\n\n", INDENT[1]);
+    fprintf(output, "};\n\n\n");
+  }
+
+  fprintf(output, "#endif // _%s_INTR_HANDLERS_H\n", upper_project_name);
+
+  //END OF FILE
+  fclose(output);
+
+}
+
+
 
 
 ///Creates the header file for interrupt handlers.
@@ -2731,6 +2959,42 @@ void CreateIntrHeader() {
 }
 
 ///Creates the header file with ac_behavior macros for interrupt handlers.
+void CreateIntrTLM2MacrosHeader() {
+  extern char *project_name;
+  extern char *upper_project_name;
+
+  char filename[256];
+  char description[] = "TLM 2.0 Interrupt Handlers ac_behavior macros header file.";
+
+  // Header File.
+  FILE  *output;
+
+  sprintf(filename, "%s_ih_bhv_macros.H", project_name);
+
+  if (!(output = fopen( filename, "w"))) {
+    perror("ArchC could not open output file");
+    exit(1);
+  }
+
+  print_comment(output, description);
+  fprintf(output, "#ifndef _%s_IH_BHV_MACROS_H\n", upper_project_name);
+  fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", upper_project_name);
+
+  /* ac_behavior main macro */
+  fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
+          project_name);
+
+  fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", upper_project_name);
+
+  //END OF FILE
+  fclose(output);
+
+}
+
+
+
+
+///Creates the header file with ac_behavior macros for interrupt handlers.
 void CreateIntrMacrosHeader() {
   extern char *project_name;
   extern char *upper_project_name;
@@ -2772,7 +3036,10 @@ void CreateMakefile(){
   extern int HaveMemHier;
   extern int HaveFormattedRegs;
   extern int HaveTLMPorts;
+  extern int HaveTLM2Ports;
+  extern int HaveTLM2NBPorts;
   extern int HaveTLMIntrPorts;
+  extern int HaveTLM2IntrPorts;
 
   FILE *output;
   char filename[] = "Makefile.archc";
@@ -2810,8 +3077,12 @@ void CreateMakefile(){
   fprintf( output, "TARGET_ARCH := %s\n\n\n", TARGET_ARCH);
 
   fprintf( output, "INC_DIR := -I. -I%s -I$(SYSTEMC)/include ", INCLUDEDIR);
-  if (HaveTLMPorts || HaveTLMIntrPorts)
-    fprintf(output, "-I%s", TLM_PATH);
+  //if (HaveTLMPorts || HaveTLMIntrPorts)     fprintf(output, "-I%s", TLM_PATH);
+
+  if (HaveTLMPorts || HaveTLMIntrPorts || HaveTLM2Ports || HaveTLM2NBPorts || HaveTLM2IntrPorts)
+     fprintf(output, "-I%s", TLM_PATH);
+
+
   
   fprintf( output, "\nLIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n\n", 
            LIBDIR);
@@ -2862,6 +3133,10 @@ void CreateMakefile(){
     fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
   fprintf( output, "\n\n");
 
+  if(HaveTLM2IntrPorts)
+         fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
+  fprintf( output, "\n\n");  
+
   //Declaring FILES variable
   COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
   COMMENT_MAKE("They are stored in the archc/src/aclib directory");
@@ -2877,9 +3152,15 @@ void CreateMakefile(){
   if(ACABIFlag)
     fprintf(output, "ac_syscall.o ");
   if(HaveTLMPorts)
-    fprintf(output, "ac_tlm_port.o ");
-  if(HaveTLMIntrPorts)
-    fprintf(output, "ac_tlm_intr_port.o ");
+      fprintf(output, "ac_tlm_port.o ");
+    if(HaveTLM2Ports)
+      fprintf(output, "ac_tlm2_port.o ");
+    if(HaveTLM2NBPorts)
+      fprintf(output, "ac_tlm2_nb_port.o ");
+    if(HaveTLMIntrPorts)
+      fprintf(output, "ac_tlm_intr_port.o ");
+    if(HaveTLM2IntrPorts)
+      fprintf(output, "ac_tlm2_intr_port.o ");
   fprintf(output, "\n\n");
 
   //Declaring FILESHEAD variable
@@ -2889,11 +3170,17 @@ void CreateMakefile(){
   if (ACABIFlag)
     fprintf(output, "ac_syscall.H ");
   if (HaveTLMPorts)
-    fprintf(output, "ac_tlm_port.H ");
-  if (HaveTLMIntrPorts)
-    fprintf(output, "ac_tlm_intr_port.H ");
-  if (HaveTLMPorts || HaveTLMIntrPorts)
-    fprintf(output, "ac_tlm_protocol.H ");
+      fprintf(output, "ac_tlm_port.H ");
+    if (HaveTLM2Ports)
+      fprintf(output, "ac_tlm2_port.H ");
+    if (HaveTLM2NBPorts)
+      fprintf(output, "ac_tlm2_nb_port.H ");
+    if (HaveTLMIntrPorts)
+      fprintf(output, "ac_tlm_intr_port.H ");
+    if (HaveTLM2IntrPorts)
+      fprintf(output, "ac_tlm2_intr_port.H ");
+    if (HaveTLMPorts || HaveTLMIntrPorts || HaveTLM2NBPorts || HaveTLM2Ports || HaveTLM2IntrPorts)
+      fprintf(output, "ac_tlm_protocol.H ");
   if (ACStatsFlag)
     fprintf(output, "ac_stats.H ac_stats_base.H ");
   fprintf(output, "\n\n");
@@ -2907,6 +3194,8 @@ void CreateMakefile(){
     fprintf( output, " $(MODULE)_syscall.cpp");
   if (HaveTLMIntrPorts)
     fprintf( output, " $(MODULE)_intr_handlers.cpp");
+  if (HaveTLM2IntrPorts)
+  fprintf(output, " $(MODULE)_intr_handlers.cpp");
   if (ACStatsFlag)
     fprintf( output, " $(MODULE)_stats.cpp");
   fprintf( output, "\n\n");
@@ -2954,6 +3243,14 @@ void CreateMakefile(){
     fprintf( output, "%s_intr_handlers.cpp:\n", project_name);
     fprintf( output, "\tcp %s_intr_handlers.cpp.tmpl %s_intr_handlers.cpp\n\n", project_name, project_name);
   }
+
+if (HaveTLM2IntrPorts) {
+         COMMENT_MAKE("Copy from template if %s_intr_handlers.cpp not exist", project_name);
+         fprintf( output, "%s_intr_handlers.cpp:\n", project_name);
+         fprintf( output, "\tcp %s_intr_handlers.cpp.tmpl %s_intr_handlers.cpp\n\n", project_name, project_name);
+     }
+
+  
 
   fprintf( output, ".cpp.o:\n");
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) -c $<\n\n");

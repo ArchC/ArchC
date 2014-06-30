@@ -32,7 +32,6 @@
  * @{
 */
 #include <stdarg.h>
-#include <stdlib.h>
 #include "ac_tools_common.h"
 #include "core_actions.h"
 #include "asm_actions.h"
@@ -41,15 +40,12 @@
 #define YYERROR_VERBOSE
 #define ADD_DEBUG 1
 
-/* yylex prototype */
-int yylex(void);
-
 /*!type used to identify which unit is being used for storage devices */
 enum _sto_unit {BYTE = 1, KBYTE = 1024, MBYTE = 1048576, GBYTE = 1073741824};
 typedef enum _sto_unit sto_unit;
 
 /*!type used to identify the kind of list being declared */
-enum _commalist {INSTR_L, STAGE_L, REG_L, PIPE_L, REGBANK_L, CACHE_L, MEM_L, TLM_PORT_L, TLM_INTR_PORT_L, INSTR_REF_L};
+enum _commalist {INSTR_L, STAGE_L, REG_L, PIPE_L, REGBANK_L, CACHE_L, MEM_L, TLM_PORT_L, TLM2_PORT_L, TLM2_NB_PORT_L, TLM_INTR_PORT_L, TLM2_INTR_PORT_L, INSTR_REF_L};
 typedef enum _commalist commalist;
 
 /*!type used to identify which description is being parsed */
@@ -177,6 +173,9 @@ static void yywarn(const char* format, ...)
 %token <text> AC_ARCH
 %token <text> AC_TLM_PORT
 %token <text> AC_TLM_INTR_PORT
+%token <text> AC_TLM2_PORT
+%token <text> AC_TLM2_NB_PORT
+%token <text> AC_TLM2_INTR_PORT
 %token <text> AC_CACHE
 %token <text> AC_ICACHE
 %token <text> AC_DCACHE
@@ -842,6 +841,38 @@ portdec: AC_TLM_PORT ID COLON INT unit
       }
       storagelist SEMICOLON
       ;
+      
+      
+      /* Port declaration */
+portdec: AC_TLM2_PORT ID COLON INT unit
+      {
+       /* Including port in storage list */
+       if (!add_storage($2, ($4 * current_unit), (ac_sto_types) TLM2_PORT, NULL, error_msg))
+        yyerror(error_msg);
+       if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
+        yyerror("Redefinition of %s", $2);
+       list_type = TLM2_PORT_L;
+       HaveTLM2Ports = 1;
+      }
+      storagelist SEMICOLON
+      ;
+
+/* NB Port declaration */
+portdec: AC_TLM2_NB_PORT ID COLON INT unit
+      {
+       /* Including port in storage list */
+       if (!add_storage($2, ($4 * current_unit), (ac_sto_types) TLM2_NB_PORT, NULL, error_msg))
+        yyerror(error_msg);
+       if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
+        yyerror("Redefinition of %s", $2);
+       list_type = TLM2_PORT_L;
+       HaveTLM2NBPorts = 1;
+      }
+      storagelist SEMICOLON
+      ;
+      
+      
+      
 
 /* Interruption Port declaration */
 intrportdec: AC_TLM_INTR_PORT ID
@@ -856,6 +887,21 @@ intrportdec: AC_TLM_INTR_PORT ID
       }
       storagelist SEMICOLON
       ;
+
+/* Interruption Port declaration */
+intrportdec: AC_TLM2_INTR_PORT ID
+      {
+       /* Including port in storage list */
+       if (!add_storage($2, 0, (ac_sto_types) TLM2_INTR_PORT, NULL, error_msg))
+        yyerror(error_msg);
+       if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
+        yyerror("Redefinition of %s", $2);
+       list_type = TLM2_INTR_PORT_L;
+       HaveTLM2IntrPorts = 1;
+      }
+      storagelist SEMICOLON
+      ;
+
 
 /* Cache Declaration */
 cachedec: AC_CACHE
@@ -992,6 +1038,20 @@ storagelist: COMMA ID COLON INT
         if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
          yyerror("Redefinition of %s", $2);
        }
+       else if (list_type == TLM2_PORT_L)
+       {
+        if (!add_storage($2, ($4 * current_unit), (ac_sto_types) TLM2_PORT, NULL, error_msg))
+         yyerror(error_msg);
+        if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
+         yyerror("Redefinition of %s", $2);
+       }
+       else if (list_type == TLM2_NB_PORT_L)
+       {
+        if (!add_storage($2, ($4 * current_unit), (ac_sto_types) TLM2_NB_PORT, NULL, error_msg))
+         yyerror(error_msg);
+        if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
+         yyerror("Redefinition of %s", $2);
+       }
        else if (list_type == TLM_INTR_PORT_L)
        {
         if (!add_storage($2, $4, (ac_sto_types) TLM_INTR_PORT, NULL, error_msg))
@@ -999,10 +1059,17 @@ storagelist: COMMA ID COLON INT
         if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
          yyerror("Redefinition of %s", $2);
        }
+        else if (list_type == TLM2_INTR_PORT_L)
+       {
+        if (!add_storage($2, $4, (ac_sto_types) TLM2_INTR_PORT, NULL, error_msg))
+         yyerror(error_msg);
+        if (!add_symbol($2, GEN_ID, (void*) storage_list_tail))
+         yyerror("Redefinition of %s", $2);
+       }
        else
        {
         /* Should never enter here. */
-        yyerror("Internal Bug. Invalid list type. It should be CACHE_L, REGBANK_L, MEM_L, TLM_PORT_L or TLM_INTR_PORT_L");
+        yyerror("Internal Bug. Invalid list type. It should be CACHE_L, REGBANK_L, MEM_L, TLM_PORT_L, TLM2_INTR_PORT_L or TLM_INTR_PORT_L");
        }
       }
       | /* empty string */ {}

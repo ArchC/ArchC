@@ -30,6 +30,7 @@
 #include <string>
 
 // SystemC includes
+#include <systemc>
 
 // ArchC includes
 #include "ac_ptr.H"
@@ -59,9 +60,8 @@ public:
    * @param wordsize Word size in bits.
    * 
    */
-  virtual void read(ac_ptr buf, uint32_t address,
-		    int wordsize) = 0;
-
+   virtual void read(ac_ptr buf, uint32_t address,int wordsize) = 0;
+   virtual void read(ac_ptr buf, uint32_t address,int wordsize,sc_core::sc_time &time_info) = 0;
   /** 
    * Reads multiple words.
    * 
@@ -71,9 +71,10 @@ public:
    * @param n_words Number of words to be read.
    * 
    */
-  virtual void read(ac_ptr buf, uint32_t address,
-		    int wordsize, int n_words) = 0;
 
+  // = sc_core::sc_time(0,SC_NS)
+  virtual void read(ac_ptr buf, uint32_t address,int wordsize, int n_words) = 0;
+  virtual void read(ac_ptr buf, uint32_t address,int wordsize, int n_words,sc_core::sc_time &time_info) = 0;
   /** 
    * Writes a single word.
    * 
@@ -82,8 +83,8 @@ public:
    * @param wordsize Word size in bits.
    *
    */
-  virtual void write(ac_ptr buf, uint32_t address,
-		     int wordsize) = 0;
+  virtual void write(ac_ptr buf, uint32_t address,int wordsize) = 0;
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time& time_info) = 0;
 
   /** 
    * Writes multiple words.
@@ -94,8 +95,8 @@ public:
    * @param n_words Number of words to be written.
    * 
    */
-  virtual void write(ac_ptr buf, uint32_t address,
-		     int wordsize, int n_words) = 0;
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words) = 0;
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info) = 0;
 
   virtual std::string get_name() const = 0;
 

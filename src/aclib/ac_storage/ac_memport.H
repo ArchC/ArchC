@@ -37,6 +37,10 @@
 #include "ac_log.H"
 #include "ac_arch_ref.H"
 #include "ac_utils.H"
+//#include "ac_guest_byte_swap.H"
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -58,13 +62,18 @@ template<typename ac_word, typename ac_Hword> class ac_memport :
 
 private:
   ac_inout_if* storage;
+  sc_core::sc_time time_info;
   
+
 protected:
   typedef list<change_log<ac_word> > log_list;
 #ifdef AC_UPDATE_LOG
   log_list changes;                 //!< Update log.
   fstream update_file;              //!< Update log binary file.
 #endif
+
+
+
 
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
@@ -73,49 +82,82 @@ protected:
 public:
 
   ///Default constructor
-  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref) : ac_arch_ref<ac_word, ac_Hword>(ref) {}
+  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref) : ac_arch_ref<ac_word, ac_Hword>(ref),time_info(0,SC_NS) {}
 
   ///Default constructor with initialization
-  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref, ac_inout_if& stg) : ac_arch_ref<ac_word, ac_Hword>(ref), storage(&stg) {}
+  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref, ac_inout_if& stg) : ac_arch_ref<ac_word, ac_Hword>(ref), storage(&stg),time_info(0,SC_NS) {}
 
   virtual ~ac_memport() {}
 
+
+  sc_core::sc_time getTimeInfo() {
+  return time_info;
+  }
+
+  void setTimeInfo(sc_core::sc_time time) { time_info = time;  }
+
   ///Reads a word
   inline ac_word read(uint32_t address) {
+
+    printf("\nac_memport::read\n");
+    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+
     ac_word aux_word;
-    storage->read(&aux_word, address, sizeof(ac_word) * 8);
+    storage->read(&aux_word, address, sizeof(ac_word) * 8,time);
+   
+    printf("\nac_memport::dado: %d",aux_word);
+    setTimeInfo (time);
+
+    ac_word tmp = byte_swap(aux_word);
+    
     return byte_swap(aux_word);
+    
   }
 
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
+
+    printf("\nac_memport::read_byte\n");
+    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     uint8_t aux_byte;
-    storage->read(&aux_byte, address, 8);
+    storage->read(&aux_byte, address, 8,time);
+    setTimeInfo (time);
     return aux_byte;
   }
 
   ///Reads half word
   inline ac_Hword read_half(uint32_t address) {
+    printf("\nac_memport::read_half\n");
+    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     ac_Hword aux_Hword;
-    storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8);
-    return byte_swap(aux_Hword);
+    storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8,time);
+    setTimeInfo (time);
+    return byte_swap_16(aux_Hword);
   }
   
   //!Writing a word
   inline void write(uint32_t address, ac_word datum) {
+printf("\nac_memport::write\n");
+     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     datum = byte_swap(datum);
-    storage->write(&datum, address, sizeof(ac_word) * 8);
+    storage->write(&datum, address, sizeof(ac_word) * 8,time);
+
+    setTimeInfo (time);
   }
 
   //!Writing a byte 
   inline void write_byte(uint32_t address, uint8_t datum) {
+    printf("\nac_memport::write_byte\n");
     storage->write(&datum, address, 8);
   }
 
   //!Writing a short int 
   inline void write_half(uint32_t address, ac_Hword datum) {
-    datum = byte_swap(datum);
-    storage->write(&datum, address, sizeof(ac_Hword) * 8);
+    printf("\nac_memport::write_half\n");
+     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+    datum = byte_swap_16(datum);
+    storage->write(&datum, address, sizeof(ac_Hword) * 8,time);
+    setTimeInfo (time);
   }
 
 #ifdef AC_DELAY
@@ -147,7 +189,7 @@ public:
     ac_word aux_word;
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    ((ac_Hword*)(&aux_word))[oset_addr] = byte_swap(datum);
+    ((ac_Hword*)(&aux_word))[oset_addr] = byte_swap_16(datum);
     
     delays.push_back(change_log<ac_word>(base_addr, aux_word, time));
   }
