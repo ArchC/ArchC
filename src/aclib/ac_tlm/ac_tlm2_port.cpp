@@ -30,8 +30,7 @@
 
 
 // If you want to debug TLM 2.0, please uncomment the next line
-
-#define debugTLM2
+//#define debugTLM2
 
 // Constructors
 
@@ -50,9 +49,6 @@ ac_tlm2_port::ac_tlm2_port(char const* nm, uint32_t sz) : name(nm), size(sz) {
 void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time& time_info)
 {
   	//sc_core::sc_time time_info;
-
-
-
 	unsigned char buffer[64];
 
 	payload->set_command(tlm::TLM_READ_COMMAND);
@@ -89,8 +85,6 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
 		printf("\nAC_TLM2_PORT READ: wordsize-->%d  data-->%d",wordsize,*(buf.ptr8));
 		#endif
 
-
-
         	break;
 	      case 16:
 	      
@@ -98,7 +92,6 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
 
 
 		*(buf.ptr16) = ((uint16_t*)&data16)[0];
-
 		//buf.ptr8= (uint8_t*)buf.ptr16;
 
 
@@ -106,24 +99,16 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
                 printf("\nAC_TLM2_PORT READ: wordsize-->%d  data-->%d",wordsize,*(buf.ptr16));
 		#endif
 
-
-
                 break;
 	      case 32:
 	       
 		data32 = *((uint32_t*)payload->get_data_ptr());
 		*(buf.ptr32) = ((uint32_t*)&data32)[0];
-
-
 		//buf.ptr8 = (uint8_t*)buf.ptr32;
 
         #ifdef debugTLM2
 		printf("\nAC_TLM2_PORT READ: wordsize-->%d  data-->%d",wordsize,*(buf.ptr32));
 		#endif
-
-
-
-
 
         	break;
 	      case 64:

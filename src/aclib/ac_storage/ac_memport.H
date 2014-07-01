@@ -37,11 +37,6 @@
 #include "ac_log.H"
 #include "ac_arch_ref.H"
 #include "ac_utils.H"
-//#include "ac_guest_byte_swap.H"
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 // 'using' statements
@@ -63,7 +58,48 @@ template<typename ac_word, typename ac_Hword> class ac_memport :
 private:
   ac_inout_if* storage;
   sc_core::sc_time time_info;
-  
+
+  // Byte Swap functions
+  inline uint16_t byte_swap(uint16_t value) {
+  #ifdef AC_GUEST_BIG_ENDIAN
+   return be16toh(value);
+  #else
+   return le16toh(value);
+  #endif
+  }
+
+  inline uint32_t byte_swap(uint32_t value) {
+  #ifdef AC_GUEST_BIG_ENDIAN
+    return be32toh(value);
+  #else
+    return le32toh(value);
+  #endif
+  }
+
+  inline uint64_t byte_swap(uint64_t value) {
+  #ifdef AC_GUEST_BIG_ENDIAN
+    return be64toh(value);
+  #else
+    return le64toh(value);
+  #endif
+  }
+
+  template <typename T>
+  inline T byte_swap(T value) {
+  #if AC_MATCH_ENDIANNESS
+    return value;
+  #else 
+    unsigned int aux;
+    T result = 0;
+    for (unsigned int i = 0; i < sizeof(T); i++) {
+      aux = value & 0xff;
+      value  >>= 8;
+      result <<= 8;
+      result |=  aux;
+    }
+    return result;
+  #endif
+  }  
 
 protected:
   typedef list<change_log<ac_word> > log_list;
@@ -71,9 +107,6 @@ protected:
   log_list changes;                 //!< Update log.
   fstream update_file;              //!< Update log binary file.
 #endif
-
-
-
 
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
@@ -99,13 +132,15 @@ public:
   ///Reads a word
   inline ac_word read(uint32_t address) {
 
+    #ifdef debugTLM2
     printf("\nac_memport::read\n");
+    #endif 
+
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
     ac_word aux_word;
     storage->read(&aux_word, address, sizeof(ac_word) * 8,time);
    
-    printf("\nac_memport::dado: %d",aux_word);
     setTimeInfo (time);
 
     ac_word tmp = byte_swap(aux_word);
@@ -117,7 +152,10 @@ public:
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
 
+    #ifdef debugTLM2
     printf("\nac_memport::read_byte\n");
+    #endif
+
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     uint8_t aux_byte;
     storage->read(&aux_byte, address, 8,time);
@@ -127,17 +165,22 @@ public:
 
   ///Reads half word
   inline ac_Hword read_half(uint32_t address) {
+    #ifdef debugTLM2
     printf("\nac_memport::read_half\n");
+    #endif
+
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     ac_Hword aux_Hword;
     storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8,time);
     setTimeInfo (time);
-    return byte_swap_16(aux_Hword);
+    return byte_swap(aux_Hword);
   }
   
   //!Writing a word
   inline void write(uint32_t address, ac_word datum) {
-printf("\nac_memport::write\n");
+    #ifdef debugTLM2
+    printf("\nac_memport::write\n");
+    #endif
      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     datum = byte_swap(datum);
     storage->write(&datum, address, sizeof(ac_word) * 8,time);
@@ -147,15 +190,21 @@ printf("\nac_memport::write\n");
 
   //!Writing a byte 
   inline void write_byte(uint32_t address, uint8_t datum) {
+    #ifdef debugTLM2
     printf("\nac_memport::write_byte\n");
+    #endif
+
     storage->write(&datum, address, 8);
   }
 
   //!Writing a short int 
   inline void write_half(uint32_t address, ac_Hword datum) {
+    #ifdef debugTLM2
     printf("\nac_memport::write_half\n");
-     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-    datum = byte_swap_16(datum);
+    #endif
+
+    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+    datum = byte_swap(datum);
     storage->write(&datum, address, sizeof(ac_Hword) * 8,time);
     setTimeInfo (time);
   }
@@ -189,7 +238,7 @@ printf("\nac_memport::write\n");
     ac_word aux_word;
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    ((ac_Hword*)(&aux_word))[oset_addr] = byte_swap_16(datum);
+    ((ac_Hword*)(&aux_word))[oset_addr] = byte_swap(datum);
     
     delays.push_back(change_log<ac_word>(base_addr, aux_word, time));
   }
