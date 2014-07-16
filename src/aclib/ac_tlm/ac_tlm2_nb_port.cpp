@@ -56,7 +56,7 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
 	#endif
  	
 	unsigned char* data_pointer = payload.get_data_ptr();		 
-	uint32_t addr = (uint32_t) payload.get_address();
+	
 
 	payload_global->set_data_ptr(data_pointer);
 
@@ -64,9 +64,9 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
         payload_global->free_all_extensions();	
 
 	#ifdef debugTLM2
-	printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),addr);        
+  printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),(uint32_t) payload.get_address());        
 	printf("\nNotifying a event in BW TRANSPORT");
-        #endif
+  #endif
 
 	this->wake_up.notify();
 
@@ -184,8 +184,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	
 	unsigned char p[32];
-	unsigned int i;
-	
+		
 	#ifdef debugTLM2 
 	printf("\n\n*******AC_TLM2_NB_PORT READ N_WORDS: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_READ_COMMAND, address);
 	#endif
@@ -194,7 +193,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	{
 	    case 8:
    	       
-		for( i=0; i<n_words; i++)
+		for(int i=0; i<n_words; i++)
   		{	
 			payload_global->set_address(address +i);
 			payload_global->set_data_length(sizeof(uint8_t));
@@ -221,7 +220,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 		break;
    
  	  case 16:
-		for( i=0; i<n_words; i++)
+		for(int i=0; i<n_words; i++)
   		{
 			payload_global->set_address(address + (i * sizeof(uint16_t)));
 			payload_global->set_data_length(sizeof(uint16_t));
@@ -236,7 +235,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	
 			wait(this->wake_up);
 
-    		        unsigned char* data_pointer = payload_global->get_data_ptr();
+    	unsigned char* data_pointer = payload_global->get_data_ptr();
 
 
 			for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
@@ -248,7 +247,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
        		break;
 	  case 32:
 		
-		for( i=0; i<n_words; i++)
+		for(int i=0; i<n_words; i++)
   		{	
 			payload_global->set_address(address + (i * sizeof(uint32_t)));
 			payload_global->set_data_length(sizeof(uint32_t));
@@ -292,8 +291,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info) {
 
   unsigned char p[32];
-  unsigned int i;
-  
   unsigned char *ptr;
 
   payload_global = new ac_tlm2_payload();
