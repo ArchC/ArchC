@@ -47,9 +47,9 @@ std::list<ac_module*> ac_module::mods_list;
 /// Standard constructor.
 ac_module::ac_module() : sc_module(sc_gen_unique_name("ac_module")),
 			 mod_id(next_mod_id++),
-			 ac_exit_status(0),
-			 instr_in_batch(0),
-			 instr_batch_size(500) {
+			 ac_exit_status(0){
+  ac_qk.set_global_quantum( sc_time(100, SC_NS) );
+  ac_qk.reset();
   this_mod = mods_list.insert(mods_list.end(), this);
   return;
 }
@@ -57,9 +57,9 @@ ac_module::ac_module() : sc_module(sc_gen_unique_name("ac_module")),
 /// Named constructor.
 ac_module::ac_module(sc_module_name nm) : sc_module(nm),
 			 mod_id(next_mod_id++),
-			 ac_exit_status(0),
-			 instr_in_batch(0),
-			 instr_batch_size(500) {
+			 ac_exit_status(0){
+  ac_qk.set_global_quantum( sc_time(100, SC_NS) );
+  ac_qk.reset();
   this_mod = mods_list.insert(mods_list.end(), this);
   return;
 }
@@ -104,6 +104,18 @@ void ac_module::set_stopped() {
 /// Public method that sets the size of the uninterrupted instruction batch
 void ac_module::set_instr_batch_size(unsigned int size)
 {
-  instr_batch_size = size;
+  //instr_batch_size = size;
+}
+
+//Implementation of default sc_time unit SC_NS -TODO 
+// void ac_module::set_quantum(unsigned int time_ns) {
+//   ac_qk.set_global_quantum( sc_time(time_ns, SC_NS));
+//   ac_qk.reset();
+// }
+
+/// Public method that sets the thread global quantum 
+void ac_module::set_quantum(sc_time time_quantum) {
+  ac_qk.set_global_quantum( time_quantum );
+  ac_qk.reset();
 }
 

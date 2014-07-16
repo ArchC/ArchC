@@ -501,9 +501,7 @@ void CreateArchHeader() {
   extern ac_sto_list *storage_list;
   extern char* project_name;
   extern char* upper_project_name;
-  //extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts;
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMPorts,
-                   HaveTLMIntrPorts, HaveTLM2NBPorts, HaveTLM2Ports, HaveTLM2IntrPorts;
+  extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, HaveTLM2NBPorts, HaveTLM2Ports, HaveTLM2IntrPorts;
 
   ac_sto_list *pstorage;
 
@@ -725,9 +723,7 @@ void CreateArchRefHeader() {
   extern ac_sto_list *storage_list;
   extern char* project_name;
   extern char* upper_project_name;
-
-  //extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts;
-  extern int HaveFormattedRegs, HaveMultiCycleIns, HaveMemHier, HaveTLMIntrPorts, HaveTLM2IntrPorts;
+  extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts, HaveTLM2IntrPorts;
 
   ac_sto_list *pstorage;
 
@@ -3325,11 +3321,9 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   }
   
   if (ACWaitFlag) {
-    fprintf( output, "%sif (instr_in_batch++ >= instr_batch_size) {\n", 
-             INDENT[base_indent]);
-    fprintf( output, "%sinstr_in_batch = 0;\n", INDENT[base_indent + 1]);
-    fprintf( output, "%swait(1, SC_NS);\n", INDENT[base_indent + 1]);
-    fprintf( output, "%s}\n\n", INDENT[base_indent]);
+    fprintf(output, "%sif (ac_qk.need_sync()) {\n", INDENT[base_indent]);
+    fprintf(output, "%sac_qk.sync();\n", INDENT[base_indent + 1]);
+    fprintf(output, "%s}\n", INDENT[base_indent]);
   }
 }
 
@@ -3590,6 +3584,9 @@ void EmitInstrExec( FILE *output, int base_indent){
     }
     fprintf(output, ");\n");
     
+    fprintf(output, "%sac_qk.inc(sc_time(%d, SC_NS));\n", INDENT[base_indent + 1],
+            pinstr->cycles);
+
     if( ACThreading )
       fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
     else

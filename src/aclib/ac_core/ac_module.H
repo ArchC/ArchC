@@ -30,6 +30,7 @@
 
 // SystemC includes
 #include <systemc.h>
+#include "tlm_utils/tlm_quantumkeeper.h"
 
 // ArchC includes
 
@@ -61,8 +62,8 @@ class ac_module: public sc_module
 
   int ac_exit_status;
 
-  unsigned int instr_in_batch;
-  unsigned int instr_batch_size;
+  // Quantum keeper for temporal decoupling
+  tlm_utils::tlm_quantumkeeper ac_qk;
 
   // SystemC special declaration.
   SC_HAS_PROCESS(ac_module);
@@ -89,7 +90,13 @@ class ac_module: public sc_module
   void set_stopped();
 
   /// Public method that sets the size of the uninterrupted instruction batch
-  void set_instr_batch_size(unsigned int size);
+  //void set_instr_batch_size(unsigned int size);
+  /// Deprecated. Use set_quantum() instead.
+  void set_instr_batch_size(unsigned int size) __attribute__((deprecated));
+
+  /// Public method that sets the thread global quantum 
+  void set_quantum( sc_time time_quantum );
+
 
 };
 
