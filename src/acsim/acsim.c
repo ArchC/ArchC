@@ -3395,7 +3395,7 @@ void EmitDecodification( FILE *output, int base_indent) {
       fprintf( output, "%sinstr_dec->valid = true;\n", 
                INDENT[base_indent]);
       
-    fprintf( output, "%sinstr_dec->id = ins_cache[IDENT];\n", 
+    fprintf( output, "%sinstr_dec->id = ins_cache ? ins_cache[IDENT]: 0;\n", 
              INDENT[base_indent]);
     
     if (ACThreading)
@@ -3411,7 +3411,7 @@ void EmitDecodification( FILE *output, int base_indent) {
       fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
   else {
-    fprintf( output, "%sins_id = ins_cache[IDENT];\n\n", INDENT[base_indent]);
+    fprintf( output, "%sins_id = ins_cache ? ins_cache[IDENT]: 0;\n\n", INDENT[base_indent]);
 
     //Checking if it is a valid instruction
     fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
