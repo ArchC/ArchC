@@ -1967,6 +1967,7 @@ void CreateProcessorImpl() {
     if ( !ACFullDecode )
       fprintf( output, "%sinstr_dec->valid = true; \\\n", INDENT[1]);
     
+    fprintf( output, "%sinstr_dec->id = 0; \\\n", INDENT[1]);
     fprintf( output, "%sinstr_dec->end_rot = &&Sys_##LOCATION;\n\n", INDENT[1]);
 
     fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[1]);
@@ -4114,7 +4115,7 @@ void EmitDispatch(FILE *output, int base_indent) {
   EmitInstrExecIni(output, base_indent);
   
   if( ACStatsFlag ){
-    fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
+    fprintf( output, "%sif(!ac_wait_sig && ins_id) {\n", INDENT[base_indent]);
     fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
             INDENT[base_indent + 1], project_name);
     fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
