@@ -50,6 +50,7 @@ ac_module::ac_module() : sc_module(sc_gen_unique_name("ac_module")),
 			 ac_exit_status(0){
   ac_qk.set_global_quantum( sc_time(100, SC_NS) );
   ac_qk.reset();
+  module_period_ns=5;  //200 MHz = 5ns
   this_mod = mods_list.insert(mods_list.end(), this);
   return;
 }
@@ -60,6 +61,7 @@ ac_module::ac_module(sc_module_name nm) : sc_module(nm),
 			 ac_exit_status(0){
   ac_qk.set_global_quantum( sc_time(100, SC_NS) );
   ac_qk.reset();
+  module_period_ns=5;  //200 MHz = 5ns
   this_mod = mods_list.insert(mods_list.end(), this);
   return;
 }
@@ -107,15 +109,14 @@ void ac_module::set_instr_batch_size(unsigned int size)
   //instr_batch_size = size;
 }
 
-//Implementation of default sc_time unit SC_NS -TODO 
-// void ac_module::set_quantum(unsigned int time_ns) {
-//   ac_qk.set_global_quantum( sc_time(time_ns, SC_NS));
-//   ac_qk.reset();
-// }
-
-/// Public method that sets the thread global quantum 
-void ac_module::set_quantum(sc_time time_quantum) {
-  ac_qk.set_global_quantum( time_quantum );
+//Implementation of default sc_time unit SC_NS
+void ac_module::set_quantum(unsigned int time_quantum_ns) {
+  ac_qk.set_global_quantum( sc_time(time_quantum_ns, SC_NS));
   ac_qk.reset();
+}
+
+/// Public method that sets the processor frequency(MHz to ns) 
+void ac_module::set_proc_freq(unsigned int proc_freq_mhz) {
+  module_period_ns=1000/proc_freq_mhz;
 }
 

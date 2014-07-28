@@ -61,6 +61,7 @@ class ac_module: public sc_module
   const unsigned mod_id;
 
   int ac_exit_status;
+  int module_period_ns;
 
   // Quantum keeper for temporal decoupling
   tlm_utils::tlm_quantumkeeper ac_qk;
@@ -94,9 +95,11 @@ class ac_module: public sc_module
   /// Deprecated. Use set_quantum() instead.
   void set_instr_batch_size(unsigned int size) __attribute__((deprecated));
 
-  /// Public method that sets the thread global quantum 
-  void set_quantum( sc_time time_quantum );
+  /// Public method that sets the thread global quantum SC_NS -TODO
+  void set_quantum(unsigned int time_quantum_ns);
 
+  /// Public method that sets the processor frequency
+  void set_proc_freq(unsigned int proc_freq);
 
 };
 

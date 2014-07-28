@@ -3585,8 +3585,9 @@ void EmitInstrExec( FILE *output, int base_indent){
     }
     fprintf(output, ");\n");
     
-    fprintf(output, "%sac_qk.inc(sc_time(%d, SC_NS));\n", INDENT[base_indent + 1],
-            pinstr->cycles);
+    if( ACWaitFlag )
+      fprintf(output, "%sac_qk.inc(sc_time(module_period_ns*%d, SC_NS));\n", INDENT[base_indent + 1],
+              pinstr->cycles);
 
     if( ACThreading )
       fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
