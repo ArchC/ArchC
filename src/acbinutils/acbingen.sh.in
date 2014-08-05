@@ -109,10 +109,11 @@ if [ ! -z ${BINUTILS_DIR} ]; then
       echo "the architecture name '${ARCH_NAME}'."
       echo
       echo "It is not recommended to continue if you have not set it by yourself."
+      echo "Use the -a option to change the architecture name (e.g. '-a ${ARCH_NAME}_1')."
 #     echo "If you continue, the Binutils files will not be patched."
       echo "==================="
       echo
-      read -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+      read -p "Do you wish to continue? (n) -> " USER_ANSWER; : ${USER_ANSWER:="n"}
       echo
       case $USER_ANSWER in 
 	  y | yes | Y | YES) PATCH_BINUTILS=0; break;;
