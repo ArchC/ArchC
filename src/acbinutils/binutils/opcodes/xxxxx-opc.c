@@ -26,8 +26,8 @@ Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  *
  *   Alexandro Baldassin            
  */
 
-#include <stdio.h>
 #include "sysdep.h"
+#include <stdio.h>
 #include `"opcode/'___arch_name___`.h"'
 
 acasm_opcode opcodes[] = {

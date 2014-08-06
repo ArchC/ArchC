@@ -29,11 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
  */
 
 
+#include "sysdep.h"
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "sysdep.h"
 #include "dis-asm.h"
 #include "opintl.h"
 #include `"opcode/'___arch_name___`.h"'
