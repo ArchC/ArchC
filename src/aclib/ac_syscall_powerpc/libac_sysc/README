@@ -1,0 +1,27 @@
+Overview
+--------
+
+The ArchC system calls library (libac_sysc.a) instruments the
+aplications to interface virtual calls with real host system calls.
+
+The GCC cross-compiled to the target architecture must be configured
+to use this library.
+
+
+How to create/configure a cross-compiler for an ArchC description
+-----------------------------------------------------------------
+
+Unfortunately at this point it is not possible to automatically
+generate a cross-compiler back-end from an ArchC description. A GCC
+cross-compiler can only be generated for architectures already
+supported by GCC.
+
+Please, take a look at "Retargeting GCC to ArchC models" in the
+Documentation section of ArchC web site for more information on how to
+create and configure a GCC cross-compiler to create aplications
+compatible with ArchC simulators.
+
+
+Thanks for using ArchC!
+The ArchC Team
+www.archc.org
