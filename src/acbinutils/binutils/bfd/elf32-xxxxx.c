@@ -836,7 +836,7 @@ elf_archc_relocate_section (output_bfd, info, input_bfd, input_section,
 	  RELOC_FOR_GLOBAL_SYMBOL (info, input_bfd, input_section, rel,
 				   r_symndx, symtab_hdr, sym_hashes,
 				   h, sec, relocation,
-				   unresolved_reloc, warned,ignored);
+				   unresolved_reloc, warned, ignored);
 
 	  // Check for special cases
 	  if (unresolved_reloc || relocation != 0)
