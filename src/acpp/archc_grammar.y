@@ -32,6 +32,7 @@
  * @{
 */
 #include <stdarg.h>
+#include <stdlib.h>
 #include "ac_tools_common.h"
 #include "core_actions.h"
 #include "asm_actions.h"

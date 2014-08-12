@@ -48,6 +48,8 @@ int ac_argc;
 char **ac_argv;
 //Name of the file containing the application to be loaded.
 char *appfilename;
+std::map<std::string, std::ofstream*> ac_cache_traces;
+
 
 //Read model options before application
 void ac_init_opt( int ac, char* av[]){
@@ -67,6 +69,7 @@ void ac_init_opt( int ac, char* av[]){
       cerr << "  --help                  Display this help message\n";
       cerr << "  --version               Display ArchC version and options used when built\n";
       cerr << "  --load=<prog_path>      Load target application\n";
+      cerr << "  --trace-cache=<cache>,<file> Trace cache access\n";
 #ifdef USE_GDB
 //      cerr << "  --gdb[=<port>]          Enable GDB support\n";
 #endif /* USE_GDB */
@@ -124,6 +127,32 @@ void ac_init_app( int ac, char* av[]){
 //         gdbstub->enable();
 //     }
 #endif /* USE_GDB */
+
+  else if ( (size>14) && (!strncmp(av[1], "--trace-cache=", 14)) ) {
+    char *comma = strchr(av[1], ',');
+    if (comma == NULL) {
+      std::cerr << "Error: invalid argument syntax.\n";
+      exit(EXIT_FAILURE);
+    }
+    std::string cache_name(av[1]+14, comma);
+    std::string file_name(comma+1, av[1]+size);
+    ac_cache_traces[cache_name] = new std::ofstream(file_name.c_str());
+    if (!ac_cache_traces[cache_name]) {
+      std::cerr << "Error opening file: " << file_name << "\n";
+      exit(EXIT_FAILURE);
+    }
+      // Remove this parameter from the list and reset the loop
+    for (int i = 1; i <= ac; i++) {
+      av[i] = av[i+1];
+    }
+    
+    ac_argc--;
+    ac--;
+    continue;
+    }
+
+
+
 
     ac --;
     av ++;

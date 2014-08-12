@@ -1,269 +1,260 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-
-/**
- * @file      ac_cache.H
- * @author    Pablo Viana <pvs@cin.ufpe.br>
- *
- *            The ArchC Team
- *            http://www.archc.org/
- *
- *            CIn - UFPE
- *
- * @version   1.0
- * @date      Thu Sep 22 11:47:36 2005
- *
- * @brief     The ArchC cache simulation class.
- *
- * @attention Copyright (C) 2002-2006 --- The ArchC Team
- *
- */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <list>
-#include "ac_storage.H"
-#include "ac_cache_if.H"
-
-#include <string>
-#include "fstream"
-
-
-
-#ifndef _AC_CACHE_H
-#define _AC_CACHE_H
-
-
-//#ifndef AC_DETAIL
-//#define AC_DETAIL
-//#endif
-
-
-#define WRITE_THROUGH true
-//#define AC_TRACE true
-//#define AC_DETAIL true
-
-#ifndef RAND_MAX
-  #define RAND_MAX 1024;
-#endif
-
-#define RANDOM 0
-#define LRU 1
-#define DEFAULT 2
-
-#define W_WORD 4
-#define W_HALF 2
-#define W_BYTE 1
-
-
-/////////////////////////////////////////////////////
-//!
-//!ArchC class for cache devices
-//!This class contains  cache parameters for
-//!behavioral simulation.
-//!The user must define three parameters:
-//!using macros for
-//!BLOCK_SIZE, NUM_BLOCKS and POLICIES
-//!
-/////////////////////////////////////////////////////
-
-
-
-class ac_cache: /*public sc_module,*/ public ac_storage , public ac_cache_if{
-
-  unsigned block_size;           //!Number of data words in a block
-  unsigned num_blocks;           //!Cache's number of lines (blocks)
-  unsigned set_size;
-  unsigned num_sets;
-  unsigned * tag;                //!Tag that certifies the address correctness
-  bool * valid;                  //!Bit-valid flag
-  bool * dirty;
-  unsigned codeSize;
-  unsigned *  chosen;             //! Element elected to be replaced (SUBSTITUIR DEPOIS POR UNSIGNED)
-  unsigned * tracker;            //! Array for tracking the cache accesses for the LRU strategy
-  int strategy;
-//  ac_storage* next_level;       //!Next lower level of the hierarchy
-//  ac_storage* previous_level;   //!Previous upper level of the hierarchy
-  ac_cache_if* next_level;       //!Next lower level of the hierarchy
-  ac_cache_if* previous_level;   //!Previous upper level of the hierarchy
-
-
-private:
-
-      //!Define the position information
-      unsigned offset;
-      unsigned set;
-      unsigned address_tag;
-
-      //!Point to the correspondent memory address
-      char *slot_data;
-      unsigned *slot_tag;
-      bool *slot_valid;
-      bool *slot_dirty;
-      unsigned element; //set' s line used
-
-      unsigned char write_policy; //byte register with the write setup |7|6|5|4|3|2|1|0|
-      // bit 0 - if set is write-through      // bit 4 - if set is write-allocate
-      // bit 1 - if set is write-back         // bit 5 - if set is write-around
-      // bit 2 - not used                     // bit 6 - not used
-      // bit 3- not used                      // bit 7 - not used
-
-       char *request_buffer;
-       int write_size;
-       bool read_access_type;
-       char* datum_ref;
-       ac_cache_if* client_global;
-       bool request_block_event;
-       bool request_write_block_event;
-       bool request_write_event;
-
-
-
-
-#ifdef  AC_TRACE  //! Trace files generation
-      char padding;
-      char access_type;
-      short size_ref;
-#endif
-
-      int hit;       // reset the hit event
-
-      unsigned char replace_status;
-      unsigned requested_address;
-
-      void ac_cache::addressing(unsigned address);               //slicing the address field
-      void ac_cache::tracing(unsigned address, unsigned type);  //access trace file writing
-//      void ac_cache::requestFromNext(unsigned address);         //request data from next storage level
-
-      void ac_cache::replaceBlockWrite();            //replace the block with the required data
-      void ac_cache::replaceBlockRead(unsigned address);            //replace the block with the required data
-
-      void ac_cache::writingBack();              //write back to the lower level the modified blocks
-
-      bool ac_cache::isWriteThrough();        //Checks the write-through policy
-      bool ac_cache::isWriteBack();           //Checks the write-back policy
-      bool ac_cache::isWriteAllocate();       //Checks the write-allocate policy
-      bool ac_cache::isWriteAround();         //Checks the write-around policy
-
-
-public:
-#ifdef AC_TRACE
-  ofstream trace;
-#endif
-//  FILE* trace;
-  //!Reading the content of an address.
-  //
-  //!
-  //! Takes as argument the 32-bit address. Searches inside the cache cobject the address asked.
-  //!The operation can result in a Hit, when the addressed tag is present and the valid bit is ok, returning the resquested data
-  //! else it can gets a Miss, asking the next hierarchical level for the data, through the "next_level" pointer.
-  //!
-  virtual ac_word ac_cache::read( unsigned address );
-
-  //!Writing to an address.
-  //
-  //!
-  //! Takes the address and the data to be writen. Searches inside the cache cobject the address asked.
-  //!The operation can result in a Hit, when the addressed tag is present and thus the new data can be writen
-  //! else it can gets a Miss, wrinting at the next_level too.
-  //!
-
-
-  //!Reading a byte
-  virtual unsigned char ac_cache::read_byte( unsigned address );
-
-
-  //!Reading half word
-  virtual ac_Hword ac_cache::read_half( unsigned address );
-
-
-
-  virtual void ac_cache::write( unsigned address, ac_word datum );
-
-  //!Class's Constructor.
-  //
-  //!
-  //!The needed arguments are 'n', 'bs', 'nb', 'ss' and 'st':
-  //!'n' is the object's name, for instance: "IC2" (Instruction Cache Level 2).
-  //!
-  virtual void ac_cache::write_byte( unsigned address, unsigned char datum );
-
-  //!Class's Constructor.
-  //
-  //!
-  //!The needed arguments are 'n', 'bs', 'nb', 'ss' and 'st':
-  //!'n' is the object's name, for instance: "IC2" (Instruction Cache Level 2).
-  //!'st' is the Strategy used for replacement (LRU or RANDOM)
-  //!
-
-  virtual void ac_cache::write_half( unsigned address, unsigned short datum );
-
-  //!Class's Constructor.
-  //
-  //!
-  //!The needed arguments are 'n', 'bs', 'nb', 'ss' and 'st':
-  //!'n' is the object's name, for instance: "IC2" (Instruction Cache Level 2).
-  //!'bs' is the Block Size described by the number of words at each cache line.
-  //!'nb' is the Number of Blocks (or lines) of the cache.
-  //!'ss' is the Set Size (associativity) in number of grouped blocks at each set.
-  //!'st' is the Strategy used for replacement (LRU or RANDOM)
-  //!'wp' is the write policiy
-  //!
-  ac_cache::ac_cache( char *n, unsigned bs, unsigned nb, unsigned ss, unsigned st, unsigned char wp = 0x11);
-
-
-
-  //!Class's Destructor
-  ac_cache::~ac_cache();
-
-  //
-  void ac_cache::bindTo(ac_cache& lower);
-
- //!Method to initialize Data array dynamically
-  void ac_cache::set_codeSize( unsigned s);
-
-/*  void ac_cache::initialize(){
-    ac_storage::initialize((unsigned)block_size*num_blocks);
-    chosen = new char[this->num_sets];
-    tracker = new char[this->set_size * this->num_sets];
-    tag = new char[num_blocks*AC_WORDSIZE/8];
-    valid = new bool[num_blocks];
-    *valid = false;
-    codeSize = 0;
-  }
-*/
-
-
-  unsigned ac_cache::get_chosen(unsigned s);
-
-  //!Method that implements the policies of replacement, based on the last access
-  void ac_cache::update(unsigned s, unsigned e);
-
-  unsigned ac_cache::get_codeSize();
-
-  void ac_cache::stall();
-
-//  void ac_cache::ready();
-  void ac_cache::ready();
-
-
-  void request_block(ac_cache_if* client, unsigned address, unsigned size_bytes);
-  void request_write_byte(ac_cache_if* client, unsigned address, unsigned char datum);
-  void request_write_half(ac_cache_if* client, unsigned address, unsigned short datum);
-  void request_write(ac_cache_if* client, unsigned address, ac_word datum);
-  void request_write_block(ac_cache_if* client, unsigned address, char* datum, unsigned size_bytes);
-
-  void response_block(char* block);
-  void response_write_byte();
-  void response_write_half();
-  void response_write();
-  void response_write_block();
-
-  void bindToNext(ac_cache_if& next);
-  void bindToPrevious(ac_cache_if& previous);
-
-//       SC_HAS_PROCESS(ac_cache);
-  void process_request();
-
+#ifndef _AC_CACHE_H_INCLUDED_
+#define _AC_CACHE_H_INCLUDED_
+
+#include "ac_cache_bhv.H"
+#include "ac_cache_trace.H"
+
+
+
+struct write_back_state {
+	bool valid;
+	bool dirty;
+	write_back_state() : valid(false), dirty(false) {}
+	bool is_invalid() {
+		return (!valid);
+	}
+	bool is_dirty() {
+		return (valid && dirty);
+	}
+	void set_valid() {
+		valid = true;
+		dirty = false;
+	}
+	void set_dirty() {
+		dirty = true;
+	}
+	void print(std::ostream &fsout) {
+		if (valid) fsout << 'V';
+		else fsout << 'I';
+		if (dirty) fsout << 'D';
+		else fsout << 'C';
+	}
 };
-#endif
+
+struct write_through_state {
+	bool valid;
+	write_through_state() : valid(false) {}
+	bool is_invalid() {
+		return (!valid);
+	}
+	void set_valid() {
+		valid = true;
+	}
+	void print(std::ostream &fsout) {
+		if (valid) fsout << 'V';
+		else fsout << 'I';
+	}
+};
+
+struct cache_statistics {
+	unsigned long long read_hit;
+	unsigned long long read_miss;
+	unsigned long long write_hit;
+	unsigned long long write_miss;
+	unsigned long long evictions;
+};
+
+template <
+	unsigned index_size,
+	unsigned block_size,
+	unsigned associativity,
+	typename cpu_word,
+	typename backing_store,
+	typename replacement_policy,
+	typename address = unsigned
+>
+class ac_write_back_cache {
+	cache_bhv<index_size, block_size, associativity, cpu_word, address, 
+	          write_back_state, replacement_policy> cache;
+	backing_store &memory;
+	ac_cache_trace *cache_trace;
+	bool trace_active;
+
+	address byte_to_word(address a) {
+		return a/sizeof(cpu_word);
+	}
+	address word_to_byte(address a) {
+		return a*sizeof(cpu_word);
+	}
+	
+	ac_write_back_cache(const ac_write_back_cache &);
+	
+	public:
+	ac_write_back_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
+	}
+	
+	~ac_write_back_cache() {
+		if (trace_active) delete cache_trace;
+	}
+	
+	void set_trace(std::ostream &o) {
+		if (trace_active) delete cache_trace;
+		cache_trace = new ac_cache_trace(o);
+		trace_active = true;
+	}
+	
+
+	  const cpu_word *read(address a, unsigned length) {
+
+		//printf("\nAC_CACHE WB::read -> address=%x  length=%d", a, length);
+
+		address b = byte_to_word(a);
+		if (!cache.get_block_for_read(b)) {
+			cache.get_available_block();
+			if (cache.block_status().is_dirty()) {
+				memory.write_block(word_to_byte(cache.block_address()),
+									     cache.read_block(), block_size);
+			}
+			a = a/block_size*block_size;
+			const cpu_word *d = memory.read_block(a, block_size);
+			cache.write_block(d);
+			cache.block_status().set_valid();
+		}
+		if (trace_active) cache_trace->add(trace_read, word_to_byte(b), length);
+		return cache.read_block_single();
+	}
+
+
+
+
+
+	  void write(address a, const cpu_word *d, unsigned length) {
+
+		  //printf("\nAC_CACHE WB::write -> address=%x  length=%d", a, length);
+
+
+		address b = byte_to_word(a);
+		if (!cache.get_block_for_write(b)) {
+			cache.get_available_block();
+			if (cache.block_status().is_dirty()) {
+				memory.write_block(word_to_byte(cache.block_address()),
+					     cache.read_block(), block_size);
+			}
+			a = a/block_size*block_size;
+			const cpu_word *d = memory.read_block(a, block_size);
+			cache.write_block(d);
+			cache.block_status().set_valid();
+		}
+		if (trace_active) cache_trace->add(trace_write, word_to_byte(b), length);
+		cache.write_block_single(d, length);
+		cache.block_status().set_dirty();
+	}
+
+
+
+	uint32_t get_size() {
+		return memory.get_size();
+	}
+	
+	void get_statistics(cache_statistics *statistics) {
+		statistics->read_hit = cache.number_read_hit();
+		statistics->read_miss = cache.number_read_miss();
+		statistics->write_hit = cache.number_write_hit();
+		statistics->write_miss = cache.number_write_miss();
+		statistics->evictions = cache.number_block_eviction();
+	}
+	
+	void print(std::ostream &fsout) {
+		fsout << cache;
+	}
+	
+	void print_statistics(ostream &out) {
+		cache.print_statistic(out);
+	}
+};
+
+template <
+	unsigned index_size,
+	unsigned block_size,
+	unsigned associativity,
+	typename cpu_word,
+	typename backing_store,
+	typename replacement_policy,
+	typename address = unsigned
+>
+class ac_write_through_cache {
+	cache_bhv<index_size, block_size, associativity, cpu_word, address,
+	          write_through_state, replacement_policy> cache;
+	backing_store &memory;
+	ac_cache_trace *cache_trace;
+	bool trace_active;
+	address byte_to_word(address a) {
+		return a/sizeof(cpu_word);
+	}
+	address word_to_byte(address a) {
+		return a*sizeof(cpu_word);
+	}
+	
+	ac_write_through_cache(const ac_write_through_cache &);
+	
+	public:
+	ac_write_through_cache(backing_store &memory_) : memory(memory_), trace_active(false) {}
+	~ac_write_through_cache() {
+		if (trace_active) delete cache_trace;
+	}
+
+	void set_trace(std::ostream &o) {
+		if (trace_active) delete cache_trace;
+		cache_trace = new ac_cache_trace(o);
+		trace_active = true;
+	}
+	
+	const cpu_word *read(address a, unsigned length) {
+
+		    //printf("\nAC_CACHE WT::read -> address=%x  length=%d", a, length);
+
+			address b = byte_to_word(a);
+			if (!cache.get_block_for_read(b)) {
+				cache.get_available_block();
+				a = a/block_size*block_size;
+				const cpu_word *d = memory.read_block(a, block_size);
+				cache.write_block(d);
+				cache.block_status().set_valid();
+			}
+			if (trace_active) cache_trace->add(trace_read, word_to_byte(b), length);
+			return cache.read_block_single();
+		}
+
+		void write(address a, const cpu_word *d, unsigned length) {
+
+			//printf("\nAC_CACHE WT::write -> address=%x  length=%d", a, length);
+   		    address b = byte_to_word(a);
+
+			if (!cache.get_block_for_write(b)) {
+				cache.get_available_block();
+				a = a/block_size*block_size;
+				const cpu_word *tmp_d = memory.read_block(a, block_size);
+				cache.write_block(tmp_d);
+				cache.block_status().set_valid();
+			}
+			if (trace_active) cache_trace->add(trace_write, word_to_byte(b), length);
+			cache.write_block_single(d, length);
+            memory.write_block(word_to_byte(cache.block_address()), cache.read_block(),block_size);
+	}
+
+
+
+	
+	void get_statistics(cache_statistics *statistics) {
+		statistics->read_hit = cache.number_read_hit();
+		statistics->read_miss = cache.number_read_miss();
+		statistics->write_hit = cache.number_write_hit();
+		statistics->write_miss = cache.number_write_miss();
+		statistics->evictions = cache.number_block_eviction();
+	}
+	
+	uint32_t get_size() {
+		return memory.get_size();
+	}
+
+	void print(std::ostream &fsout) {
+		fsout << cache;
+	}
+	
+	void print_statistics(ostream &out) {
+		cache.print_statistic(out);
+	}
+};
+
+#endif /* _AC_CACHE_H_INCLUDED_ */
 

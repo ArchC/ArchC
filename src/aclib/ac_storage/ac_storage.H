@@ -29,7 +29,9 @@
 
 // Standard includes
 #include <string>
+#include <systemc>
 
+ 
 // SystemC includes
 
 // ArchC includes
@@ -92,6 +94,8 @@ public:
 
   void write(ac_ptr buf, uint32_t address,
           int wordsize, int n_words,sc_core::sc_time &time_info);
+
+
 
 
 

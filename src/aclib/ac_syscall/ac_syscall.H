@@ -144,9 +144,9 @@ int * ac_syscall<ac_word, ac_Hword>::get_syscall_table() {
 
 AC_SYSCALL::open()
 {
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
   if (!flush_cache()) return;
-#endif
+#endif*/
   DEBUG_SYSCALL("open");
   unsigned char pathname[100];
   get_buffer(0, pathname, 100);
@@ -208,9 +208,9 @@ AC_SYSCALL::close()
 
 AC_SYSCALL::read()
 {
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
   if (!flush_cache()) return;
-#endif  
+#endif  */
   DEBUG_SYSCALL("read");
   int fd = get_int(0);
   unsigned count = get_int(2);
@@ -232,9 +232,9 @@ AC_SYSCALL::read()
 
 AC_SYSCALL::write()
 {
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
   if (!flush_cache()) return;
-#endif
+#endif*/
   DEBUG_SYSCALL("write");
   int fd = get_int(0);
   unsigned count = get_int(2);
@@ -335,11 +335,11 @@ AC_SYSCALL::fstat()
 {
   DEBUG_SYSCALL("fstat");
   static bool fstat_warn = true;
-  if (fstat_warn) {
+  /*if (fstat_warn) {
     AC_WARN("This version of fstat should not be called!");
     AC_WARN("Please, recompile your target application with an updated libac_sysc.");
     fstat_warn = false;
-  }
+  }*/
   int fd = get_int(0);
   struct stat buf;
   int ret = ::fstat(fd, &buf);
@@ -706,9 +706,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     return 0;
   } else if (syscall == sctbl[3]) { // read
     DEBUG_SYSCALL("read");
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
     if (!flush_cache()) return;
-#endif  
+#endif  */
     int fd = get_int(0);
     unsigned count = get_int(2);
     unsigned char *buf = (unsigned char*) malloc(count);
@@ -720,9 +720,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 
   } else if (syscall == sctbl[4]) { // write
     DEBUG_SYSCALL("write");
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
     if (!flush_cache()) return;
-#endif
+#endif*/
     int fd = get_int(0);
     unsigned count = get_int(2);
     unsigned char *buf = (unsigned char*) malloc(count);
@@ -734,9 +734,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 
   } else if (syscall == sctbl[5]) { // open
     DEBUG_SYSCALL("open");
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
     if (!flush_cache()) return;
-#endif
+#endif*/
     unsigned char pathname[100];
     get_buffer(0, pathname, 100);
     int flags = get_int(1);

@@ -47,6 +47,11 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <map>
+#include <string>
+
+
+
 
 
 // Forward declarations of ac_arch and ac_arch_ref.
@@ -58,6 +63,8 @@ using std::setw;
 
 extern int ac_argc;
 extern char **ac_argv;
+extern std::map<std::string, std::ofstream*> ac_cache_traces;
+
 
 // Prototypes
 void ac_init_opt( int ac, char* av[]);

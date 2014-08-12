@@ -27,6 +27,7 @@
 #include "acpp.h"
 #include "stdlib.h"
 #include "string.h"
+ #include <stdbool.h>
 
 
 //#define DEBUG_STORAGE
@@ -418,6 +419,12 @@ int main(int argc, char** argv) {
   if( ACDDecoderFlag )
     ShowDecoder(decoder -> decoder, 0);
 
+
+  /*cache*/
+  EnumerateCaches();
+  GetFetchDevice();
+  GetLoadDevice();
+
   //Creating Resources Header File
   CreateArchHeader();
   CreateArchRefHeader();
@@ -552,6 +559,20 @@ void CreateArchHeader() {
     fprintf(output, "template <typename ac_word> class AC_GDB;\n\n");
   }
 
+
+ /*cache*/
+ if (HaveMemHier) {
+      fprintf(output, "#include \"ac_cache.H\"\n");
+      fprintf(output, "#include \"ac_mem.H\"\n");
+      fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_lru_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_cache_if.H\"\n");
+        }
+
+
+
   //Declaring Architecture Resources class.
   COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.\n");
   fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", 
@@ -641,36 +662,62 @@ void CreateArchHeader() {
       case CACHE:
       case ICACHE:
       case DCACHE:
-        //It is a generic cache. Just emit a base container object.
-        if( !HaveMemHier ) { 
-          fprintf( output, "%sac_storage %s_stg;\n", 
-                   INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", 
-                  INDENT[1], project_name, project_name, pstorage->name);
-        }
-        else{
-          //It is an ac_cache object.
-          fprintf( output, "%sac_cache %s;\n", INDENT[1], pstorage->name);
-        }
-        break;
 
-      case MEM:
-        if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-          fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", 
-                  INDENT[1], project_name, project_name, pstorage->name);
+         /*cache*/
+         if (!HaveMemHier) {  //It is a generic cache. Just emit a base container object.
+            fprintf(output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
+            /*****/
+            fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
+              INDENT[1], project_name, project_name, pstorage->name);
         }
-        else{
+        else {
+            //It is an ac_cache object.
+            ac_cache_parms *p = pstorage->parms;
+            if (p == NULL)
+                abort();
+
+            fprintf(output, "%s%s %s;\n", INDENT[1], pstorage->class_declaration,
+              pstorage->name);
+
+            if (pstorage->level == 0) {
+                fprintf(output, "%sac_cache_if<%s_parms::ac_word, %s_parms::ac_Hword, %s >"
+                        " %s_if;\n", INDENT[1], project_name, project_name,
+                        pstorage->class_declaration, pstorage->name);
+                /*****/
+                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
+                        "%s_port;\n", INDENT[1], project_name, project_name, pstorage->name);
+            }
+       }
+        break;
+      /*cache*/  
+      case MEM:
+
+        /*if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
+          fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+        }
+        else
+        {
           //It is an ac_mem object.
           fprintf( output, "%sac_mem %s;\n", INDENT[1], pstorage->name);
-        }
+        }*/
+
+        if (!HaveMemHier) { //It is a generic mem. Just emit a base container object.
+          fprintf(output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+            } else {
+          //It is an ac_mem object.
+          unsigned i = pstorage->size * 8 / wordsize;
+          fprintf(output, "%sac_mem<%u, %s_parms::ac_word> %s;\n", INDENT[1], i, project_name,
+            pstorage->name);
+            }
+
         break;
 
-      case TLM_PORT:
+       case TLM_PORT:
         fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", 
-                INDENT[1], project_name, project_name, pstorage->name);
-        break;
+        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+        break;  
 
       case TLM2_PORT:
         fprintf(output, "%sac_tlm2_port %s_port;\n", INDENT[1], pstorage->name);
@@ -755,7 +802,19 @@ void CreateArchRefHeader() {
   if (HaveTLM2IntrPorts)
          fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
 
-  fprintf(output, "\n");       
+  fprintf(output, "\n");   
+
+
+if (HaveMemHier) {
+      fprintf(output, "#include \"ac_cache.H\"\n");
+      fprintf(output, "#include \"ac_mem.H\"\n");
+      fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
+      fprintf(output, "#include \"ac_lru_replacement_policy.H\"\n");
+        }
+
+
 
   COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
   fprintf(output, "class %s_arch;\n\n", project_name);
@@ -849,24 +908,32 @@ void CreateArchRefHeader() {
       case CACHE:
       case ICACHE:
       case DCACHE:
-        if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-          fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", 
-                   INDENT[1], project_name, project_name, pstorage->name);
-        }
-        else{
+        if (!HaveMemHier) { //It is a generic cache. Just emit a base container object.
+              /*****/
+
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n",
+            INDENT[1], project_name, project_name, pstorage->name);
+            } else {
           //It is an ac_cache object.
-          fprintf( output, "%sac_cache& %s;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration,
+            pstorage->name);
+          if (pstorage->level == 0) {
+              /*****/
+
+              fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
+                      "&%s_port;\n", INDENT[1], project_name, project_name, pstorage->name);
+          }
         }
         break;
 
       case MEM:
-        if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-          fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", 
-                   INDENT[1], project_name, project_name, pstorage->name);
+       if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
+        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
         }
-        else{
-          //It is an ac_mem object.
-          fprintf( output, "%sac_mem& %s;\n", INDENT[1], pstorage->name);
+       else{
+         //It is an ac_mem object.
+         fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration,
+          pstorage->name);
         }
         break;
 
@@ -923,17 +990,23 @@ void CreateArchRefImpl() {
           "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
           project_name, project_name, project_name, project_name, project_name);
 
-  /* Declaring ac_pc reference */
   fprintf(output, "%sac_pc(arch.ac_pc),\n", INDENT[1]);
 
-  /* Declaring storage devices */
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name,
-            pstorage->name);
-    if (pstorage->next != NULL) {
-      fprintf(output, ", ");
+ /* Declaring storage devices */
+    for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+      fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
+      if (HaveMemHier && pstorage->level == 0) {
+        if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
+          fprintf(output, ", %s%s_port(arch.%s_port)", INDENT[1], pstorage->name, pstorage->name);
+            }
+         }
+         if (pstorage->next != NULL) {
+              fprintf(output, ", ");
+         }
+
     }
-  }
+
+   
   fprintf(output, " {}\n\n");
   fclose( output);
 
@@ -1934,11 +2007,11 @@ void CreateProcessorImpl() {
   fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
   fprintf(output, "%s}\n\n", INDENT[1]);
 
-  if( HaveMemHier ) {
+  /*if( HaveMemHier ) {
     fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[1]);
     fprintf( output, "%sreturn;\n", INDENT[2]);
     fprintf( output, "%s}\n\n", INDENT[1]);
-  }
+  }*/
   
   // Starting
   fprintf( output, "%sif( start_up ){\n", INDENT[1]);
@@ -2023,6 +2096,24 @@ void CreateProcessorImpl() {
   /* init() and stop() */
   /* init() with no parameters */
   fprintf(output, "void %s::init() {\n", project_name);
+
+  /*CACHE*/
+  for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
+        switch(pstorage->type) {
+        case CACHE:
+        case ICACHE:
+        case DCACHE:
+            fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
+                            "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
+                            INDENT[1], pstorage->name, pstorage->name, pstorage->name);
+            default: 
+          continue;
+        }
+
+  }
+
+
+
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2053,6 +2144,26 @@ void CreateProcessorImpl() {
   fprintf(output, "%sac_init_opt( ac, av);\n", INDENT[1]);
   fprintf(output, "%sac_init_app( ac, av);\n", INDENT[1]);
   fprintf(output, "%sAPP_MEM->load(appfilename);\n", INDENT[1]);
+
+
+  for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
+  switch(pstorage->type) {
+  case CACHE:
+  case ICACHE:
+  case DCACHE:
+      fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
+                      "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
+                      INDENT[1], pstorage->name, pstorage->name, pstorage->name);
+       
+       default: continue;
+
+     }
+  }
+
+
+
+
+
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2145,6 +2256,26 @@ void CreateProcessorImpl() {
   fprintf(output, "void %s::PrintStat() {\n", project_name);
   fprintf(output, "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n", 
           INDENT[1], project_name, project_name);
+
+
+
+   if (HaveMemHier) {
+  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+      switch(pstorage->type) {
+      case CACHE:
+      case ICACHE:
+      case DCACHE:
+    fprintf(output, "%sstd::cerr << \"cache: %s\\n\";\n", INDENT[1], pstorage->name);
+    fprintf(output, "%s%s.print_statistics(std::cerr);\n", INDENT[1], pstorage->name);
+    break;
+      default:
+    continue;
+      }
+  }
+  }
+ 
+
+
   fprintf(output, "}\n\n");
 
   /* GDB enable method */
@@ -2195,6 +2326,13 @@ void CreateArchImpl() {
 
   fprintf( output, "#include \"%s_arch.H\"\n\n", project_name);
 
+  if (HaveMemHier) {
+  fprintf(output, "#include \"ac_cache_if.H\"\n");
+     }
+
+     fprintf(output, "\n");
+
+
   /* Emitting Constructor */
   fprintf(output, "%s%s_arch::%s_arch() :\n", 
           INDENT[0], project_name, project_name);
@@ -2237,24 +2375,33 @@ void CreateArchImpl() {
       case CACHE:
       case ICACHE:
       case DCACHE:
-        if( !pstorage->parms ) { //It is a generic cache. Just emit a base container object.
-          fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-          fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+        if (!pstorage->parms) { //It is a generic cache. Just emit a base container object.
+        fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name,
+          pstorage->name, pstorage->size);
+        fprintf(output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+          } else {
+        //It is an ac_cache object.
+        fprintf(output, "%s%s(%s)", INDENT[1], pstorage->name, pstorage->higher->name);
+
+        if (HaveMemHier && pstorage->level == 0) {
+            fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name, pstorage->name);
+            fprintf(output, ",\n%s%s_port(*this, %s_if)", INDENT[1], pstorage->name,
+              pstorage->name);
         }
-        else //It is an ac_cache object.
-          EmitCacheDeclaration(output, pstorage, 0);
+          }
         break;
 
       case MEM:
         if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-          fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-          fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
-        }
-        else{
-          //It is an ac_mem object.
-          fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-          fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
-        }
+        fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+      }
+      else{
+        //It is an ac_mem object.
+        //fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        //fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+        fprintf(output, "%s%s()", INDENT[1], pstorage->name);
+      }
         break;
 
       case TLM_PORT:
@@ -2308,7 +2455,14 @@ case TLM2_PORT:
     }
   }
 
-  fprintf( output, "%sIM = &%s;\n", INDENT[1], fetch_device->name);
+  // fprintf( output, "%sIM = &%s;\n", INDENT[1], fetch_device->name);
+  /*CACHE*/
+   if (!HaveMemHier) {
+  fprintf(output, "%sIM = &%s;\n", INDENT[1], fetch_device->name);
+     }
+     else {
+  fprintf(output, "%sIM = &%s_port;\n", INDENT[1], fetch_device->name);
+     }
 
   /* Determining which device is going to be used for loading applications*/
   /* The device used for loading applications must be the one in the highest
@@ -2326,11 +2480,11 @@ case TLM2_PORT:
   fprintf( output, "%sAPP_MEM = &%s;\n\n", INDENT[1], load_device->name);
 
   /* Connecting memory hierarchy */
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
+  /*for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
     if( pstorage->higher )
       fprintf( output, "%s%s.bindToNext(%s);\n", 
                INDENT[1], pstorage->name, pstorage->higher->name );
-    
+  */  
   fprintf( output, "}\n\n");
 }
 
@@ -3312,14 +3466,14 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
     fprintf( output, "%s}\n", INDENT[base_indent]);
   }
 
-  if( HaveMemHier ) {
+  /*if( HaveMemHier ) {
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next ) {
       if( pstorage->type == CACHE || pstorage->type == ICACHE || 
           pstorage->type == DCACHE || pstorage->type == MEM )
         fprintf( output, "%s%s.process_request( );\n", 
                  INDENT[base_indent], pstorage->name);
     }
-  }
+  }*/
   
   if (ACWaitFlag) {
     fprintf(output, "%sif (ac_qk.need_sync()) {\n", INDENT[base_indent]);
@@ -3336,7 +3490,7 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
 void EmitDecodification( FILE *output, int base_indent) {
   extern int wordsize, fetchsize, HaveMemHier, largest_format_size;
 
-  if( HaveMemHier ){
+  /*if( HaveMemHier ){
     if (fetchsize == wordsize)
       fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read( ac_pc );\n\n", 
                INDENT[base_indent]);
@@ -3350,15 +3504,21 @@ void EmitDecodification( FILE *output, int base_indent) {
       AC_ERROR("Fetchsize differs from wordsize or (wordsize/2) or 8: not implemented.");
       exit(EXIT_FAILURE);
     }
+    
+   
 
     fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[base_indent]);
-    if (ACThreading)
-      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
-              INDENT[base_indent + 1]);
-    else 
-      fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
-    fprintf( output, "%s}\n", INDENT[base_indent]);
-  }
+
+   */
+
+    //if (ACThreading)
+    //  fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+    //          INDENT[base_indent + 1]);
+    //else 
+    //  fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
+    
+  
+  //}
 
   if( ACDecCacheFlag ){
     fprintf( output, "%sinstr_dec = (DEC_CACHE + (", INDENT[base_indent]);
@@ -4279,3 +4439,205 @@ void ReadConfFile(){
   free(conf_filename_local);
   free(conf_filename_global);
 }
+
+
+
+
+void ParseCache(ac_sto_list * cache_in)
+{
+    ac_cache_parms *p;
+    bool fully_associative = false;
+    extern char *project_name;
+    struct CacheObject *cache_out;
+    if (cache_in->cache_object != NULL)
+  abort();
+
+    // Let the OS free this in the end
+    cache_in->cache_object = malloc(sizeof(struct CacheObject));
+    cache_out = cache_in->cache_object;
+
+    // 1st parameter
+    p = cache_in->parms;
+    if (!strcmp(p->str, "dm") || !strcmp(p->str, "DM")) {
+  cache_out->associativity = 1;
+    } else if (!strcmp(p->str, "fully") || !strcmp(p->str, "FULLY")) {
+  fully_associative = true;
+    } else if (sscanf(p->str, " %d", &cache_out->associativity) <= 0 ||
+         cache_out->associativity < 1) {
+  AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
+  printf("The first parameter must be a valid associativity: \"dm\","
+         " \"2w\", \"4w\", ..., \"fully\" \n");
+  exit(EXIT_FAILURE);
+    }
+    // 2nd parameter
+    p = p->next;
+    if (fully_associative) {
+  cache_out->associativity = p->value;
+    }
+    cache_out->block_count = p->value;
+
+    // 3rd parameter
+    p = p->next;
+    cache_out->block_size = p->value;
+
+    // 4th parameter
+    p = p->next;
+    if (!strcmp(p->str, "wt") || !strcmp(p->str, "WT")) {
+  cache_out->type = WriteThrough;
+    } else if (!strcmp(p->str, "wb") || !strcmp(p->str, "WB")) {
+  cache_out->type = WriteBack;
+    } else {
+  AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
+  printf("The fourth parameter must be a valid write policy: \"wt\" or \"wb\".\n");
+    }
+
+    // 5th parameter
+    p = p->next;
+    if (p == NULL) {
+  if (cache_out->associativity > 1) {
+      AC_ERROR("Missing parameter in cache declaration: %s\n", cache_in->name);
+      printf("Non-direct-mapped caches need a replacement policy as the fifth "
+       "parameter: \"plrum\", \"random\", \"fifo\" or \"lru\".\n");
+      exit(EXIT_FAILURE);
+  }
+  cache_out->replacement_policy = None;
+    } else {
+  if (cache_out->associativity <= 1) {
+      AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
+      printf("For direct-mapped caches there must be only four parameters "
+       "(without a replacement policy).\n");
+      exit(EXIT_FAILURE);
+  }
+  if (!strcmp(p->str, "plrum") || !strcmp(p->str, "PLRUM")) {
+      cache_out->replacement_policy = PLRUM;
+  } else if (!strcmp(p->str, "random") || !strcmp(p->str, "RANDOM")) {
+      cache_out->replacement_policy = Random;
+  } else if (!strcmp(p->str, "fifo") || !strcmp(p->str, "FIFO")) {
+      cache_out->replacement_policy = FIFO;
+  } else if (!strcmp(p->str, "lru") || !strcmp(p->str, "LRU")) {
+      cache_out->replacement_policy = LRU;
+  } else {
+      AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
+      printf("The fifth parameter must be a valid replacement strategy:"
+       "\"plrum\", \"random\", \"fifo\" or \"lru\".\n");
+      exit(EXIT_FAILURE);
+  }
+    }
+}
+
+void MemoryClassDeclaration(ac_sto_list * memory)
+{
+    const unsigned s = 20;
+    unsigned i = memory->size * 8 / wordsize;
+    memory->class_declaration = malloc(s);
+    if (snprintf(memory->class_declaration, s, "ac_mem<%d>", i) >= s)
+  abort();
+}
+
+void TLMMemoryClassDeclaration(ac_sto_list * memory)
+{
+    extern char *project_name;
+    const unsigned s = 70;
+    //unsigned i = memory->size * 8 / wordsize;
+    memory->class_declaration = malloc(s);
+    if (snprintf(memory->class_declaration, s, "ac_memport<%s_parms::ac_word, %s_parms::ac_Hword>", project_name, project_name) >= s)
+  abort();
+}
+
+/*void TLMCacheMemoryClassDeclaration(ac_sto_list * memory)
+{
+    extern char *project_name;
+    const unsigned s = 70;
+    //unsigned i = memory->size * 8 / wordsize;
+    memory->class_declaration = malloc(s);
+
+
+    if (snprintf(memory->class_declaration, s, "ac_cache_memport<%s_parms::ac_word, %s_parms::ac_Hword>", project_name, project_name) >= s)
+  abort();
+}*/
+
+
+void CacheClassDeclaration(ac_sto_list * storage)
+{
+    const unsigned s = 800;
+    extern char *project_name;
+    struct CacheObject *cache = storage->cache_object;
+    if (storage->higher->class_declaration == NULL) {
+  if (storage->higher->type == MEM) {
+      MemoryClassDeclaration(storage->higher);
+  }
+        else if (storage->higher->type == TLM_PORT || storage->higher->type == TLM2_PORT || storage->higher->type ==TLM2_NB_PORT)
+        {
+        /*****/
+          TLMMemoryClassDeclaration(storage->higher);
+        }
+        else {
+      ParseCache(storage->higher);
+      CacheClassDeclaration(storage->higher);
+  }
+    }
+    storage->class_declaration = malloc(s);
+    int r = snprintf(storage->class_declaration, s,
+         "%s<%d, %d, %d, %s_parms::ac_word, %s, %s>", CacheName[cache->type],
+         cache->block_count / cache->associativity, cache->block_size,
+         cache->associativity, project_name, storage->higher->class_declaration,
+         ReplacementPolicyName[cache->replacement_policy]);
+    if (r >= s)
+  abort();
+}
+
+void EnumerateCaches()
+{
+    extern ac_sto_list *storage_list;
+    ac_sto_list *i;
+    for (i = storage_list; i != NULL; i = i->next) {
+        //printf("\nprinting i->type = %d", i->type);
+        if (i->type == ICACHE || i->type == DCACHE || i->type == CACHE) {
+           if (i->parms != NULL) {
+    ParseCache(i);
+    CacheClassDeclaration(i);
+      }
+  }
+    }
+}
+
+void GetFetchDevice()
+{
+    extern ac_sto_list *fetch_device, *storage_list;
+    ac_sto_list *pstorage;
+
+    /* Determining which device is gonna be used for fetching instructions */
+    if (!fetch_device) {
+  //The parser has not determined because there is not an ac_icache obj declared.
+  //In this case, look for the object with the lowest (zero) hierarchy level.
+  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
+      if (pstorage->level == 0 && pstorage->type != REG && pstorage->type != REGBANK
+    && pstorage->type != TLM_INTR_PORT)
+    fetch_device = pstorage;
+
+  if (!fetch_device) {  //Couldn't find a fetch device. Error!
+      AC_INTERNAL_ERROR("Could not determine a device for fetching.");
+      exit(EXIT_FAILURE);
+  }
+    }
+}
+
+void GetLoadDevice()
+{
+    extern ac_sto_list *storage_list, *fetch_device;
+    ac_sto_list *pstorage;
+    load_device = storage_list;
+    /* Determining which device is going to be used for loading applications */
+    /* The device used for loading applications must be the one in the highest
+       level of a memory hierachy. */
+    for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+  if (pstorage->level > load_device->level)
+      load_device = pstorage;
+    }
+
+    /* If there is only one level, which is gonna be zero, then it is the same
+       object used for fetching. */
+    if (load_device->level == 0)
+  load_device = fetch_device;
+}
+

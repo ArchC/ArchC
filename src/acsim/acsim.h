@@ -110,6 +110,45 @@ enum _ac_cmd_options {
 
 typedef enum  _ac_cmd_options_ ac_cmd_options;
 
+
+enum CacheType {
+        WriteBack,
+        WriteThrough
+};
+
+static const char *CacheName[] = {
+  [WriteBack] = "ac_write_back_cache",
+  [WriteThrough] = "ac_write_through_cache"
+};
+
+enum CacheReplacementPolicy {
+  FIFO,
+  Random,
+  PLRUM,
+  LRU,
+  None
+};
+
+static const char *ReplacementPolicyName[] = {
+  [FIFO] = "ac_fifo_replacement_policy",
+  [Random] = "ac_random_replacement_policy",
+  [PLRUM] = "ac_plrum_replacement_policy",
+  [LRU] = "ac_lru_replacement_policy",
+  [None] = "ac_fifo_replacement_policy" // placeholder
+};
+
+
+struct CacheObject {
+  enum CacheType type;
+  unsigned block_count; // index size * associativity
+  unsigned block_size;
+  unsigned associativity;
+  enum CacheReplacementPolicy replacement_policy;
+};
+
+
+
+
 //@}
 
 ///////////////////////////////////////
@@ -175,6 +214,15 @@ void EmitVetLabelAt(FILE *output, int base_indent);                             
  * @{
  */
 void ReadConfFile(void);                          //!< Read archc.conf contents.
+void ParseCache(ac_sto_list *cache_in);
+void CacheClassDeclaration(ac_sto_list *storage);
+void MemoryClassDeclaration(ac_sto_list *memory);
+void TLMMemoryClassDeclaration(ac_sto_list *memory);
+void EnumerateCaches(void);
+void GetFetchDevice(void);
+void GetLoadDevice(void);
+
+
 //@}
 
 

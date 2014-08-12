@@ -89,7 +89,7 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
           case 16:
             data16 = *((uint16_t*)payload->get_data_ptr());
             *(buf.ptr16) = ((uint16_t*)&data16)[0];
-            //buf.ptr8= (uint8_t*)buf.ptr16;
+           
             #ifdef debugTLM2 
             printf("\nAC_TLM2_PORT READ: wordsize-->%d  data-->%d",wordsize,*(buf.ptr16));
             #endif
@@ -98,7 +98,7 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
           case 32:
             data32 = *((uint32_t*)payload->get_data_ptr());
             *(buf.ptr32) = ((uint32_t*)&data32)[0];
-            //buf.ptr8 = (uint8_t*)buf.ptr32;
+            
             #ifdef debugTLM2
             printf("\nAC_TLM2_PORT READ: wordsize-->%d  data-->%d",wordsize,*(buf.ptr32));
             #endif
@@ -176,6 +176,8 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address,
                 (*this)->b_transport(*payload, time_info);      
 
                 buf.ptr32[i]= *((uint32_t*)p);
+                //buf.ptr32[i]= ((uint32_t*)p)[0];
+                //buf.ptr32[i]= p[0];
             }
         break;
         
@@ -227,10 +229,9 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_
 
         payload->set_command(tlm::TLM_WRITE_COMMAND);
         
-        //((uint16_t*)p)[0] = *((uint16_t*)buf.ptr8);
+        //p[0] = *buf.ptr16;
 
         ((uint16_t*)p)[0] = *(buf.ptr16);
-
 
         (*this)->b_transport(*payload, time_info);  
       break;
@@ -241,9 +242,12 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_
         payload->set_data_ptr(p);
         payload->set_data_length(sizeof(uint32_t));
 
-        //((uint32_t*)p)[0]= *((uint32_t*)buf.ptr8);
+        
 
+        
+        //p[0] = *(buf.ptr32);
         ((uint32_t*)p)[0]=*(buf.ptr32);
+
 
         payload->set_data_ptr(p);      
         (*this)->b_transport(*payload, time_info);  
@@ -278,6 +282,8 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address,
     payload->set_address(address + (i * sizeof(uint32_t)));
     payload->set_data_ptr(p);
 
+    
+    //p[0] = buf.ptr32[i];
     *((uint32_t*)p) = buf.ptr32[i];
 
     #ifdef debugTLM2

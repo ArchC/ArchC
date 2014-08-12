@@ -87,10 +87,10 @@ public:
 
   //!Writing to a register. Overloaded Method.
   void write( unsigned address , ac_word datum  ){
-#ifdef AC_MEM_HIERARCHY
+/*#ifdef AC_MEM_HIERARCHY
     if(ac_wait_sig)
       return;
-#endif
+#endif*/
   
 #ifdef AC_UPDATE_LOG
     changes.push_back( chg_log(address, datum , sc_simulation_time()));

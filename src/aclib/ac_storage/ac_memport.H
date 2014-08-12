@@ -1,5 +1,4 @@
-/**
- * @file      ac_memport.H
+/* @file      ac_memport.H
  * @author    Thiago Massariolli Sigrist
  *
  *            The ArchC Team
@@ -37,6 +36,7 @@
 #include "ac_log.H"
 #include "ac_arch_ref.H"
 #include "ac_utils.H"
+
 //////////////////////////////////////////////////////////////////////////////
 
 // 'using' statements
@@ -56,10 +56,19 @@ template<typename ac_word, typename ac_Hword> class ac_memport :
   public ac_arch_ref<ac_word, ac_Hword> {
 
 private:
+
   ac_inout_if* storage;
+
+  ac_word aux_word;
+  ac_Hword aux_Hword;
+  uint8_t aux_byte;
+
+  ac_ptr buf;
+
   sc_core::sc_time time_info;
 
-  // Byte Swap functions
+
+ // Byte Swap functions
   inline uint16_t byte_swap(uint16_t value) {
   #ifdef AC_GUEST_BIG_ENDIAN
    return be16toh(value);
@@ -101,6 +110,10 @@ private:
   #endif
   }  
 
+
+
+  
+
 protected:
   typedef list<change_log<ac_word> > log_list;
 #ifdef AC_UPDATE_LOG
@@ -115,49 +128,47 @@ protected:
 public:
 
   ///Default constructor
-  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref) : ac_arch_ref<ac_word, ac_Hword>(ref),time_info(0,SC_NS) {}
-
-  ///Default constructor with initialization
-  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref, ac_inout_if& stg) : ac_arch_ref<ac_word, ac_Hword>(ref), storage(&stg),time_info(0,SC_NS) {}
-
-  virtual ~ac_memport() {}
-
-
-  sc_core::sc_time getTimeInfo() {
-  return time_info;
+  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref) : ac_arch_ref<ac_word, ac_Hword>(ref),time_info(0,SC_NS){
+	  	  buf.ptr8 = new uint8_t [1024];
   }
 
-  void setTimeInfo(sc_core::sc_time time) { time_info = time;  }
+  ///Default constructor with initialization
+  explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref, ac_inout_if& stg) : ac_arch_ref<ac_word, ac_Hword>(ref), storage(&stg),time_info(0,SC_NS) {
+	      buf.ptr8 = new uint8_t [1024];
+  }
 
-  ///Reads a word
+  virtual ~ac_memport() { delete [] buf.ptr8; }
+
+  sc_core::sc_time getTimeInfo() {
+	return time_info;
+  }
+
+  void setTimeInfo(sc_core::sc_time time) {	time_info = time;  }
+
+  uint32_t byte_to_word(uint32_t a) {
+     		return a/sizeof(ac_word);
+     	}
+
+
+///Reads a word
   inline ac_word read(uint32_t address) {
+	//printf("\n\nAC_MEMPORT::read-> address=%x", address);
 
-    #ifdef debugTLM2
-    printf("\nac_memport::read\n");
-    #endif 
+	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
-    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-
-    ac_word aux_word;
     storage->read(&aux_word, address, sizeof(ac_word) * 8,time);
-   
+    if (!this->ac_mt_endian) {
+    	aux_word = byte_swap(aux_word);
+    }
     setTimeInfo (time);
-
-    ac_word tmp = byte_swap(aux_word);
-    
-    return byte_swap(aux_word);
-    
+    return aux_word;
   }
 
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
 
-    #ifdef debugTLM2
-    printf("\nac_memport::read_byte\n");
-    #endif
-
+    //printf("\n\nAC_MEMPORT::read_byte->address=%x", address);
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-    uint8_t aux_byte;
     storage->read(&aux_byte, address, 8,time);
     setTimeInfo (time);
     return aux_byte;
@@ -165,63 +176,118 @@ public:
 
   ///Reads half word
   inline ac_Hword read_half(uint32_t address) {
-    #ifdef debugTLM2
-    printf("\nac_memport::read_half\n");
-    #endif
+
+    //printf("\n\nAC_MEMPORT::read_half address=%x", address);
 
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-    ac_Hword aux_Hword;
+
     storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8,time);
+
+    if (!this->ac_mt_endian) {
+      aux_Hword = convert_endian(sizeof(ac_Hword), aux_Hword, 0);
+    }
     setTimeInfo (time);
-    return byte_swap(aux_Hword);
+    return aux_Hword;
   }
   
+
+  const ac_word *read_block(uint32_t address, unsigned l) {
+
+	    //printf("\nAC_MEMPORT::read_block-> address=%x", address);
+
+	    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+
+	    ac_word *p = (ac_word*) buf.ptr8;
+
+	    l = byte_to_word(l);
+
+	    for (unsigned i=0; i<l; i++)
+	    {
+	    	storage->read(&(p[i]), address+i*sizeof(ac_word), sizeof(ac_word) * 8,time);
+	    	setTimeInfo (time);
+	    }
+
+	    return p;
+
+  	}
+
+
   //!Writing a word
-  inline void write(uint32_t address, ac_word datum) {
-    #ifdef debugTLM2
-    printf("\nac_memport::write\n");
-    #endif
-     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-    datum = byte_swap(datum);
-    storage->write(&datum, address, sizeof(ac_word) * 8,time);
+    inline void write(uint32_t address, ac_word datum) {
 
-    setTimeInfo (time);
-  }
+      //printf("\n\nAC_MEMPORT::write-> address=%x datum=%x", address, datum);
 
-  //!Writing a byte 
-  inline void write_byte(uint32_t address, uint8_t datum) {
-    #ifdef debugTLM2
-    printf("\nac_memport::write_byte\n");
-    #endif
+      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      aux_word = datum;
+      if (!this->ac_mt_endian) {
+    	aux_word = byte_swap(datum);
 
-    storage->write(&datum, address, 8);
-  }
+      }
+      storage->write(&aux_word, address, sizeof(ac_word) * 8,time);
+      setTimeInfo (time);
+    }
 
-  //!Writing a short int 
-  inline void write_half(uint32_t address, ac_Hword datum) {
-    #ifdef debugTLM2
-    printf("\nac_memport::write_half\n");
-    #endif
+   //!Writing a byte
+    inline void write_byte(uint32_t address, uint8_t datum) {
 
-    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-    datum = byte_swap(datum);
-    storage->write(&datum, address, sizeof(ac_Hword) * 8,time);
-    setTimeInfo (time);
-  }
+  	    //printf("\n\nAC_MEMPORT::write_byte->address=%x datum=%x", address, datum);
+
+        sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+        storage->write(&datum, address, 8,time);
+        setTimeInfo (time);
+    }
+
+    //!Writing a short int
+    inline void write_half(uint32_t address, ac_Hword datum) {
+
+       //printf("\n\nAC_MEMPORT::write_half-> address=%x datum=%x", address, datum);
+
+       sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+
+       aux_Hword = datum;
+
+       if (!this->ac_mt_endian) {
+          aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
+       }
+
+       storage->write(&aux_Hword, address, sizeof(ac_Hword) * 8,time);
+       setTimeInfo (time);
+    }
+
+    void write_block(uint32_t address, const ac_word *d, unsigned length) {
+
+      	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+
+      	unsigned l = byte_to_word(length);
+
+      	//unsigned max_length = 0x20000000-address;
+      	//if (l > max_length) std::abort();
+
+
+      	for (unsigned i=0; i<l; i++)
+        {
+        	aux_word = d[i];
+        	storage->write(&aux_word, address+i*sizeof(ac_word), sizeof(ac_word) * 8,time);
+        	setTimeInfo (time);
+        }
+
+	}
 
 #ifdef AC_DELAY
   //!Writing a word
   inline void write(uint32_t address, ac_word datum, uint32_t time) {
-    delays.push_back(change_log<ac_word>(address, byte_swap(datum), time));
+    if (!this->ac_mt_endian)
+      delays.push_back(change_log<ac_word>(address, byte_swap(datum), time));
+    else
+      delays.push_back(change_log<ac_word>(address, datum, time));
   }
 
   //!Writing a byte 
   inline void write_byte(uint32_t address, uint8_t datum,
-			 uint32_t time) {
+       uint32_t time) {
     uint32_t oset_addr = address % sizeof(ac_word);
     uint32_t base_addr = address - oset_addr;
-    
-    ac_word aux_word;
+
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
     ((uint8_t*)(&aux_word))[oset_addr] = datum;
@@ -235,12 +301,16 @@ public:
     uint32_t oset_addr = address % sizeof(ac_word);
     uint32_t base_addr = address - oset_addr;
 
-    ac_word aux_word;
     storage->read(&aux_word, base_addr, sizeof(ac_word) * 8);
 
-    ((ac_Hword*)(&aux_word))[oset_addr] = byte_swap(datum);
+    aux_Hword = datum;
+    if (!this->ac_mt_endian) {
+      aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
+    }
+    ((ac_Hword*)(&aux_word))[oset_addr] = aux_Hword;
     
     delays.push_back(change_log<ac_word>(base_addr, aux_word, time));
+    
   }
 
 #endif
@@ -299,7 +369,7 @@ public:
 #endif
 
   //!Method to provide the name of the device.
-  inline const char* get_name() {
+  inline char* get_name() {
     return "";
   }
 
@@ -315,7 +385,7 @@ public:
   }
 #endif
 
-  /// ***** EDIT *****
+ /// ***** EDIT *****
   ///Method to load device content from a file.
   /// Use local Data array
   inline void load(char* file) {
@@ -332,12 +402,15 @@ public:
 
     Data = new unsigned char[storage->get_size()];
 
+    sc_core::sc_time time(0,SC_NS);
+
     //Try to read as ELF first
     if (ac_load_elf<ac_word, ac_Hword>(*this, file, Data, storage->get_size(), this->ac_heap_ptr, this->ac_start_addr, this->ac_mt_endian) == EXIT_SUCCESS) {
       //init decode cache and return
       if(!this->dec_cache_size)
         this->dec_cache_size = this->ac_heap_ptr;
-      storage->write(Data, 0, 32, (this->ac_heap_ptr)/4);
+      storage->write(Data, 0, 32, (this->ac_heap_ptr)/4,time);
+      setTimeInfo (time);
       delete[] Data;
       return;
     }
@@ -395,7 +468,10 @@ public:
       fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", storage->get_name().c_str());
       exit(EXIT_FAILURE);
     }
-    storage->write((ac_ptr)const_cast<uint8_t *>(d), 0, 8, s);
+
+    sc_core::sc_time time(0,SC_NS);
+    storage->write((ac_ptr)d, 0, 8, s,time);
+    setTimeInfo (time);
   }
 
 
@@ -427,7 +503,8 @@ public:
   }
 
 };
+#endif
 
-//////////////////////////////////////////////////////////////////////////////
 
-#endif // _AC_MEMPORT_H_
+
+

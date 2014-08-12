@@ -56,6 +56,9 @@ typedef struct _ac_sto_list
  struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
  ac_cache_parms* parms;        //!< Parameter list used for (not generic) ac_cache  declarations.
  struct _ac_sto_list* next;    //!< Next element.
+ struct CacheObject *cache_object;
+ char *class_declaration;      //!< String with class name and template parameters
+
 } ac_sto_list;
 
 //! List of Stages.

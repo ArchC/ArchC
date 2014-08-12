@@ -386,6 +386,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     payload_global->set_data_length(sizeof(uint32_t));
 
     ((uint32_t*)p)[0]=*(buf.ptr32);
+    //p[0]=*(buf.ptr32);
 
     payload_global->set_data_ptr(p);    
     status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
