@@ -81,6 +81,8 @@ class ac_write_back_cache {
 	
 	public:
 	ac_write_back_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
+
+		memory.setBlockSize (block_size);
 	}
 	
 	~ac_write_back_cache() {
@@ -188,7 +190,11 @@ class ac_write_through_cache {
 	ac_write_through_cache(const ac_write_through_cache &);
 	
 	public:
-	ac_write_through_cache(backing_store &memory_) : memory(memory_), trace_active(false) {}
+	ac_write_through_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
+
+		memory.setBlockSize (block_size);
+
+	}
 	~ac_write_through_cache() {
 		if (trace_active) delete cache_trace;
 	}
@@ -202,6 +208,8 @@ class ac_write_through_cache {
 	const cpu_word *read(address a, unsigned length) {
 
 		    //printf("\nAC_CACHE WT::read -> address=%x  length=%d", a, length);
+		
+
 
 			address b = byte_to_word(a);
 			if (!cache.get_block_for_read(b)) {

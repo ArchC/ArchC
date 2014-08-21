@@ -64,6 +64,7 @@ private:
   uint8_t aux_byte;
 
   ac_ptr buf;
+  int bytesPerBlock;
 
   sc_core::sc_time time_info;
 
@@ -129,15 +130,39 @@ public:
 
   ///Default constructor
   explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref) : ac_arch_ref<ac_word, ac_Hword>(ref),time_info(0,SC_NS){
-	  	  buf.ptr8 = new uint8_t [1024];
+	  	  // buf.ptr8 = new uint8_t [1024];
+        bytesPerBlock = 0;
+        
   }
 
   ///Default constructor with initialization
   explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref, ac_inout_if& stg) : ac_arch_ref<ac_word, ac_Hword>(ref), storage(&stg),time_info(0,SC_NS) {
-	      buf.ptr8 = new uint8_t [1024];
+	      // buf.ptr8 = new uint8_t [1024];
+         
+        bytesPerBlock = 0;
   }
 
   virtual ~ac_memport() { delete [] buf.ptr8; }
+
+  // initializeBuffer and setBlockSize are necessary for cache<->memory data transference
+  // if there is a cache using ac_memport, the number os units of data per block is a necessary
+  // parameter for using read_block and write_block (ac_memport methods)
+  void initializeBuffer ()
+  {
+      buf.ptr8 = new uint8_t [bytesPerBlock];
+      
+
+  }
+  void setBlockSize (int cacheBlockSize)
+  {
+      // cacheBlockSize is the number of units of data in a cache block
+      this->bytesPerBlock = (cacheBlockSize * sizeof(ac_word));
+      
+      this->initializeBuffer();
+      
+      this->initializeBuffer();
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////
 
   sc_core::sc_time getTimeInfo() {
 	return time_info;
