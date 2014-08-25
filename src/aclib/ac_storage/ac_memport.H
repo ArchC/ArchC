@@ -130,16 +130,17 @@ public:
 
   ///Default constructor
   explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref) : ac_arch_ref<ac_word, ac_Hword>(ref),time_info(0,SC_NS){
-	  	  // buf.ptr8 = new uint8_t [1024];
+	    // buf.ptr8 = new uint8_t [1024];
         bytesPerBlock = 0;
+        initializeBuffer();
         
   }
 
   ///Default constructor with initialization
   explicit ac_memport(ac_arch<ac_word, ac_Hword>& ref, ac_inout_if& stg) : ac_arch_ref<ac_word, ac_Hword>(ref), storage(&stg),time_info(0,SC_NS) {
-	      // buf.ptr8 = new uint8_t [1024];
-         
+	    // buf.ptr8 = new uint8_t [1024];
         bytesPerBlock = 0;
+        initializeBuffer();
   }
 
   virtual ~ac_memport() { delete [] buf.ptr8; }
