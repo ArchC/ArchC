@@ -155,8 +155,7 @@ public:
       // cacheBlockSize is the number of units of data in a cache block
       this->bytesPerBlock = (cacheBlockSize * sizeof(ac_word));
       
-      this->initializeBuffer();
-      
+    
       this->initializeBuffer();
   }
   //////////////////////////////////////////////////////////////////////////////////////////
