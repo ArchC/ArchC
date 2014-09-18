@@ -105,7 +105,8 @@ enum _ac_cmd_options {
   OPPCAddress,
   OPFullDecode,
   OPCurInstrID,
-  ACNumberOfOptions
+  OPPower,
+  ACNumberOfOptions,
 };
 
 typedef enum  _ac_cmd_options_ ac_cmd_options;

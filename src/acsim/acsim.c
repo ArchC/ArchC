@@ -53,6 +53,7 @@ int  ACIndexFix=0;                              //!<Indicates if Index Decode Ca
 int  ACPCAddress=1;                             //!<Indicates if PC bounds is verified or not
 int  ACFullDecode=0;                            //!<Indicates if Full Decode Optimization is turned on or not
 int  ACCurInstrID=1;                            //!<Indicates if Current Instruction ID is save in dispatch
+int  ACPowerEnable=0;                           //!<Indicates if Power Estimation is enabled
 
 char ACOptions[500];                            //!<Stores ArchC recognized command line options
 char *ACOptions_p = ACOptions;                  //!<Pointer used to append options in ACOptions
@@ -104,6 +105,7 @@ struct option_map option_map[] = {
   {"--no-pc-addr-ver"  , "-npv","Disable PC address verification.", 0},
   {"--full-decode"     , "-fdc","Enable Full Decode Optimization.", 0},
   {"--no-curr-instr-id", "-nci","Disable Current Instruction ID save in dispatch.", 0},
+  {"--power"           , "-pw" ,"Enable Power Estimation.", 0},
   { }
 };
 
@@ -252,9 +254,12 @@ int main(int argc, char** argv) {
     /* Handling command line options */
     for(j = 0; j < argn; j++) {
       /* Searching option map.*/
+      printf("numberOfOptions...%d", ACNumberOfOptions);
       for(i = 0; i < ACNumberOfOptions; i++) {
         if( (!strcmp(argv[0], option_map[i].name)) || 
             (!strcmp(argv[0], option_map[i].equivalent))){
+
+            
           switch (i) {
             case OPABI:
               ACABIFlag = 1;
@@ -325,6 +330,9 @@ int main(int argc, char** argv) {
               ACCurInstrID = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
+            case OPPower:
+              ACPowerEnable = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
             default:
               break;
           }
@@ -1533,6 +1541,15 @@ void CreateProcessorHeader() {
   fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
   fprintf( output, "#include \"%s_isa.H\"\n", project_name);
+  
+  // POWER ESTIMATION SUPPORT
+
+  if (ACPowerEnable) {
+    fprintf( output, "#ifdef POWER_SIM\n");
+    fprintf( output, "#include \"arch_power_stats.H\"\n"); 
+    fprintf( output, "#endif\n");
+  }
+
 
   if (ACABIFlag)
     fprintf( output, "#include \"%s_syscall.H\"\n", project_name);
@@ -1564,7 +1581,16 @@ if (HaveTLM2IntrPorts) {
     EmitDecCache(output, 1);
   }
 
-  fprintf( output, "public:\n");
+  fprintf( output, "public:\n\n");
+
+  // POWER ESTIMATION SUPPORT
+  if (ACPowerEnable) {
+   
+    fprintf( output, "#ifdef POWER_SIM\n");
+    fprintf( output, "power_stats ps;\n"); 
+    fprintf( output, "#endif\n");
+  }
+
 
   if (ACVerboseFlag)
     fprintf( output, "%ssc_signal<bool> done;\n\n", INDENT[1]);
@@ -1633,8 +1659,27 @@ if (HaveTLM2IntrPorts) {
 
   //!Declaring ARCH Constructor.
   COMMENT(INDENT[1], "Constructor.");
-  fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", 
+
+  // POWER ESTIMATION SUPPORT
+
+  if (ACPowerEnable) { 
+    fprintf( output, "\n#ifdef POWER_SIM\n");
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this), ps((const char*)name_)", 
            INDENT[1], project_name, project_name);
+    fprintf( output, "\n#else\n");
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", 
+            INDENT[1], project_name, project_name);
+    fprintf( output, "\n#endif\n");
+  }
+
+  else
+  {
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", 
+            INDENT[1], project_name, project_name);
+
+  }
+
+
   
   if (HaveTLMIntrPorts) {
     for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
@@ -2191,7 +2236,8 @@ void CreateProcessorImpl() {
   /* stop() */
   fprintf(output, "//Stop simulation (may receive exit status)\n");
   fprintf(output, "void %s::stop(int status) {\n", project_name);
-  fprintf(output, "%scerr << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
+
+   fprintf(output, "%scerr << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
           INDENT[1]);
   fprintf(output, "%sISA._behavior_end();\n", INDENT[1]);
   fprintf(output, "%sac_stop_flag = 1;\n", INDENT[1]);
@@ -4207,6 +4253,10 @@ void EmitDispatch(FILE *output, int base_indent) {
   fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent]);
   
+ 
+
+
+
   if( ACABIFlag && !ACDecCacheFlag) {
     if (ACSyscallJump) {
       fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);  
@@ -4307,12 +4357,28 @@ void EmitDispatch(FILE *output, int base_indent) {
     else
       fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent]);
   }
+
+// POWER ESTIMATION
+
+  if (ACPowerEnable) {
+    fprintf(output, "\n\n#ifdef POWER_SIM\n");
+    fprintf(output, "ps.update_stat_power(ins_id);\n");
+    fprintf(output, "#endif\n\n");
+  }
+
   
   if(ACDecCacheFlag)
     fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent]);  
   else
     fprintf( output, "%sreturn IntRoutine[ins_id];\n", INDENT[base_indent]);  
   
+
+  
+
+
+
+
+
   base_indent--;
   fprintf( output, "%s}\n\n", INDENT[base_indent]);  
 }
