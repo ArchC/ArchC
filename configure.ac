@@ -46,6 +46,9 @@ TLM_DIR=
 BINUTILS_DIR=
 GDB_DIR=
 
+
+
+
 AC_ARG_WITH(systemc,
             AC_HELP_STRING([--with-systemc=PATH],
                            [Sets the directory where SystemC is installed.]),
@@ -77,6 +80,38 @@ AC_SUBST(GDB_DIR)
 
 AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
 AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
+
+
+# set the SystemC headers directory
+SCLIB_DIR="$SC_DIR"
+SCLIB_INCLUDES="-I$SCLIB_DIR/include"
+SCLIB_SRC_INCLUDES="-I$SCLIB_DIR/src"
+AC_SUBST(SCLIB_DIR)
+AC_SUBST(SCLIB_INCLUDES)
+AC_SUBST(SCLIB_SRC_INCLUDES)
+
+
+SCLIB_SRC_DIR="$SCLIB_DIR/src/sysc"
+SC_DT_BIT_DIR="$SCLIB_SRC_DIR/datatypes/bit"
+SC_COMM_DIR="$SCLIB_SRC_DIR/communication"
+SC_KERNEL_DIR="$SCLIB_SRC_DIR/kernel"
+AC_CHECK_FILES($SC_DT_BIT_DIR/sc_bit.cpp \
+          $SC_DT_BIT_DIR/sc_logic.cpp \
+          $SC_COMM_DIR/sc_clock.cpp \
+          $SC_KERNEL_DIR/sc_wait.cpp \
+          $SC_KERNEL_DIR/sc_join.cpp ,
+          ,
+          AC_MSG_ERROR([SystemC source file not found!!!. See config.log for details.])
+          )
+
+AC_SUBST(SC_DT_BIT_DIR) 
+AC_SUBST(SC_COMM_DIR)
+AC_SUBST(SC_KERNEL_DIR)
+
+
+# set the SystemC library directory
+SCLIB_LIBDIR="$SCLIB_DIR/lib-linux"
+LDFLAGS="-L$SCLIB_LIBDIR $LDFLAGS"
 
 # Sets global flags
 CFLAGS="$CFLAGS -Wall"
@@ -133,6 +168,7 @@ AC_CONFIG_FILES(
   src/accsim/Makefile
   src/acbinutils/Makefile
   src/acbinutils/binutils/gas/config/tc-xxxxx.c
+  src/powersc/Makefile
 ])
 
 # Output
