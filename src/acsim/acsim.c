@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
     /* Handling command line options */
     for(j = 0; j < argn; j++) {
       /* Searching option map.*/
-      printf("numberOfOptions...%d", ACNumberOfOptions);
+      
       for(i = 0; i < ACNumberOfOptions; i++) {
         if( (!strcmp(argv[0], option_map[i].name)) || 
             (!strcmp(argv[0], option_map[i].equivalent))){
@@ -4524,6 +4524,7 @@ void ParseCache(ac_sto_list * cache_in)
 
     // 1st parameter
     p = cache_in->parms;
+   
     if (!strcmp(p->str, "dm") || !strcmp(p->str, "DM")) {
   cache_out->associativity = 1;
     } else if (!strcmp(p->str, "fully") || !strcmp(p->str, "FULLY")) {
@@ -4560,7 +4561,12 @@ void ParseCache(ac_sto_list * cache_in)
     // 5th parameter
     p = p->next;
     if (p == NULL) {
+
+      
+
   if (cache_out->associativity > 1) {
+
+   
       AC_ERROR("Missing parameter in cache declaration: %s\n", cache_in->name);
       printf("Non-direct-mapped caches need a replacement policy as the fifth "
        "parameter: \"plrum\", \"random\", \"fifo\" or \"lru\".\n");
@@ -4568,13 +4574,19 @@ void ParseCache(ac_sto_list * cache_in)
   }
   cache_out->replacement_policy = None;
     } else {
+
+      
+
+
   if (cache_out->associativity <= 1) {
+      
       AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
       printf("For direct-mapped caches there must be only four parameters "
        "(without a replacement policy).\n");
       exit(EXIT_FAILURE);
   }
   if (!strcmp(p->str, "plrum") || !strcmp(p->str, "PLRUM")) {
+
       cache_out->replacement_policy = PLRUM;
   } else if (!strcmp(p->str, "random") || !strcmp(p->str, "RANDOM")) {
       cache_out->replacement_policy = Random;
@@ -4583,6 +4595,8 @@ void ParseCache(ac_sto_list * cache_in)
   } else if (!strcmp(p->str, "lru") || !strcmp(p->str, "LRU")) {
       cache_out->replacement_policy = LRU;
   } else {
+
+    printf("no else");
       AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
       printf("The fifth parameter must be a valid replacement strategy:"
        "\"plrum\", \"random\", \"fifo\" or \"lru\".\n");

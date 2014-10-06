@@ -61,6 +61,12 @@ AC_ARG_WITH(tlm,
             [TLM_DIR=$withval],
             [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
 
+AC_ARG_WITH(powersc,
+            AC_HELP_STRING([--with-powersc=PATH],
+                           [Sets the directory where the the SystemC source code are stored.]),
+            [PW_DIR=$withval],
+            [AC_MSG_NOTICE([ArchC will be compiled without PowerSC.])])
+
 AC_ARG_WITH(binutils,
             AC_HELP_STRING([--with-binutils=PATH],
                            [Sets the directory where the Binutils source files are stored.]),
@@ -77,21 +83,24 @@ AC_SUBST(SC_DIR)
 AC_SUBST(TLM_DIR)
 AC_SUBST(BINUTILS_DIR)
 AC_SUBST(GDB_DIR)
+AC_SUBST(PW_DIR)
 
 AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
 AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
+AM_CONDITIONAL([POWERSC_SUPPORT], [ ! test -z "$PW_DIR" ])
 
 
 # set the SystemC headers directory
 SCLIB_DIR="$SC_DIR"
 SCLIB_INCLUDES="-I$SCLIB_DIR/include"
-SCLIB_SRC_INCLUDES="-I$SCLIB_DIR/src"
+SCLIB_SRC_INCLUDES="-I$PW_DIR"
+#SCLIB_SRC_INCLUDES="-I$SCLIB_DIR/src"
 AC_SUBST(SCLIB_DIR)
 AC_SUBST(SCLIB_INCLUDES)
 AC_SUBST(SCLIB_SRC_INCLUDES)
 
 
-SCLIB_SRC_DIR="$SCLIB_DIR/src/sysc"
+SCLIB_SRC_DIR="$PW_DIR/sysc"
 SC_DT_BIT_DIR="$SCLIB_SRC_DIR/datatypes/bit"
 SC_COMM_DIR="$SCLIB_SRC_DIR/communication"
 SC_KERNEL_DIR="$SCLIB_SRC_DIR/kernel"
