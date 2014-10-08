@@ -93,14 +93,13 @@ AM_CONDITIONAL([POWERSC_SUPPORT], [ ! test -z "$PW_DIR" ])
 # set the SystemC headers directory
 SCLIB_DIR="$SC_DIR"
 SCLIB_INCLUDES="-I$SCLIB_DIR/include"
-SCLIB_SRC_INCLUDES="-I$PW_DIR/src"
-#SCLIB_SRC_INCLUDES="-I$SCLIB_DIR/src"
+SCLIB_SRC_INCLUDES="-I$PW_DIR/src/"
 AC_SUBST(SCLIB_DIR)
 AC_SUBST(SCLIB_INCLUDES)
 AC_SUBST(SCLIB_SRC_INCLUDES)
 
 
-SCLIB_SRC_DIR="$PW_DIR/sysc"
+SCLIB_SRC_DIR="$PW_DIR/src/sysc"
 SC_DT_BIT_DIR="$SCLIB_SRC_DIR/datatypes/bit"
 SC_COMM_DIR="$SCLIB_SRC_DIR/communication"
 SC_KERNEL_DIR="$SCLIB_SRC_DIR/kernel"
@@ -190,10 +189,11 @@ AC_MSG_RESULT([
         sysconfdir:             ${sysconfdir}
         libdir:                 ${libdir}
         bindir:                 ${bindir}
-        systemcdir:		${SC_DIR}
+        systemcdir:             ${SC_DIR}
         tlmdir:                 ${TLM_DIR}
         binutilsdir:            ${BINUTILS_DIR}
         gdbdir:                 ${GDB_DIR}
+        powerscdir:             ${PW_DIR}
 
         cc:                     ${CC}
         cxx:                    ${CXX}
