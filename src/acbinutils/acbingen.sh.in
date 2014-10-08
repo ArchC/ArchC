@@ -109,10 +109,11 @@ if [ ! -z ${BINUTILS_DIR} ]; then
       echo "the architecture name '${ARCH_NAME}'."
       echo
       echo "It is not recommended to continue if you have not set it by yourself."
+      echo "Use the -a option to change the architecture name (e.g. '-a ${ARCH_NAME}_1')."
 #     echo "If you continue, the Binutils files will not be patched."
       echo "==================="
       echo
-      read -p "Do you wish to continue? (y) -> " USER_ANSWER; : ${USER_ANSWER:="y"}
+      read -p "Do you wish to continue? (n) -> " USER_ANSWER; : ${USER_ANSWER:="n"}
       echo
       case $USER_ANSWER in 
 	  y | yes | Y | YES) PATCH_BINUTILS=0; break;;
@@ -333,6 +334,7 @@ if [ ! -z ${BINUTILS_DIR} ]; then
     sed s/md_apply_fix3/md_apply_fix/g $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c > $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2
     mv $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c2 $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c
   fi
+
 # Checking whether expr.c uses md_parse_name(x,y,z) or md_parse_name(x,y,t,z)
   grep -e 'md_parse_name *([^,]*,[^,]*,[^,]*,.*)' $BINUTILS_DIR/gas/expr.c > /dev/null 2>&1
   if [ $? -eq 0 ]; then
@@ -353,6 +355,29 @@ if [ ! -z ${BINUTILS_DIR} ]; then
     mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
   fi
 
+  # Checking if ibfd class have link_next (< 2.24.51) or link.next (>= 2.24.51) member
+  COUNT=`grep -re "ibfd->link\.next" $BINUTILS_DIR/bfd | wc -l`
+  if [ "$COUNT" -eq 1 ]; then
+      # version < 2.24.51
+      sed -e 's/ibfd->link\.next/ibfd->link_next/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
+      mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
+  fi
+
+  # Checking if the macro RELOC_FOR_GLOBAL_SYMBOL have the 'ignored' parameter (>=2.24.51)
+  COUNT=`grep -re "unresolved_reloc, warned);" $BINUTILS_DIR/bfd | wc -l`
+  if [ "$COUNT" -gt 1 ] ; then
+      # version < 2.24.51. Remove the 'ignored' parameter
+      sed -e 's/unresolved_reloc, warned, ignored);/unresolved_reloc, warned);/g' $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c > $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2
+      mv $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c2 $BINUTILS_DIR/bfd/elf32-${ARCH_NAME}.c
+  fi
+   
+  # Checking if the macro TC_CONS_FIX_NEW have the 'r' parameter (>=2.24.51)
+  COUNT=`grep -e "TC_CONS_FIX_NEW" $BINUTILS_DIR/gas/read.c | grep -e "exp);" | wc -l`
+  if [ "$COUNT" -eq 1 ]; then
+      # version < 2.24.51. Remove r parameter
+      sed -i -e 's/, bfd_reloc_code_real_type r)/)/g' $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.c 
+      sed -i -e 's/, bfd_reloc_code_real_type);/);/g' $BINUTILS_DIR/gas/config/tc-${ARCH_NAME}.h
+  fi
 fi
 
 if [ ! -z ${GDB_DIR} ]; then

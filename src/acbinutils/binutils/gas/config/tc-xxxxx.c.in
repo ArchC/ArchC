@@ -37,6 +37,7 @@
 #include `"elf/'___arch_name___`.h"'
 #include `"opcode/'___arch_name___`.h"'
 #include `"share-'___arch_name___`.h"'
+#include <assert.h>
 
 /*
  * The gas source in binutils 2.15 signals fatal error
@@ -100,7 +101,7 @@ typedef struct _acaliastype
   struct _acaliastype *next;
 } acaliastype;
 
-static bfd_reloc_code_real_type ac_parse_reloc PARAMS((void));
+static bfd_reloc_code_real_type ac_parse_reloc (void);
 static void ac_parse_req (char *str);
 static void s_cons(int byte_size);
 static void s_bss (int);
@@ -126,7 +127,7 @@ static void free_all_fixups(acfixuptype *fix);
 #ifdef DEBUG_ON
 static void print_internal_fixup(FILE *stream, unsigned int il, acfixuptype *fix);
 static void print_fixup(FILE *stream, unsigned int il, fixS *fixP);
-static void print_req_aliases PARAMS((void));
+static void print_req_aliases (void);
 #endif
 static void encode_field(unsigned int val_const, unsigned int oper_id, list_op_results lr);
 void md_apply_fix3 (fixS *fixP ATTRIBUTE_UNUSED, valueT *valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED);
@@ -1301,7 +1302,7 @@ ___arch_name___`_symbol_new_hook' (symbolS *sym ATTRIBUTE_UNUSED)
    .word label2
 */
 extern void 
-___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes, struct expressionS *exp)
+___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes, struct expressionS *exp, bfd_reloc_code_real_type r)
 {
   fixS *fixP = NULL;
 

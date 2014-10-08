@@ -66,7 +66,7 @@ extern void ___arch_name___`_symbol_new_hook'(symbolS *sym);
 extern void ___arch_name___`_handle_align'(struct frag *);
 #define HANDLE_ALIGN(fragp) ___arch_name___`_handle_align'(fragp)
 
-extern void ___arch_name___`_cons_fix_new'(struct frag *, int, unsigned int, struct expressionS *);
+extern void ___arch_name___`_cons_fix_new'(struct frag *, int, unsigned int, struct expressionS *, bfd_reloc_code_real_type);
 #define TC_CONS_FIX_NEW ___arch_name___`_cons_fix_new'
 
 #define TC_VALIDATE_FIX(fixp, this_segment, skip_label) \
