@@ -3303,7 +3303,7 @@ void CreateMakefile(){
 
   fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) %s %s\n",
            (ACGDBIntegrationFlag) ? "-DUSE_GDB" : "",
-           (ACPowerEnable) ? "-DPOWER_SIM" : "");
+           (ACPowerEnable) ? "-DPOWER_SIM=\\\"$(PWD)/powersc\\\"" : "");
 
   fprintf( output, "\nMODULE := %s\n\n", project_name);
 
