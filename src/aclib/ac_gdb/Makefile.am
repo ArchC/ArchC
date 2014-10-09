@@ -7,7 +7,7 @@ AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib
 noinst_LTLIBRARIES = libacgdb.la
 
 ## ArchC library includes
-pkginclude_HEADERS = breakpoints.H ac_gdb.H ac_gdb_interface.H
+include_HEADERS = breakpoints.H ac_gdb.H ac_gdb_interface.H
 
 ## Adding code to the ArchC library
 libacgdb_la_SOURCES = breakpoints.cpp

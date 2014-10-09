@@ -7,6 +7,6 @@ AM_CPPFLAGS = -I.
 noinst_LTLIBRARIES = libacdecoder.la
 
 ## ArchC library includes
-pkginclude_HEADERS = ac_decoder_rt.H ac_decoder.h
+include_HEADERS = ac_decoder_rt.H ac_decoder.h
 
 libacdecoder_la_SOURCES = ac_decoder.c ac_decoder_rt.cpp

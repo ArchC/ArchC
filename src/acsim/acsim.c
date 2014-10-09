@@ -3268,19 +3268,13 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
   COMMENT_MAKE("Variable that points to ArchC installation path");
-  fprintf( output, "ARCHC := %s\n\n", BINDIR);
+  fprintf( output, "ARCHC := %s\n\n", ARCHCDIR);
 
   COMMENT_MAKE("Target Arch used by SystemC");
   fprintf( output, "TARGET_ARCH := %s\n\n\n", TARGET_ARCH);
 
-  fprintf( output, "INC_DIR := -I. -I%s -I$(SYSTEMC)/include ", INCLUDEDIR);
-  //if (HaveTLMPorts || HaveTLMIntrPorts)     fprintf(output, "-I%s", TLM_PATH);
-
-  if (HaveTLMPorts || HaveTLMIntrPorts || HaveTLM2Ports || HaveTLM2NBPorts || HaveTLM2IntrPorts)
-     fprintf(output, "-I%s", TLM_PATH);
-
-
-  
+  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include -I$(SYSTEMC)/include ");
+ 
   fprintf( output, "\nLIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n\n", 
            LIBDIR);
 
@@ -3406,7 +3400,7 @@ void CreateMakefile(){
   //Declaring dependencie rules
   fprintf( output, ".SUFFIXES: .cc .cpp .o .x\n\n");
 
-  fprintf( output, "all: $(addprefix %s/, $(ACFILESHEAD))", INCLUDEDIR);
+  fprintf( output, "all: $(addprefix %s/include/, $(ACFILESHEAD))", ARCHCDIR);
   if (ACABIFlag)
     fprintf( output, " $(MODULE)_syscall.H");
   fprintf( output, " $(ACHEAD) $(ACFILES) $(EXE)\n\n");

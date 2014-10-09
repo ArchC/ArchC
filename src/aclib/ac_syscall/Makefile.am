@@ -7,6 +7,6 @@ AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib
 noinst_LTLIBRARIES = libacsyscall.la
 
 ## ArchC library includes
-pkginclude_HEADERS = ac_syscall_codes.h ac_syscall.H ac_syscall.def
+include_HEADERS = ac_syscall_codes.h ac_syscall.H ac_syscall.def
 
 libacsyscall_la_SOURCES = ac_syscall.cpp

@@ -7,7 +7,7 @@ AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib
 noinst_LTLIBRARIES = libacutils.la
 
 ## ArchC library includes
-pkginclude_HEADERS = ac_debug_model.H elf32-tiny.h archc.H ac_utils.H ac_log.H ac_msgbuf.H 
+include_HEADERS = ac_debug_model.H elf32-tiny.h archc.H ac_utils.H ac_log.H ac_msgbuf.H 
 
 
 

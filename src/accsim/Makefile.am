@@ -6,7 +6,7 @@
 AM_YFLAGS = -d -p eval_
 
 ## Flags and macros
-AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/aclib/ac_syscall -I$(top_srcdir)/src/aclib/ac_utils -DSYSCONFDIR=\"$(sysconfdir)\" -DARCHCPATH=\"$(prefix)\" -DINCLUDEDIR=\"$(pkgincludedir)\" -DBINDIR=\"$(bindir)\" -DLIBDIR=\"$(libdir)\" -DACVERSION=\"$(VERSION)\" @CPPFLAGS@
+AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/acpp -I$(top_srcdir)/src/aclib/ac_syscall -I$(top_srcdir)/src/aclib/ac_utils -DSYSCONFDIR=\"$(sysconfdir)\" -DARCHCPATH=\"$(prefix)\" -DINCLUDEDIR=\"$(includedir)\" -DBINDIR=\"$(bindir)\" -DLIBDIR=\"$(libdir)\" -DACVERSION=\"$(VERSION)\" @CPPFLAGS@
 
 ## The ArchC compiled simulator generation tool 
 bin_PROGRAMS = accsim
