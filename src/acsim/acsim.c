@@ -3264,9 +3264,8 @@ void CreateMakefile(){
   fprintf( output, "\n\n");
 
   COMMENT_MAKE("Variable that points to SystemC installation path");
-  fprintf( output, "SYSTEMC := %s\n", SYSTEMC_PATH);
+  fprintf( output, "SYSTEMC := %s\n\n", SYSTEMC_PATH);
 
-  fprintf( output, "\n\n");
   COMMENT_MAKE("Variable that points to ArchC installation path");
   fprintf( output, "ARCHC := %s\n\n", ARCHCDIR);
 
@@ -3274,14 +3273,18 @@ void CreateMakefile(){
   fprintf( output, "TARGET_ARCH := %s\n\n\n", TARGET_ARCH);
 
   fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include -I$(SYSTEMC)/include ");
- 
+
+  if (HaveTLMPorts || HaveTLMIntrPorts || HaveTLM2Ports || HaveTLM2NBPorts || HaveTLM2IntrPorts)
+     fprintf(output, "-I%s", TLM_PATH);
+
   fprintf( output, "\nLIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n\n", 
            LIBDIR);
 
   fprintf( output, "LIB_SYSTEMC := %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
 
-  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
+  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc %s\n",
+           (ACPowerEnable) ? "-lpowersc" : "");
 
   fprintf( output, "CC :=  %s\n", CC_PATH);
 
@@ -3298,8 +3301,9 @@ void CreateMakefile(){
     fprintf( output, " -DAC_MATCH_ENDIANNESS");
   fprintf( output, " %s\n", OTHER_FLAGS);
 
-  fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) %s\n",
-           (ACGDBIntegrationFlag) ? "-DUSE_GDB" : "" );
+  fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) %s %s\n",
+           (ACGDBIntegrationFlag) ? "-DUSE_GDB" : "",
+           (ACPowerEnable) ? "-DPOWER_SIM" : "");
 
   fprintf( output, "\nMODULE := %s\n\n", project_name);
 
