@@ -246,38 +246,38 @@ void psc_cells_repository::print_cells()
 {
 	list<psc_pin_power_info>::iterator it_p;
 			
-	cout << "--- Cells repository ---" << endl;
+	cerr << "--- Cells repository ---" << endl;
 
 	for ( unsigned int i = 0 ; i < m_power_info.size() ; i++ ) {
 		psc_cell_power_info & cell = m_power_info[ i ];
 
-		cout << "cell name: " << cell.get_name() << endl;
+		cerr << "cell name: " << cell.get_name() << endl;
 
-		cout << "\ttype: " << cell.get_type();
-		cout << "\tlevel: " << cell.get_level() << endl;
-		cout << "\tleakage power: " << cell.get_leak_power();
-		cout << "\taggregate power: " << cell.get_power();
-		cout << endl;
+		cerr << "\ttype: " << cell.get_type();
+		cerr << "\tlevel: " << cell.get_level() << endl;
+		cerr << "\tleakage power: " << cell.get_leak_power();
+		cerr << "\taggregate power: " << cell.get_power();
+		cerr << endl;
 
 		it_p = cell.get_pins_info().begin();
 		for ( ; it_p != cell.get_pins_info().end() ; it_p++ ) {
 			psc_pin_power_info & pinfo = *it_p;	
 
-			cout << "\tid: " << pinfo.get_id();
-			cout << "\tenergy: " << pinfo.get_energy();
-			cout << "\trelated pins: ";
+			cerr << "\tid: " << pinfo.get_id();
+			cerr << "\tenergy: " << pinfo.get_energy();
+			cerr << "\trelated pins: ";
 
 			vector<string> & relpins = pinfo.get_rel_pins();
 			string prefix = "";
 			for ( unsigned int j = 0 ; j < relpins.size() ; j++ ) {
-				cout << prefix << relpins[ j ];
+				cerr << prefix << relpins[ j ];
 				prefix = ", ";
 			}
-			cout << endl;
+			cerr << endl;
 		}
 	}
 
-	cout << "------------------------" << endl;
+	cerr << "------------------------" << endl;
 }
 
 void psc_cells_repository::power_report( const char *fname )
@@ -407,10 +407,10 @@ double psc_cells_repository::compute_intpower( psc_cell_power_info & cell )
 		if ( infoid && (totalSP > 0) )
 			power += (energy * infoid->toggle_rate) / totalSP;
 
-		/*cout << "id=" << (*it1).get_id();
-		cout << "\tenergy=" << energy;
-		cout << "\ttotalSP=" << totalSP;
-		cout << "\tpower=" << power << endl;*/
+		/*cerr << "id=" << (*it1).get_id();
+		cerr << "\tenergy=" << energy;
+		cerr << "\ttotalSP=" << totalSP;
+		cerr << "\tpower=" << power << endl;*/
 
 		// add the ID to the done list
 		done.push_back( (*it1).get_id() );

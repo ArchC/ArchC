@@ -134,7 +134,7 @@ public:
 			memset( m_time_at_1, 0, sizeof(uint64)*W );
 
 #ifdef DEBUG_POWER_L3
-         cout << "\t[psc_objinfo]: Creating " << prefix << W << " object" << endl;
+         cerr << "\t[psc_objinfo]: Creating " << prefix << W << " object" << endl;
 #endif
       }
 
@@ -144,9 +144,9 @@ public:
       {
 #ifdef DEBUG_POWER_L3
          if ( m_bFirstTime )
-            cout << "\t[psc_objinfo]: Destroying temporary " << m_strPrefix << W << " object" << endl;
+            cerr << "\t[psc_objinfo]: Destroying temporary " << m_strPrefix << W << " object" << endl;
          else
-            cout << "\t[psc_objinfo]: Destroying " << m_strID.c_str() << endl;
+            cerr << "\t[psc_objinfo]: Destroying " << m_strID.c_str() << endl;
 #endif
 
          if ( get_toggle_count() > 0 ) {
@@ -213,7 +213,7 @@ public:
          force_init_info();
          
 #ifdef DEBUG_POWER_L3
-         cout << "\t[psc_objinfo]: Setting alias \"" << new_alias << 
+         cerr << "\t[psc_objinfo]: Setting alias \"" << new_alias << 
             "\" for object with id " << get_str_id() << endl;
 #endif
          m_strAlias = new_alias; 
@@ -252,7 +252,7 @@ public:
          force_init_info();
          
 #ifdef DEBUG_POWER_L3
-         cout << "\t[psc_objinfo]: Setting alias \"" << new_alias << 
+         cerr << "\t[psc_objinfo]: Setting alias \"" << new_alias << 
             "\" for object with id " << get_str_id() << endl;
 #endif
          m_strAlias = new_alias; 
@@ -367,10 +367,10 @@ void psc_objinfo<W, T>::update_toggle_count(const T & cur_val, const T & new_val
 
       m_previous_change_time = get_last_update();
 
-//		cout << endl << PRINT_OBJ_STR << "m_previous_change_time = " << m_previous_change_time << endl;
-//		cout << endl << "\tNOW IS " << sc_time_stamp() << endl;
-//		cout << "\tm_cur_val = " << m_cur_val << endl;
-//		cout << "\tm_new_val = " << m_new_val << endl;
+//		cerr << endl << PRINT_OBJ_STR << "m_previous_change_time = " << m_previous_change_time << endl;
+//		cerr << endl << "\tNOW IS " << sc_time_stamp() << endl;
+//		cerr << "\tm_cur_val = " << m_cur_val << endl;
+//		cerr << "\tm_new_val = " << m_new_val << endl;
    } else if ( sc_time_stamp() == get_last_update() ) {
       m_new_val = new_val;
    } else {
@@ -394,9 +394,9 @@ void psc_objinfo<W, T>::update_toggle_count(const T & cur_val, const T & new_val
 	      
 #ifdef DEBUG_POWER_L2
    if (changed_count == 0)
-      cout << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: NO bits changed since " << m_previous_change_time << endl;
+      cerr << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: NO bits changed since " << m_previous_change_time << endl;
    else {
-      cout << hex << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: from " << m_cur_val << " to " << m_new_val
+      cerr << hex << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: from " << m_cur_val << " to " << m_new_val
 	 << " => " << dec << changed_count << " bit(s) changed @ " << m_previous_change_time << endl;
    }
 #endif
@@ -408,7 +408,7 @@ template<int W, class T>
 void psc_objinfo<W, T>::update_static_prob( const uint64 & changed )
 {
 #ifdef DEBUG_POWER_L2
-	cout << "\t" << PRINT_OBJ_STR << " -> Updating the static probability" << endl;
+	cerr << "\t" << PRINT_OBJ_STR << " -> Updating the static probability" << endl;
 #endif
 	// difference between last update and previous change time
 	uint64 diff;
@@ -440,15 +440,15 @@ void psc_objinfo<W, T>::update_static_prob( const uint64 & changed )
 	}
 
 #ifdef DEBUG_POWER_L2
-	cout << "\tT0=";
+	cerr << "\tT0=";
 	for ( int i = 0 ; i < W ; i++ )
-		cout << m_time_at_0[i] << "\t";
-	cout << endl;
+		cerr << m_time_at_0[i] << "\t";
+	cerr << endl;
 
-	cout << "\tT1=";
+	cerr << "\tT1=";
 	for ( int i = 0 ; i < W ; i++ )
-		cout << m_time_at_1[i] << "\t";
-	cout << endl;
+		cerr << m_time_at_1[i] << "\t";
+	cerr << endl;
 #endif
 }
 
@@ -518,16 +518,16 @@ double psc_objinfo<W, T>::get_toggle_rate() const
 	TR = 0;
 	sim_time = sc_simulation_time();
 
-//	cout << "alias = " << m_strAlias << endl;
+//	cerr << "alias = " << m_strAlias << endl;
 	for ( int i = 0 ; i < W ; i++ ) {
-//		cout << "\tTC[" << i << "] = " << m_tc_bits[i];
-//		cout << "\ttime_at_1[" << i << "] = " << m_time_at_1[i] << endl;
+//		cerr << "\tTC[" << i << "] = " << m_tc_bits[i];
+//		cerr << "\ttime_at_1[" << i << "] = " << m_time_at_1[i] << endl;
 		TR += ((double)m_tc_bits[ i ]);
 	}
-//	cout << "\tsummation: TR = " << TR << endl;
-//	cout << "\tsummation: W = " << W << endl;
-//	cout << "\tsummation: sim_time = " << sim_time << endl;
-//	cout << "--------------------------" << endl;
+//	cerr << "\tsummation: TR = " << TR << endl;
+//	cerr << "\tsummation: W = " << W << endl;
+//	cerr << "\tsummation: sim_time = " << sim_time << endl;
+//	cerr << "--------------------------" << endl;
 	return( (TR/sim_time)/(double)W );
 }
 
@@ -618,7 +618,7 @@ template <int W, class T>
 void psc_objinfo<W, T>::flush_data( bool destroying )
 {
 #ifdef DEBUG_POWER_L3
-   cout << "\t[psc_objinfo]: Flushing data for " << m_strID.c_str() << endl;
+   cerr << "\t[psc_objinfo]: Flushing data for " << m_strID.c_str() << endl;
 #endif
 
    // otherwise update entry in the registry with current data
@@ -664,9 +664,9 @@ void psc_objinfo<W, T>::finish_pending()
 
 #ifdef DEBUG_POWER_L2
       if (changed_count == 0)
-	 		cout << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: NO bits changed since " << m_previous_change_time << endl;
+	 		cerr << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: NO bits changed since " << m_previous_change_time << endl;
       else {
-	 		cout << hex << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: from " << m_cur_val << " to " << m_new_val
+	 		cerr << hex << "\t" << PRINT_OBJ_STR << " -> Updating Toggle Count: from " << m_cur_val << " to " << m_new_val
 	    		<< " => " << dec << changed_count << " bit(s) changed @ " << m_previous_change_time << endl;
       }
 #endif
@@ -685,23 +685,23 @@ void psc_objinfo<W, T>::print_time_at()
 {
 	string prefix;
 
-	cout << "\n--- time at 0/1 - " << get_str_id() << " ---" << endl;
+	cerr << "\n--- time at 0/1 - " << get_str_id() << " ---" << endl;
 
 	prefix = "";
-	cout << "\ttime_at_0 = [";
+	cerr << "\ttime_at_0 = [";
 	for ( int i = 0 ; i < W ; i++ ) {
-		cout << prefix << m_time_at_0[ i ];
+		cerr << prefix << m_time_at_0[ i ];
 		prefix = ", ";
 	}
-	cout << "]" << endl;
+	cerr << "]" << endl;
 
 	prefix = "";
-	cout << "\ttime_at_1 = [";
+	cerr << "\ttime_at_1 = [";
 	for ( int i = 0 ; i < W ; i++ ) {
-		cout << prefix << m_time_at_1[ i ];
+		cerr << prefix << m_time_at_1[ i ];
 		prefix = ", ";
 	}
-	cout << "]" << endl;
+	cerr << "]" << endl;
 }
 
 

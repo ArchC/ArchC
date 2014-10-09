@@ -62,7 +62,7 @@ bool psc_obj_repository::add_register(const char *entry_name, repository_entry_t
    m_map[name] = e;
 
 #ifdef DEBUG_POWER_L3
-   cout << "\t[psc_obj_repository]: Registering " << entry_name << endl;
+   cerr << "\t[psc_obj_repository]: Registering " << entry_name << endl;
 #endif
 
    return(true);
@@ -85,7 +85,7 @@ bool psc_obj_repository::unregister(const char *entry_name)
    m_map.erase(itr); // remove the entry pointed by itr
 
 #ifdef DEBUG_POWER_L3
-   cout << "\t[psc_obj_repository]: Unregistering " << entry_name << endl;
+   cerr << "\t[psc_obj_repository]: Unregistering " << entry_name << endl;
 #endif
    
    return(true);
@@ -104,7 +104,7 @@ bool psc_obj_repository::update_registry(const char *entry_name, repository_entr
    m_map[name] = e;
    
 #ifdef DEBUG_POWER_L3
-   cout << "\t[psc_obj_repository]: Updating entry " << entry_name << endl;
+   cerr << "\t[psc_obj_repository]: Updating entry " << entry_name << endl;
 #endif
 
    return(true);
@@ -132,7 +132,7 @@ void psc_obj_repository::print_entries()
    long long int totalTC;
    repository_map::const_iterator itr = m_map.begin();
    
-   cout << "--- psc_obj_repository entries ---" << endl;
+   cerr << "--- psc_obj_repository entries ---" << endl;
 
    totalTC = 0;
    
@@ -142,36 +142,36 @@ void psc_obj_repository::print_entries()
 
       totalTC += current_value.toggle_count; // increments the total toggle count
 
-		cout << " " << i+1 << ". id=" << current_key << "\tTC=" << 
+		cerr << " " << i+1 << ". id=" << current_key << "\tTC=" << 
 			current_value.toggle_count << "\talias=" << current_value.alias;
 		
-		cout << "\tnet=" << current_value.is_net;
-		cout << "\tfanout=" << current_value.fanout;
-		cout << "\tnload=" << current_value.nload;
-		cout << "\tndelay=" << current_value.ndelay;
-		cout << "\twload=" << current_value.wload;
-		cout << "\tTR=" << current_value.toggle_rate;
-		cout << "\tSP0=" << current_value.sp0;
-		cout << "\tSP1=" << current_value.sp1;
-		cout << "\ttechinfo=" << current_value.techinfo;
-		cout << endl;
+		cerr << "\tnet=" << current_value.is_net;
+		cerr << "\tfanout=" << current_value.fanout;
+		cerr << "\tnload=" << current_value.nload;
+		cerr << "\tndelay=" << current_value.ndelay;
+		cerr << "\twload=" << current_value.wload;
+		cerr << "\tTR=" << current_value.toggle_rate;
+		cerr << "\tSP0=" << current_value.sp0;
+		cerr << "\tSP1=" << current_value.sp1;
+		cerr << "\ttechinfo=" << current_value.techinfo;
+		cerr << endl;
    }
    
-   cout << "----------------------------------" << endl;
-   cout << "TOTAL toggle count: " << totalTC << endl;
+   cerr << "----------------------------------" << endl;
+   cerr << "TOTAL toggle count: " << totalTC << endl;
 
    if ( m_activity_sampler->is_full_sampling() ) {
       average_tc = (double)(totalTC) / sc_simulation_time();
-      cout << "Average toggle count (fully simulated): " << average_tc << " transitions / " << sc_get_default_time_unit() << endl;
+      cerr << "Average toggle count (fully simulated): " << average_tc << " transitions / " << sc_get_default_time_unit() << endl;
    } else {
       double mon_time = m_activity_sampler->get_monitored_time();
       double percent = (mon_time / sc_simulation_time()) * 100.0;
       average_tc = m_activity_sampler->get_global_mean();
-      cout << "Average toggle count (sampled): " << average_tc << " transitions / " << sc_get_default_time_unit() << endl;
-      cout << "Sampled time: " << percent << "%" << endl;
+      cerr << "Average toggle count (sampled): " << average_tc << " transitions / " << sc_get_default_time_unit() << endl;
+      cerr << "Sampled time: " << percent << "%" << endl;
    }
    
-   cout << "----------------------------------" << endl;
+   cerr << "----------------------------------" << endl;
 }
 
 void psc_obj_repository::write_entries_to_csv_file(const char *name)
@@ -203,7 +203,7 @@ bool psc_obj_repository::conditional_hit(string cond_str, int at_line, bool cond
    id += line_;
    
 #ifdef DEBUG_POWER_LEVEL2
-   cout << "\t[psc_obj_repository]: Conditional hit -> " << id << endl;
+   cerr << "\t[psc_obj_repository]: Conditional hit -> " << id << endl;
 #endif
    
    cond_stat_map::iterator itr = m_cond.find(id); // look for the id in the conditional map
@@ -224,22 +224,22 @@ void psc_obj_repository::print_cond_hits()
 {
    cond_stat_map::const_iterator itr = m_cond.begin();
 
-   cout << "---  Conditional Entries  ---" << endl;
+   cerr << "---  Conditional Entries  ---" << endl;
 
    for (int i = 0; itr != m_cond.end(); i++, itr++) {
       const string & current_key = (*itr).first;
       const cond_statement_t & current_value = (*itr).second;      
-      cout << " " << i+1 << ". id=\"" << current_key << "\" \thit_count=" <<
+      cerr << " " << i+1 << ". id=\"" << current_key << "\" \thit_count=" <<
          current_value.hit_count << endl;
    }
    
-   cout << "----------------------------------" << endl;
+   cerr << "----------------------------------" << endl;
 }
 
 double psc_obj_repository::average_toggle_count()
 {
 #ifdef DEBUG_POWER_LEVEL3
-   cout << "\t[psc_obj_repository]: Computing the average toggle count" << endl;
+   cerr << "\t[psc_obj_repository]: Computing the average toggle count" << endl;
 #endif
 
    int i;
@@ -266,7 +266,7 @@ double psc_obj_repository::average_toggle_count()
 unsigned long long int psc_obj_repository::total_toggle_count()
 {
 #ifdef DEBUG_POWER_LEVEL3
-   cout << "\t[psc_obj_repository]: Computing the total toggle count" << endl;
+   cerr << "\t[psc_obj_repository]: Computing the total toggle count" << endl;
 #endif
 
    unsigned long long int total = 0; // TC accumulator
@@ -295,7 +295,7 @@ void psc_obj_repository::switching_power_report()
 
 	it = m_map.begin();
 	
-	cout << "--- Switching Power ---" << endl;
+	cerr << "--- Switching Power ---" << endl;
 
 	for ( ; it != m_map.end() ; it++ ) {
       const string & key = (*it).first;
@@ -303,12 +303,12 @@ void psc_obj_repository::switching_power_report()
 		netpower = ((entry.nload + entry.wload) * entry.toggle_rate);
 		netpower *= Vdd2 / 2;
 		netpower *= psc_objinfo_base::techlib.get_dynpwr_unit();
-		cout << key << "(" << entry.alias << "): " << netpower << "W" << endl;
+		cerr << key << "(" << entry.alias << "): " << netpower << "W" << endl;
 	}
 
-	cout << "--" << endl;
-	cout << "TOTAL: " << get_switching_power() << "W" << endl;
-   cout << "-----------------------" << endl;
+	cerr << "--" << endl;
+	cerr << "TOTAL: " << get_switching_power() << "W" << endl;
+   cerr << "-----------------------" << endl;
 }
 
 double psc_obj_repository::get_switching_power()

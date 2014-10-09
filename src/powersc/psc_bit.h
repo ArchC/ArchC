@@ -98,7 +98,7 @@ public:
 	~psc_bit()
 	{
 #ifdef DEBUG_POWER_L3
-		cout << "\t[psc_bit]: Destroying " << PRINT_OBJ_STR << " TC=" << get_toggle_count() << endl;
+		cerr << "\t[psc_bit]: Destroying " << PRINT_OBJ_STR << " TC=" << get_toggle_count() << endl;
 #endif
 
 		finish_pending(); // if some calculation is pending, update the statistics
@@ -112,7 +112,7 @@ public:
 		update_toggle_count(sc_bit(*this), tmp);
 
 #ifdef DEBUG_POWER_L1
-		cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (psc_bit " << bool(b) 
+		cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (psc_bit " << bool(b) 
 			<< ") TC: " << dec << get_toggle_count() << endl;
 #endif
 
@@ -125,7 +125,7 @@ public:
 		update_toggle_count(sc_bit(*this), b);
 
 #ifdef DEBUG_POWER_L1
-		cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_bit " << bool(b)
+		cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_bit " << bool(b)
 			<< ") TC: " << dec << get_toggle_count() << endl;
 #endif
 
@@ -138,7 +138,7 @@ public:
 		update_toggle_count(sc_bit(*this), sc_bit(b));
 
 #ifdef DEBUG_POWER_L1
-		cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int " << b 
+		cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int " << b 
 			<< ") TC: " << dec << get_toggle_count() << endl;
 #endif
 
@@ -151,7 +151,7 @@ public:
 		update_toggle_count(sc_bit(*this), sc_bit(b));
 
 #ifdef DEBUG_POWER_L1
-		cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (bool " << b
+		cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (bool " << b
 			<< ") TC: " << dec << get_toggle_count() << endl;
 #endif
 
@@ -164,7 +164,7 @@ public:
 		update_toggle_count(sc_bit(*this), sc_bit(b));
 
 #ifdef DEBUG_POWER_L1
-		cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (char " << b 
+		cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (char " << b 
 			<< ") TC: " << dec << get_toggle_count() << endl;
 #endif
 		

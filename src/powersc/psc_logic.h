@@ -114,7 +114,7 @@ public:
    ~psc_logic()
    {
 #ifdef DEBUG_POWER_L3
-		cout << "\t[psc_logic]: Destroying " << PRINT_OBJ_STR << " TC=" << get_toggle_count() << endl;
+		cerr << "\t[psc_logic]: Destroying " << PRINT_OBJ_STR << " TC=" << get_toggle_count() << endl;
 #endif
 
 		finish_pending(); // if some calculation is pending, update the statistics

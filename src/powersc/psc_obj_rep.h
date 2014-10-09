@@ -136,8 +136,8 @@ class psc_obj_repository : public psc_obj_repository_base {
 				m_activity_sampler->set_power_db( this );
 
 #ifdef DEBUG_POWER_L3
-				cout << "\t[psc_obj_repository]: Creating repository -> Initial bucket count is " << m_map.bucket_count() << endl;
-				cout << "\t[psc_obj_repository]: Creating conditional map -> Initial bucket count is " << m_cond.bucket_count() << endl;
+				cerr << "\t[psc_obj_repository]: Creating repository -> Initial bucket count is " << m_map.bucket_count() << endl;
+				cerr << "\t[psc_obj_repository]: Creating conditional map -> Initial bucket count is " << m_cond.bucket_count() << endl;
 #endif
 			}
 
@@ -148,8 +148,8 @@ class psc_obj_repository : public psc_obj_repository_base {
 				delete( m_activity_sampler );
 
 #ifdef DEBUG_POWER_L3
-			cout << "\t[psc_obj_repository]: Destroying repository -> size=" << m_map.size() << " - bucket_count=" << m_map.bucket_count() << endl;
-			cout << "\t[psc_obj_repository]: Destroying conditonal map -> size=" << m_cond.size() << " - bucket_count=" << m_cond.bucket_count() << endl;
+			cerr << "\t[psc_obj_repository]: Destroying repository -> size=" << m_map.size() << " - bucket_count=" << m_map.bucket_count() << endl;
+			cerr << "\t[psc_obj_repository]: Destroying conditonal map -> size=" << m_cond.size() << " - bucket_count=" << m_cond.bucket_count() << endl;
 #endif
 		}
 

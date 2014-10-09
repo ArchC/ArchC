@@ -87,7 +87,7 @@ SC_MODULE(psc_sampler)
       init_defaults();
 
 #ifdef DEBUG_POWER_L2
-      cout << "[psc_sampler]: " << this->name() << endl;
+      cerr << "[psc_sampler]: " << this->name() << endl;
 #endif
 
       SC_METHOD(execute);
@@ -100,16 +100,16 @@ public:
    ~psc_sampler()
    {
 #ifdef DEBUG_POWER_L3
-      cout << "[psc_sampler]: Destroying object" << endl;
-      cout << "Final simulation time: " << sc_simulation_time() << endl;
-      cout << "total_tmon = " << m_total_tmon << endl;
-      cout << "Final monitoring window: " << m_t_end_mon << endl;
+      cerr << "[psc_sampler]: Destroying object" << endl;
+      cerr << "Final simulation time: " << sc_simulation_time() << endl;
+      cerr << "total_tmon = " << m_total_tmon << endl;
+      cerr << "Final monitoring window: " << m_t_end_mon << endl;
 #endif
 
       if ( m_t_end_mon > sc_simulation_time() ) {
-         cout << "Adjusting monitored time" << endl;
+         cerr << "Adjusting monitored time" << endl;
          double real_t_mon = m_total_tmon - (m_t_end_mon - sc_simulation_time());
-         cout << "Monitored time: " << real_t_mon << endl;
+         cerr << "Monitored time: " << real_t_mon << endl;
       }
    }
 

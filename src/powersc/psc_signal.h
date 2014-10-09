@@ -198,7 +198,7 @@ inline
 void psc_signal<T>::set_alias( const char *new_alias )
 {
 #ifdef DEBUG_POWER_L3
-   cout << "\t[psc_signal]: Setting alias \"" << new_alias << "\"" << endl;
+   cerr << "\t[psc_signal]: Setting alias \"" << new_alias << "\"" << endl;
 #endif
 
    init_info( new_alias );

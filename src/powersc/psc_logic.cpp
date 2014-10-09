@@ -47,7 +47,7 @@ using namespace psc_dt;
 unsigned short int psc_logic::on_bits( const sc_logic & v )
 {
 //   if ( !v.is_01() ) 
-//      cout << "Warning: value of sc_logic parameter is undefined" << endl;
+//      cerr << "Warning: value of sc_logic parameter is undefined" << endl;
 	if ( psc_logic::must_update() && (v.to_bool() != 0) )
 		psc_objinfo<1, sc_logic>::inc_bit_toggle_count( 0, 1 );
 
@@ -95,7 +95,7 @@ psc_logic& psc_logic::operator = ( const psc_logic& a )
    update_toggle_count( (*this), a );
 
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (psc_logic " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (psc_logic " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -108,7 +108,7 @@ psc_logic& psc_logic::operator = ( const sc_logic& a )
    update_toggle_count( (*this), a );
 
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_logic " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_logic " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -121,7 +121,7 @@ psc_logic& psc_logic::operator = ( sc_logic_value_t v )
    update_toggle_count( (*this), v );
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_logic_value_t " << v 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_logic_value_t " << v 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -134,7 +134,7 @@ psc_logic& psc_logic::operator = ( bool a )
    update_toggle_count( (*this), sc_logic( a ) );
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (bool " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (bool " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -147,7 +147,7 @@ psc_logic& psc_logic::operator = ( char a )
    update_toggle_count( (*this), sc_logic( a ) );
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (char " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (char " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -160,7 +160,7 @@ psc_logic& psc_logic::operator = ( int a )
    update_toggle_count( (*this), sc_logic( a ) );
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -173,7 +173,7 @@ psc_logic& psc_logic::operator = ( const sc_bit& a )
    update_toggle_count( (*this), sc_logic( a ) );
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_bit " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_bit " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    

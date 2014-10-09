@@ -49,7 +49,7 @@ void psc_sampler::execute()
    // the conditions evaluates to true until the end of the simulation
    if ( m_full_sampling ) {
 #ifdef DEBUG_POWER_L2
-      cout << "[psc_sampler]: Full simulation monitoring" << endl;
+      cerr << "[psc_sampler]: Full simulation monitoring" << endl;
 #endif
 
       m_to_sample = true;
@@ -66,7 +66,7 @@ void psc_sampler::execute()
       next_trigger( m_tmon, SC_NS );
       m_total_tmon = m_tmon;
       
-      cout << sc_time_stamp() << " - Monitoring the initial samples: samples(" 
+      cerr << sc_time_stamp() << " - Monitoring the initial samples: samples(" 
          << m_num_first_samples << ") time(" << m_tmon << ")" << endl;
       return;
    }
@@ -82,7 +82,7 @@ void psc_sampler::execute()
       // first predicted average has the same value than the actual average
       m_global_pred_avg = (double)m_mon_tc / m_t_end_mon;
       m_local_avg = m_global_pred_avg; // first local avg is equal to first predicted avg
-      cout << sc_time_stamp() << " - first computed average: " << m_global_pred_avg << endl;      
+      cerr << sc_time_stamp() << " - first computed average: " << m_global_pred_avg << endl;      
    } else
       m_global_pred_avg = get_global_average();
    
@@ -112,7 +112,7 @@ void psc_sampler::execute()
 #if 0
             // if difference is too big we restart the sampler
             if ( ! reset_threshold_check(local_avg, m_global_pred_avg) ) {
-               cout << "m_reset_counter: " << m_reset_counter << endl;
+               cerr << "m_reset_counter: " << m_reset_counter << endl;
                if ( --m_reset_counter == 0 ) {
                   reset_sampler();
                   m_reset_counter = RESET_SAMPLER_COUNTER;
@@ -122,7 +122,8 @@ void psc_sampler::execute()
 #endif    
          }
          m_local_avg = local_avg;
-         cout << "Local average: " << local_tc << "/" << local_time 
+
+         cerr << "Local average: " << local_tc << "/" << local_time 
             << " = " << local_avg << endl;
       }
 
@@ -135,7 +136,7 @@ void psc_sampler::execute()
       m_total_tmon += m_tmon;
 
       
-      cout << sc_time_stamp() << " - Resume monitoring: samples(" << m_n_mon
+      cerr << sc_time_stamp() << " - Resume monitoring: samples(" << m_n_mon
          << ") time(" << m_tmon << ")" << endl;
    } else {
       m_tpred = m_n_pred * m_ts;
@@ -147,12 +148,12 @@ void psc_sampler::execute()
       next_trigger( m_tpred, SC_NS );
       m_total_tpred += m_tpred;
 
-      cout << "-> The last local average is " << m_local_avg << endl;
-      cout << sc_time_stamp() << " - Stopping monitoring: samples(" << m_n_pred
+      cerr << "-> The last local average is " << m_local_avg << endl;
+      cerr << sc_time_stamp() << " - Stopping monitoring: samples(" << m_n_pred
          << ") time(" << m_tpred << ")" << endl;
    }
 
-   cout << "[t=" << sc_time_stamp() << "] - current global average: " << m_global_pred_avg 
+   cerr << "[t=" << sc_time_stamp() << "] - current global average: " << m_global_pred_avg 
       << " - m_total_tpred: " << m_total_tpred << " - m_total_tmon: " << m_total_tmon << endl;
 }
 
@@ -160,14 +161,14 @@ void psc_sampler::status_quo()
 {
    if ( ! m_status_quo ) {
 #ifdef DEBUG_POWER_L2
-      cout << "[psc_sampler]: " << "switching activity status quo retrieval disabled" << endl;
+      cerr << "[psc_sampler]: " << "switching activity status quo retrieval disabled" << endl;
 #endif
       next_trigger(); // nevermore during the simulation
       return;
    } else if ( m_wait_first_interval ) {
       // wait for the first interval
 #ifdef DEBUG_POWER_L2
-      cout << "[psc_sampler]: " << "switching activity status quo retrieval enabled" << endl;
+      cerr << "[psc_sampler]: " << "switching activity status quo retrieval enabled" << endl;
 #endif
       next_trigger( m_status_interval, SC_NS );
       m_wait_first_interval = false;
@@ -219,7 +220,7 @@ bool psc_sampler::threshold_check( double local, double pred )
    ratio = (max / min);
    diff = ratio - 1.0;
 
-   cout << "threshold_check - Local: " << local << " - Pred: " << pred
+   cerr << "threshold_check - Local: " << local << " - Pred: " << pred
       << " - diff: " << diff << " (" << ((diff <= m_threshold) ? "OK": "Not OK") << ")" << endl;
 
    return( diff <= m_threshold );
@@ -399,16 +400,16 @@ double psc_sampler::get_global_average()
    global_average = (mon_avg * mon_weight) + (pred_avg * pred_weight);
 
    if ( sc_simulation_time() > 10.0e+6 ) {
-      cout << "---------------------------------------" << endl;
-      cout << "-- m_total_tmon = " << m_total_tmon << endl;
-      cout << "-- m_total_tpred = " << m_total_tpred << endl;
-      cout << "-- total_sim_time = " << total_sim_time << endl;
-      cout << "-- mon_weight = " << mon_weight << endl;
-      cout << "-- pred_weight = " << pred_weight << endl;
-      cout << "-- mon_avg = " << mon_avg << endl;
-      cout << "-- pred_avg = " << pred_avg << endl;
-      cout << "-- global_avg = " << global_average << endl;
-      cout << "---------------------------------------" << endl;
+      cerr << "---------------------------------------" << endl;
+      cerr << "-- m_total_tmon = " << m_total_tmon << endl;
+      cerr << "-- m_total_tpred = " << m_total_tpred << endl;
+      cerr << "-- total_sim_time = " << total_sim_time << endl;
+      cerr << "-- mon_weight = " << mon_weight << endl;
+      cerr << "-- pred_weight = " << pred_weight << endl;
+      cerr << "-- mon_avg = " << mon_avg << endl;
+      cerr << "-- pred_avg = " << pred_avg << endl;
+      cerr << "-- global_avg = " << global_average << endl;
+      cerr << "---------------------------------------" << endl;
    }
    
    return( global_average );
@@ -425,7 +426,7 @@ bool psc_sampler::reset_threshold_check( double local, double pred )
    ratio = (max / min);
    diff = ratio - 1.0;
 
-   cout << "reset_threshold_check - diff: " << diff << " (" << ((diff <= m_reset_threshold) ? "OK, pass": "Not OK, resetting") << ")" << endl;
+   cerr << "reset_threshold_check - diff: " << diff << " (" << ((diff <= m_reset_threshold) ? "OK, pass": "Not OK, resetting") << ")" << endl;
 
    return( diff <= m_reset_threshold );
 }

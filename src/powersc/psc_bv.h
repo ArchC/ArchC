@@ -151,7 +151,7 @@ public:
    ~psc_bv()
    {
 #ifdef DEBUG_POWER_L3
-      cout << "\t[psc_bv]: Destroying " << PRINT_OBJ_STR << " TC=" << get_toggle_count() << endl;
+      cerr << "\t[psc_bv]: Destroying " << PRINT_OBJ_STR << " TC=" << get_toggle_count() << endl;
 #endif
 
       this->finish_pending(); // if some calculation is pending, update the statistics before destroying the object
@@ -257,7 +257,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_proxy<X>& a )
    update_toggle_count(sc_bv<W>(*this), a);
 
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_proxy " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_proxy " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -271,7 +271,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_bv<W>& a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_bv " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_bv " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -285,7 +285,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const psc_bv<W>& a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (psc_bv " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (psc_bv " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -301,7 +301,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const char* a )
    update_toggle_count(sc_bv<W>(*this), tmp);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (char* " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (char* " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -316,7 +316,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const bool* a )
    
 #ifdef DEBUG_POWER_L1
    sc_bv<W> tmp_( a );
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (bool* " << tmp_ 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (bool* " << tmp_ 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -331,7 +331,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_logic* a )
    
 #ifdef DEBUG_POWER_L1
    sc_bv<W> tmp_( a );
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_logic* " << tmp_ 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_logic* " << tmp_ 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -345,7 +345,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_unsigned& a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_unsigned " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_unsigned " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -359,7 +359,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_signed& a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_signed " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_signed " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -373,7 +373,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_uint_base& a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_uint_base " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_uint_base " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -387,7 +387,7 @@ psc_bv<W>& psc_bv<W>::operator = ( const sc_int_base& a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_int_base " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (sc_int_base " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -401,7 +401,7 @@ psc_bv<W>& psc_bv<W>::operator = ( unsigned long a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (unsigned long " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (unsigned long " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -415,7 +415,7 @@ psc_bv<W>& psc_bv<W>::operator = ( long a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (long " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (long " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -429,7 +429,7 @@ psc_bv<W>& psc_bv<W>::operator = ( unsigned int a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (unsigned int " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (unsigned int " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -443,7 +443,7 @@ psc_bv<W>& psc_bv<W>::operator = ( int a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -456,7 +456,7 @@ psc_bv<W>& psc_bv<W>::operator = ( uint64 a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (uint64 " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (uint64 " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    
@@ -470,7 +470,7 @@ psc_bv<W>& psc_bv<W>::operator = ( int64 a )
    update_toggle_count(sc_bv<W>(*this), a);
    
 #ifdef DEBUG_POWER_L1
-   cout << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int64 " << a 
+   cerr << hex << "\t" << PRINT_OBJ_STR << ": (" << (*this) << ") operator = (int64 " << a 
       << ") TC: " << dec << get_toggle_count() << endl;
 #endif
    

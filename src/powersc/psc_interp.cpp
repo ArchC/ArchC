@@ -77,9 +77,9 @@ double psc_geometric_centroid( psc_point_t points[4], double x, double y )
 	P.weight = 0.0;
 
 #if 0
-	std::cout << "-- psc_geometric_centroid - begin" << std::endl;
+	std::cerr << "-- psc_geometric_centroid - begin" << std::endl;
 	for ( int i = 0 ; i < 4 ; i++ )
-		std::cout << "points[" << i << "] = {" << points[i].x << ", " 
+		std::cerr << "points[" << i << "] = {" << points[i].x << ", " 
 			<< points[i].y << ", " << points[i].z << "}" << std::endl;
 #endif
 	
@@ -97,17 +97,17 @@ double psc_geometric_centroid( psc_point_t points[4], double x, double y )
 
 #if 0
 	for ( int i = 0 ; i < 4 ; i++ )
-		std::cout << "points[" << i << "].weight = " << points[i].weight << std::endl;
+		std::cerr << "points[" << i << "].weight = " << points[i].weight << std::endl;
 #endif
 
 	P.z = (points[0].weight*points[0].z + points[1].weight*points[1].z + points[2].weight*points[2].z + points[3].weight*points[3].z);
 	P.z /= (points[0].weight + points[1].weight + points[2].weight + points[3].weight);
 
 #if 0
-	std::cout << "P.x = " << P.x << std::endl;
-	std::cout << "P.y = " << P.y << std::endl;
-	std::cout << "P.z = " << P.z << std::endl;
-	std::cout << "-- psc_geometric_centroid - end" << std::endl;
+	std::cerr << "P.x = " << P.x << std::endl;
+	std::cerr << "P.y = " << P.y << std::endl;
+	std::cerr << "P.z = " << P.z << std::endl;
+	std::cerr << "-- psc_geometric_centroid - end" << std::endl;
 #endif
 
 	return( P.z );
@@ -125,9 +125,9 @@ double psc_geometric_centroid( psc_point_4d_t points[8], double x, double y, dou
     P.weight = 0.0;
 
 #if 1
-    std::cout << "-- psc_geometric_centroid - begin" << std::endl;
+    std::cerr << "-- psc_geometric_centroid - begin" << std::endl;
     for ( int i = 0 ; i < 8 ; i++ )
-        std::cout << "points[" << i << "] = {" << points[i].x << ", "
+        std::cerr << "points[" << i << "] = {" << points[i].x << ", "
             << points[i].y << ", " << points[i].z
             << ", " << points[i].power << ")" << std::endl;
 #endif
@@ -166,7 +166,7 @@ double psc_geometric_centroid( psc_point_4d_t points[8], double x, double y, dou
 
 #if 1
     for ( int i = 0 ; i < 8 ; i++ )
-        std::cout << "points[" << i << "].weight = " << points[i].weight << std::endl;
+        std::cerr << "points[" << i << "].weight = " << points[i].weight << std::endl;
 #endif
     // interpolate the power value given the weights
     P.power  = (points[0].weight*points[0].power + points[1].weight*points[1].power + points[2].weight*points[2].power + points[3].weight*points[3].power);
@@ -176,11 +176,11 @@ double psc_geometric_centroid( psc_point_4d_t points[8], double x, double y, dou
     P.power /= (sum_weights);
 
 #if 1
-    std::cout << "P.x = " << P.x << std::endl;
-    std::cout << "P.y = " << P.y << std::endl;
-    std::cout << "P.z = " << P.z << std::endl;
-    std::cout << "P.power = " << P.power << std::endl;
-    std::cout << "-- psc_geometric_centroid - end" << std::endl;
+    std::cerr << "P.x = " << P.x << std::endl;
+    std::cerr << "P.y = " << P.y << std::endl;
+    std::cerr << "P.z = " << P.z << std::endl;
+    std::cerr << "P.power = " << P.power << std::endl;
+    std::cerr << "-- psc_geometric_centroid - end" << std::endl;
 #endif
 
 	 return( P.power );
