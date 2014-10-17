@@ -36,7 +36,7 @@ public:
   {
 
     // local storage for the set counters
-	  printf("\nassoc=%d, m_assoc=%d", assoc, m_assoc);
+	  
     if (m_assoc != 1) {
     	counter = new uint8_t[num_blocks/assoc];
     	for (int i=0; i<num_blocks/assoc; i++) counter[i]=0;

@@ -52,14 +52,15 @@ GDB_DIR=
 AC_ARG_WITH(systemc,
             AC_HELP_STRING([--with-systemc=PATH],
                            [Sets the directory where SystemC is installed.]),
-            [SC_DIR=$withval],
+            [SC_DIR=$withval 
+	     TLM_DIR=$SC_DIR/include],
             [AC_MSG_NOTICE([ArchC will be compiled without SystemC.])])
 
-AC_ARG_WITH(tlm,
-            AC_HELP_STRING([--with-tlm=PATH],
-                           [Sets the directory where the TLM libraries are installed.]),
-            [TLM_DIR=$withval],
-            [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
+#AC_ARG_WITH(tlm,
+#            AC_HELP_STRING([--with-tlm=PATH],
+#                           [Sets the directory where the TLM libraries are installed.]),
+#            [TLM_DIR=$withval],
+#            [AC_MSG_NOTICE([ArchC will be compiled without TLM.])])
 
 AC_ARG_WITH(powersc,
             AC_HELP_STRING([--with-powersc=PATH],
@@ -103,14 +104,14 @@ SCLIB_SRC_DIR="$PW_DIR/src/sysc"
 SC_DT_BIT_DIR="$SCLIB_SRC_DIR/datatypes/bit"
 SC_COMM_DIR="$SCLIB_SRC_DIR/communication"
 SC_KERNEL_DIR="$SCLIB_SRC_DIR/kernel"
-#AC_CHECK_FILES($SC_DT_BIT_DIR/sc_bit.cpp \
-#          $SC_DT_BIT_DIR/sc_logic.cpp \
-#          $SC_COMM_DIR/sc_clock.cpp \
-#          $SC_KERNEL_DIR/sc_wait.cpp \
-#          $SC_KERNEL_DIR/sc_join.cpp ,
-#          ,
-#          AC_MSG_ERROR([SystemC source file not found!!!. See config.log for details.])
-#          )
+AC_CHECK_FILES($SC_DT_BIT_DIR/sc_bit.cpp \
+          $SC_DT_BIT_DIR/sc_logic.cpp \
+          $SC_COMM_DIR/sc_clock.cpp \
+          $SC_KERNEL_DIR/sc_wait.cpp \
+          $SC_KERNEL_DIR/sc_join.cpp ,
+          ,
+          AC_MSG_ERROR([SystemC source file not found!!!. See config.log for details.])
+          )
 
 AC_SUBST(SC_DT_BIT_DIR) 
 AC_SUBST(SC_COMM_DIR)
