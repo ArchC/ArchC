@@ -99,6 +99,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
   	//sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
 	unsigned char p[32];
 
+	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	payload_global->set_address((sc_dt::uint64)address);
 	payload_global->set_data_ptr(p);
@@ -181,6 +182,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	tlm::tlm_sync_enum status;
 
 	//sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
+	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	
 	unsigned char p[32];
@@ -308,6 +310,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 
   switch (wordsize) {
   case 8:
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     payload_global->set_command(tlm::TLM_READ_COMMAND);
     payload_global->set_address((uint64_t)address);
     payload_global->set_data_length(sizeof(uint8_t));
@@ -327,6 +330,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     wait(this->wake_up);
 
     
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     payload_global->set_command(tlm::TLM_WRITE_COMMAND);
 
     ptr = payload_global->get_data_ptr();
@@ -347,6 +351,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 
     break;
   case 16:
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     payload_global->set_command(tlm::TLM_READ_COMMAND);
     payload_global->set_address((uint64_t)address);
     payload_global->set_data_length(sizeof(uint16_t));
@@ -361,6 +366,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	
     wait(this->wake_up);
     
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     payload_global->set_command(tlm::TLM_WRITE_COMMAND);
     ptr = payload_global->get_data_ptr();
 
@@ -382,6 +388,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
  
  case 32:
     payload_global->set_address((uint64_t)address);
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     payload_global->set_command(tlm::TLM_WRITE_COMMAND);
     payload_global->set_data_length(sizeof(uint32_t));
 
