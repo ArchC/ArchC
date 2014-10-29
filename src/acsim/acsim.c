@@ -767,7 +767,7 @@ void CreateArchHeader() {
   fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
 
   fprintf( output, "%sstatic int globalId;\n", INDENT[1]);
-  fprintf( output, "%sint getId() { return id.read(); }\n",INDENT[1]);
+  fprintf( output, "%sint getId() { return regId.read(); }\n",INDENT[1]);
 
 
   fprintf( output, "};\n\n"); //End of ac_resources class
@@ -1715,8 +1715,8 @@ if (HaveTLM2IntrPorts) {
   fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
-  //fprintf( output, "%sid = globalId;\n", INDENT[2] );
-  fprintf( output, "%sid.write(globalId++);\n", INDENT[2]);
+  fprintf( output, "%sid = globalId;\n", INDENT[2] );
+  fprintf( output, "%sregId.write(globalId++);\n", INDENT[2]);
 
   
     
