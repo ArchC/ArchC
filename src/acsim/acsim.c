@@ -766,6 +766,10 @@ void CreateArchHeader() {
   COMMENT(INDENT[1],"Virtual destructor declaration.");
   fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
 
+  fprintf( output, "%sstatic int globalId;\n", INDENT[1]);
+  fprintf( output, "%sint getId() { return regId.read(); }\n",INDENT[1]);
+
+
   fprintf( output, "};\n\n"); //End of ac_resources class
 
   fprintf( output, "#endif  //_%s_ARCH_H\n", upper_project_name);
@@ -1631,7 +1635,7 @@ if (HaveTLM2IntrPorts) {
   else
     fprintf( output, "%sunsigned* ins_cache;\n", INDENT[1]);
 
-  fprintf( output, "%sunsigned id;\n", INDENT[1]);
+  //fprintf( output, "%sunsigned id;\n", INDENT[1]);
   fprintf( output, "%sbool start_up;\n", INDENT[1]);
 
   if (ACGDBIntegrationFlag)
@@ -1711,8 +1715,11 @@ if (HaveTLM2IntrPorts) {
   fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
-  fprintf( output, "%sid = %d;\n", INDENT[2], 1);
+  fprintf( output, "%sid = globalId;\n", INDENT[2] );
+  fprintf( output, "%sregId.write(globalId++);\n", INDENT[2]);
 
+  
+    
   if (ACGDBIntegrationFlag)
     fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", 
             INDENT[2], project_name, project_name);
@@ -2532,6 +2539,10 @@ case TLM2_PORT:
                INDENT[1], pstorage->name, pstorage->higher->name );
   */  
   fprintf( output, "}\n\n");
+
+
+  fprintf( output, "int mips_arch::globalId = 0;");
+
 }
 
 
