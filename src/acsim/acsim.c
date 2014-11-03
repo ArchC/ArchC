@@ -767,7 +767,7 @@ void CreateArchHeader() {
   fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
 
   fprintf( output, "%sstatic int globalId;\n", INDENT[1]);
-  fprintf( output, "%sint getId() { return regId.read(); }\n",INDENT[1]);
+  fprintf( output, "%sint getId() { return id.read(); }\n",INDENT[1]);
 
 
   fprintf( output, "};\n\n"); //End of ac_resources class
@@ -1715,10 +1715,8 @@ if (HaveTLM2IntrPorts) {
   fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
-  fprintf( output, "%sid = globalId;\n", INDENT[2] );
-  fprintf( output, "%sregId.write(globalId++);\n", INDENT[2]);
-
-  
+  fprintf( output, "%sid.write(globalId++);\n", INDENT[2]);
+ 
     
   if (ACGDBIntegrationFlag)
     fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", 
@@ -4194,7 +4192,7 @@ void EmitDecCache(FILE *output, int base_indent) {
     fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
   if (ACThreading)
     fprintf(output, "%svoid* end_rot;\n", INDENT[base_indent + 1]);
-  fprintf(output, "%sunsigned id;\n", INDENT[base_indent + 1]);
+  
   fprintf(output, "%sunion {\n", INDENT[base_indent + 1]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
     fprintf(output, "%sT_%s F_%s;\n", INDENT[base_indent + 2], 
