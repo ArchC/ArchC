@@ -7,6 +7,8 @@ aplications to interface virtual calls with real host system calls.
 The GCC cross-compiled to the target architecture must be configured
 to use this library.
 
+This folder contains specific modifications to work with ARM's newlib.
+
 
 How to create/configure a cross-compiler for an ArchC description
 -----------------------------------------------------------------

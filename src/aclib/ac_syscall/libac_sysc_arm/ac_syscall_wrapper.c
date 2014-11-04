@@ -17,7 +17,9 @@
  */
 
 #include <ac_syscall_wrapper.h>
+
 #include <ac_syscall_codes.h>
+#include "ac_arm_codes.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>

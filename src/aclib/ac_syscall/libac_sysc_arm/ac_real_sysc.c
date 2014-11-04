@@ -1,5 +1,5 @@
 /**
- * @file      kill.c
+ * @file      ac_real_sysc.c
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
@@ -14,15 +14,15 @@
  *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  *
- * @note      The kill isn't implemented yet; go out via exit if self
- *
  */
 
+/* some syscalls that trap to simulator functions */
 
-int
-kill(int pid, int sig)
-{
-  if(pid == 1)
-    _exit(sig);
-  return 0;
+#include "ac_arm.h"
+
+#define AC_SYSC(NAME,LOCATION) \
+int NAME() { \
+  goto *LOCATION; \
 }
+
+#include "ac_syscall.def"

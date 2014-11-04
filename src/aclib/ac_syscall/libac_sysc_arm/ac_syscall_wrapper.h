@@ -22,7 +22,6 @@
 #include <errno.h>
 
 
-
 #define __syscall_return(type, res) \
 do { \
   if ((int)(res) == -1) errno = ac_syscall_geterrno(); \
