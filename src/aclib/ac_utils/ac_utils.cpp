@@ -69,6 +69,7 @@ void ac_init_opt( int ac, char* av[]){
       cerr << "  --help                  Display this help message\n";
       cerr << "  --version               Display ArchC version and options used when built\n";
       cerr << "  --load=<prog_path>      Load target application\n";
+      cerr << "  -- <prog_path>          Load target application\n";
       cerr << "  --trace-cache=<cache>,<file> Trace cache access\n";
 #ifdef USE_GDB
 //      cerr << "  --gdb[=<port>]          Enable GDB support\n";
@@ -99,7 +100,7 @@ void ac_init_app( int ac, char* av[]){
     size = strlen(av[1]);
 
     //Checking if an application needs to be loaded
-    if( (size>11) && (!strncmp( av[1], "--load_obj=", 11))){   //Loading a binary app
+    if( (size>11) && (!strncmp( av[1], "--load_obj=", 11))){   // Loading hex file in the ArchC Format
       appname = (char*)malloc(size - 10);
       strcpy(appname, av[1]+11);
       ac_argv[1] = appname;
@@ -107,62 +108,77 @@ void ac_init_app( int ac, char* av[]){
       strcpy(appfilename, appname);
       //ac_load_obj( appname );
     }
-    else if( (size>7) && (!strncmp( av[1], "--load=", 7))){  //Loading hex file in the ArchC Format
+    else if( (size>7) && (!strncmp( av[1], "--load=", 7))){  // Loading a binary app with former way: --load=<bin>
       appname = (char*)malloc(size - 6);
       strcpy(appname, av[1]+7);
       ac_argv[1] = appname;
       appfilename = (char*) malloc(sizeof(char)*(size - 6));
       strcpy(appfilename, appname);
+
+    } else if ( (size==2) && (!strncmp( av[1], "--", 2))) { // Loading a binary with new way: -- <bin> 
+        ac_argc--;
+        ac--;
+
+        // Remove --load from ac_argv
+        for (int i = 1; i < ac; i++) {
+            ac_argv[i] = ac_argv[i+1];
+        }
+
+        size = strlen(av[1]);
+        appname = (char*)malloc(size);
+        strcpy(appname, av[1]);
+        // ac_argv[1] = appname;
+        appfilename = (char*) malloc(sizeof(char)*(size));
+        strcpy(appfilename, appname);
+
+        av++;
     }
 #ifdef USE_GDB
-//     if( (size>=5) && (!strncmp( av[1], "--gdb", 5))){ //Enable GDB support
-//       int port = 0;
-//       if ( size > 6 )
-//         {
-//           port = atoi( av[1] + 6 );
-//           if ( ( port > 1024 ) && gdbstub )
-//             gdbstub->set_port( port );
-//         }
-//       if ( gdbstub )
-//         gdbstub->enable();
-//     }
+    //     if( (size>=5) && (!strncmp( av[1], "--gdb", 5))){ //Enable GDB support
+    //       int port = 0;
+    //       if ( size > 6 )
+    //         {
+    //           port = atoi( av[1] + 6 );
+    //           if ( ( port > 1024 ) && gdbstub )
+    //             gdbstub->set_port( port );
+    //         }
+    //       if ( gdbstub )
+    //         gdbstub->enable();
+    //     }
 #endif /* USE_GDB */
 
-  else if ( (size>14) && (!strncmp(av[1], "--trace-cache=", 14)) ) {
-    char *comma = strchr(av[1], ',');
-    if (comma == NULL) {
-      std::cerr << "Error: invalid argument syntax.\n";
-      exit(EXIT_FAILURE);
-    }
-    std::string cache_name(av[1]+14, comma);
-    std::string file_name(comma+1, av[1]+size);
-    ac_cache_traces[cache_name] = new std::ofstream(file_name.c_str());
-    if (!ac_cache_traces[cache_name]) {
-      std::cerr << "Error opening file: " << file_name << "\n";
-      exit(EXIT_FAILURE);
-    }
-      // Remove this parameter from the list and reset the loop
-    for (int i = 1; i <= ac; i++) {
-      av[i] = av[i+1];
-    }
-    
-    ac_argc--;
-    ac--;
-    continue;
-    }
+    else if ( (size>14) && (!strncmp(av[1], "--trace-cache=", 14)) ) {
+        char *comma = strchr(av[1], ',');
+        if (comma == NULL) {
+            std::cerr << "Error: invalid argument syntax.\n";
+            exit(EXIT_FAILURE);
+        }
+        std::string cache_name(av[1]+14, comma);
+        std::string file_name(comma+1, av[1]+size);
+        ac_cache_traces[cache_name] = new std::ofstream(file_name.c_str());
+        if (!ac_cache_traces[cache_name]) {
+            std::cerr << "Error opening file: " << file_name << "\n";
+            exit(EXIT_FAILURE);
+        }
+        // Remove this parameter from the list and reset the loop
+        for (int i = 1; i <= ac; i++) {
+            av[i] = av[i+1];
+        }
 
-
-
+        ac_argc--;
+        ac--;
+        continue;
+    }
 
     ac --;
     av ++;
   }
 
   if (!appname) {
-    AC_ERROR("No application provided.");
-    AC_ERROR("Use --load=<prog_path> option to load a target application.");
-    AC_ERROR("Try --help for more options.");
-    exit(1);
+      AC_ERROR("No application provided.");
+      AC_ERROR("Use --load=<prog_path> or -- <prog_path> to load a target application.");
+      AC_ERROR("Try --help for more options.");
+      exit(1);
   }
   ac_argv++;
 
