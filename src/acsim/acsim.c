@@ -2539,7 +2539,7 @@ case TLM2_PORT:
   fprintf( output, "}\n\n");
 
 
-  fprintf( output, "int mips_arch::globalId = 0;");
+  fprintf( output, "int %s_arch::globalId = 0;", project_name);
 
 }
 
@@ -4192,6 +4192,7 @@ void EmitDecCache(FILE *output, int base_indent) {
     fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
   if (ACThreading)
     fprintf(output, "%svoid* end_rot;\n", INDENT[base_indent + 1]);
+  fprintf(output, "%sunsigned id;\n", INDENT[base_indent + 1]);
   
   fprintf(output, "%sunion {\n", INDENT[base_indent + 1]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
