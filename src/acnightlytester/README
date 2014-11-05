@@ -1,0 +1,26 @@
+#******************************************************
+#   AcNightlyTester 
+#******************************************************
+
+The ArchC Nightly Tester builds the ArchC, generates simulators for the Models and 
+runs many tests to help us identify bugs. The ArchC server run this script generally 
+once a day, using the HEAD on git master branch, for all source code.
+
+http://archc.lsc.ic.unicamp.br/nightlytester
+
+You can modify the configuration files to test your ArchC code, in local machine. 
+The configuration files (.conf) have explanations for the options. 
+Your local machine must have a APACHE2 server installed and configured. 
+
+*******************************************************
+WARNING: Although the acnightlytester code come within
+         the ArchC source, it's recommended copy it 
+         to other place and use it outside of ArchC 
+         directory tree
+*******************************************************
+
+Using the script:
+
+./nightlytester.sh conf_file.conf
+
+

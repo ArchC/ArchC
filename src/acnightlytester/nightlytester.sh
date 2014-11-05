@@ -7,12 +7,32 @@
 
 # Parameters adjustable by environment variables
 
-if ! [ -f "nightlytester.conf" ]; then
-  echo "Configuration file not found. Must run in the same directory which contains the configuration file."
-  exit 1
+NIGHTLYVERSION=2.0
+
+usage(){
+		echo -ne "\nusage: ./nightlytester.sh <config_file>\n\n"
+}
+
+if [ $# -eq 0 ]; then
+    usage
+    exit
+else
+case "$1" in
+    -h)
+        usage
+        exit
+        ;;
+
+    *   )
+        if ! [ -f "$1" ]; then
+           echo -ne "\nConfiguration file not found. Must run with a valid configuration file.\n\n"
+           exit 1
+        fi
+       ;;
+esac
 fi
 
-. nightlytester.conf
+. $1
 
 # Configuring ACSIM param
 if [ "$COLLECT_STATS" != "no" ]; then
@@ -36,18 +56,41 @@ fi
 # * Extracted sources path constants **
 # *************************************
 
-TLMPATH=${TESTROOT}/tlm/TLM-2005-04-08/tlm
-BINUTILSPATH=${TESTROOT}/binutils/binutils-2.15
-GDBPATH=${TESTROOT}/gdb/gdb-6.4
-GCCPATH=${TESTROOT}/gcc/gcc-3.3
 
 # Functions
 
+
+is_spec2006_enabled(){
+    if  [ "$BZIP_2" == "no" ] &&
+        [ $MCF == "no" ] &&
+        [ $GOBMK == "no" ] &&
+        [ $HMMER == "no" ] &&      
+        [ $SJENG == "no" ] &&
+        [ $LIBQUANTUM == "no" ] &&
+        [ $H264 == "no" ] &&        
+        [ $OMNETPP == "no" ] &&
+        [ $ASTAR == "no" ]; then
+            return 1;
+        else
+            return 0;
+        fi
+}
+
+
 finalize_nightly_tester() {
   TEMPFL=${RANDOM}.out
-  HTMLLINE="<tr><td>${HTMLPREFIX}</td><td>${DATE}</td><td>${ARCHCREV}</td><td><a href=\"${HTMLPREFIX}-index.htm\">Here</a></td><td>${REVMESSAGE}</td><td>${HOSTNAME}</td></tr>"
-  sed -e "/<tr><td>${LASTHTMLPREFIX}/i${HTMLLINE}" $HTMLINDEX > $TEMPFL
-  mv ${TEMPFL} $HTMLINDEX
+
+  DATE_TMP=`LANG=en_US date '+%a %D %T'`
+  sed -n -e  "s@Produced by NightlyTester.*@Produced by NightlyTester \@ $DATE_TMP <\/p>@;p" < ${HTMLINDEX} > TMPFILE
+  mv TMPFILE ${HTMLINDEX}
+  rm -f TMPFILE
+
+
+  if [ "$LASTEQCURRENT" != "true" ]; then
+      HTMLLINE="<tr><td>${HTMLPREFIX}</td><td>${DATE}</td><td>${ARCHCREV}</td><td><a href=\"${HTMLPREFIX}-index.htm\">Here</a></td><td>${REVMESSAGE}</td><td>${HOSTNAME}</td></tr>"
+      sed -e "/<tr><td>${LASTHTMLPREFIX}/i${HTMLLINE}" $HTMLINDEX > $TEMPFL
+      mv ${TEMPFL} $HTMLINDEX
+  fi
 
   if [ "$DELETEWHENDONE" != "no" ]; then
     rm -rf $TESTROOT
@@ -87,140 +130,146 @@ format_html_output() {
 	echo -ne "</font></td></tr></table>"  >>$2
 }
 
-#
-# This function is used to build a model using ArchC's simulator generator ACSIM 
-#
-# Param1 is modelname (e.g. "armv5e")
-# Param2 is GIT link (e.g. "$ARMGITLINK")
-# Param3 says if we really should build using ACSIM, or just do the svn checkout (e.g. "$RUN_ARM_ACSIM")
-# e.g. ARMREV=build_model "armv5e" "$ARMGITLINK" "$RUN_ARM_ACSIM"
-build_model() {
+# This function is used to get source model, in GIT repository or local Working Copy
+clone_or_copy_model(){
   MODELNAME=$1
   GITLINK=$2
-  USEACSIM=$3
-  mkdir ${TESTROOT}/${MODELNAME}
-  echo -ne "Cloning ${MODELNAME} ArchC Model GIT...\n"
+  MODELWORKINGCOPY=$3
 
-  TEMPFL=${RANDOM}.out
-  #svn co ${SVNLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
-  git clone ${GITLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
-  [ $? -ne 0 ] && {
-    rm $TEMPFL
-    echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model GIT clone failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
-    finalize_html $HTMLLOG ""
-    echo -ne "GIT clone \e[31mfailed\e[m. Check script parameters.\n"
-    do_abort
-  } 
-  # Extract model revision number
-  cd ${TESTROOT}/${MODELNAME}
-  MODELREV=".."$(git log | head -n1 | cut -c40-)
-  cd -
-  #MODELREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
-  rm $TEMPFL
-
-  ### WORKAROUND: In armv5e model, we must rename it to from "arm" to "armv5e" to enable gdb compilation (in gdb tree there is already an architecture named sparcv8)
-  if [ "$MODELNAME" = "armv5e" ]; then
-    MODELNAME="arm_1" 
-    cd ${TESTROOT}
-    mv armv5e arm_1
-    cd arm_1
-    for MODELFILE in `find arm*`
-    do
-	NEWFILENAME=`sed -e 's/arm/arm_1/' <<< "$MODELFILE"`
-    sed -e 's/\([^p]arm\)/\1_1/g' $MODELFILE > $NEWFILENAME
-    done
-  fi
-
-  ### WORKAROUND: In sparcv8 model, we must rename it to "sparcv8_1" to enable gdb compilation (in gdb tree there is already an architecture named sparcv8)
-  if [ "$MODELNAME" = "sparcv8" ]; then
-    MODELNAME="sparcv8_1" 
-    cd ${TESTROOT}
-    mv sparcv8 sparcv8_1
-    cd sparcv8_1
-    for MODELFILE in `find sparcv8*`
-    do
-	NEWFILENAME=`sed -e 's/sparcv8/sparcv8_1/' <<< "$MODELFILE"`
-	sed -e 's/sparcv8/sparcv8_1/' $MODELFILE > $NEWFILENAME
-    done
-  fi
-
-  ### WORKAROUND: In powerpc model, we must rename it to "powerpc1" to enable acbinutils testing (in binutils tree there is already an architecture named powerpc)
-  if [ "$MODELNAME" = "powerpc" ]; then
-    MODELNAME="powerpc1" 
-    cd ${TESTROOT}
-    mv powerpc powerpc1
-    cd powerpc1
-    for MODELFILE in `find powerpc*`
-    do
-	NEWFILENAME=`sed -e 's/powerpc/powerpc1/' <<< "$MODELFILE"`
-	sed -e 's/powerpc/powerpc1/' $MODELFILE > $NEWFILENAME
-    done
-  fi
-
-  if [ "$USEACSIM" != "no" ]; then    
-    if [ "$RUN_ACSTONE" != "no" ]; then
-      echo -ne "Building ${MODELNAME} ArchC Model with gdb support for acstone...\n"
-      cd ${TESTROOT}/${MODELNAME}
-      mkdir -p acstone
-      cd acstone
-      find ../ -maxdepth 1 -mindepth 1 -type f -exec cp '{}' . \; 
-      TEMPFL=${RANDOM}.out
-      ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} -gdb > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
-      RETCODE=$?
-      HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm
-      initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV build output (with gdb support for acstone use)"
-      format_html_output $TEMPFL $HTMLBUILDLOG
-      finalize_html $HTMLBUILDLOG ""
-      rm $TEMPFL
-      if [ $RETCODE -ne 0 ]; then
-	echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV build with gdb support (for acstone) failed. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
-	finalize_html $HTMLLOG ""
-	echo -ne "ACSIM (gdb) \e[31mfailed\e[m to build $MODELNAME model.\n"
-	do_abort
-      else
-	echo -ne "<p>${MODELNAME} Model rev. $MODELREV with gdb support (for acstone) built successfully. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
-      fi
-    fi
-    echo -ne "Building ${MODELNAME} ArchC Model...\n"
-    cd ${TESTROOT}/${MODELNAME}
-    TEMPFL=${RANDOM}.out
-    ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
-    RETCODE=$?
-    HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-log.htm
-    initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV build output"
-    format_html_output $TEMPFL $HTMLBUILDLOG
-    finalize_html $HTMLBUILDLOG ""
-    rm $TEMPFL
-    if [ $RETCODE -ne 0 ]; then
-      echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV build failed. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
+  mkdir -p ${TESTROOT}/${MODELNAME}/base
+  if [ -z "$GITLINK" ]; then
+    echo -ne "Copying $MODELNAME source from a local directory...\n"
+    cp -a ${MODELWORKINGCOPY} ${TESTROOT}/${MODELNAME}/base &> /dev/null
+    [ $? -ne 0 ] && {
+      echo -ne "<p><b><font color=\"crimson\">${MODELNAME} source copy failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
       finalize_html $HTMLLOG ""
-      echo -ne "ACSIM \e[31mfailed\e[m to build $MODELNAME model.\n"
+      echo -ne "Local directory copy \e[31mfailed\e[m. Check script parameters.\n"
       do_abort
+    }
+    cd ${TESTROOT}/${MODELNAME}/base
+    MODELREV="N/A"
+    cd - &> /dev/null
+  else
+    echo -ne "Cloning ${MODELNAME} ArchC Model GIT...\n"
+    TEMPFL=${RANDOM}.out
+    #svn co ${SVNLINK} ${TESTROOT}/${MODELNAME} > $TEMPFL 2>&1
+    git clone ${GITLINK} ${TESTROOT}/${MODELNAME}/base > $TEMPFL 2>&1
+    [ $? -ne 0 ] && {
+      rm $TEMPFL
+      echo -ne "<p><b><font color=\"crimson\">${modelname} model git clone failed. check script parameters.</font></b></p>\n" >> $htmllog
+      finalize_html $htmllog ""
+      echo -ne "git clone \e[31mfailed\e[m. check script parameters.\n"
+      do_abort
+    } 
+    # Extract model revision number
+    cd ${TESTROOT}/${MODELNAME}/base
+    #MODELREV=$(git log | head -n1 | cut -c8-13)"..."$(git log | head -n1 | cut -c42-)
+    MODELREV=$(git log | head -n1 | cut -c8-15)".."
+    if [ "$LASTHTMLPREFIX" != "0" ]; then
+        LASTMODELREV=`grep -e "<td>$MODELNAME" < ${LOGROOT}/${LASTHTMLPREFIX}-index.htm | head -n 1 | cut -d\> -f 5 | cut -d\< -f 1`
+        if [ "$MODELREV" != "$LASTMODELREV" ]; then
+            LASTEQCURRENT="false"
+        fi
     else
-      echo -ne "<p>${MODELNAME} Model rev. $MODELREV built successfully. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+        LASTEQCURRENT="false"
     fi
+    cd - &> /dev/null
+    #MODELREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
+    rm $TEMPFL
   fi
+
 }
 
-#
+build_model() {
+      MODELNAME=$1
+      USEACSIM=$2
+      LOCAL_PARAMS=$3  # Each test have a specific set of params
+      LOCAL_DIR=$4     # Each test have a specific dir (e.g. arm/acsim, arm/accsim, arm/acstone)
+    
+      build_fault="no"  # funcion return
+
+    if [ "$USEACSIM" != "no" ]; then    
+        echo -ne "Building ${MODELNAME} ArchC Model with [ ${LOCAL_PARAMS} ] params...\n"
+        cd ${TESTROOT}/${MODELNAME}
+        cp -r base $LOCAL_DIR
+        cd $LOCAL_DIR
+        TEMPFL=${RANDOM}.out
+        if [ $LOCALSIMULATOR != "no" ]; then
+            echo -ne "Using local source simulator...\n"
+            if [ -e Makefile.archc ]; then
+                make -f Makefile.archc clean &> /dev/null
+                make -f Makefile.archc >> $TEMPFL 2>&1
+            else
+                echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model GIT can not be used with LOCALSIMULATOR=yes. Check script parameters.</font></b></p>\n" >> $HTMLLOG
+                finalize_html $HTMLLOG ""
+                echo -ne "GIT clone \e[31mfailed\e[m. GIT can not be used with LOCALSIMULATOR=yes. Check script parameters.\n"
+                do_abort
+           fi 
+        else
+            if [ -e Makefile.archc ]; then
+                make -f Makefile.archc distclean &> /dev/null
+            fi
+            ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${LOCAL_PARAMS} > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1  
+        fi
+        RETCODE=$?
+        HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-${LOCAL_DIR}-build-log.htm
+        initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV build output"
+        format_html_output $TEMPFL $HTMLBUILDLOG
+        finalize_html $HTMLBUILDLOG ""
+        rm $TEMPFL
+        if [ $RETCODE -ne 0 ]; then
+            echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV build failed. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-${LOCAL_DIR}-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
+            finalize_html $HTMLLOG ""
+            echo -ne "ACSIM \e[31mfailed\e[m to build $MODELNAME model.\n"
+            build_fault="yes"
+        else
+            echo -ne "<p>${MODELNAME} Model rev. $MODELREV built successfully. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-${LOCAL_DIR}-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+        fi
+    fi
+}
+
+build_model_gdb () {
+    MODELNAME=$1
+    USEACSIM=$2
+      
+    if [ "$USEACSIM" != "no" ]; then    
+        if [ "$RUN_ACSTONE" != "no" ]; then
+            echo -ne "Building ${MODELNAME} ArchC Model with gdb support for acstone...\n"
+            cd ${TESTROOT}/${MODELNAME}
+            cp -r base acstone
+            cd acstone
+            TEMPFL=${RANDOM}.out
+            ${TESTROOT}/install/bin/acsim ${MODELNAME}.ac ${ACSIM_PARAMS} -gdb > $TEMPFL 2>&1 && make -f Makefile.archc >> $TEMPFL 2>&1
+            RETCODE=$?
+            HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm
+            initialize_html $HTMLBUILDLOG "${MODELNAME} rev $MODELREV build output (with gdb support for acstone use)"
+            format_html_output $TEMPFL $HTMLBUILDLOG
+            finalize_html $HTMLBUILDLOG ""
+            rm $TEMPFL
+            if [ $RETCODE -ne 0 ]; then
+                echo -ne "<p><b><font color=\"crimson\">${MODELNAME} Model rev. $MODELREV build with gdb support (for acstone) failed. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG  
+                finalize_html $HTMLLOG ""
+                echo -ne "ACSIM (gdb) \e[31mfailed\e[m to build $MODELNAME model.\n"
+                do_abort
+            else
+                echo -ne "<p>${MODELNAME} Model rev. $MODELREV with gdb support (for acstone) built successfully. Check <a href=\"${HTMLPREFIX}-${MODELNAME}-build-acstone-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
+            fi
+        fi
+    fi
+}
+
 # This function is used to build binutils tools for a given model, testing ACASM, ArchC's binary tools synthetizer.
-#
-# Param1 is modelname (e.g. "armv5e")
-#
-# Requires: Model already fetched from GIT repository and stored in ${TESTROOT}/${MODELNAME}
-# Results: Binary tools for architecture $MODELNAME installed in ${TESTROOT}/${MODELNAME}/binutils
-#
-# Use example: build_binary_tools "armv5e"
 build_binary_tools() {
   MODELNAME=$1
   cd ${TESTROOT}/${MODELNAME}
   mkdir -p binutils
   echo -ne "Building ${MODELNAME} BINUTILS ArchC Model...\n"
   TEMPFL=${RANDOM}.out
-  ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&
+  ${TESTROOT}/install/bin/acbingen.sh -a ${MODELNAME}_1 -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&
     mkdir build-binutils &&
     cd build-binutils && # D_FORTIFY used below is used to prevent a bug present in binutils 2.15 and 2.16
-    CFLAGS="-g -O2 -D_FORTIFY_SOURCE=1" ${BINUTILSPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
+    #CFLAGS="-w -g -O2 -D_FORTIFY_SOURCE=1" ${BINUTILSPATH}/configure --target=${MODELNAME}_1-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
+    CFLAGS="-w -g -O2" ${BINUTILSPATH}/configure --target=${MODELNAME}_1-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
     make >> $TEMPFL 2>&1 &&
     make install >> $TEMPFL 2>&1 
   RETCODE=$?
@@ -239,22 +288,14 @@ build_binary_tools() {
   fi  
 }
 
-#
 # This function is used to build gdb for a given model, testing acstone, which uses gdb for validation.
-#
-# Param1 is modelname (e.g. "armv5e")
-#
-# Requires: Model already fetched from GIT repository and stored in ${TESTROOT}/${MODELNAME}
-# Results: gdb for architecture $MODELNAME installed in ${TESTROOT}/${MODELNAME}/binutils
-#
-# Use example: build_binary_tools "armv5e"
 build_gdb() {
   MODELNAME=$1
   cd ${TESTROOT}/${MODELNAME}
   mkdir -p binutils
   echo -ne "Building GDB for ${MODELNAME}...\n"
   TEMPFL=${RANDOM}.out
-  ${TESTROOT}/install/bin/acbingen.sh -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&    
+  #${TESTROOT}/install/bin/acbingen.sh -a ${MODELNAME}_1 -f ${MODELNAME}.ac > $TEMPFL 2>&1 &&    
     mkdir build-gdb &&
     cd build-gdb &&
     ${GDBPATH}/configure --target=${MODELNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils >> $TEMPFL 2>&1 &&
@@ -276,18 +317,8 @@ build_gdb() {
   fi  
 }
 
-
-#
 # This function is used to build binutils *ORIGINAL* tools for a given architecture, so we can compare and expect the results from these tools to be correct and
 # validate ArchC's generated ones.
-#
-# Param1 is modelname (e.g. "armv5e")
-# Param2 is architecture name used in packages (e.g. "arm")
-#
-# Requires: Folder ${TESTROOT}/${MODELNAME} must exist.
-# Results: Complete toolchain for architecture installed in ${TESTROOT}/${MODELNAME}/binutils-orig
-#
-# Use example: build_original_toolchain "armv5e" "arm"
 build_original_toolchain() {
   MODELNAME=$1
   ARCHNAME=$2
@@ -298,7 +329,7 @@ build_original_toolchain() {
   echo -ne "  Building binutils...\n"
   TEMPFL=${RANDOM}.out
   cd build-binutils-orig &&
-    ${BINUTILSPATH}/configure --target=${ARCHNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils-orig >> $TEMPFL 2>&1 &&
+    CFLAGS="-w -O2" ${BINUTILSPATH}/configure --target=${ARCHNAME}-elf --prefix=${TESTROOT}/${MODELNAME}/binutils-orig >> $TEMPFL 2>&1 &&
     make >> $TEMPFL 2>&1 &&
     make install >> $TEMPFL 2>&1    
   RETCODE=$?
@@ -317,27 +348,22 @@ build_original_toolchain() {
   fi
 }
 
-#
 # This functions is used to run simulations tests using ACSTONE and ArchC's generated simulator for a target architecture
-#
-# Param1 is modelname (e.g. "armv5e")
-# Param2 is model's svn revision number (e.g. "${ARMREV})
-# e.g. run_tests_acsim_acstone "armv5e" "${ARMREV}"
 run_tests_acsim_acstone() {
   MODELNAME=$1
   MODELREV=$2
 
   ### WORKAROUND: In armv5e model, we must rename it to "arm", see "build_model()" for more info  
-  if [ "$MODELNAME" = "armv5e" ]; then
-    MODELNAME="arm_1"     
+  if [ "$MODELNAME" = "arm" ]; then
+    MODELNAME="arm"     
   fi
-  ### WORKAROUND: In sparcv8 model, we must rename it to "sparcv8_1", see "build_model()" for more info  
-  if [ "$MODELNAME" = "sparcv8" ]; then
-    MODELNAME="sparcv8_1"     
+  ### WORKAROUND: In sparcv8 model, we must rename it to "sparc", see "build_model()" for more info  
+  if [ "$MODELNAME" = "sparc" ]; then
+    MODELNAME="sparc"     
   fi
-  ### WORKAROUND: In powerpc model, we must rename it to "powerpc1", see "build_model()" for more info
+  ### WORKAROUND: In powerpc model, we must rename it to "powerpc", see "build_model()" for more info
   if [ "$MODELNAME" = "powerpc" ]; then
-    MODELNAME="powerpc1" 
+    MODELNAME="powerpc" 
   fi
 
   export TESTER=${TESTROOT}/acstone/acstone_run_teste.sh
@@ -354,23 +380,51 @@ run_tests_acsim_acstone() {
   echo -ne "<tr><td>${MODELNAME} (acstone)</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}-acstone.htm\">Here</a></td></tr>\n" >> $HTMLLOG
 }
 
-#
-# This function is used to run simulation tests using Mibench and ArchC's generated simulator for a target architecture
-#
-# Param1 is modelname (e.g. "armv5e")
-# Param2 is mibench root (e.g. "${TESTROOT}/acsim/ARMMibench")
-# Param3 is model's svn revision number (e.g. "${ARMREV})
-# e.g. run_tests_acsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
-run_tests_acsim_mibench() {
+# This function runs ACASM validation script, assembling and linking a series of .s files using both the generated assembler and a correct reference
+# assembler (binutils for a given architecture). The results are compared between these two assemblers and validation is successful if they have no
+# difference.
+run_tests_acasm() {
+  MODELNAME=$1
+  ARCHNAME=$2
+  if [ "$MODELNAME" = "arm" ]; then
+    cd ${TESTROOT}/acasm-validation/arm/runtest
+    export BENCH_ROOT="${TESTROOT}/acasm-validation/arm/benchmark/Mibench"
+  else
+    cd ${TESTROOT}/acasm-validation/${MODELNAME}/runtest
+    export BENCH_ROOT="${TESTROOT}/acasm-validation/${MODELNAME}/benchmark/Mibench"
+  fi
+  export ACBIN_PATH="${TESTROOT}/${MODELNAME}/binutils/${MODELNAME}_1-elf/bin"
+  export BINUTILS_PATH="${TESTROOT}/${MODELNAME}/binutils-orig/${ARCHNAME}-elf/bin"
+  LOG_FILE=l${RANDOM}.out
+  FORM_FILE=f${RANDOM}.out
+  HTML_LOG_FILE=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-report.htm
+  export LOG_FILE
+  export FORM_FILE
+  export HTML_LOG_FILE
+  #../../runtest.sh --verbose-log ../mibench.conf > /dev/null 2>&1
+  ../../runtest.sh --verbose-log ../mibench.conf 
+  HTMLACASMLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-log.htm
+  HTMLACASMFORM=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-form.htm
+  format_html_output $LOG_FILE $HTMLACASMLOG
+  format_html_output $FORM_FILE $HTMLACASMFORM
+  echo -ne "<tr><td>${MODELNAME}</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}-acasm-mibench-report.htm\">Report</a>, <a href=\"${HTMLPREFIX}-${MODELNAME}-acasm-mibench-log.htm\">Log</a>, <a href=\"${HTMLPREFIX}-${MODELNAME}-acasm-mibench-form.htm\">Form</a></td></tr>\n" >> $HTMLLOG
+}
+
+run_tests_acsim() {
   MODELNAME=$1
   MODELBENCHROOT=$2
-  MODELREV=$3
+  MODELSPECROOT=$3
+  MODELREV=$4
+  DIRSIMULATOR=$5  # Each test have simulators with a specific set of params (e.g. arm/acsim, arm/acstone, arm/powersc)
+
 
   # Preparing test script
   ARCH="${MODELNAME}"
-  SIMULATOR="${TESTROOT}/${MODELNAME}/${MODELNAME}.x --load="
+  SIMULATOR="${TESTROOT}/${MODELNAME}/$DIRSIMULATOR/${MODELNAME}.x --load="
   GOLDENROOT=${TESTROOT}/acsim/GoldenMibench
-  BENCHROOT=${MODELBENCHROOT}  
+  GOLDENSPECROOT=${TESTROOT}/acsim/GoldenSpec
+  MIBENCHROOT=${MODELBENCHROOT} 
+  SPECROOT=${MODELSPECROOT} 
   STATSROOT=${BENCHROOT}/stats
   # Collect statistical information 
   if [ "$COLLECT_STATS" != "no" ]; then
@@ -378,14 +432,18 @@ run_tests_acsim_mibench() {
     cp ${SCRIPTROOT}/collect_stats.py ${STATSROOT}
   fi
   export ARCH
+  export DIRSIMULATOR
   export SIMULATOR 
   export RUNSMALL   # ==================================
   export RUNLARGE   # Definition in nightlytester.conf
   export COMPILE    # ==================================
   export GOLDENROOT
-  export BENCHROOT
+  export GOLDENSPECROOT
+  export MIBENCHROOT
+  export SPECROOT
   export STATSROOT
   export COLLECT_STATS
+  export RUN_POWERSC
 
   # Define which programs to test (definition in nightlytester.conf)  
   export BASICMATH
@@ -403,20 +461,32 @@ run_tests_acsim_mibench() {
   export JPEG
   export LAME
 
+  export BZIP_2	
+  export MCF 
+  export GOBMK    
+  export HMMER      
+  export SJENG 	    
+  export LIBQUANTUM
+  export H264        
+  export OMNETPP    
+  export ASTAR      
+
+  export TESTROOT
+  export TESTCOMPILER
+  export TESTCOMPILERCPP
+  export TESTAR
+  export TESTRANLIB
+  export TESTFLAG
+
+  export -f is_spec2006_enabled
+
   cd ${TESTROOT}/acsim
   ./validation.sh
   
-  echo -ne "<tr><td>${MODELNAME} (mibench)</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}.htm\">Here</a></td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>${MODELNAME} </td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}-${DIRSIMULATOR}.htm\">Here</a></td></tr>\n" >> $HTMLLOG
 }
 
-#
 # This function is used to run simulation tests using Mibench and ArchC's generated *COMPILED* simulator for a target architecture
-#
-# Param1 is modelname (e.g. "armv5e")
-# Param2 is mibench root (e.g. "${TESTROOT}/acsim/ARMMibench")
-# Param3 is model's svn revision number (e.g. "${ARMREV})
-# Param4 is accsim flags (e.g. "-ai")
-# e.g. run_tests_accsim_mibench "armv5e" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
 run_tests_accsim_mibench() {
   MODELNAME=$1
   MODELBENCHROOT=$2
@@ -476,42 +546,262 @@ run_tests_accsim_mibench() {
 }
 
 
-#
-# This function runs ACASM validation script, assembling and linking a series of .s files using both the generated assembler and a correct reference
-# assembler (binutils for a given architecture). The results are compared between these two assemblers and validation is successful if they have no
-# difference.
-#
-# Requires: build_original_toolchain() and build_binary_tools() already called for the given architecture
-# Produces: ACASM validation for a given architecture
-#
-# Param1 is modelname (e.g. "armv5e")
-# Param2 is reference architecture name in binutils (e.g. "arm")
-#
-# e.g. run_tests_acasm "armv5e" "arm"
-run_tests_acasm() {
-  MODELNAME=$1
-  ARCHNAME=$2
-  if [ "$MODELNAME" = "arm_1" ]; then
-    cd ${TESTROOT}/acasm-validation/armv5e/runtest
-    export BENCH_ROOT="${TESTROOT}/acasm-validation/armv5e/benchmark/Mibench"
-  else
-    cd ${TESTROOT}/acasm-validation/${MODELNAME}/runtest
-    export BENCH_ROOT="${TESTROOT}/acasm-validation/${MODELNAME}/benchmark/Mibench"
-  fi
-  export ACBIN_PATH="${TESTROOT}/${MODELNAME}/binutils/${MODELNAME}-elf/bin"
-  export BINUTILS_PATH="${TESTROOT}/${MODELNAME}/binutils-orig/${ARCHNAME}-elf/bin"
-  LOG_FILE=l${RANDOM}.out
-  FORM_FILE=f${RANDOM}.out
-  HTML_LOG_FILE=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-report.htm
-  export LOG_FILE
-  export FORM_FILE
-  export HTML_LOG_FILE
-  ../../runtest.sh --verbose-log ../mibench.conf > /dev/null 2>&1
-  HTMLACASMLOG=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-log.htm
-  HTMLACASMFORM=${LOGROOT}/${HTMLPREFIX}-${MODELNAME}-acasm-mibench-form.htm
-  format_html_output $LOG_FILE $HTMLACASMLOG
-  format_html_output $FORM_FILE $HTMLACASMFORM
-  echo -ne "<tr><td>${MODELNAME}</td><td>${MODELREV}</td><td><a href=\"${HTMLPREFIX}-${MODELNAME}-acasm-mibench-report.htm\">Report</a>, <a href=\"${HTMLPREFIX}-${MODELNAME}-acasm-mibench-log.htm\">Log</a>, <a href=\"${HTMLPREFIX}-${MODELNAME}-acasm-mibench-form.htm\">Form</a></td></tr>\n" >> $HTMLLOG
+#######################################
+### TEST DRIVER
+#######################################
+
+test_acsim_simple() {
+
+    echo -ne "<h3>Testing: ACSIM </h3>\n" >> $HTMLLOG
+    echo -ne "<p>Command used to build ACSIM models: <b> ./acsim model.ac ${ACSIM_PARAMS} </b> </p>\n" >> $HTMLLOG
+
+    echo -ne "\n**********************************************\n"
+    echo -ne "* Testing ACSIM simple                      **\n"
+    echo -ne "**********************************************\n"
+
+    if [ "$RUN_ARM_ACSIM" != "no" ]; then
+        build_model "arm" "${RUN_ARM_ACSIM}" "${ACSIM_PARAMS}" "acsim" 
+    fi
+    if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+        build_model "sparc" "${RUN_SPARC_ACSIM}" "${ACSIM_PARAMS}" "acsim"
+    fi
+    if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+        build_model "mips" "${RUN_MIPS_ACSIM}" "${ACSIM_PARAMS}" "acsim"
+    fi
+    if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+        build_model "powerpc" "${RUN_POWERPC_ACSIM}" "${ACSIM_PARAMS}" "acsim"
+    fi
+
+    cp ${SCRIPTROOT}/validation.sh ${TESTROOT}/acsim/validation.sh
+    chmod u+x ${TESTROOT}/acsim/validation.sh
+    export LOGROOT
+    export HTMLPREFIX
+    
+    echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
+    echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
+
+    if [ "$RUN_ARM_ACSIM" != "no" ]; then
+        echo -ne "\n Running ARM... \n"
+        run_tests_acsim "arm" "${TESTROOT}/acsim/ARMMibench" "${TESTROOT}/acsim/ARMSpec" "${ARMREV}" "acsim" 
+    fi
+    if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+        echo -ne "\n Running Sparc... \n"
+        run_tests_acsim "sparc" "${TESTROOT}/acsim/SparcMibench" "${TESTROOT}/acsim/SparcSpec" "${SPARCREV}" "acsim" 
+    fi
+    if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+        echo -ne "\n Running Mips... \n"
+        run_tests_acsim "mips" "${TESTROOT}/acsim/MipsMibench" "${TESTROOT}/acsim/MipsSpec" "${MIPSREV}" "acsim" 
+    fi
+    if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+        echo -ne "\n Running PowerPC... \n"
+        run_tests_acsim "powerpc" "${TESTROOT}/acsim/PowerPCMibench" "${TESTROOT}/acsim/PowerPCSpec" "${PPCREV}" "acsim" 
+    fi
+    
+    finalize_html $HTMLLOG "</table></p>"
+}
+
+test_accsim() {
+
+    echo -ne "<h3>Testing: ACCSIM </h3>\n" >> $HTMLLOG
+    echo -ne "<p>Command used to build ACCSIM models: <b> ./accsim model.ac ${ACCSIM_PARAMS} /path/to/program </b> </p>\n" >> $HTMLLOG
+
+    echo -ne "\n**********************************************\n"
+    echo -ne "* Testing ACCSIM simple                      **\n"
+    echo -ne "**********************************************\n"
+
+    cp ${SCRIPTROOT}/validation-accsim.sh ${TESTROOT}/acsim/validation-accsim.sh
+    chmod u+x ${TESTROOT}/acsim/validation-accsim.sh
+    export LOGROOT
+    export HTMLPREFIX
+
+    echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
+    echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
+
+    if [ "$RUN_ARM_ACCSIM" != "no" ]; then  
+      run_tests_accsim_mibench "arm" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
+    fi
+    if [ "$RUN_SPARC_ACCSIM" != "no" ]; then  
+      run_tests_accsim_mibench "sparc" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}" "-opt 2"
+    fi
+    if [ "$RUN_MIPS_ACCSIM" != "no" ]; then  
+      run_tests_accsim_mibench "mips" "${TESTROOT}/acsim/MipsMibench" "${MIPSREV}" "-opt 2"
+    fi
+    if [ "$RUN_POWERPC_ACCSIM" != "no" ]; then  
+      run_tests_accsim_mibench "powerpc" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}" "-opt 2"
+    fi
+    
+    finalize_html $HTMLLOG "</table></p>"
+}
+
+test_acasm() {
+
+    echo -ne "<h3>Testing: ACASM </h3>\n" >> $HTMLLOG
+    echo -ne "<p>Command used to build ACASM: <b> acbingen.sh -a model -f model.ac </b> </p>\n" >> $HTMLLOG
+    
+    echo -ne "\n**********************************************\n"
+    echo -ne "* Testing acasm                             **\n"
+    echo -ne "**********************************************\n"
+
+    if [ "$RUN_ARM_ACASM" != "no" ]; then
+      build_binary_tools "arm"
+      build_original_toolchain "arm" "arm"
+    fi
+    if [ "$RUN_SPARC_ACASM" != "no" ]; then
+      build_binary_tools "sparc"
+      build_original_toolchain "sparc" "sparc"
+    fi
+    if [ "$RUN_MIPS_ACASM" != "no" ]; then
+      build_binary_tools "mips"
+      build_original_toolchain "mips" "mips"
+    fi
+    if [ "$RUN_POWERPC_ACASM" != "no" ]; then
+      build_binary_tools "powerpc"
+      build_original_toolchain "powerpc" "powerpc"
+    fi
+ 
+    echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
+    echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
+
+    echo -ne "Uncompressing ACASM validation package...\n"
+    cd $TESTROOT
+    tar -xjf ${SCRIPTROOT}/sources/acasm-validation.tar.bz2
+    [ $? -ne 0 ] && do_abort
+    chmod u+x acasm-validation/runtest.sh
+    
+    if [ "$RUN_ARM_ACASM" != "no" ]; then
+      echo -ne "Validating binary tools generated for arm ArchC model...\n"
+      run_tests_acasm "arm" "arm"
+    fi
+    if [ "$RUN_MIPS_ACASM" != "no" ]; then
+      echo -ne "Validating binary tools generated for mips ArchC model...\n"
+      run_tests_acasm "mips" "mips"
+    fi
+    if [ "$RUN_SPARC_ACASM" != "no" ]; then
+      echo -ne "Validating binary tools generated for sparc ArchC model...\n"
+      run_tests_acasm "sparc" "sparc"
+    fi
+    if [ "$RUN_POWERPC_ACASM" != "no" ]; then
+      echo -ne "Validating binary tools generated for powerpc ArchC model...\n"
+      run_tests_acasm "powerpc" "powerpc"
+    fi
+    
+    finalize_html $HTMLLOG "</table></p>"
+}
+
+test_acstone() {
+
+    echo -ne "<h3>Testing: ACSTONE </h3>\n" >> $HTMLLOG
+    echo -ne "<p>Command used to ACSTONE: <b> ./acsim model.ac ${ACSIM_PARAMS} -gdb </b> </p>\n" >> $HTMLLOG
+
+    echo -ne "\n**********************************************\n"
+    echo -ne "* Testing ACSTONE                           **\n"
+    echo -ne "**********************************************\n"
+
+
+    # Extracts acstone binaries (arm, mips, powerpc and sparc) as well as the helper scripts
+    cd ${TESTROOT} &> /dev/null
+    tar -xjf ${SCRIPTROOT}/sources/AllArchs-acstone.tar.bz2
+    [ $? -ne 0 ] && do_abort
+    cp ${SCRIPTROOT}/acstone_run_all.sh ${TESTROOT}/acstone &&
+      cp ${SCRIPTROOT}/acstone_run_teste.sh ${TESTROOT}/acstone &&
+      cp ${SCRIPTROOT}/collect_stats.py ${TESTROOT}/acstone
+    [ $? -ne 0 ] && do_abort	
+    chmod u+x ${TESTROOT}/acstone/*.sh
+    [ $? -ne 0 ] && do_abort	
+    # Fix arm names
+    cd ${TESTROOT}/acstone &> /dev/null
+    #  for MODELFILE in `find *arm*`
+    #    do
+    #	NEWFILENAME=`sed -e 's/arm/arm/' <<< "$MODELFILE"`
+    #	cp $MODELFILE $NEWFILENAME
+    #    done
+    cd - &> /dev/null
+
+    echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
+    echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
+
+    if [ "$RUN_ARM_ACSIM" != "no" ]; then
+      build_model "arm" "${RUN_ARM_ACSIM}" "${ACSIM_PARAMS} -gdb" "acstone" 
+      build_gdb "arm"
+      run_tests_acsim_acstone "arm" "${ARMREV}"
+    fi
+    if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+      build_model "sparc" "${RUN_SPARC_ACSIM}" "${ACSIM_PARAMS} -gdb" "acstone" 
+      build_gdb "sparc"
+      run_tests_acsim_acstone "sparc" "${SPARCREV}"
+    fi
+    if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+      build_model "mips" "${RUN_MIPS_ACSIM}" "${ACSIM_PARAMS} -gdb" "acstone" 
+      build_gdb "mips"
+      run_tests_acsim_acstone "mips" "${MIPSREV}"
+    fi
+    if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+      build_model "powerpc" "${RUN_POWERPC_ACSIM}" "${ACSIM_PARAMS} -gdb" "acstone" 
+      build_gdb "powerpc"
+      run_tests_acsim_acstone "powerpc" "${PPCREV}"    
+    fi
+
+    finalize_html $HTMLLOG "</table></p>"
+}
+
+test_powersc() {
+
+    echo -ne "<h3>Testing: PowerSC </h3>\n" >> $HTMLLOG
+    echo -ne "<p>Command used to build PowerSC models: <b> ./acsim model.ac ${ACSIM_PARAMS} -pw </b> </p>\n" >> $HTMLLOG
+
+    echo -ne "\n**********************************************\n"
+    echo -ne "* Testing PowerSC                           **\n"
+    echo -ne "**********************************************\n"
+
+    ARM_POWERSC=$RUN_ARM_ACSIM
+    SPARC_POWERSC=$RUN_SPARC_ACSIM
+    MIPS_POWERSC=$RUN_MIPS_ACSIM
+    POWERPC_POWERSC=$RUN_POWERPC_ACSIM
+
+
+    if [ "$RUN_ARM_ACSIM" != "no" ]; then
+        build_model "arm" "${RUN_ARM_ACSIM}" "${ACSIM_PARAMS} -pw" "powersc"
+        [[ "$build_fault" == "yes" ]] && ARM_POWERSC="no"
+    fi
+    if [ "$RUN_SPARC_ACSIM" != "no" ]; then
+        build_model "sparc" "${RUN_SPARC_ACSIM}" "${ACSIM_PARAMS} -pw" "powersc"
+        [[ "$build_fault" == "yes" ]] && SPARC_POWERSC="no"
+    fi
+    if [ "$RUN_MIPS_ACSIM" != "no" ]; then
+        build_model "mips" "${RUN_MIPS_ACSIM}" "${ACSIM_PARAMS} -pw" "powersc"
+        [[ "$build_fault" == "yes" ]] && MIPS_POWERSC="no"
+    fi
+    if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
+        build_model "powerpc" "${RUN_POWERPC_ACSIM}" "${ACSIM_PARAMS} -pw" "powersc"
+        [[ "$build_fault" == "yes" ]] && POWERPC_POWERSC="no"
+    fi
+
+    cp ${SCRIPTROOT}/validation.sh ${TESTROOT}/acsim/validation.sh
+    chmod u+x ${TESTROOT}/acsim/validation.sh
+    export LOGROOT
+    export HTMLPREFIX
+    
+    echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
+    echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
+
+    if [ "$ARM_POWERSC" != "no" ]; then
+        echo -ne "\n Running ARM... \n"
+        run_tests_acsim "arm" "${TESTROOT}/acsim/ARMMibench" "${TESTROOT}/acsim/ARMSpec" "${ARMREV}" "powersc"
+    fi
+    if [ "$SPARC_POWERSC" != "no" ]; then
+        echo -ne "\n Running Sparc... \n"
+        run_tests_acsim "sparc" "${TESTROOT}/acsim/SparcMibench" "${TESTROOT}/acsim/SparcSpec" "${SPARCREV}" "powersc"
+    fi
+    if [ "$MIPS_POWERSC" != "no" ]; then
+        echo -ne "\n Running Mips... \n"
+        run_tests_acsim "mips" "${TESTROOT}/acsim/MipsMibench" "${TESTROOT}/acsim/MipsSpec" "${MIPSREV}" "powersc"
+    fi
+    if [ "$POWERPC_POWERSC" != "no" ]; then
+        echo -ne "\n Running PowerPC... \n"
+        run_tests_acsim "powerpc" "${TESTROOT}/acsim/PowerPCMibench" "${TESTROOT}/acsim/PowerPCSpec" "${PPCREV}" "powersc"
+    fi
+    
+    finalize_html $HTMLLOG "</table></p>"
 }
 
 ####################################
@@ -520,44 +810,70 @@ run_tests_acasm() {
 
 # Initializing HTML log files
 # Discover this run's number and prefix all our HTML files with it
-HTMLPREFIX=`sed -n -e '/<tr><td>[0-9]\+/{s/<tr><td>\([0-9]\+\).*/\1/;p;q}' <${HTMLINDEX}`
-LASTHTMLPREFIX=$HTMLPREFIX
+export HTMLPREFIX=`sed -n -e '/<tr><td>[0-9]\+/{s/<tr><td>\([0-9]\+\).*/\1/;p;q}' <${HTMLINDEX}`
+export LASTHTMLPREFIX=$HTMLPREFIX
+
+export LASTARCHCREV=`grep -e "<tr><td>" < ${HTMLINDEX} | head -n 1 | cut -d\> -f 7 | cut -d\< -f 1`
+export LASTEQCURRENT="true"
+
+
 HTMLPREFIX=$(($HTMLPREFIX + 1))
 
 HTMLLOG=${LOGROOT}/${HTMLPREFIX}-index.htm
 
 initialize_html $HTMLLOG "NightlyTester ${NIGHTLYVERSION} Run #${HTMLPREFIX}"
-DATE=`date '+%a %D %r'`
+export DATE=`LANG=en_US date '+%a %D %T'`
 echo -ne "<p>Produced by NightlyTester @ ${DATE}</p>"   >> $HTMLLOG
 echo -ne "<h3>Listing of GIT links used in this run.</h3>\n" >> $HTMLLOG
 echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
 echo -ne "<tr><th>Component</th><th>Link</th></tr>\n" >> $HTMLLOG
 if [ -z "$CLONELINK" ]; then
-  echo -ne "<tr><td>ArchC</td><td>${WORKINGCOPY} (private working copy)</td></tr>\n" >> $HTMLLOG
+  echo -ne "<tr><td>ArchC</td><td>${WORKINGCOPY}</td></tr>\n" >> $HTMLLOG
+  LASTEQCURRENT="false"
 else
   echo -ne "<tr><td>ArchC</td><td>${CLONELINK}</td></tr>\n" >> $HTMLLOG
 fi
+
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" -o "$RUN_ARM_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>ARM Model</td><td>${ARMGITLINK}</td></tr>\n" >> $HTMLLOG
+  if [ -z "$ARMGITLINK" ]; then
+    echo -ne "<tr><td>ARM Model</td><td>${ARMWORKINGCOPY}</td></tr>\n" >> $HTMLLOG
+    LASTEQCURRENT="false"
+  else
+    echo -ne "<tr><td>ARM Model</td><td>${ARMGITLINK}</td></tr>\n" >> $HTMLLOG
+  fi
 fi
 if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>MIPS Model</td><td>${MIPSGITLINK}</td></tr>\n" >> $HTMLLOG
+  if [ -z "$MIPSGITLINK" ]; then
+    echo -ne "<tr><td>MIPS Model</td><td>${MIPSWORKINGCOPY}</td></tr>\n" >> $HTMLLOG
+    LASTEQCURRENT="false"
+  else
+    echo -ne "<tr><td>MIPS Model</td><td>${MIPSGITLINK}</td></tr>\n" >> $HTMLLOG
+  fi
 fi
 if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>SPARC Model</td><td>${SPARCGITLINK}</td></tr>\n" >> $HTMLLOG
+  if [ -z "$SPARCGITLINK" ]; then
+    echo -ne "<tr><td>SPARC Model</td><td>${SPARCWORKINGCOPY}</td></tr>\n" >> $HTMLLOG
+    LASTEQCURRENT="false"
+  else
+   echo -ne "<tr><td>SPARC Model</td><td>${SPARCGITLINK}</td></tr>\n" >> $HTMLLOG
+  fi
 fi
 if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>PowerPC Model</td><td>${POWERPCGITLINK}</td></tr>\n" >> $HTMLLOG
+   if [ -z "$POWERPCGITLINK" ]; then
+    echo -ne "<tr><td>POWERPC Model</td><td>${POWERPCWORKINGCOPY}</td></tr>\n" >> $HTMLLOG
+    LASTEQCURRENT="false"
+  else
+    echo -ne "<tr><td>POWERPC Model</td><td>${POWERPCGITLINK}</td></tr>\n" >> $HTMLLOG
+  fi
 fi
 echo -ne "</table></p>\n" >> $HTMLLOG
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  echo -ne "<p>Parameters used to build acsim models: ${ACSIM_PARAMS}</p>\n" >> $HTMLLOG
-fi
-if [ "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  echo -ne "<p>Parameters used to build accsim models: ${ACCSIM_PARAMS}</p>\n" >> $HTMLLOG
-fi
+
 if [ "$SYSTEMCCOMPILE" != "yes" ]; then
-  echo -ne "<p>Using user-supplied SystemC path: ${SYSTEMCPATH}</p>\n" >> $HTMLLOG
+  echo -ne "<p>User-supplied SystemC path: ${SYSTEMCPATH}</p>\n" >> $HTMLLOG
+fi
+
+if [ "$RUN_POWERSC" != "no" ]; then
+    echo -ne "<p>User-supplied PowerSC path: ${POWERSCPATH}</p>\n" >> $HTMLLOG
 fi
 
 # GIT clone and ArchC build configuration
@@ -569,6 +885,7 @@ cd ${TESTROOT}/acsrc
 if [ -z "$CLONELINK" ]; then
   echo -ne "Copying ArchC source from a local directory...\n"
   cp -a ${WORKINGCOPY} ./ &> /dev/null
+  make distclean &> /dev/null
   [ $? -ne 0 ] && {
     echo -ne "<p><b><font color=\"crimson\">ArchC source copy failed. Check script parameters.</font></b></p>\n" >> $HTMLLOG
     finalize_html $HTMLLOG ""
@@ -578,8 +895,6 @@ if [ -z "$CLONELINK" ]; then
   ARCHCREV="N/A"
 else
   echo -ne "Cloning ArchC GIT version...\n"
-  #TEMPFL=${RANDOM}.out
-  #svn co ${CHECKOUTLINK} ./ > $TEMPFL 2>&1
   git clone $CLONELINK . > /dev/null 2>&1 
   [ $? -ne 0 ] && {
     rm $TEMPFL
@@ -590,149 +905,90 @@ else
   } 
   # Extract revision number
   # ARCHCREV=`sed -n -e '/Checked out revision/{s/Checked out revision \+\([0-9]\+\).*/\1/;p}' <$TEMPFL`
-  cd ${TESTROOT}/acsrc
-  ARCHCREV=".."$(git log | head -n1 | cut -c40-)
-  cd -
+  cd ${TESTROOT}/acsrc &> /dev/null
+  #ARCHCREV=$(git log | head -n1 | cut -c8-13)"..."$(git log | head -n1 | cut -c42-)
+  ARCHCREV=$(git log | head -n1 | cut -c8-15)".."
+  if [ ${ARCHCREV} != ${LASTARCHCREV} ]; then
+        LASTEQCURRENT="false"
+  fi
+  cd - &> /dev/null
   #rm $TEMPFL
 fi
 
-
-
-###########################################
-### Unpack necessary software packages
-###########################################
-echo -ne "\n**********************************************\n"
-echo -ne "* Uncompressing auxiliary software packages **\n"
-echo -ne "**********************************************\n"
-
 # binutils
 if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
-  echo -ne "Uncompressing binutils...\n"
-  mkdir ${TESTROOT}/binutils
-  cd ${TESTROOT}/binutils
-  tar -xjf ${SCRIPTROOT}/sources/binutils-2.15.tar.bz2
+    echo -ne "<p>Using user-supplied Binutils path: ${BINUTILSPATH}</p>\n" >> $HTMLLOG
+    if [ -d $BINUTILSPATH ]; then
+        echo -ne "Directory binutils found...\n"
+        mkdir ${TESTROOT}/binutils
+        cd ${TESTROOT}/binutils
+        cp -r $BINUTILSPATH .
+        BINUTILSPATH=${TESTROOT}/binutils/$(basename $BINUTILSPATH)
+    elif [ -f $BINUTILSPATH ]; then
+            echo -ne "Uncompressing binutils...\n"    
+            mkdir ${TESTROOT}/binutils
+            cd ${TESTROOT}/binutils
+            tar -xjf $BINUTILSPATH
+    else
+        echo -ne "ACASM enabled and binutils not found.\n"
+        do_abort
+    fi
 fi
 
-# gdb
-# Only decompress if running acsim tests (gdb is used to validate correct execution of acstone benchmark)
+## gdb
+## Only decompress if running acsim tests (gdb is used to validate correct execution of acstone benchmark)
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
   if [ "$RUN_ACSTONE" != "no" ]; then
-    echo -ne "Uncompressing gdb...\n"
+    echo -ne "<p>Using user-supplied GDB path: ${GDBPATH}</p>\n" >> $HTMLLOG
+    echo -ne "Copying GDB source...\n"
     mkdir ${TESTROOT}/gdb
     cd ${TESTROOT}/gdb
-    tar -xjf ${SCRIPTROOT}/sources/gdb-6.4.tar.bz2
-    cd gdb-6.4
-    wget http://www.ic.unicamp.br/~auler/fix-gdb-6.4.patch > /dev/null 2>&1
-    patch -p1 < ./fix-gdb-6.4.patch 
+    cp -r $GDBPATH .
+#    wget http://www.ic.unicamp.br/~auler/fix-gdb-6.4.patch > /dev/null 2>&1
+#    patch -p1 < ./fix-gdb-6.4.patch 
+    GDBPATH=${TESTROOT}/gdb/$(basename $GDBPATH)
   fi
 fi
 
-# gcc
-#echo -ne "Uncompressing gcc...\n"
-#mkdir ${TESTROOT}/gcc
-#cd ${TESTROOT}/gcc
-#tar -xf ${SCRIPTROOT}/sources/gcc-3.3.tar.gz
+## systemc
+#if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o 
+#   "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o 
+#   "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
+#  if [ "$SYSTEMCCOMPILE" != "no" ]; then
+#    echo -ne "Uncompressing SystemC...\n"
+#    # only compile SystemC if we will run ACSIM/ACCSIM tests
+#    mkdir ${TESTROOT}/systemc
+#    cd ${TESTROOT}/systemc
+#    tar -xjf ${SCRIPTROOT}/sources/systemc-2.2.0.tar.bz2
+#  fi
+#fi
 
-# glibc
-#echo -ne "Uncompressing glibc...\n"
-#mkdir ${TESTROOT}/glibc
-#cd ${TESTROOT}/glibc
-#tar -xjf ${SCRIPTROOT}/sources/glibc-2.3.2.tar.bz2
-#cd ${TESTROOT}/glibc/glibc-2.3.2
-#tar -xjf ${SCRIPTROOT}/sources/glibc-linuxthreads-2.3.2.tar.bz2
-
-# tlm
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  echo -ne "Uncompressing tlm...\n"
-  # only compile SystemC if we will run ACSIM/ACCSIM tests
-  mkdir ${TESTROOT}/tlm
-  cd ${TESTROOT}/tlm
-  tar -xf ${SCRIPTROOT}/sources/TLM-1.0.tar.gz
-fi
-
-# systemc
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  if [ "$SYSTEMCCOMPILE" != "no" ]; then
-    echo -ne "Uncompressing SystemC...\n"
-    # only compile SystemC if we will run ACSIM/ACCSIM tests
-    mkdir ${TESTROOT}/systemc
-    cd ${TESTROOT}/systemc
-    tar -xjf ${SCRIPTROOT}/sources/systemc-2.2.0.tar.bz2
-  fi
-fi
-
-
-echo -ne "\n**********************************************\n"
-echo -ne "* Building software packages                **\n"
-echo -ne "**********************************************\n"
-
-###############################################
-### Configuring SystemC and building library
-###############################################
-mkdir install
-cd install
-# Only compile SystemC if we will run ACSIM/ACCSIM tests and the user did not supply a System
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  if [ "$SYSTEMCCOMPILE" != "no" ]; then
-    TEMPFL=${RANDOM}.out
-    ../systemc-2.2.0/configure --prefix=${TESTROOT}/systemc/install > $TEMPFL 2>&1
-    echo -ne "Building SystemC...\n"
-    make >> $TEMPFL 2>&1
-    [ $? -ne 0 ] && {
-      HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-systemc-build-log.htm
-      initialize_html $HTMLBUILDLOG "SystemC build output"
-      format_html_output $TEMPFL $HTMLBUILDLOG
-      finalize_html $HTMLBUILDLOG ""
-      rm $TEMPFL
-      echo -ne "<p><b><font color=\"crimson\">SystemC build failed. Check <a href=\"/${HTMLPREFIX}-systemc-build-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
-      finalize_html $HTMLLOG ""
-      echo -ne "SystemC build \e[31mfailed\e[m.\n"
-      do_abort
-    } 
-    rm $TEMPFL
-    TEMPFL=${RANDOM}.out
-    echo -ne "Installing SystemC...\n"
-    make install > $TEMPFL 2>&1
-    [ $? -ne 0 ] && {
-      HTMLBUILDLOG=${LOGROOT}/${HTMLPREFIX}-systemc-install-log.htm
-      initialize_html $HTMLBUILDLOG "SystemC install output"
-      format_html_output $TEMPFL $HTMLBUILDLOG
-      finalize_html $HTMLBUILDLOG ""
-      rm $TEMPFL
-      echo -ne "<p><b><font color=\"crimson\">SystemC install failed. Check <a href=\"${HTMLPREFIX}-systemc-install-log.htm\">log</a>.</font></b></p>\n" >> $HTMLLOG
-      finalize_html $HTMLLOG ""
-      echo -ne "SystemC install \e[31mfailed\e[m.\n"
-      do_abort
-    } 
-    rm $TEMPFL
-  fi
-fi
-########################################
 ### Configure & install ArchC
-########################################
 cd ${TESTROOT}/acsrc
-
 echo -ne "Building/Installing ArchC...\n"
 TEMPFL=${RANDOM}.out
+
 # Configure script
+ACSIM_STRING=""
+ACASM_STRING=""
+ACSTONE_STRING=""
+POWERSC_STRING=""
 ./boot.sh > $TEMPFL 2>&1
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
-    if [ "$RUN_ACSTONE" != "no" ]; then
-      # Configure ArchC fully (testing acsim/accsim and acasm) with gdb support (used by acstone)
-      ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1    
-    else
-      # Configure ArchC without gdb support (acsim and acasm supported)
-      ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-binutils=${BINUTILSPATH} >> $TEMPFL 2>&1    
-    fi
-  else
-    #Configure ArchC without acasm support
-    ./configure --prefix=${TESTROOT}/install --with-systemc=${SYSTEMCPATH} --with-tlm=${TLMPATH} --with-gdb=${GDBPATH} >> $TEMPFL 2>&1
-  fi
-else
-  # Configure ArchC without SystemC, because we won't need acsim/accsim
-  ./configure --prefix=${TESTROOT}/install --with-binutils=${BINUTILSPATH} >> $TEMPFL 2>&1    
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o  \
+     "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
+    ACSIM_STRING="--with-systemc=${SYSTEMCPATH}"
 fi
+if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
+    ACASM_STRING="--with-binutils=${BINUTILSPATH}"
+fi
+if [ "$RUN_ACSTONE" != "no" ]; then
+    ACSTONE_STRING=" --with-gdb=${GDBPATH}"
+fi
+if [ "$RUN_POWERSC" != "no" ]; then
+    POWERSC_STRING="--with-powersc=${POWERSCPATH}"
+fi
+./configure --prefix=${TESTROOT}/install $ACSIM_STRING $ACASM_STRING $ACSTONE_STRING $POWERSC_STRING >> $TEMPFL 2>&1    
+
 # Compile
 make >> $TEMPFL 2>&1 &&
 make install >> $TEMPFL 2>&1
@@ -751,278 +1007,184 @@ else
   echo -ne "<p>ArchC rev. $ARCHCREV built successfully. Check <a href=\"${HTMLPREFIX}-archc-build-log.htm\">compilation log</a>.</p>\n" >> $HTMLLOG
 fi
 
-######################
-### ArchC's models
-######################
-
-### Build ARM Model
+### Get ArchC Models
 if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_ARM_ACASM" != "no" -o "$RUN_ARM_ACCSIM" != "no" ]; then
-  build_model "armv5e" "${ARMGITLINK}" "${RUN_ARM_ACSIM}"
+  clone_or_copy_model "arm" "${ARMGITLINK}" "${ARMWORKINGCOPY}" 
   ARMREV=${MODELREV}
-  if [ "$RUN_ARM_ACASM" != "no" ]; then
-    build_binary_tools "arm_1"
-    build_original_toolchain "arm_1" "arm"
-  fi
-  if [ "$RUN_ARM_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
-    build_gdb "arm_1"
-  fi
 fi
-
-### Build sparcv8 Model
 if [ "$RUN_SPARC_ACSIM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" ]; then
-  build_model "sparcv8" "${SPARCGITLINK}" "${RUN_SPARC_ACSIM}"
-  ### in sparcv8 model we change the name of the model to "sparcv8_1" to avoid conflicts with gdb preexistent target
+  clone_or_copy_model "sparc" "${SPARCGITLINK}" "${SPARCWORKINGCOPY}" 
   SPARCREV=${MODELREV}
-  if [ "$RUN_SPARC_ACASM" != "no" ]; then
-    build_binary_tools "sparcv8_1"
-    build_original_toolchain "sparcv8_1" "sparc"
-  fi
-  if [ "$RUN_SPARC_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
-    build_gdb "sparcv8_1"
-  fi
 fi
-
-### Build mips1 Model
 if [ "$RUN_MIPS_ACSIM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" ]; then
-  build_model "mips1" "${MIPSGITLINK}" "${RUN_MIPS_ACSIM}"
+  clone_or_copy_model "mips" "${MIPSGITLINK}" "${MIPSWORKINGCOPY}" 
   MIPSREV=${MODELREV}
-  if [ "$RUN_MIPS_ACASM" != "no" ]; then
-    build_binary_tools "mips1"
-    build_original_toolchain "mips1" "mips"
-  fi
-  if [ "$RUN_MIPS_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
-    build_gdb "mips1"
-  fi
 fi
-
-### Build powerpc Model
 if [ "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_POWERPC_ACASM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  build_model "powerpc" "${POWERPCGITLINK}" "${RUN_POWERPC_ACSIM}"
-  ### in powerpc model we change the name of the model to "powerpc1" to avoid conflicts in acbinutils validation
+  clone_or_copy_model "powerpc" "${POWERPCGITLINK}" "${POWERPCWORKINGCOPY}" 
   PPCREV=${MODELREV}
-  if [ "$RUN_POWERPC_ACASM" != "no" ]; then
-    build_binary_tools "powerpc1"
-    build_original_toolchain "powerpc1" "powerpc"
-  fi
-  if [ "$RUN_POWERPC_ACSIM" != "no" -a "$RUN_ACSTONE" != "no" ]; then
-    build_gdb "powerpc1"
-  fi
 fi
 
-echo -ne "\n**********************************************\n"
-echo -ne "* Testing                                   **\n"
-echo -ne "**********************************************\n"
-
-
-### Test enviroment setup
-if [ "$RUN_ACSTONE" != "no" ]; then
-  # Extracts acstone binaries (arm, mips, powerpc and sparc) as well as the helper scripts
-  cd ${TESTROOT}
-  tar -xjf ${SCRIPTROOT}/sources/AllArchs-acstone.tar.bz2
-  [ $? -ne 0 ] && do_abort
-  cp ${SCRIPTROOT}/acstone_run_all.sh ${TESTROOT}/acstone &&
-    cp ${SCRIPTROOT}/acstone_run_teste.sh ${TESTROOT}/acstone &&
-    cp ${SCRIPTROOT}/collect_stats.py ${TESTROOT}/acstone
-  [ $? -ne 0 ] && do_abort	
-  chmod u+x ${TESTROOT}/acstone/*.sh
-  [ $? -ne 0 ] && do_abort	
-  # Fix arm names
-  cd ${TESTROOT}/acstone
-  for MODELFILE in `find *armv5e*`
-    do
-	NEWFILENAME=`sed -e 's/armv5e/arm_1/' <<< "$MODELFILE"`
-	cp $MODELFILE $NEWFILENAME
-    done
-  cd -
-
+# If All Revision tested in last execution, is not generated a new entry in the table
+if [ "$LASTEQCURRENT" != "false" ]; then
+    echo -ne "All Revisions tested in last execution\n"
+    rm ${LOGROOT}/${HTMLPREFIX}-* 
+    do_abort
 fi
+
 mkdir ${TESTROOT}/acsim
-cp ${SCRIPTROOT}/validation.sh ${TESTROOT}/acsim/validation.sh
-cp ${SCRIPTROOT}/validation-accsim.sh ${TESTROOT}/acsim/validation-accsim.sh
-chmod u+x ${TESTROOT}/acsim/validation.sh
-export LOGROOT
-export HTMLPREFIX
 
-echo -ne "<h3>Listing of component versions tested in this run.</h3>\n" >> $HTMLLOG
-echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLLOG
-echo -ne "<tr><th>Component</th><th>Version</th><th>Report</th></tr>\n" >> $HTMLLOG
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
-  if [ "$RUN_ACSTONE" != "no" ]; then
-    echo -ne "<tr><td>ACSIM simulating Acstone and Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
-  else
-    echo -ne "<tr><td>ACSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
-  fi
-fi
-
-######################################
-### ACSTONE Benchmark Testing      ###
-######################################
-if [ "$RUN_ACSTONE" != "no" ]; then  
-  [ "$RUN_ARM_ACSIM" != "no" ] &&
-    run_tests_acsim_acstone "armv5e" "${ARMREV}"
-  [ "$RUN_SPARC_ACSIM" != "no" ] &&
-    run_tests_acsim_acstone "sparcv8" "${SPARCREV}"
-  [ "$RUN_MIPS_ACSIM" != "no" ] &&
-    run_tests_acsim_acstone "mips1" "${MIPSREV}"
-  [ "$RUN_POWERPC_ACSIM" != "no" ] &&
-    run_tests_acsim_acstone "powerpc" "${PPCREV}"    
-fi
-
-######################################
-### Building ARM Test Environment  ###
-######################################
-if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
+# Golden Environment             
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o     \
+     "$RUN_POWERPC_ACSIM" != "no" -o "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o \
+     "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
   echo -ne "Uncompressing correct results for Mibench...\n"
   cd ${TESTROOT}/acsim
   tar -xjf ${SCRIPTROOT}/sources/GoldenMibench.tar.bz2
   [ $? -ne 0 ] && do_abort
+
+  if is_spec2006_enabled; then
+      echo -ne "Uncompressing correct results for SPEC2006...\n"
+    cd ${TESTROOT}/acsim
+    tar -xjf ${SCRIPTROOT}/sources/GoldenSPEC2006.tar.bz2
+    [ $? -ne 0 ] && do_abort
+  fi
 fi
 
-if [ "$RUN_ARM_ACSIM" != "no" ]; then  
-  echo -ne "Uncompressing Mibench precompiled for ARM...\n"
-  tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort
+# Building ARM Test Environment  
+if [ "$RUN_ARM_ACSIM" != "no" ]; then   
+  if [ "$COMPILE" != "no" ]; then
+    echo -ne "Uncompressing Mibench from source to ARM cross compiling...\n"
+    tar -xjf ${SCRIPTROOT}/sources/SourceLittleEndianMibench.tar.bz2
+    [ $? -ne 0 ] && do_abort
+    mv SourceLittleEndianMibench ARMMibench
 
-  run_tests_acsim_mibench "arm_1" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}"
+    if is_spec2006_enabled; then
+        echo -ne "Uncompressing SPEC2006 from source to ARM cross compiling...\n"
+        #tar -xjf ${SCRIPTROOT}/sources/SourceSPEC2006.tar.bz2
+        cp -r ${SCRIPTROOT}/sources/SourceSPEC2006 ${TESTROOT}/acsim
+        [ $? -ne 0 ] && do_abort
+        mv SourceSPEC2006 ARMSpec
+    fi
+    export TESTCOMPILER=$CROSS_ARM/`ls $CROSS_ARM | grep gcc$` 
+    export TESTCOMPILERCPP=$CROSS_ARM/`ls $CROSS_ARM | grep g++$` 
+    export TESTAR=$CROSS_ARM/`ls $CROSS_ARM | grep "\-ar$" | grep -v gcc` 
+    export TESTRANLIB=$CROSS_ARM/`ls $CROSS_ARM | grep ranlib$ | grep -v gcc`
+    export TESTFLAG=$CROSS_ARM_FLAG
+  else
+    echo -ne "Uncompressing Mibench precompiled for ARM...\n"
+    tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
+    [ $? -ne 0 ] && do_abort
+    
+    #FIXME: Make precompiled for SPEC2006
+    if is_spec2006_enabled; then
+       echo -ne "SPEC precompiled unavailable\n"
+       do_abort
+    fi
+  fi
 fi
 
-##########################################
-### Building SPARCV8 Test Environment  ###
-##########################################
-
+# Building SPARCV8 Test Environment 
 if [ "$RUN_SPARC_ACSIM" != "no" ]; then
-  echo -ne "Uncompressing Mibench precompiled for SPARC...\n"
-  cd ${TESTROOT}/acsim
-  tar -xjf ${SCRIPTROOT}/sources/SparcMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort
-
-  run_tests_acsim_mibench "sparcv8_1" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}"
+  if [ "$COMPILE" != "no" ]; then
+     echo -ne "Uncompressing Mibench from source to SPARC cross compiling...\n"
+     tar -xjf ${SCRIPTROOT}/sources/SourceBigEndianMibench.tar.bz2
+     [ $? -ne 0 ] && do_abort
+     mv SourceBigEndianMibench SparcMibench
+     echo -ne "Uncompressing SPEC2006 from source to SPARC cross compiling...\n"
+     #tar -xjf ${SCRIPTROOT}/sources/SourceSPEC2006.tar.bz2
+     cp -r ${SCRIPTROOT}/sources/SourceSPEC2006 ${TESTROOT}/acsim
+     [ $? -ne 0 ] && do_abort
+     mv SourceSPEC2006 SparcSpec
+     export TESTCOMPILER=$CROSS_SPARC/`ls $CROSS_SPARC | grep gcc$` 
+     export TESTCOMPILERCPP=$CROSS_SPARC/`ls $CROSS_SPARC | grep g++$` 
+     export TESTAR=$CROSS_SPARC/`ls $CROSS_SPARC | grep "\-ar$" | grep -v gcc` 
+     export TESTRANLIB=$CROSS_SPARC/`ls $CROSS_SPARC | grep ranlib$ | grep -v gcc`
+     export TESTFLAG=$CROSS_SPARC_FLAG
+  else
+    echo -ne "Uncompressing Mibench precompiled for SPARC...\n"
+    cd ${TESTROOT}/acsim
+    tar -xjf ${SCRIPTROOT}/sources/SparcMibench.tar.bz2
+    [ $? -ne 0 ] && do_abort
+  fi
 fi
 
-##########################################
-### Building MIPS Test Environment     ###
-##########################################
-
+# Building MIPS Test Environment    
 if [ "$RUN_MIPS_ACSIM" != "no" ]; then
-  echo -ne "Uncompressing Mibench precompiled for MIPS...\n"
-  cd ${TESTROOT}/acsim
-  tar -xjf ${SCRIPTROOT}/sources/MipsMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort
-
-  run_tests_acsim_mibench "mips1" "${TESTROOT}/acsim/MipsMibench" "${MIPSREV}"
+  if [ "$COMPILE" != "no" ]; then
+     echo -ne "Uncompressing Mibench from source to MIPS cross compiling...\n"
+     tar -xjf ${SCRIPTROOT}/sources/SourceBigEndianMibench.tar.bz2
+     [ $? -ne 0 ] && do_abort
+     mv SourceBigEndianMibench MipsMibench
+     echo -ne "Uncompressing SPEC2006 from source to MIPS cross compiling...\n"
+     #tar -xjf ${SCRIPTROOT}/sources/SourceSPEC2006.tar.bz2
+     cp -r ${SCRIPTROOT}/sources/SourceSPEC2006 ${TESTROOT}/acsim
+     [ $? -ne 0 ] && do_abort
+     mv SourceSPEC2006 MipsSpec
+     export TESTCOMPILER=$CROSS_MIPS/`ls $CROSS_MIPS | grep gcc$` 
+     export TESTCOMPILERCPP=$CROSS_MIPS/`ls $CROSS_MIPS | grep g++$` 
+     export TESTAR=$CROSS_MIPS/`ls $CROSS_MIPS | grep "\-ar$" | grep -v gcc` 
+     export TESTRANLIB=$CROSS_MIPS/`ls $CROSS_MIPS | grep ranlib$ | grep -v gcc`
+     export TESTFLAG=$CROSS_MIPS_FLAG
+ else
+    cd ${TESTROOT}/acsim
+    echo -ne "Uncompressing Mibench precompiled for MIPS...\n"
+    tar -xjf ${SCRIPTROOT}/sources/MipsMibench.tar.bz2
+    [ $? -ne 0 ] && do_abort
+  fi
 fi
 
-##########################################
-### Building PowerPC Test Environment  ###
-##########################################
-
+# Building PowerPC Test Environment  
 if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
-  echo -ne "Uncompressing Mibench precompiled for PowerPC...\n"
-  cd ${TESTROOT}/acsim
-  tar -xjf ${SCRIPTROOT}/sources/PowerPCMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort
-
-  run_tests_acsim_mibench "powerpc1" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}"
+  if [ "$COMPILE" != "no" ]; then
+     echo -ne "Uncompressing Mibench from source to POWERPC cross compiling...\n"
+     tar -xjf ${SCRIPTROOT}/sources/SourceBigEndianMibench.tar.bz2
+     [ $? -ne 0 ] && do_abort
+     mv SourceBigEndianMibench PowerPCMibench
+     echo -ne "Uncompressing SPEC2006 from source to POWERPC cross compiling...\n"
+     #tar -xjf ${SCRIPTROOT}/sources/SourceSPEC2006.tar.bz2
+     cp -r ${SCRIPTROOT}/sources/SourceSPEC2006 ${TESTROOT}/acsim
+     [ $? -ne 0 ] && do_abort
+     mv SourceSPEC2006 PowerPCSpec
+     export TESTCOMPILER=$CROSS_POWERPC/`ls $CROSS_POWERPC | grep gcc$` 
+     export TESTCOMPILERCPP=$CROSS_POWERPC/`ls $CROSS_POWERPC | grep g++$` 
+     export TESTAR=$CROSS_POWERPC/`ls $CROSS_POWERPC | grep "\-ar$" | grep -v gcc` 
+     export TESTRANLIB=$CROSS_POWERPC/`ls $CROSS_POWERPC | grep ranlib$ | grep -v gcc`
+     export TESTFLAG=$CROSS_POWERPC_FLAG
+  else 
+     echo -ne "Uncompressing Mibench precompiled for PowerPC...\n"
+     cd ${TESTROOT}/acsim
+     tar -xjf ${SCRIPTROOT}/sources/PowerPCMibench.tar.bz2
+     [ $? -ne 0 ] && do_abort
+  fi
 fi
 
-#################################
-### ACCSIM VALIDATION TESTS
-#################################
+#########################
+###  Call the tests
+#########################
+
+if [ "$RUN_ARM_ACSIM" != "no" -o "$RUN_MIPS_ACSIM" != "no" -o "$RUN_SPARC_ACSIM" != "no" -o "$RUN_POWERPC_ACSIM" != "no" ]; then
+    test_acsim_simple
+fi
+
+if [ $RUN_POWERSC != "no" ]; then
+    test_powersc
+fi
 
 if [ "$RUN_ARM_ACCSIM" != "no" -o "$RUN_MIPS_ACCSIM" != "no" -o "$RUN_SPARC_ACCSIM" != "no" -o "$RUN_POWERPC_ACCSIM" != "no" ]; then
-  echo -ne "<tr><td>ACCSIM simulating Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+    test_accsim
 fi
 
-#arm
-if [ "$RUN_ARM_ACCSIM" != "no" ]; then  
-  cd ${TESTROOT}/acsim
-  if [ "$RUN_ARM_ACSIM" != "no" ]; then
-    rm -rf ARMMibench
-  fi
-  echo -ne "Uncompressing Mibench precompiled for ARM...\n"
-  tar -xjf ${SCRIPTROOT}/sources/ARMMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort
-  run_tests_accsim_mibench "arm_1" "${TESTROOT}/acsim/ARMMibench" "${ARMREV}" "-ai"
-fi
-
-#sparc
-if [ "$RUN_SPARC_ACCSIM" != "no" ]; then  
-  cd ${TESTROOT}/acsim
-  if [ "$RUN_SPARC_ACSIM" != "no" ]; then
-    rm -rf SparcMibench
-  fi
-  echo -ne "Uncompressing Mibench precompiled for SPARC...\n"
-  tar -xjf ${SCRIPTROOT}/sources/SparcMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort  
-  run_tests_accsim_mibench "sparcv8_1" "${TESTROOT}/acsim/SparcMibench" "${SPARCREV}" "-opt 2"
-fi
-
-#mips
-if [ "$RUN_MIPS_ACCSIM" != "no" ]; then  
-  cd ${TESTROOT}/acsim
-  if [ "$RUN_MIPS_ACSIM" != "no" ]; then
-    rm -rf MipsMibench
-  fi
-  echo -ne "Uncompressing Mibench precompiled for MIPS...\n"
-  tar -xjf ${SCRIPTROOT}/sources/MipsMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort  
-  run_tests_accsim_mibench "mips1" "${TESTROOT}/acsim/MipsMibench" "${MIPSREV}" "-opt 2"
-fi
-
-#powerpc
-if [ "$RUN_POWERPC_ACCSIM" != "no" ]; then  
-  cd ${TESTROOT}/acsim
-  if [ "$RUN_POWERPC_ACSIM" != "no" ]; then
-    rm -rf PowerPCMibench
-  fi
-  echo -ne "Uncompressing Mibench precompiled for POWERPC...\n"
-  tar -xjf ${SCRIPTROOT}/sources/PowerPCMibench.tar.bz2
-  [ $? -ne 0 ] && do_abort
-  run_tests_accsim_mibench "powerpc1" "${TESTROOT}/acsim/PowerPCMibench" "${PPCREV}" "-opt 2"
-fi
-
-
-
-#################################
-### ACASM VALIDATION TESTS
-#################################
 if [ "$RUN_ARM_ACASM" != "no" -o "$RUN_MIPS_ACASM" != "no" -o "$RUN_SPARC_ACASM" != "no" -o "$RUN_POWERPC_ACASM" != "no" ]; then
-  echo -ne "Uncompressing ACASM validation package...\n"
-  cd $TESTROOT
-  tar -xjf ${SCRIPTROOT}/sources/acasm-validation.tar.bz2
-  [ $? -ne 0 ] && do_abort
-  chmod u+x acasm-validation/runtest.sh
-  echo -ne "<tr><td>ACASM assembling and linking Mibench apps</td><td></td><td></td></tr>\n" >> $HTMLLOG
+    test_acasm
 fi
 
-# ARM
-if [ "$RUN_ARM_ACASM" != "no" ]; then
-  echo -ne "Validating binary tools generated for arm ArchC model...\n"
-  run_tests_acasm "arm_1" "arm"
+if [ $RUN_ACSTONE != "no" ]; then
+    test_acstone
 fi
 
-# MIPS
-if [ "$RUN_MIPS_ACASM" != "no" ]; then
-  echo -ne "Validating binary tools generated for mips ArchC model...\n"
-  run_tests_acasm "mips1" "mips"
-fi
 
-# SPARC
-if [ "$RUN_SPARC_ACASM" != "no" ]; then
-  echo -ne "Validating binary tools generated for sparc ArchC model...\n"
-  run_tests_acasm "sparcv8_1" "sparc"
-fi
-
-# POWERPC
-if [ "$RUN_POWERPC_ACASM" != "no" ]; then
-  echo -ne "Validating binary tools generated for powerpc ArchC model...\n"
-  run_tests_acasm "powerpc1" "powerpc"
-fi
-
-################################
-# Finalizing
-################################
-finalize_html $HTMLLOG "</table></p>"
+#########################
 
 finalize_nightly_tester
 
