@@ -331,29 +331,29 @@ AC_SYSCALL::lseek()
   return_from_syscall();
 }
 
-AC_SYSCALL::fstat()
-{
-  DEBUG_SYSCALL("fstat");
-  static bool fstat_warn = true;
-  /*if (fstat_warn) {
-    AC_WARN("This version of fstat should not be called!");
-    AC_WARN("Please, recompile your target application with an updated libac_sysc.");
-    fstat_warn = false;
-  }*/
-  int fd = get_int(0);
-  struct stat buf;
-  int ret = ::fstat(fd, &buf);
-  if (ret == -1) {
-#if 0 /// Changed to iostream-type. --Marilia
-    AC_RUN_ERROR("System Call fstat (fd %d): %s\n", fd, strerror(errno));
-#else
-    AC_RUN_ERROR << "System Call fstat (fd " << fd << "): " << strerror(errno) << std::endl;
-#endif
-    exit(EXIT_FAILURE);
-  }
-  set_int(0, ret);
-  return_from_syscall();
-}
+//AC_SYSCALL::fstat()
+//{
+//  DEBUG_SYSCALL("fstat");
+//  static bool fstat_warn = true;
+//  if (fstat_warn) {
+//    AC_WARN("This version of fstat should not be called!");
+//    AC_WARN("Please, recompile your target application with an updated libac_sysc.");
+//    fstat_warn = false;
+//  }
+//  int fd = get_int(0);
+//  struct stat buf;
+//  int ret = ::fstat(fd, &buf);
+//  if (ret == -1) {
+//#if 0 /// Changed to iostream-type. --Marilia
+//    AC_RUN_ERROR("System Call fstat (fd %d): %s\n", fd, strerror(errno));
+//#else
+//    AC_RUN_ERROR << "System Call fstat (fd " << fd << "): " << strerror(errno) << std::endl;
+//#endif
+//    exit(EXIT_FAILURE);
+//  }
+//  set_int(0, ret);
+//  return_from_syscall();
+//}
 
 AC_SYSCALL::_exit()
 {
