@@ -300,7 +300,7 @@ static int ON_BITS[ 256 ] = {
 	8 	// 255 (0xFF)
 };
 
-static long long MASK_BITS[ 64+1 ] = {
+static unsigned long long MASK_BITS[ 64+1 ] = {
 	0x0,	// for 0
 	0x1,	// for 1
 	0x3,	// for 2

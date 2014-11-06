@@ -7,7 +7,10 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER(config.h)
 #AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
+
 AM_SILENT_RULES([yes])
+
 
 AC_CONFIG_SRCDIR([src/acsim/acsim.c])
 AC_CONFIG_LIBOBJ_DIR([src/replace])
