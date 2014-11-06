@@ -387,14 +387,15 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     break;
  
  case 32:
+ {
     payload_global->set_address((uint64_t)address);
     payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     payload_global->set_command(tlm::TLM_WRITE_COMMAND);
     payload_global->set_data_length(sizeof(uint32_t));
 
-    ((uint32_t*)p)[0]=*(buf.ptr32);
-    //((uint32_t*)ptr)[0]=*(buf.ptr32);
-    
+    uint32_t *T = reinterpret_cast<uint32_t*>(p);
+    T[0] = *(buf.ptr32);
+    //((uint32_t*)p)[0]=*(buf.ptr32);
 
     payload_global->set_data_ptr(p);    
     status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
@@ -409,7 +410,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	
 
     break;
- 
+  }
   case 64:
   default:
 	printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
