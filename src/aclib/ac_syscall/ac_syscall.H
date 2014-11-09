@@ -1136,7 +1136,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
   }
 
   /* Default case */
-//  set_int(0, -EINVAL);
+  set_int(0, -EINVAL);
   return -1;
 }
 #undef SET_BUFFER_CORRECT_ENDIAN
