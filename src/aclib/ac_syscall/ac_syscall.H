@@ -956,8 +956,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
     for (int i = 0; i < iovcnt; i++) {
       unsigned char *tmp;
-      buf[i].iov_base = (void *) 
-        CORRECT_ENDIAN((unsigned)(long) buf[i].iov_base, sizeof(void *)); // FIXME: this should be checked on x64 systems
+      // FIXME: this should be checked on x64 systems
+      unsigned long endian_tmp = CORRECT_ENDIAN((unsigned)(long) buf[i].iov_base, sizeof(void *));
+      buf[i].iov_base = (void *) endian_tmp;
       buf[i].iov_len  = CORRECT_ENDIAN(buf[i].iov_len, sizeof(size_t));
       set_int(1, (int)(long) buf[i].iov_base); // FIXME: this should be checked on x64 systems
       tmp = (unsigned char *) malloc(buf[i].iov_len);
@@ -1135,7 +1136,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
   }
 
   /* Default case */
-  set_int(0, -EINVAL);
+//  set_int(0, -EINVAL);
   return -1;
 }
 #undef SET_BUFFER_CORRECT_ENDIAN

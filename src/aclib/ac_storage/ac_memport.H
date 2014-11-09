@@ -407,7 +407,7 @@ public:
 #endif
 
  /// ***** EDIT *****
-  ///Method to load device content from a file.
+  /// Method to load device content from a file.
   /// Use local Data array
   inline void load(char* file) {
 

@@ -146,7 +146,8 @@ unsigned int convert_endian(unsigned int size, unsigned int num, bool match_endi
 //Loading binary application
 // int ac_load_elf(char* filename, unsigned char* data_mem, unsigned int data_mem_size)
 /// Template wrapper class for memory access. 
-template <typename ac_word, typename ac_Hword> int ac_load_elf(ac_arch_ref<ac_word, ac_Hword> &ref, char* filename, unsigned char* data_mem, unsigned int data_mem_size, unsigned int& ac_heap_ptr, unsigned int& ac_start_addr, bool match_endian)
+template <typename ac_word, typename ac_Hword> 
+int ac_load_elf(ac_arch_ref<ac_worde ac_Hword> &ref, char* filename, unsigned char* data_mem, unsigned int data_mem_size, unsigned int& ac_heap_ptr, unsigned int& ac_start_addr, bool match_endian)
 { 
   Elf32_Ehdr    ehdr;
   Elf32_Shdr    shdr;
@@ -156,7 +157,7 @@ template <typename ac_word, typename ac_Hword> int ac_load_elf(ac_arch_ref<ac_wo
   int           is_dyn = 0;           /* If executable has INTERP segment */
   Elf32_Addr    dynamic_address = 0;  /* DYNAMIC segment address (if present) */
   Elf32_Word    size = 0;             /* Total size occupied by the executable file in memory */
-  unsigned char pinterp[256];          /* Program interpreter name */
+  unsigned char pinterp[256];         /* Program interpreter name */
 
   //Open application
   if (!filename || ((fd = open(filename, 0)) == -1)) {
