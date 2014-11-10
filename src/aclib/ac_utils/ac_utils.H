@@ -147,7 +147,7 @@ unsigned int convert_endian(unsigned int size, unsigned int num, bool match_endi
 // int ac_load_elf(char* filename, unsigned char* data_mem, unsigned int data_mem_size)
 /// Template wrapper class for memory access. 
 template <typename ac_word, typename ac_Hword> 
-int ac_load_elf(ac_arch_ref<ac_worde ac_Hword> &ref, char* filename, unsigned char* data_mem, unsigned int data_mem_size, unsigned int& ac_heap_ptr, unsigned int& ac_start_addr, bool match_endian)
+int ac_load_elf(ac_arch_ref<ac_word, ac_Hword> &ref, char* filename, unsigned char* data_mem, unsigned int data_mem_size, unsigned int& ac_heap_ptr, unsigned int& ac_start_addr, bool match_endian)
 { 
   Elf32_Ehdr    ehdr;
   Elf32_Shdr    shdr;
