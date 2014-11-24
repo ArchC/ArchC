@@ -32,6 +32,10 @@ AC_SUBST(TARGET_ARCH)
 
 AC_DISABLE_SHARED
 
+#Uncomment this lines to use clang compiler
+#CC=clang-3.5
+#CXX=clang++-3.5
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
