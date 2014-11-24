@@ -4,7 +4,8 @@ Nov 2014, ArchC Change Log
 + SystemC 2.3.1 supported
 
 + clang-3.5 and clang++-3.5 supported
-	* The c++11 std it's not supported yet
+	
++ Standard c11/c++11 supported with clang/clang++ and gcc/g++
 
 + Separate build directory supported
 
