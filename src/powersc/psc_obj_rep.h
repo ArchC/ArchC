@@ -118,7 +118,7 @@ struct eqstr
    }
 };
 
-using std::hash;
+using __gnu_cxx::hash;
 
 typedef hash_map<string, repository_entry_t, hash<string>, eqstr> repository_map;
 typedef hash_map<string, cond_statement_t, hash<string>, eqstr> cond_stat_map;
