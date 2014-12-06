@@ -21,12 +21,12 @@
 #include <sys/time.h>
 #include <errno.h>
 
-int
-gettimeofday( struct timeval  *ptimeval,
-	      struct timezone *ptimezone)
-{
-  int t = time(0);
-  ptimeval->tv_sec = t;
-  ptimeval->tv_usec = 0;
-  return 0;
-}
+//int
+//gettimeofday( struct timeval  *ptimeval,
+//	      struct timezone *ptimezone)
+//{
+//  int t = time(0);
+//  ptimeval->tv_sec = t;
+//  ptimeval->tv_usec = 0;
+//  return 0;
+//}
