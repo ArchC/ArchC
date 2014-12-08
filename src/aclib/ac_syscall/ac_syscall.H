@@ -153,14 +153,14 @@ AC_SYSCALL::open()
   int flags = get_int(1); correct_flags(&flags);
   int mode = get_int(2);
   int ret = ::open((char*)pathname, flags, mode);
-  if (ret == -1) {
-#if 0 /// Changed to iostream-type. --Marilia
-    AC_RUN_ERROR("System Call open (file '%s'): %s\n", pathname, strerror(errno));
-#else
-    AC_RUN_ERROR << "System Call open (file '" << pathname << "'): " << strerror(errno) << std::endl;
-#endif
-    exit(EXIT_FAILURE);
-  }
+//  if (ret == -1) {
+//#if 0 /// Changed to iostream-type. --Marilia
+//    AC_RUN_ERROR("System Call open (file '%s'): %s\n", pathname, strerror(errno));
+//#else
+//    AC_RUN_ERROR << "System Call open (file '" << pathname << "'): " << strerror(errno) << std::endl;
+//#endif
+//    exit(EXIT_FAILURE);
+//  }
   set_int(0, ret);
   return_from_syscall();
 }
@@ -216,14 +216,14 @@ AC_SYSCALL::read()
   unsigned count = get_int(2);
   unsigned char *buf = (unsigned char*) malloc(count);
   int ret = ::read(fd, buf, count);
-  if (ret == -1) {
-#if 0 /// Changed to iostream-type. --Marilia
-    AC_RUN_ERROR("System Call read (fd %d): %s\n", fd, strerror(errno));
-#else
-    AC_RUN_ERROR << "System Call read (fd " << fd << "): " << strerror(errno) << std::endl;
-#endif
-    exit(EXIT_FAILURE);
-  }
+//  if (ret == -1) {
+//#if 0 /// Changed to iostream-type. --Marilia
+//    AC_RUN_ERROR("System Call read (fd %d): %s\n", fd, strerror(errno));
+//#else
+//    AC_RUN_ERROR << "System Call read (fd " << fd << "): " << strerror(errno) << std::endl;
+//#endif
+//    exit(EXIT_FAILURE);
+//  }
   set_buffer(1, buf, ret);
   set_int(0, ret);
   return_from_syscall();
@@ -449,6 +449,11 @@ AC_SYSCALL::ac_syscall_wrapper()
     DEBUG_SYSCALL("fstat");
     fd = get_int(1);
     ret = ::fstat(fd, &buf_stat);
+    break;
+
+  case __NR_unlink:
+    DEBUG_SYSCALL("unlink");
+    ret = buf_stat.st_nlink;
     break;
 
 
