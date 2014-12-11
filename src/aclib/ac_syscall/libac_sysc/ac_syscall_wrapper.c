@@ -23,6 +23,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef ARM
+#define unlink  _unlink
+#define getpid  _getpid
+#endif
+
 
 _syscall2(int,link,const char *,oldpath,const char *,newpath)
 _syscall1(int,unlink,const char*,pathname)
@@ -48,6 +53,12 @@ _syscall2(int,dup2,int,oldfd,int,newfd)
 /* _syscall2(int,lstat,const char *,file_name,struct stat *,buf); */
 
 #include <unistd.h>
+
+#ifdef ARM
+int _fstat(int filedes, struct stat *buf) {
+    return (fstat(filedes,buf));
+}
+#endif
 
 int fstat(int filedes, struct stat *buf)
 {

@@ -7,7 +7,7 @@ aplications to interface virtual calls with real host system calls.
 The GCC cross-compiled to the target architecture must be configured
 to use this library.
 
-    make CC=mips-gcc
+    make TARGET=mips-newlib-elf
 
 How to create/configure a cross-compiler for an ArchC description
 -----------------------------------------------------------------

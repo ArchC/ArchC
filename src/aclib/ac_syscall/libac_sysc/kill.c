@@ -18,6 +18,9 @@
  *
  */
 
+#ifdef ARM
+#define kill _kill
+#endif
 
 int
 kill(int pid, int sig)

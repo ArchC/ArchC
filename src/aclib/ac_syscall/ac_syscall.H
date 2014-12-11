@@ -241,14 +241,14 @@ AC_SYSCALL::write()
   unsigned char *buf = (unsigned char*) malloc(count);
   get_buffer(1, buf, count);
   int ret = ::write(fd, buf, count);
-  if (ret == -1) {
-#if 0 /// Changed to iostream-type. --Marilia
-    AC_RUN_ERROR("System Call write (fd %d): %s\n", fd, strerror(errno));
-#else
-    AC_RUN_ERROR << "System Call write (fd " << fd << "): " << strerror(errno) << std::endl;
-#endif
-    exit(EXIT_FAILURE);
-  }
+//  if (ret == -1) {
+//#if 0 /// Changed to iostream-type. --Marilia
+//    AC_RUN_ERROR("System Call write (fd %d): %s\n", fd, strerror(errno));
+//#else
+//    AC_RUN_ERROR << "System Call write (fd " << fd << "): " << strerror(errno) << std::endl;
+//#endif
+//    exit(EXIT_FAILURE);
+//  }
   set_int(0, ret);
   return_from_syscall();
   free(buf);
@@ -406,6 +406,31 @@ AC_SYSCALL::random()
 }
 
 
+AC_SYSCALL::getcwd()
+{
+  DEBUG_SYSCALL("getcwd");
+  unsigned size = get_int(1);
+  char *buf = (char*) malloc(size);
+  long ret = (long) ::getcwd(buf, size);
+  set_buffer(0, (unsigned char*) buf, ret);
+  set_int(0, ret);
+  return_from_syscall();
+  free(buf);
+}
+
+AC_SYSCALL::getpagesize()
+{
+  DEBUG_SYSCALL("getpagesize");
+
+  //FIXME: page size changes depending the architecture
+  int ret = sysconf(_SC_PAGE_SIZE);
+
+  set_int(0, ret);
+  return_from_syscall();
+}
+
+
+
 #include <ac_syscall_codes.h>
 
 AC_SYSCALL::ac_syscall_wrapper()
@@ -456,6 +481,14 @@ AC_SYSCALL::ac_syscall_wrapper()
     ret = buf_stat.st_nlink;
     break;
 
+  case __NR_stat:
+    {
+    DEBUG_SYSCALL("stat");
+    get_buffer(0, pathname, 100);
+    const char* path = (char*) pathname;
+    ret = ::stat(path, &buf_stat);
+    }
+    break;
 
     /* Special cases for the fields of the "struct stat":
        to convert from glibc to newlib */
@@ -463,7 +496,7 @@ AC_SYSCALL::ac_syscall_wrapper()
 #define FILL_STRUCT_STAT(x)                             \
     case __AC_struct_stat_##x:                          \
       DEBUG_SYSCALL("filling struct stat field: " #x);  \
-    ret = buf_stat.x;                                   \
+      ret = buf_stat.x;                                 \
     break
 
     FILL_STRUCT_STAT(st_dev);
@@ -492,11 +525,6 @@ AC_SYSCALL::ac_syscall_wrapper()
     exit(EXIT_FAILURE);
   }
     
-#if 0 /// Changed to iostream-type. --Marilia
-  //if (ret == -1)   AC_RUN_ERROR("System call %d returned -1.\n", syscall_code);
-#else
-  //if (ret == -1)   AC_RUN_ERROR << "System call " << syscall_code << " returned -1." << std::endl;
-#endif
   set_int(0, ret);
   return_from_syscall();
 }

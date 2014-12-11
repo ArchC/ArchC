@@ -18,6 +18,10 @@
 
 /* some syscalls that trap to simulator functions */
 
+#ifdef ARM
+#include "ac_arm.h" 
+#endif
+
 #define AC_SYSC(NAME,LOCATION) \
 int NAME() { \
   goto *LOCATION; \

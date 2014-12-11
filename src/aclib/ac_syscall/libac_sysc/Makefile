@@ -5,10 +5,14 @@ AR       = $(TARGET)-ar
 RANLIB   = $(TARGET)-ranlib
 
 # Flags
-CFLAGS   = -O2 -g -I. -I..
+CFLAGS   = -O2 -g -I. -I.. 
 ARFLAGS  = cr
 RM       = rm
 RMFLAGS  = -rf
+
+ifneq (,$(findstring arm,$(TARGET)))
+CFLAGS+=-DARM
+endif
 
 # Targets
 LIBSYSC = libac_sysc.a
