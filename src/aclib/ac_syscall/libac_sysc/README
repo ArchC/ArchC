@@ -9,6 +9,12 @@ to use this library.
 
     make TARGET=mips-newlib-elf
 
+The output file (libac_sysc.a) must be moved to:
+
+$(CROSS_PATH)/$(CROSS_TUPLE)/$(CROSS_TUPLE)/lib/
+
+Where CROSS_TUPLE could be 'mips-newlib-elf', 'powerpc-newlib-elf', etc.
+
 How to create/configure a cross-compiler for an ArchC description
 -----------------------------------------------------------------
 
