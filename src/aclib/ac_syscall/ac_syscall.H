@@ -429,7 +429,20 @@ AC_SYSCALL::getpagesize()
   return_from_syscall();
 }
 
+AC_SYSCALL::execve()
+{
+    AC_RUN_ERROR << "System Call 'execve' not implemented yet." << std::endl;
+}
 
+AC_SYSCALL::fork()
+{
+    AC_RUN_ERROR << "System Call 'fork' not implemented yet." << std::endl;
+}
+
+AC_SYSCALL::wait()
+{
+    AC_RUN_ERROR << "System Call 'wait' not implemented yet." << std::endl;
+}
 
 #include <ac_syscall_codes.h>
 

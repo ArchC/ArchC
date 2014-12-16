@@ -19,4 +19,7 @@ AC_SYSC(ac_rtld_fini, 0x84);
 AC_SYSC(ac_rtld_dummy, 0x88);
 AC_SYSC(getcwd, 0x8c);
 AC_SYSC(getpagesize,0x90);
+AC_SYSC(execve,0x94);
+AC_SYSC(fork,0x98);
+AC_SYSC(wait,0x9c);
 
