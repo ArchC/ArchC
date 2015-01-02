@@ -2062,17 +2062,7 @@ void CreateProcessorImpl() {
     fprintf( output, "%sreturn;\n", INDENT[2]);
     fprintf( output, "%s}\n\n", INDENT[1]);
   }*/
-  
-  // Starting
-  fprintf( output, "%sif( start_up ){\n", INDENT[1]);
-  if(ACABIFlag)
-    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n", 
-             INDENT[2]);
-  fprintf( output, "%sstart_up = 0;\n", INDENT[2]);
-  if( ACDecCacheFlag )
-    fprintf( output, "%sinit_dec_cache();\n", INDENT[2]);
-  fprintf( output, "%s}\n\n", INDENT[1]);
-  
+    
   if( ACFullDecode ) {
     fprintf(output, "%sfor (decode_pc = ac_pc; decode_pc < dec_cache_size; decode_pc += %d) {\n", 
             INDENT[1], largest_format_size / 8);
@@ -2162,8 +2152,6 @@ void CreateProcessorImpl() {
 
   }
 
-
-
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2172,7 +2160,14 @@ void CreateProcessorImpl() {
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
   fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
           INDENT[1]);
-  fprintf(output, "%sInitStat();\n\n", INDENT[1]);
+  fprintf(output, "%sInitStat();\n", INDENT[1]);
+
+  if(ACABIFlag)
+    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+  fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
+  if( ACDecCacheFlag )
+    fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
+
   fprintf(output, "%ssignal(SIGINT, sigint_handler);\n", INDENT[1]);
   fprintf(output, "%ssignal(SIGTERM, sigint_handler);\n", INDENT[1]);
   fprintf(output, "%ssignal(SIGSEGV, sigsegv_handler);\n", INDENT[1]);
@@ -2210,10 +2205,6 @@ void CreateProcessorImpl() {
      }
   }
 
-
-
-
-
   fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
@@ -2222,7 +2213,14 @@ void CreateProcessorImpl() {
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
   fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
           INDENT[1]);
-  fprintf(output, "%sInitStat();\n\n", INDENT[1]);
+  fprintf(output, "%sInitStat();\n", INDENT[1]);
+
+  if(ACABIFlag)
+    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+  fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
+  if( ACDecCacheFlag )
+    fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
+
   fprintf(output, "%ssignal(SIGINT, sigint_handler);\n", INDENT[1]);
   fprintf(output, "%ssignal(SIGTERM, sigint_handler);\n", INDENT[1]);
   fprintf(output, "%ssignal(SIGSEGV, sigsegv_handler);\n", INDENT[1]);
