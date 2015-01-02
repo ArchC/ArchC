@@ -3712,12 +3712,6 @@ void EmitInstrExec( FILE *output, int base_indent){
                         INDENT[base_indent], project_name);
             }
 
-            if( ACDebugFlag ){
-                fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
-                fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
-                        INDENT[base_indent + 1]);
-            }
-
             fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
             fprintf( output, "%sgoto *dispatch();\n\n", INDENT[base_indent]);
             base_indent--;
@@ -4251,8 +4245,13 @@ void EmitDispatch(FILE *output, int base_indent) {
 
   fprintf( output, "%svoid* %s::dispatch() {\n", 
            INDENT[base_indent], project_name);
-  
+
   base_indent++;
+
+  if( ACDebugFlag ){
+    fprintf( output, "%sextern bool ac_do_trace;\n", INDENT[base_indent]);
+    fprintf( output, "%sextern ofstream trace_file;\n", INDENT[base_indent]);
+  }
   
   //!Emit update method.
   EmitUpdateMethod( output, base_indent);
