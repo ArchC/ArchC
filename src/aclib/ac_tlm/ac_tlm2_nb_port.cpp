@@ -97,20 +97,18 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	tlm::tlm_sync_enum status;
 
   	//sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
-	unsigned char p[32];
 
 	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	payload_global->set_address((sc_dt::uint64)address);
-	payload_global->set_data_ptr(p);
+	payload_global->set_data_ptr(buf.ptr8);
 	
-        if (wordsize == 8) payload_global->set_data_length(sizeof(uint8_t));
-        else if (wordsize == 16) payload_global->set_data_length(sizeof(uint16_t));
-        else if (wordsize == 32) payload_global->set_data_length(sizeof(uint32_t));
-	else {
+	if (wordsize % 8) {
 		printf("\n\nAC_TLM2_NB_PORT READ: wordsize not implemented");
 		exit(0);
 	}
+	payload_global->set_data_length(wordsize / 8);
+
 
 	#ifdef debugTLM2 
 	printf("\n\n*******AC_TLM2_NB_PORT READ: command-->%d address-->%ld",tlm::TLM_READ_COMMAND, address);
@@ -124,48 +122,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	}
 
 	wait(this->wake_up);
-	
-	
-	uint8_t data8;
-	uint16_t data16;
-	uint32_t data32;
-
-	   switch (wordsize) 
-	   {
-	      case 8:
-	       	data8 = *((uint8_t*)payload_global->get_data_ptr());
-		*(buf.ptr8) = ((uint8_t*)&data8)[0];
-	        #ifdef debugTLM2 
-		printf("\nAC_TLM2_NB_PORT READ: wordsize-->%d  data8-->%d data-->%d, address-->%ld",wordsize,data8,*(payload_global->get_data_ptr()),payload_global->get_address());
-		#endif
-	       	break;
-
-	      case 16:
-	      
-		data16 = *((uint16_t*)payload_global->get_data_ptr());
-		*(buf.ptr16) = ((uint16_t*)&data16)[0];
-
-	  	#ifdef debugTLM2 
-                printf("\nAC_TLM2_NB_PORT READ: wordsize-->%d  data16-->%d data-->%d, address-->%ld",wordsize,data16,*(payload_global->get_data_ptr()),payload_global->get_address());
-		#endif
-                break;
-	      case 32:
-	       
-		data32 = *((uint32_t*)payload_global->get_data_ptr());
-
-		*(buf.ptr32) = ((uint32_t*)&data32)[0];
-
-        	#ifdef debugTLM2 
-		printf("\nAC_TLM2_NB_PORT READ: wordsize-->%d  data32-->%d data-->%d, address-->%ld",wordsize,data32,*(payload_global->get_data_ptr()),payload_global->get_address());
-		#endif
-        	break;
-	      case 64:
-	      default:
-        	printf("*** AC_TLM2_NB_PORT READ: wordsize-->%d not supported ****", wordsize);
-		exit(0);
-	        break;
-	   }
-
 	
 	delete payload_global;
  	
@@ -185,99 +141,27 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	
-	unsigned char p[32];
-		
 	#ifdef debugTLM2 
 	printf("\n\n*******AC_TLM2_NB_PORT READ N_WORDS: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_READ_COMMAND, address);
 	#endif
 
-	switch (wordsize) 
-	{
-	    case 8:
-   	       
-		for(int i=0; i<n_words; i++)
-  		{	
-			payload_global->set_address(address +i);
-			payload_global->set_data_length(sizeof(uint8_t));
-			payload_global->set_data_ptr(p);
-
-			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-			if(status != tlm::TLM_UPDATED)
-			{
-				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
-				exit(0);
-			}
-	
-			wait(this->wake_up);
-			
-	
-			unsigned char* data_pointer = payload_global->get_data_ptr();		
-
-			for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
-				(buf.ptr8)[i] = ((uint8_t*)data_pointer)[j];
-			}
-			i--;
-			
-   		}
-		break;
-   
- 	  case 16:
-		for(int i=0; i<n_words; i++)
-  		{
-			payload_global->set_address(address + (i * sizeof(uint16_t)));
-			payload_global->set_data_length(sizeof(uint16_t));
-			payload_global->set_data_ptr(p);
-
-			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-			if(status != tlm::TLM_UPDATED)
-			{
-				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
-				exit(0);
-			}
-	
-			wait(this->wake_up);
-
-    	unsigned char* data_pointer = payload_global->get_data_ptr();
-
-
-			for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
-				buf.ptr16[i] = ((uint16_t*)data_pointer)[j];
-			}
-			i--;
-
-		}
-       		break;
-	  case 32:
-		
-		for(int i=0; i<n_words; i++)
-  		{	
-			payload_global->set_address(address + (i * sizeof(uint32_t)));
-			payload_global->set_data_length(sizeof(uint32_t));
-		        payload_global->set_data_ptr(p);
-
-			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-			if(status != tlm::TLM_UPDATED)
-			{
-				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
-				exit(0);
-			}
-	
-			wait(this->wake_up);
-
-			unsigned char* data_pointer = payload_global->get_data_ptr();
-			
-			buf.ptr32[i] = *((uint32_t*)data_pointer);
-
-   		}	
-	
-	        break;
-  	  case 64:
-	  default:
+	payload_global->set_address(address);
+	if (wordsize % 8) {
 		printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
-		exit(0);	
-		break;
-        }
-	 
+		exit(0);
+	}
+	payload_global->set_data_length(n_words * wordsize / 8);
+	payload_global->set_data_ptr(buf.ptr8);
+
+	status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+	if(status != tlm::TLM_UPDATED)
+	{
+		printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
+		exit(0);
+	}
+
+	wait(this->wake_up);
+
 	delete payload_global;
  		
 }
@@ -292,9 +176,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
  */
 void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info) {
 
-  unsigned char p[32];
-  unsigned char *ptr;
-
   payload_global = new ac_tlm2_payload();
 
   tlm::tlm_phase phase = tlm::BEGIN_REQ;
@@ -307,117 +188,25 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
   printf("\n\n*******AC_TLM2_NB_PORT WRITE: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_WRITE_COMMAND, address);
   #endif
 
-
-  switch (wordsize) {
-  case 8:
-    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-    payload_global->set_command(tlm::TLM_READ_COMMAND);
-    payload_global->set_address((uint64_t)address);
-    payload_global->set_data_length(sizeof(uint8_t));
-    payload_global->set_data_ptr(p);
-    
-    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-    if(status != tlm::TLM_UPDATED)
-    {
-	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-	exit(0);
-    }
-	
-    #ifdef debugTLM2 
-    printf("\n\nAC_TLM2_NB_PORT WRITE is waiting for wake_up event");
-    #endif
-
-    wait(this->wake_up);
-
-    
-    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-    payload_global->set_command(tlm::TLM_WRITE_COMMAND);
-
-    ptr = payload_global->get_data_ptr();
-    ((uint8_t*)ptr)[0] = *(buf.ptr8);
-
-    payload_global->set_address((uint64_t)address);
-    payload_global->set_data_ptr(ptr);
-
-    
-    status =  LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-    if(status != tlm::TLM_UPDATED)
-    {
-	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-	exit(0);
-    }
-    wait(this->wake_up);
-    
-
-    break;
-  case 16:
-    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-    payload_global->set_command(tlm::TLM_READ_COMMAND);
-    payload_global->set_address((uint64_t)address);
-    payload_global->set_data_length(sizeof(uint16_t));
-    payload_global->set_data_ptr(p);
-
-    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-    if(status != tlm::TLM_UPDATED)
-    {
-	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-	exit(0);
-    }
-	
-    wait(this->wake_up);
-    
-    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-    payload_global->set_command(tlm::TLM_WRITE_COMMAND);
-    ptr = payload_global->get_data_ptr();
-
-    ((uint16_t*)ptr)[0] = *(buf.ptr16);
-    payload_global->set_address((uint64_t)address);
-    payload_global->set_data_ptr(ptr);
-
-    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-    if(status != tlm::TLM_UPDATED)
-    {
-	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-	exit(0);
-    } 
-    
-    wait(this->wake_up);
-    
-
-    break;
- 
- case 32:
- {
-    payload_global->set_address((uint64_t)address);
-    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-    payload_global->set_command(tlm::TLM_WRITE_COMMAND);
-    payload_global->set_data_length(sizeof(uint32_t));
-
-    uint32_t *T = reinterpret_cast<uint32_t*>(p);
-    T[0] = *(buf.ptr32);
-    //((uint32_t*)p)[0]=*(buf.ptr32);
-
-    payload_global->set_data_ptr(p);    
-    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
-
-    if(status != tlm::TLM_UPDATED)
-    {
-	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-	exit(0);
-    } 
-
-    wait(this->wake_up);
-	
-
-    break;
+  payload_global->set_address((uint64_t)address);
+  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+  payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+  if (wordsize % 8) {
+          printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
+          exit(0);
   }
-  case 64:
-  default:
-	printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
-	exit(0);
-    break;
+  payload_global->set_data_length(wordsize / 8);
+
+  payload_global->set_data_ptr(buf.ptr8);
+  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+
+  if(status != tlm::TLM_UPDATED)
+  {
+      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+      exit(0);
   }
 
+  wait(this->wake_up);
   
   delete payload_global;
 
@@ -435,7 +224,39 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address,
                          int wordsize, int n_words,sc_core::sc_time &time_info) {
 
-  printf("ac_tlm2_nb_port write isn't implemented");
+  payload_global = new ac_tlm2_payload();
+
+  tlm::tlm_phase phase = tlm::BEGIN_REQ;
+  tlm::tlm_sync_enum status;
+
+  //sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
+
+
+  #ifdef debugTLM2
+  printf("\n\n*******AC_TLM2_NB_PORT WRITE: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_WRITE_COMMAND, address);
+  #endif
+
+  payload_global->set_address((uint64_t)address);
+  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+  payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+  if (wordsize % 8) {
+          printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
+          exit(0);
+  }
+  payload_global->set_data_length(n_words * wordsize / 8);
+
+  payload_global->set_data_ptr(buf.ptr8);
+  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+
+  if(status != tlm::TLM_UPDATED)
+  {
+      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+      exit(0);
+  }
+
+  wait(this->wake_up);
+  
+  delete payload_global;
   
 }
 

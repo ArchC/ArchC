@@ -213,24 +213,16 @@ public:
   
 
   const ac_word *read_block(uint32_t address, unsigned l) {
+	  //printf("AC_MEMPORT::read_block-> address=%x length=%u bytes\n", address, l);
+	  sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
-	    //printf("\nAC_MEMPORT::read_block-> address=%x", address);
+	  ac_word *p = (ac_word*) buf.ptr8;
 
-	    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-
-	    ac_word *p = (ac_word*) buf.ptr8;
-
-	    l = byte_to_word(l);
-
-	    for (unsigned i=0; i<l; i++)
-	    {
-	    	storage->read(&(p[i]), address+i*sizeof(ac_word), sizeof(ac_word) * 8,time);
-	    	setTimeInfo (time);
-	    }
-
-	    return p;
-
-  	}
+          if (l % sizeof(ac_word)) { printf("Memory size not wordsize aligned\n"); exit(1); }
+          storage->read(p, address, sizeof(ac_word) * 8, l / sizeof(ac_word), time);
+          setTimeInfo (time);
+      	  return p;
+  }
 
 
   //!Writing a word
@@ -276,23 +268,15 @@ public:
     }
 
     void write_block(uint32_t address, const ac_word *d, unsigned length) {
+        //printf("AC_MEMPORT::write_block-> address=%x length=%u bytes\n", address, length);
 
       	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
-      	unsigned l = byte_to_word(length);
+        if (length % sizeof(ac_word)) { printf("Memory size not wordsize aligned\n"); exit(1); }
+        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time); //TODO Remove cast
+        setTimeInfo (time);
 
-      	//unsigned max_length = 0x20000000-address;
-      	//if (l > max_length) std::abort();
-
-
-      	for (unsigned i=0; i<l; i++)
-        {
-        	aux_word = d[i];
-        	storage->write(&aux_word, address+i*sizeof(ac_word), sizeof(ac_word) * 8,time);
-        	setTimeInfo (time);
-        }
-
-	}
+    }
 
 #ifdef AC_DELAY
   //!Writing a word
