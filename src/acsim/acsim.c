@@ -4343,8 +4343,8 @@ void EmitDispatch(FILE *output, int base_indent) {
   }
 
   if( ACDebugFlag ){
-    fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent + 1]);
-    fprintf( output, PRINT_TRACE, INDENT[base_indent + 2]);
+    fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent]);
+    fprintf( output, PRINT_TRACE, INDENT[base_indent + 1]);
   }
   
   if( ACABIFlag && !ACDecCacheFlag ) {
@@ -4380,13 +4380,6 @@ void EmitDispatch(FILE *output, int base_indent) {
   else
     fprintf( output, "%sreturn IntRoutine[ins_id];\n", INDENT[base_indent]);  
   
-
-  
-
-
-
-
-
   base_indent--;
   fprintf( output, "%s}\n\n", INDENT[base_indent]);  
 }

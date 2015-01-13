@@ -233,16 +233,35 @@ void AC_GDB<ac_word>::reg_read(char *ib, char *ob) {
   char fmt[ 5 ] = "";
   ac_word r;
 
-  /* 1 byte is represented in hexadecimal by 2 chars */
-  snprintf( fmt, 5, "%%%02dx", (int)sizeof( ac_word ) * 2 );
 
-  for ( i = 0; i < proc->nRegs(); i ++ )
-    {
-      r = proc->reg_read( i );
-      if (proc->get_ac_tgt_endian() == false)
-        r = changeendianess(r);
-      sprintf( ob + strlen( ob ), fmt, r );
-    }
+  switch( ib[0] ) {
+      case 'g':
+          /* 1 byte is represented in hexadecimal by 2 chars */
+          snprintf( fmt, 5, "%%%02dx", (int)sizeof( ac_word ) * 2 );
+
+          for ( i = 0; i < proc->nRegs(); i ++ )
+          {
+              r = proc->reg_read( i );
+              if (proc->get_ac_tgt_endian() == false)
+                  r = changeendianess(r);
+              sprintf( ob + strlen( ob ), fmt, r );
+          }
+          break;
+
+      case 'p':
+          /* 1 byte is represented in hexadecimal by 2 chars */
+          snprintf( fmt, 5, "%%%02dx", (int)sizeof( ac_word ) * 2 );
+          if ( sscanf( ib, "p%x", &i) != 1 ) {
+              /* Data is wrong! */
+              strncpy( ob, "E01", GDB_BUFFERSIZE );
+          } else {
+              r = proc->reg_read( i );
+              if (proc->get_ac_tgt_endian() == false)
+                  r = changeendianess(r);
+              sprintf( ob + strlen( ob ), fmt, r );
+          }
+          break;
+  }
 }
 
 
@@ -622,6 +641,7 @@ void AC_GDB<ac_word>::process_bp() {
 
     comm_getpacket(in_buffer);
 
+
     switch (in_buffer[0]) {
     case '?':
       /* "?": Return the reason simulator halted */
@@ -638,6 +658,11 @@ void AC_GDB<ac_word>::process_bp() {
       reg_write( in_buffer, out_buffer );
       break;
 
+    case 'p':
+      /* "pAA": return the value of a specific register (AA) */
+      reg_read( in_buffer, out_buffer );
+      break;
+    
     case 'm':
       /* "mAA..AA,LLLL": Read LLLL bytes at address AA..AA as hex data or ENN*/
       mem_read( in_buffer, out_buffer );
