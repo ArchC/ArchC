@@ -53,27 +53,6 @@
 #DIFF="diff --report-identical-file --brief"
 DIFF="diff -w"
 
-#programas
-#BASICMATH=yes # demorado
-#BITCOUNT=yes
-#QUICKSORT=yes
-#SUSAN=yes
-#ADPCM=yes
-#CRC=yes
-#FFT=yes # demorado
-#GSM=yes
-#DIJKSTRA=yes
-#PATRICIA=yes # demorado
-#RIJNDAEL=yes
-#SHA=yes
-#JPEG=yes
-#LAME=yes # demorado
-#filtro para remover o aviso do SystemC dos arquivos de saída
-#Apenas deverá ser usado se o SystemC produz um aviso "deprecated"
-#quando o simulador é executado.
-#FILTRO="sed 1,2d"
-# Script
-
 aplicafiltro() {
 	#${FILTRO} $1 > ${1}.temp
 	#mv ${1}.temp $1
@@ -107,8 +86,9 @@ compile_mibench() {
 		HTML_COMP=${LOGROOT}/${HTMLPREFIX}-${ARCH}-${1}-comp.htm
 		initialize_html $HTML_COMP "${1} compilation results"
 		TEMPFL=${RANDOM}.out
-		make clean 
-        make > $TEMPFL 2>&1
+        echo -ne "Compiling...\n"
+		make clean > /dev/null 
+        make ENDIAN=${ENDIAN} > $TEMPFL 2>&1
         EXCODE=$?
         if [ $EXCODE -ne 0 ]; then
             echo -ne "<td><b><font color=\"crimson\"> failed </font></b>" >> $HTMLMAIN
@@ -129,8 +109,9 @@ compile_spec(){
 		HTML_COMP=${LOGROOT}/${HTMLPREFIX}-${ARCH}-${1}-comp.htm
 		initialize_html $HTML_COMP "${1} compilation results"
 		TEMPFL=${RANDOM}.out
-        make SPEC=${SPECROOT} clean
-        make SPEC=${SPECROOT} CC=${TESTCOMPILER} CXX=${TESTCOMPILERCPP} > $TEMPFL 2>&1
+        echo -ne "Compiling...\n"
+        make SPEC=${SPECROOT} clean > /dev/null
+        make SPEC=${SPECROOT} CC=${TESTCOMPILER} CXX=${TESTCOMPILERCXX} ENDIAN="${ENDIAN}" > $TEMPFL 2>&1
         EXCODE=$?
         if [ $EXCODE -ne 0 ]; then
             echo -ne "<td><b><font color=\"crimson\"> Failed </font></b>" >> $HTMLMAIN
@@ -250,7 +231,7 @@ echo -ne "<p><table border=\"1\" cellspacing=\"1\" cellpadding=\"5\">" >> $HTMLM
 #echo -ne "<tr><th>Program</th><th>Program</th><th>Small</th><th></th><th></th><th>Large</th><th></th><th></th></tr>\n" >> $HTMLMAIN
 echo -ne "<tr><th>MiBench</th><th>Compilation</th><th>Simulation (small)</th><th>Speed</th><th># Instrs.</th><th>Simulation (large)</th><th>Speed</th><th># Instrs.</th></tr>\n" >> $HTMLMAIN
 
-echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
+#echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
 #basicmath
 [ "$BASICMATH" != "no" ] && {
 	echo -ne "\nCurrently testing: BASICMATH\n"
@@ -258,8 +239,8 @@ echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><t
 	cd ${MIBENCHROOT}/automotive/basicmath
 	compile_mibench "basicmath"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/automotive/basicmath" "output_small.txt" "yes" "$RUNSMALL" "basicmath-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/automotive/basicmath" "output_large.txt" "yes" "$RUNLARGE" "basicmath-large"	
+	run_test "runme_small.sh" "${GOLDENROOT}/automotive/basicmath" "output_small.txt" "no" "$RUNSMALL" "basicmath-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/automotive/basicmath" "output_large_softfloat.txt" "no" "$RUNLARGE" "basicmath-large"	
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -301,9 +282,9 @@ echo -ne "<tr><td>Automotive</td><td></td><td></td><td></td><td></td><td></td><t
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 # --- telecomm ---
-echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
+#echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
 
-#adpcm - problema: Remover string produzida pelo "SystemC" no início do arquivo binário de saída - resolvido
+#adpcm
 [ "$ADPCM" != "no" ] && {
 	echo -ne "\nCurrently testing: ADPCM\n"
 	echo -ne "<tr><td>adpcm</td>" >> $HTMLMAIN
@@ -311,8 +292,13 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 	compile_mibench "adpcm"
 	cd ..
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/adpcm" "output_small.adpcm output_small.pcm" "yes" "$RUNSMALL" "adpcm-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/adpcm" "output_large.adpcm output_large.pcm" "yes" "$RUNLARGE" "adpcm-large"
+    if [ "$ENDIAN" == "big" ]; then
+    	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/adpcm" "output_small.adpcm BIG_ENDIAN_output_small.pcm" "no" "$RUNSMALL" "adpcm-small"
+	    run_test "runme_large.sh" "${GOLDENROOT}/telecomm/adpcm" "output_large.adpcm BIG_ENDIAN_output_large.pcm" "no" "$RUNLARGE" "adpcm-large"
+    else
+    	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/adpcm" "output_small.adpcm output_small.pcm" "no" "$RUNSMALL" "adpcm-small"
+	    run_test "runme_large.sh" "${GOLDENROOT}/telecomm/adpcm" "output_large.adpcm output_large.pcm" "no" "$RUNLARGE" "adpcm-large"
+    fi
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 #CRC32
@@ -322,8 +308,8 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 	cd ${MIBENCHROOT}/telecomm/CRC32
 	compile_mibench "crc"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/CRC32" "output_small.txt" "yes" "$RUNSMALL" "crc32-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/CRC32" "output_large.txt" "yes" "$RUNLARGE" "crc32-large"
+	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/CRC32" "output_small.txt" "no" "$RUNSMALL" "crc32-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/CRC32" "output_large.txt" "no" "$RUNLARGE" "crc32-large"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 #FFT
@@ -333,8 +319,8 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 	cd ${MIBENCHROOT}/telecomm/FFT
 	compile_mibench "fft"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/FFT" "output_small.txt output_small.inv.txt" "yes" "$RUNSMALL" "fft-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/FFT" "output_large.txt output_large.inv.txt" "yes" "$RUNLARGE" "fft-large"
+	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/FFT" "output_small.txt output_small.inv.txt" "no" "$RUNSMALL" "fft-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/FFT" "output_large.txt output_large.inv.txt" "no" "$RUNLARGE" "fft-large"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -345,12 +331,12 @@ echo -ne "<tr><td>Telecomm</td><td></td><td></td><td></td><td></td><td></td><td>
 	cd ${MIBENCHROOT}/telecomm/gsm
 	compile_mibench "gsm"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/gsm" "output_small.encode.gsm output_small.decode.run" "yes" "$RUNSMALL" "gsm-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/gsm" "output_large.encode.gsm output_large.decode.run" "yes" "$RUNLARGE" "gsm-large"
+	run_test "runme_small.sh" "${GOLDENROOT}/telecomm/gsm" "output_small.encode.gsm output_small.decode.run" "no" "$RUNSMALL" "gsm-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/telecomm/gsm" "output_large.encode.gsm output_large.decode.run" "no" "$RUNLARGE" "gsm-large"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 # --- network ---
-echo -ne "<tr><td>Network</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
+#echo -ne "<tr><td>Network</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
 
 #dijkstra
 [ "$DIJKSTRA" != "no" ] && {
@@ -359,8 +345,8 @@ echo -ne "<tr><td>Network</td><td></td><td></td><td></td><td></td><td></td><td><
 	cd ${MIBENCHROOT}/network/dijkstra
 	compile_mibench "dijkstra"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/network/dijkstra" "output_small.dat" "yes" "$RUNSMALL" "dijkstra-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/network/dijkstra" "output_large.dat" "yes" "$RUNLARGE" "dijkstra-large"
+	run_test "runme_small.sh" "${GOLDENROOT}/network/dijkstra" "output_small.dat" "no" "$RUNSMALL" "dijkstra-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/network/dijkstra" "output_large.dat" "no" "$RUNLARGE" "dijkstra-large"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -371,12 +357,12 @@ echo -ne "<tr><td>Network</td><td></td><td></td><td></td><td></td><td></td><td><
 	cd ${MIBENCHROOT}/network/patricia
 	compile_mibench "patricia"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/network/patricia" "output_small.txt" "yes" "$RUNSMALL" "patricia-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/network/patricia" "output_large.txt" "yes" "$RUNLARGE" "patricia-large"
+	run_test "runme_small.sh" "${GOLDENROOT}/network/patricia" "output_small.txt" "no" "$RUNSMALL" "patricia-small"
+	run_test "runme_large.sh" "${GOLDENROOT}/network/patricia" "output_large.txt" "no" "$RUNLARGE" "patricia-large"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 # --- security ---
-echo -ne "<tr><td>Security</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
+#echo -ne "<tr><td>Security</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
 
 #rijndael
 [ "$RIJNDAEL" != "no" ] && {
@@ -385,8 +371,14 @@ echo -ne "<tr><td>Security</td><td></td><td></td><td></td><td></td><td></td><td>
 	cd ${MIBENCHROOT}/security/rijndael
 	compile_mibench "rijndael"
 	chmod u+x *.sh
-	run_test "runme_small.sh" "${GOLDENROOT}/security/rijndael" "output_small.enc output_small.dec" "no" "$RUNSMALL" "rijndael-small"
-	run_test "runme_large.sh" "${GOLDENROOT}/security/rijndael" "output_large.enc output_large.dec" "no" "$RUNLARGE" "rijndael-large"
+
+    if [ "$ENDIAN" == "little" ]; then
+	    run_test "runme_small.sh" "${GOLDENROOT}/security/rijndael" "LITTLE_ENDIAN_output_small.enc output_small.dec" "no" "$RUNSMALL" "rijndael-small"
+    	run_test "runme_large.sh" "${GOLDENROOT}/security/rijndael" "LITTLE_ENDIAN_output_large.enc output_large.dec" "no" "$RUNLARGE" "rijndael-large"
+    else
+    	run_test "runme_small.sh" "${GOLDENROOT}/security/rijndael" "output_small.enc output_small.dec" "no" "$RUNSMALL" "rijndael-small"
+	    run_test "runme_large.sh" "${GOLDENROOT}/security/rijndael" "output_large.enc output_large.dec" "no" "$RUNLARGE" "rijndael-large"
+    fi
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }	
 
@@ -403,7 +395,7 @@ echo -ne "<tr><td>Security</td><td></td><td></td><td></td><td></td><td></td><td>
 }
 
 # --- consumer ---
-echo -ne "<tr><td>Consumer</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
+#echo -ne "<tr><td>Consumer</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>\n" >> $HTMLMAIN
 
 #jpeg
 [ "$JPEG" != "no" ] && {
@@ -432,10 +424,11 @@ echo -ne "<tr><td>Consumer</td><td></td><td></td><td></td><td></td><td></td><td>
 }
 
 
+echo -ne "<tr><td colspan=8 height=25></td></tr>\n" >> $HTMLMAIN
 # --- SPEC2006 ---
 if is_spec2006_enabled; then
     echo -ne "<tr><th>SPEC2006</th><th>Compilation</th><th>Test Data Set</th><th>Speed</th><th># Instr.</th>
-                                                                  <th>Ref Data Set</th><th>Speed</th><th># Instr.</th></tr>\n" >> $HTMLMAIN
+                                                                  <th>Train Data Set</th><th>Speed</th><th># Instr.</th></tr>\n" >> $HTMLMAIN
 fi
 
 [ "$BZIP_2" != "no" ] && {
@@ -445,10 +438,24 @@ fi
     compile_spec "401.bzip2"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/401.bzip2/data/test/output" "input.program.out" "no" "yes" "401.bzip2-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/401.bzip2/data/test/output" "input.combined.out" "no" "no"  "401.bzip2-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/401.bzip2/data/test/output" "input.program.out" "no" "$RUNTEST" "401.bzip2-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/401.bzip2/data/test/output" "input.combined.out" "no" "$RUNTRAIN"  "401.bzip2-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
+
+[ "$GCC" != "no" ] && {
+    APP="403.gcc" 
+	echo -ne "\nCurrently testing: $APP\n"
+	echo -ne "<tr><td>$APP</td>" >> $HTMLMAIN
+	cd ${SPECROOT}/CPU2006/$APP/src
+    compile_spec "$APP"
+    cd ..
+    chmod u+x *.sh
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/$APP/data/test/output" "cccp.s" "no" "$RUNTEST" "$APP-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/$APP/data/test/output" "integrate.s" "no" "$RUNTRAIN"  "$APP-test"
+	echo -ne "</tr>\n" >> $HTMLMAIN
+}
+
 
 [ "$MCF" != "no" ] && {
 	echo -ne "\nCurrently testing: 429.mcf\n"
@@ -457,8 +464,8 @@ fi
     compile_spec "429.mcf"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/429.mcf/data/test/output" "inp.out" "no" "yes" "429.mcf-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/429.mcf/data/test/output" "inp.out" "no" "no"  "429.mcf-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/429.mcf/data/test/output" "inp.out" "no" "$RUNTEST" "429.mcf-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/429.mcf/data/test/output" "inp.out" "no" "$RUNTRAIN"  "429.mcf-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -469,8 +476,8 @@ fi
     compile_spec "445.gobmk"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/445.gobmk/data/test/output" "capture.out" "no" "yes" "445.gobmk-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/445.gobmk/data/test/output" "capture.out" "no" "no"  "445.gobmk-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/445.gobmk/data/test/output" "capture.out" "no" "$RUNTEST" "445.gobmk-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/445.gobmk/data/test/output" "capture.out" "no" "$RUNTRAIN"  "445.gobmk-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -481,8 +488,8 @@ fi
     compile_spec "456.hmmer"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/456.hmmer/data/test/output" "bombesin.out" "no" "yes" "456.hmmer-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/456.hmmer/data/test/output" "bombesin.out" "no" "no"  "456.hmmer-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/456.hmmer/data/test/output" "bombesin.out" "no" "$RUNTEST" "456.hmmer-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/456.hmmer/data/test/output" "bombesin.out" "no" "$RUNTRAIN"  "456.hmmer-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -493,8 +500,8 @@ fi
     compile_spec "458.sjeng"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/458.sjeng/data/test/output" "test.out" "no" "yes" "458.sjeng-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/458.sjeng/data/test/output" "test.out" "no" "no"  "458.sjeng-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/458.sjeng/data/test/output" "test.out" "no" "$RUNTEST" "458.sjeng-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/458.sjeng/data/test/output" "test.out" "no" "$RUNTRAIN"  "458.sjeng-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -505,8 +512,8 @@ fi
     compile_spec "462.libquantum"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/462.libquantum/data/test/output" "test.out" "no" "yes" "462.libquantum-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/462.libquantum/data/test/output" "test.out" "no" "no"  "462.libquantum-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/462.libquantum/data/test/output" "test.out" "no" "$RUNTEST" "462.libquantum-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/462.libquantum/data/test/output" "test.out" "no" "$RUNTRAIN"  "462.libquantum-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -517,8 +524,8 @@ fi
     compile_spec "464.h264ref"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/464.h264ref/data/test/output" "foreman_test_baseline_encodelog.out" "no" "yes"  "464.h264ref-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/464.h264ref/data/test/output" "foreman_test_baseline_encodelog.out" "no" "no"   "464.h264ref-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/464.h264ref/data/test/output" "foreman_test_baseline_encodelog.out" "no" "$RUNTEST"  "464.h264ref-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/464.h264ref/data/test/output" "foreman_test_baseline_encodelog.out" "no" "$RUNTRAIN"   "464.h264ref-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -529,8 +536,8 @@ fi
     compile_spec "471.omnetpp"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/471.omnetpp/data/test/output" "omnetpp.log" "no" "yes"  "471.omnetpp-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/471.omnetpp/data/test/output" "omnetpp.log" "no" "no"   "471.omnetpp-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/471.omnetpp/data/test/output" "omnetpp.log" "no" "$RUNTEST"  "471.omnetpp-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/471.omnetpp/data/test/output" "omnetpp.log" "no" "$RUNTRAIN"   "471.omnetpp-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 
@@ -541,8 +548,8 @@ fi
     compile_spec "473.astar"
     cd ..
     chmod u+x *.sh
-    run_test "runme.sh" "${GOLDENSPECROOT}/473.astar/data/test/output" "lake.out" "no" "yes"  "473.astar-test"
-    run_test "runme.sh" "${GOLDENSPECROOT}/473.astar/data/test/output" "lake.out" "no" "no"   "473.astar-test"
+    run_test "runme_test.sh" "${GOLDENSPECROOT}/473.astar/data/test/output" "lake.out" "no" "$RUNTEST"  "473.astar-test"
+    run_test "runme_train.sh" "${GOLDENSPECROOT}/473.astar/data/test/output" "lake.out" "no" "$RUNTRAIN"   "473.astar-test"
 	echo -ne "</tr>\n" >> $HTMLMAIN
 }
 echo -ne "</table>\n" >> $HTMLMAIN
