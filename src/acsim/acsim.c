@@ -1767,6 +1767,7 @@ if (HaveTLM2IntrPorts) {
   fprintf( output, "%svirtual void PrintStat();\n\n", INDENT[1]);
   fprintf( output, "%svoid init(int ac, char* av[]);\n\n", INDENT[1]);
   fprintf( output, "%svoid init();\n\n", INDENT[1]);
+  fprintf( output, "%svoid set_prog_args();\n\n", INDENT[1]);
   fprintf( output, "%svoid load(char* program);\n\n", INDENT[1]);
   fprintf( output, "%svoid delayed_load(char* program);\n\n", INDENT[1]);
   fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
@@ -2162,8 +2163,8 @@ void CreateProcessorImpl() {
           INDENT[1]);
   fprintf(output, "%sInitStat();\n", INDENT[1]);
 
-  if(ACABIFlag)
-    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+//  if(ACABIFlag)
+//    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
   fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
   if( ACDecCacheFlag )
     fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
@@ -2215,8 +2216,8 @@ void CreateProcessorImpl() {
           INDENT[1]);
   fprintf(output, "%sInitStat();\n", INDENT[1]);
 
-  if(ACABIFlag)
-    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+//  if(ACABIFlag)
+//    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
   fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
   if( ACDecCacheFlag )
     fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
@@ -2234,6 +2235,10 @@ void CreateProcessorImpl() {
   fprintf(output, "%svoid Execute(int argc, char *argv[]);\n", INDENT[1]);
   fprintf(output, "%sExecute(argc, argv);\n", INDENT[1]);
   fprintf(output, "#endif\n");
+  fprintf(output, "}\n\n");
+
+  fprintf(output, "void %s::set_prog_args(){\n", project_name); 
+  fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
   fprintf(output, "}\n\n");
 
   /* stop() */
@@ -2587,6 +2592,7 @@ void CreateMainTmpl() {
     fprintf(output, "%s%s_proc1.enable_gdb();\n", INDENT[1], project_name);
 
   fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
+  fprintf(output, "%s%s_proc1.set_prog_args();\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf(output, "%ssc_start();\n\n", INDENT[1]);
