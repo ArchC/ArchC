@@ -53,7 +53,6 @@
 
 
 
-
 // Forward declarations of ac_arch and ac_arch_ref.
 template<class ac_word, class ac_Hword> class ac_arch;
 template<class ac_word, class ac_Hword> class ac_arch_ref;
@@ -65,10 +64,15 @@ extern int ac_argc;
 extern char **ac_argv;
 extern std::map<std::string, std::ofstream*> ac_cache_traces;
 
+typedef struct {
+    int     size;
+    char**  app_args;
+    char*   app_filename;
+} args_t;
 
 // Prototypes
-void ac_init_opt( int ac, char* av[]);
-void ac_init_app( int ac, char* av[]);
+void ac_init_opts( int ac, char* av[]);
+args_t ac_init_args( int ac, char* av[]);
 
 
 //////////////////////////////////////////

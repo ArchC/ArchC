@@ -2153,8 +2153,7 @@ void CreateProcessorImpl() {
 
   }
 
-  fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
-  fprintf(output, "#ifdef AC_VERIFY\n");
+  fprintf(output, "\n#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
   fprintf(output, "#endif\n\n");
   fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
@@ -2176,21 +2175,15 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifdef USE_GDB\n");
   fprintf(output, "%ssignal(SIGUSR2, sigusr2_handler);\n", INDENT[1]);
   fprintf(output, "#endif\n");
-  fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_running();\n", INDENT[1]);
-  fprintf(output, "#else\n");
-  fprintf(output, "%svoid Execute(int argc, char *argv[]);\n", INDENT[1]);
-  fprintf(output, "%sExecute(argc, argv);\n", INDENT[1]);
-  fprintf(output, "#endif\n");
   fprintf(output, "}\n\n");
 
   /* init() with 3 parameters */
-  fprintf(output, "void %s::init(int ac, char *av[]) {\n", project_name);
-  fprintf(output, "%sextern char* appfilename;\n", INDENT[1]);
-  fprintf(output, "%sac_init_opt( ac, av);\n", INDENT[1]);
-  fprintf(output, "%sac_init_app( ac, av);\n", INDENT[1]);
-  fprintf(output, "%sAPP_MEM->load(appfilename);\n", INDENT[1]);
-
+  fprintf(output, "void %s::init(int ac, char *av[]) {\n\n", project_name);
+//  fprintf(output, "%sac_init_opts( ac, av);\n", INDENT[1]);
+  fprintf(output, "%sargs_t args = ac_init_args( ac, av);\n", INDENT[1]);
+  fprintf(output, "%sset_args(args.size, args.app_args);\n", INDENT[1]);
+  fprintf(output, "%sAPP_MEM->load(args.app_filename);\n", INDENT[1]);
 
   for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
   switch(pstorage->type) {
@@ -2206,7 +2199,6 @@ void CreateProcessorImpl() {
      }
   }
 
-  fprintf(output, "%sset_args(ac_argc, ac_argv);\n", INDENT[1]);
   fprintf(output, "#ifdef AC_VERIFY\n");
   fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
   fprintf(output, "#endif\n\n");
@@ -2229,12 +2221,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#ifdef USE_GDB\n");
   fprintf(output, "%ssignal(SIGUSR2, sigusr2_handler);\n", INDENT[1]);
   fprintf(output, "#endif\n");
-  fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_running();\n", INDENT[1]);
-  fprintf(output, "#else\n");
-  fprintf(output, "%svoid Execute(int argc, char *argv[]);\n", INDENT[1]);
-  fprintf(output, "%sExecute(argc, argv);\n", INDENT[1]);
-  fprintf(output, "#endif\n");
   fprintf(output, "}\n\n");
 
   fprintf(output, "void %s::set_prog_args(){\n", project_name); 
@@ -2250,9 +2237,7 @@ void CreateProcessorImpl() {
   fprintf(output, "%sISA._behavior_end();\n", INDENT[1]);
   fprintf(output, "%sac_stop_flag = 1;\n", INDENT[1]);
   fprintf(output, "%sac_exit_status = status;\n", INDENT[1]);
-  fprintf(output, "#ifndef AC_COMPSIM\n");
   fprintf(output, "%sset_stopped();\n", INDENT[1]);
-  fprintf(output, "#endif\n");
   if (ACLongJmpStop)
     fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", INDENT[1]);
   fprintf(output, "}\n\n");

@@ -32,10 +32,6 @@ AC_SUBST(TARGET_ARCH)
 
 AC_DISABLE_SHARED
 
-#Uncomment this lines to use clang compiler or redefine CC and CXX in command line
-#CC="clang-3.5 -std=c11"
-#CXX="clang++-3.5 -std=c++11"
-
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -78,6 +74,10 @@ AC_SUBST(GDB_DIR)
 
 AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
 AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
+
+#Uncomment this lines to use clang compiler or redefine CC and CXX in command line
+#CC="clang-3.5 -std=c11"
+#CXX="clang++-3.5 -std=c++11"
 
 # Sets global flags
 CFLAGS="$CFLAGS -Wall"
