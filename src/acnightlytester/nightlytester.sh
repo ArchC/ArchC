@@ -31,7 +31,7 @@ fi
 # Initializing HTML log files
 # Discover this run's number and prefix all our HTML files with it
 
-if [ ! -a $HTMLPREFIX ]; then
+if [ ! -a $HTMLINDEX ]; then
     cp htmllogs/index.htm $HTMLINDEX
 fi
 export HTMLPREFIX=`sed -n -e '/<tr><td>[0-9]\+/{s/<tr><td>\([0-9]\+\).*/\1/;p;q}' <${HTMLINDEX}`

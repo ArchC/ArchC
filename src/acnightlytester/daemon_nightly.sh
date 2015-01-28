@@ -1,6 +1,14 @@
 #!/bin/bash
 
-cd /local/archc/acnightlytester &> /dev/null
+############################################################################
+#
+# This script will be called by cron:
+# 0 0 * * * /home/notroot/nightly/acnightlytester/daemon_nightly.sh
+#
+###########################################################################
+
+
+cd /home/notroot/nightly/acnightlytester &> /dev/null
 . site.conf
 export LD_LIBRARY_PATH="$SYSTEMCPATH/lib-linux64/"
 ./nightlytester.sh site.conf  $1
