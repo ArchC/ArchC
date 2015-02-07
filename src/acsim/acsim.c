@@ -4405,6 +4405,8 @@ void EmitVetLabelAt(FILE *output, int base_indent) {
 // Utility Functions              //
 ////////////////////////////////////
 
+#include <unistd.h>
+
 //!Read the archc.conf configuration file
 void ReadConfFile(){
 
@@ -4433,10 +4435,23 @@ void ReadConfFile(){
   strcpy(conf_filename_global, SYSCONFDIR);
   strcat(conf_filename_global, "/archc.conf");
 
+  // Try to get a local file in $HOME/.archc
   conf_file = fopen(conf_filename_local, "r");
 
+  // Try to get a global file, based on PREFIX instalation path
   if (!conf_file)
     conf_file = fopen(conf_filename_global, "r");
+
+  // Try get a relative conf based on "acsim" executable path
+  if (!conf_file) {
+      char buf[512];
+      int len = readlink("/proc/self/exe", buf, 512-1);
+      while (buf[--len] != '/');  // find the path without exec name
+      while (buf[--len] != '/');  // find the path without /bin
+      buf[len] = '\0';  
+      strcat(buf,"/etc/archc.conf");      
+      conf_file = fopen(buf,"r");
+  }
 
   if( !conf_file ){
     AC_ERROR("Could not open archc.conf configuration file.\n");
