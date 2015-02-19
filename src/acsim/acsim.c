@@ -38,6 +38,7 @@
 //Command-line options flags
 int  ACABIFlag=0;                               //!<Indicates whether an ABI was provided or not
 int  ACDebugFlag=0;                             //!<Indicates whether debugger option is turned on or not
+int  ACHLTraceFlag=0;                           //!<Indicates whether high level trace option is turned on or not
 int  ACDecCacheFlag=1;                          //!<Indicates whether the simulator will cache decoded instructions or not
 int  ACDelayFlag=0;                             //!<Indicates whether delay option is turned on or not
 int  ACDDecoderFlag=0;                          //!<Indicates whether decoder structures are dumped or not
@@ -88,6 +89,7 @@ ac_sto_list* load_device=0;
 struct option_map option_map[] = {
   {"--abi-included"    , "-abi","Indicate that an ABI for system call emulation was provided." ,"o"},
   {"--debug"           , "-g"  ,"Enable simulation debug features: traces, update logs." ,"o"},
+  {"--high-level-trace", "-hlt","Enable generation of high level traces" ,"o"},
   {"--delay"           , "-dy" ,"Enable delayed assignments to storage elements." ,"o"},
   {"--dumpdecoder"     , "-dd" ,"Dump the decoder data structure." ,"o"},
   {"--help"            , "-h"  ,"Display this help message."       , 0},
@@ -267,6 +269,10 @@ int main(int argc, char** argv) {
               break;
             case OPDebug:
               ACDebugFlag = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPHLTrace:
+              ACHLTraceFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             case OPDelay:
@@ -1542,6 +1548,7 @@ void CreateProcessorHeader() {
   fprintf( output, "#include \"systemc.h\"\n");
   fprintf( output, "#include \"ac_module.H\"\n");
   fprintf( output, "#include \"ac_utils.H\"\n");
+  fprintf( output, "#include \"ac_hltrace.H\"\n");
   fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
   fprintf( output, "#include \"%s_isa.H\"\n", project_name);
@@ -3281,8 +3288,8 @@ void CreateMakefile(){
   fprintf( output, "LIB_SYSTEMC := %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
 
-  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc %s\n",
-           (ACPowerEnable) ? "-lpowersc" : "");
+  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc %s %s\n",
+           (ACPowerEnable) ? "-lpowersc" : "", (ACHLTraceFlag) ? "-ldw -lelf" : "");
 
   fprintf( output, "CC :=  %s\n", CC_PATH);
 
@@ -3341,7 +3348,7 @@ void CreateMakefile(){
   //Declaring ACLIBFILES variable
   COMMENT_MAKE("These are the library files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/lib directory");
-  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o ");
+  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o ac_hltrace.o ");
   if(ACABIFlag)
     fprintf(output, "ac_syscall.o ");
   if(HaveTLMPorts)
@@ -3359,7 +3366,7 @@ void CreateMakefile(){
   //Declaring FILESHEAD variable
   COMMENT_MAKE("These are the headers files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/include directory");
-  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
+  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_hltrace.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
   if (ACABIFlag)
     fprintf(output, "ac_syscall.H ");
   if (HaveTLMPorts)
@@ -3718,6 +3725,10 @@ void EmitInstrExec( FILE *output, int base_indent){
             fprintf( output, PRINT_TRACE, INDENT[base_indent+1]);
             fprintf( output, "\n");
         }
+        if( ACHLTraceFlag)
+        {
+          fprintf( output, "%sgenerate_trace_for_address(ac_pc);\\\n", INDENT[base_indent]);
+        }
 
         EmitInstrExecIni( output, base_indent );
 
@@ -3879,6 +3890,11 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
       fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
       fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
               INDENT[base_indent + 1]);
+    }
+
+    if( ACHLTraceFlag)
+    {
+      fprintf( output, "%sgenerate_trace_for_address(ac_pc);\\\n", INDENT[base_indent]);
     }
 
     fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
@@ -4282,6 +4298,10 @@ void EmitDispatch(FILE *output, int base_indent) {
       fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
               INDENT[base_indent + 1]);
     }
+    if( ACHLTraceFlag)
+    {
+      fprintf( output, "%sgenerate_trace_for_address(ac_pc);\\\n", INDENT[base_indent]);
+    }
 
     fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
     
@@ -4336,6 +4356,10 @@ void EmitDispatch(FILE *output, int base_indent) {
   if( ACDebugFlag ){
     fprintf( output, "%sif( ac_do_trace != 0 ) \n", INDENT[base_indent]);
     fprintf( output, PRINT_TRACE, INDENT[base_indent + 1]);
+  }
+  if( ACHLTraceFlag)
+  {
+    fprintf( output, "%sgenerate_trace_for_address(ac_pc);\\\n", INDENT[base_indent]);
   }
   
   if( ACABIFlag && !ACDecCacheFlag ) {

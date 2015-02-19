@@ -1,14 +1,15 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib/ac_gdb -I$(top_srcdir)/src/aclib/ac_storage -I$(top_srcdir)/src/aclib/ac_syscall -I$(top_srcdir)/src/aclib/ac_core -I$(top_srcdir)/src/aclib/ac_rtld -I$(SC_DIR)/include
+AM_CPPFLAGS = -std=c++11 -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib/ac_gdb -I$(top_srcdir)/src/aclib/ac_storage -I$(top_srcdir)/src/aclib/ac_syscall -I$(top_srcdir)/src/aclib/ac_core -I$(top_srcdir)/src/aclib/ac_rtld -I$(SC_DIR)/include -ldw -lelf
+
 
 ## The ArchC library
 noinst_LTLIBRARIES = libacutils.la
 
 ## ArchC library includes
-include_HEADERS = ac_debug_model.H elf32-tiny.h archc.H ac_utils.H ac_log.H ac_msgbuf.H 
+include_HEADERS = ac_debug_model.H elf32-tiny.h archc.H ac_utils.H ac_log.H ac_msgbuf.H ac_hltrace.H
 
 
 
-libacutils_la_SOURCES = ac_utils.cpp
+libacutils_la_SOURCES = ac_utils.cpp ac_hltrace.cpp 

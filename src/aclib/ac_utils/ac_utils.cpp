@@ -81,6 +81,7 @@ void ac_init_opts( int ac, char* av[]){
     }
 }
 
+char* appfilename = '\0';
 //Initialize arguments for application
 args_t ac_init_args( int ac, char* av[]){
 
@@ -88,7 +89,6 @@ args_t ac_init_args( int ac, char* av[]){
     char *appname=0;
     int ac_argc;
     char** ac_argv;
-    char* appfilename = '\0';
 
     ac_argc = ac-1;   //Skiping program's name
     ac_argv = av;
