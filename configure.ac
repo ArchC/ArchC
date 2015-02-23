@@ -90,6 +90,10 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h unistd.h])
 
+AC_CHECK_HEADER([elfutils/libdwfl.h],[],[AC_MSG_ERROR(["Please, install libdw-dev"])])
+
+
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_CONST
