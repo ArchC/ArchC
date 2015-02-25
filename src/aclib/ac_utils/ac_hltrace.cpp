@@ -7,6 +7,7 @@
 #include <vector>
 #include <utility>
 #include <string.h>
+#include <string>
 #include <iostream>
 #include "ac_hltrace.H"
 
@@ -273,12 +274,6 @@ LineInfo* getLineInfoFromAddr(std::string exec_name ,std::string addr)
   offline_callbacks.section_address = dwfl_offline_section_address;
   offline_callbacks.find_elf = dwfl_build_id_find_elf;
 
-    
-  //Dwfl *dwfl = NULL;
-  //dwfl = dwfl_begin (&offline_callbacks);
-  //dwfl_report_offline (dwfl, "", exec_name.c_str(), -1); 
-  //dwfl_report_end (dwfl, NULL, NULL);
-  
   static Dwfl *dwfl = NULL;
   if (dwfl == NULL)
   {
@@ -304,7 +299,7 @@ void generate_trace_for_address(unsigned long long int addr)
   static std::string appNameString (appfilename);
   static std::string projectNameString (project_name);
 
-  static std::string hltrace_file_name = projectNameString + "_" + appNameString + ".hltrace";
+  static std::string hltrace_file_name = projectNameString + "_" + appNameString.substr(appNameString.find_last_of("\\/") + 1) + ".hltrace";
   static FILE* hltrace_file  = fopen(hltrace_file_name.c_str(),"w+");
   static int last_trace_line = -1;
   static std::string last_trace_file ("");
