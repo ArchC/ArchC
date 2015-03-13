@@ -88,7 +88,9 @@ char *OTHER_FLAGS;    //!<Miscellaneous flags to be passed to the compiler
 enum _ac_cmd_options {
   OPABI,
   OPDebug,
+#if HLT_SUPPORT
   OPHLTrace,
+#endif
   OPDelay,
   OPDDecoder,
   OPHelp,

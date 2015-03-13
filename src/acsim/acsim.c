@@ -32,6 +32,22 @@
 
 //#define DEBUG_STORAGE
 
+// High Level Trace
+#ifdef HLT_SUPPORT
+
+// default configuration
+#define HLT_OBJ "ac_hltrace.o"
+#define HLT_HEADER "ac_hltrace.H"
+#else
+
+// if ArchC configured with --disable-hlt 
+#define HLT_OBJ
+#define HLT_HEADER
+#endif
+
+
+
+
 //Defining Traces and Dasm strings
 #define PRINT_TRACE "%strace_file << hex << ac_pc << dec <<\"\\n\";\n"
 
@@ -89,7 +105,9 @@ ac_sto_list* load_device=0;
 struct option_map option_map[] = {
   {"--abi-included"    , "-abi","Indicate that an ABI for system call emulation was provided." ,"o"},
   {"--debug"           , "-g"  ,"Enable simulation debug features: traces, update logs." ,"o"},
+#ifdef HLT_SUPPORT
   {"--high-level-trace", "-hlt","Enable generation of high level traces" ,"o"},
+#endif
   {"--delay"           , "-dy" ,"Enable delayed assignments to storage elements." ,"o"},
   {"--dumpdecoder"     , "-dd" ,"Dump the decoder data structure." ,"o"},
   {"--help"            , "-h"  ,"Display this help message."       , 0},
@@ -271,10 +289,12 @@ int main(int argc, char** argv) {
               ACDebugFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
+#if HLT_SUPPORT
             case OPHLTrace:
               ACHLTraceFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
+#endif
             case OPDelay:
               ACDelayFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
@@ -1548,7 +1568,9 @@ void CreateProcessorHeader() {
   fprintf( output, "#include \"systemc.h\"\n");
   fprintf( output, "#include \"ac_module.H\"\n");
   fprintf( output, "#include \"ac_utils.H\"\n");
+#ifdef HLT_SUPPORT
   fprintf( output, "#include \"ac_hltrace.H\"\n");
+#endif
   fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
   fprintf( output, "#include \"%s_isa.H\"\n", project_name);
@@ -3348,7 +3370,8 @@ void CreateMakefile(){
   //Declaring ACLIBFILES variable
   COMMENT_MAKE("These are the library files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/lib directory");
-  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o ac_hltrace.o ");
+
+  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o "HLT_OBJ" ");
   if(ACABIFlag)
     fprintf(output, "ac_syscall.o ");
   if(HaveTLMPorts)
@@ -3366,7 +3389,7 @@ void CreateMakefile(){
   //Declaring FILESHEAD variable
   COMMENT_MAKE("These are the headers files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/include directory");
-  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_hltrace.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H ");
+  fprintf( output, "ACFILESHEAD := $(ACFILES:.cpp=.H) ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H "HLT_HEADER" ");
   if (ACABIFlag)
     fprintf(output, "ac_syscall.H ");
   if (HaveTLMPorts)

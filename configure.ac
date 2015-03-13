@@ -72,6 +72,16 @@ AC_SUBST(TLM_DIR)
 AC_SUBST(BINUTILS_DIR)
 AC_SUBST(GDB_DIR)
 
+AC_ARG_ENABLE(hlt,
+              AS_HELP_STRING([--disable-hlt], [Disable High Level Trace feature]),
+              [disable_hlt=yes],[])
+
+AS_IF([ test "$disable_hlt" != "yes" ],
+      [ AC_CHECK_HEADER([elfutils/libdwfl.h],[],[AC_MSG_ERROR(["Please, install libdw-dev"])])], 
+      [])
+
+
+AM_CONDITIONAL([HLT_SUPPORT], [ ! test "$disable_hlt" = "yes" ])
 AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
 AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
 
@@ -90,9 +100,7 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h sys/socket.h unistd.h])
 
-AC_CHECK_HEADER([elfutils/libdwfl.h],[],[AC_MSG_ERROR(["Please, install libdw-dev"])])
-
-
+#AC_CHECK_HEADER([elfutils/libdwfl.h],[],[AC_MSG_ERROR(["Please, install libdw-dev"])])]
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
