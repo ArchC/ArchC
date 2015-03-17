@@ -42,6 +42,14 @@ AC_PROG_LEX
 AC_PROG_YACC
 AC_PROG_INSTALL
 
+# pkg-config
+
+PKG_PROG_PKG_CONFIG
+if test "x${PKG_CONFIG}" = "x" ; then
+   AC_MSG_ERROR([pkg-config tool not found. Install it or set PKG_CONFIG environment variable to that path tool. Exiting...])
+fi
+
+
 # SystemC base and TLM library options
 SC_DIR=
 TLM_DIR=
