@@ -1,6 +1,6 @@
 lib_LIBRARIES = libpowersc.a
 
-AM_CPPFLAGS = -I. -I$(SC_DIR)/include
+AM_CPPFLAGS = -I. @SYSTEMC_CFLAGS@
 
 include_HEADERS = psc_sampler.h psc_base_integer.h psc_objinfo.h psc_objinfo_if.h psc_obj_rep.h psc_obj_rep_base.h debug_power.h powersc.h psc_bit.h psc_bv.h psc_clock.h psc_int.h psc_logic.h psc_lv.h psc_sensitive.h psc_signal.h psc_signal_bool.h psc_uint.h psc_randgen.h psc_tables.h psc_misc.h psc_interp.h psc_techlib.h psc_macromodel.h config.h
 

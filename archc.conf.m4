@@ -4,8 +4,6 @@
 #---------------------------------------------------------------------------
 # Paths
 #---------------------------------------------------------------------------
-SYSTEMC_PATH = systemc_path()
-TLM_PATH = tlm_path()
 BINUTILS_PATH = binutils_path()
 GDB_PATH = gdb_path()
 CC = compiler()
@@ -16,8 +14,3 @@ CC = compiler()
 OPT = -O3
 DEBUG = -g
 OTHER = -Wno-deprecated
-
-#---------------------------------------------------------------------------
-# Simulator Flags
-#---------------------------------------------------------------------------
-TARGET_ARCH = systemc_target()

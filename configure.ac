@@ -14,22 +14,6 @@ AM_SILENT_RULES([yes])
 AC_CONFIG_SRCDIR([src/acsim/acsim.c])
 AC_CONFIG_LIBOBJ_DIR([src/replace])
 
-# Getting system configuration - copy from SystemC
-AC_CANONICAL_HOST
-TARGET_ARCH=
-case "$host" in
-  x86_64*linux*)
-    TARGET_ARCH="linux64"
-    ;;
-  *linux*)
-    TARGET_ARCH="linux"
-    ;;
-  *darwin*)
-    TARGET_ARCH="macosx"
-    ;;
-esac
-AC_SUBST(TARGET_ARCH)
-
 AC_DISABLE_SHARED
 
 # Checks for programs.
@@ -43,25 +27,29 @@ AC_PROG_YACC
 AC_PROG_INSTALL
 
 # pkg-config
-
 PKG_PROG_PKG_CONFIG
 if test "x${PKG_CONFIG}" = "x" ; then
    AC_MSG_ERROR([pkg-config tool not found. Install it or set PKG_CONFIG environment variable to that path tool. Exiting...])
 fi
 
+PKG_CHECK_MODULES(SYSTEMC, [systemc >= 2.3.0], [have_systemc=yes], [have_systemc=no])
+AS_IF([test "x$have_systemc" = "xyes"],
+      [AC_DEFINE([HAVE_SYSTEMC], [1], [Have SystemC])])
+AM_CONDITIONAL(HAVE_SYSTEMC, test "x$have_systemc" = "xyes")
+
+PKG_CHECK_MODULES(TLM, [tlm >= 1], [have_tlm=yes], [have_tlm=no])
+AS_IF([test "x$have_tlm" = "xyes"],
+      [AC_DEFINE([HAVE_TLM], [1], [Have TLM])])
+AM_CONDITIONAL(HAVE_TLM, test "x$have_tlm" = "xyes")
+
+PKG_CHECK_MODULES(TLM2, [tlm >= 2], [have_tlm2=yes], [have_tlm2=no])
+AS_IF([test "x$have_tlm2" = "xyes"],
+      [AC_DEFINE([HAVE_TLM2], [1], [Have TLM2])])
+AM_CONDITIONAL(HAVE_TLM2, test "x$have_tlm2" = "xyes")
 
 # SystemC base and TLM library options
-SC_DIR=
-TLM_DIR=
 BINUTILS_DIR=
 GDB_DIR=
-
-AC_ARG_WITH(systemc,
-            AC_HELP_STRING([--with-systemc=PATH],
-                           [Sets the directory where SystemC is installed.]),
-            [SC_DIR=$withval 
-	         TLM_DIR=$SC_DIR/include],
-            [AC_MSG_NOTICE([ArchC will be compiled without SystemC.])])
 
 AC_ARG_WITH(binutils,
             AC_HELP_STRING([--with-binutils=PATH],
@@ -75,8 +63,6 @@ AC_ARG_WITH(gdb,
             [GDB_DIR=$withval],
             [AC_MSG_NOTICE([Gdb path not specified.])])
 
-AC_SUBST(SC_DIR)
-AC_SUBST(TLM_DIR)
 AC_SUBST(BINUTILS_DIR)
 AC_SUBST(GDB_DIR)
 
@@ -90,8 +76,6 @@ AS_IF([ test "$disable_hlt" != "yes" ],
 
 
 AM_CONDITIONAL([HLT_SUPPORT], [ ! test "$disable_hlt" = "yes" ])
-AM_CONDITIONAL([TLM_SUPPORT], [ ! test -z "$TLM_DIR"])
-AM_CONDITIONAL([SYSTEMC_SUPPORT], [ ! test -z "$SC_DIR" ])
 
 #Uncomment this lines to use clang compiler or redefine CC and CXX in command line
 #CC="clang-3.5 -std=c11"
@@ -167,8 +151,9 @@ AC_MSG_RESULT([
         sysconfdir:             ${sysconfdir}
         libdir:                 ${libdir}
         bindir:                 ${bindir}
-        systemcdir:             ${SC_DIR}
-        tlmdir:                 ${TLM_DIR}
+        SystemC:                ${SYSTEMC_LIBS}
+        TLM:                    ${TLM_LIBS}
+        TLM2:                   ${TLM2_LIBS}
         binutilsdir:            ${BINUTILS_DIR}
         gdbdir:                 ${GDB_DIR}
 

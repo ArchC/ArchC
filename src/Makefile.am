@@ -3,10 +3,8 @@
 
 EXTRA_DIST = main.dox
 
-if SYSTEMC_SUPPORT
-  SC_DEP_DIRS = powersc aclib acsim actsim accsim
-else
-  SC_DEP_DIRS =
-endif
+SUBDIRS = replace acpp acbinutils
 
-SUBDIRS = replace acpp $(SC_DEP_DIRS) acbinutils
+if HAVE_SYSTEMC
+SUBDIRS += powersc aclib acsim actsim accsim
+endif
