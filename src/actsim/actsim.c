@@ -2444,21 +2444,13 @@ void CreateMakefile(void)
  COMMENT_MAKE("http://www.lsc.ic.unicamp.br                   ");
  COMMENT_MAKE("####################################################");
  fprintf(output, "\n");
- COMMENT_MAKE("Variable that points to SystemC installation path.");
- fprintf(output, "SYSTEMC :=%s\n", SYSTEMC_PATH);
- COMMENT_MAKE("Variable that points to ArchC installation path");
- fprintf(output, "ARCHC :=%s\n", BINDIR);
- COMMENT_MAKE("Target Arch used by SystemC");
- fprintf(output, "TARGET_ARCH :=%s\n", TARGET_ARCH);
- fprintf(output, "INC_DIR := -I. -I%s -I$(SYSTEMC)/include", INCLUDEDIR);
+ fprintf(output, "INC_DIR := -I. -I%s `pkg-config --cflags systemc` `pkg-config --cflags archc`", INCLUDEDIR);
  if (HaveTLMPorts || HaveTLMIntrPorts)
-  fprintf(output, " -I$(SYSTEMC)/include/sysc/tlm");
+  fprintf(output, " `pkg-config --cflags tlm`");
  fprintf(output, "\n");
- fprintf(output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n", LIBDIR);
+ fprintf(output, "LIB_DIR := -L. `pkg-config --libs systemc` -L%s\n", LIBDIR);
  fprintf(output, "\n");
- fprintf(output, "LIB_SYSTEMC := %s\n",
-         (SYSTEMC_PATH && strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
- fprintf(output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
+ fprintf(output, "LIBS := `pkg-config --libs systemc` -lm $(EXTRA_LIBS) `pkg-config --libs archc`\n");
  fprintf(output, "CC := %s\n", CC_PATH);
  fprintf(output, "OPT := %s\n", OPT_FLAGS);
  fprintf(output, "DEBUG := %s\n", DEBUG_FLAGS);
@@ -2555,8 +2547,7 @@ void CreateMakefile(void)
  // Declaring dependence rules.
  fprintf(output, ".SUFFIXES: .cc .cpp .o .x\n\n");
  fprintf(output, "all: $(addprefix %s/, $(ACFILESHEAD)) $(ACHEAD) $(ACFILES) $(EXE)\n\n", INCLUDEDIR);
- fprintf(output, "$(EXE): $(OBJS) %s\n",
-         (SYSTEMC_PATH && strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
+ fprintf(output, "$(EXE): $(OBJS)\n");
  fprintf(output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n");
  COMMENT_MAKE("Copy from template if main.cpp not exist.");
  fprintf(output, "main.cpp:\n");
@@ -4344,8 +4335,6 @@ void ReadConfFile(void)
  char* conf_filename_local;
  char* conf_filename_global;
  char* user_home;
- //extern char* ARCHC_PATH;
- extern char* SYSTEMC_PATH;
  extern char* CC_PATH;
  extern char* OPT_FLAGS;
  extern char* DEBUG_FLAGS;
@@ -4385,17 +4374,7 @@ void ReadConfFile(void)
    {
     sscanf(line, "%s", var);
     strcpy(value, (strchr(line, '=') + 1));
-    if (!strcmp(var, "SYSTEMC_PATH"))
-    {
-     SYSTEMC_PATH = (char*) malloc(sizeof(char) * (strlen(value) + 1));
-     SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);
-     if (strlen(value) <= 2)
-     {
-      AC_ERROR("Please configure a SystemC path running install.sh script in ArchC directory.\n");
-      exit(1);
-     }
-    }
-    else if (!strcmp(var, "CC"))
+    if (!strcmp(var, "CC"))
     {
      CC_PATH = (char*) malloc(sizeof(char) * (strlen(value) + 1));
      CC_PATH = strcpy(CC_PATH, value);
@@ -4414,11 +4393,6 @@ void ReadConfFile(void)
     {
      OTHER_FLAGS = (char*) malloc(sizeof(char) * (strlen(value) + 1));
      OTHER_FLAGS = strcpy(OTHER_FLAGS, value);
-    }
-    else if (!strcmp(var, "TARGET_ARCH"))
-    {
-     TARGET_ARCH = (char*) malloc(sizeof(char) * (strlen(value) + 1));
-     TARGET_ARCH = strcpy(TARGET_ARCH, value);
     }
    }
   }
