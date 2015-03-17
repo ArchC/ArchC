@@ -3670,7 +3670,7 @@ void CreateMakefile(){
   fprintf( output, "\n");
  
   fprintf( output, "LIB_SYSTEMC := %s\n",
-           (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
+           (SYSTEMC_PATH && strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
   fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
   fprintf( output, "CC :=  %s\n", CC_PATH);
   //fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
@@ -3815,7 +3815,7 @@ void CreateMakefile(){
   fprintf( output, "all: $(ACFILESHEAD) $(MODULE)_syscall.H $(ACFILES) $(EXE)\n\n");
 
   fprintf( output, "$(EXE): $(OBJS) %s libdummy.a\n",
-           (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
+           (SYSTEMC_PATH && strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) -Xlinker --allow-multiple-definition 2>&1 | c++filt\n\n");
 
   COMMENT_MAKE("Create dummy library with possibly undefined functions");

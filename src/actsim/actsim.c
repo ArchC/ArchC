@@ -2457,7 +2457,7 @@ void CreateMakefile(void)
  fprintf(output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L%s\n", LIBDIR);
  fprintf(output, "\n");
  fprintf(output, "LIB_SYSTEMC := %s\n",
-         (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
+         (SYSTEMC_PATH && strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
  fprintf(output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
  fprintf(output, "CC := %s\n", CC_PATH);
  fprintf(output, "OPT := %s\n", OPT_FLAGS);
@@ -2556,7 +2556,7 @@ void CreateMakefile(void)
  fprintf(output, ".SUFFIXES: .cc .cpp .o .x\n\n");
  fprintf(output, "all: $(addprefix %s/, $(ACFILESHEAD)) $(ACHEAD) $(ACFILES) $(EXE)\n\n", INCLUDEDIR);
  fprintf(output, "$(EXE): $(OBJS) %s\n",
-         (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
+         (SYSTEMC_PATH && strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
  fprintf(output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n");
  COMMENT_MAKE("Copy from template if main.cpp not exist.");
  fprintf(output, "main.cpp:\n");
