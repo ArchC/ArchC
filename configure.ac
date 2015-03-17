@@ -139,6 +139,8 @@ AC_CONFIG_FILES(
   src/acbinutils/Makefile
   src/acbinutils/binutils/gas/config/tc-xxxxx.c
   src/powersc/Makefile
+  pc/archc.pc
+  pc/powersc.pc
 ])
 
 # Output

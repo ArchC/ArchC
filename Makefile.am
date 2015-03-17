@@ -11,6 +11,9 @@ AUTOMAKE_OPTIONS = foreign
 ## Subdirectories
 SUBDIRS = src
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = pc/archc.pc pc/powersc.pc
+
 ## Special ArchC configuration file installation
 sysconf_DATA = archc.conf
 archc.conf: archc.conf.m4 Makefile
