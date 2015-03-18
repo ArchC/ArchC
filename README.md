@@ -21,11 +21,11 @@ files and install them into the host system. .
 
 1.
 ```bash
-./boot.sh
+./autogen.sh
 ```
 2.
 ```bash
-./configure --with-systemc=<systemc-path>
+./configure
 ```
 Optional flags:
   * --with-binutils=<binutils-path> -> if you plan to generate binary utilities
