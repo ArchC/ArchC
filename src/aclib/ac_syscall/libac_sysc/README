@@ -11,7 +11,7 @@ and added to PATH environment. Compiling the library:
 
 The output file (libac_sysc.a) must be moved to:
 
-$(CROSS_PATH)/$(CROSS_TUPLE)/$(CROSS_TUPLE)/lib/
+$(CROSS_PATH)/$(CROSS_TUPLE)/lib/
 
 Where CROSS_TUPLE could be 'mips-newlib-elf', 'powerpc-newlib-elf', etc.
 
