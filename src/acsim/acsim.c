@@ -1562,10 +1562,8 @@ void CreateProcessorHeader() {
   extern ac_sto_list *tlm_intr_port_list;
   ac_sto_list *pport;
   extern ac_dec_instr *instr_list;
-  ac_dec_instr *pinstr;
   char filename[256];
   char description[] = "Architecture Module header file.";
-  int temp;
 
   // File containing ISA declaration
   FILE  *output;
@@ -1631,8 +1629,8 @@ if (HaveTLM2IntrPorts) {
     EmitDecCache(output, 1);
   }
   if( ACWaitFlag ) {
-    for(temp=1; temp<=5; temp++) {
-      for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    for(int temp=1; temp<=5; temp++) {
+      for (ac_dec_instr *pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
         if (pinstr->cycles == temp) {
           fprintf(output, "%ssc_time time_%dcycle;\n", INDENT[1], temp);
           break;
@@ -2084,8 +2082,6 @@ void CreateProcessorImpl() {
   ac_sto_list *pstorage;
   
   extern ac_dec_instr *instr_list;
-  ac_dec_instr *pinstr;
-  int cycles;
 
   char* filename;
   FILE* output;
@@ -2391,8 +2387,8 @@ void CreateProcessorImpl() {
     fprintf(output, "void %s::set_proc_freq(unsigned int proc_freq) {\n", project_name);
     fprintf(output, "%sac_module::set_proc_freq(proc_freq);\n", INDENT[1]);
 
-    for(cycles=1; cycles<=5; cycles++) {
-      for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+    for(int cycles=1; cycles<=5; cycles++) {
+      for (ac_dec_instr *pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
         if (pinstr->cycles == cycles) {
           fprintf(output, "%stime_%dcycle=sc_time(%d*module_period_ns, SC_NS);\n", INDENT[1], cycles, cycles);
           break;
