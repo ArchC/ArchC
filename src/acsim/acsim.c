@@ -788,7 +788,7 @@ void CreateArchHeader() {
   
   //ac_resources constructor declaration
   COMMENT(INDENT[1],"Constructor.");
-  fprintf( output, "%sexplicit %s_arch();\n\n", INDENT[1], project_name);
+  fprintf( output, "%sexplicit %s_arch(const char* proc_name=\"\");\n\n", INDENT[1], project_name);
   
   COMMENT(INDENT[1],"Module initialization method.");
   fprintf( output, "%svirtual void init(int ac, char* av[]) = 0;\n\n", 
@@ -1723,7 +1723,7 @@ if (HaveTLM2IntrPorts) {
 
   if (ACPowerEnable) { 
     fprintf( output, "\n#ifdef POWER_SIM\n");
-    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this), ps((const char*)name_)", 
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(name_), ISA(*this), ps((const char*)name_)", 
            INDENT[1], project_name, project_name);
     fprintf( output, "\n#else\n");
     fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", 
@@ -2455,7 +2455,7 @@ void CreateArchImpl() {
 
 
   /* Emitting Constructor */
-  fprintf(output, "%s%s_arch::%s_arch() :\n", 
+  fprintf(output, "%s%s_arch::%s_arch(const char* proc_name) :\n", 
           INDENT[0], project_name, project_name);
   fprintf(output, "%sac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword>(%s_parms::AC_MAX_BUFFER),\n", 
           INDENT[1], project_name, project_name, project_name);
@@ -2502,7 +2502,7 @@ void CreateArchImpl() {
         fprintf(output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
           } else {
         //It is an ac_cache object.
-        fprintf(output, "%s%s(%s)", INDENT[1], pstorage->name, pstorage->higher->name);
+        fprintf(output, "%s%s(%s,proc_name)", INDENT[1], pstorage->name, pstorage->higher->name);
 
         if (HaveMemHier && pstorage->level == 0) {
             fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name, pstorage->name);

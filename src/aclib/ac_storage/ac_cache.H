@@ -84,6 +84,12 @@ class ac_write_back_cache {
 
 		memory.setBlockSize (block_size);
 	}
+
+	ac_write_back_cache(backing_store &memory_, const char* proc_name="") : memory(memory_), trace_active(false),
+  cache(proc_name) {
+
+		memory.setBlockSize (block_size);
+	}
 	
 	~ac_write_back_cache() {
 		if (trace_active) delete cache_trace;
@@ -163,6 +169,10 @@ class ac_write_back_cache {
 	void print_statistics(ostream &out) {
 		cache.print_statistic(out);
 	}
+
+  void powersc_connect() {
+    cache.ps.powersc_connect();
+  }
 };
 
 template <
@@ -262,6 +272,10 @@ class ac_write_through_cache {
 	void print_statistics(ostream &out) {
 		cache.print_statistic(out);
 	}
+  
+  void powersc_connect() {
+    cache.ps.powersc_connect();
+  }
 };
 
 #endif /* _AC_CACHE_H_INCLUDED_ */
