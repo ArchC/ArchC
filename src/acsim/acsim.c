@@ -1561,6 +1561,7 @@ void CreateProcessorHeader() {
 
   extern ac_sto_list *tlm_intr_port_list;
   ac_sto_list *pport;
+  extern ac_dec_instr *instr_list;
   char filename[256];
   char description[] = "Architecture Module header file.";
 
@@ -1623,9 +1624,20 @@ if (HaveTLM2IntrPorts) {
             project_name);
   fprintf(output, " {\n");
 
+  fprintf(output, "private:\n");
   if( ACDecCacheFlag ) {
-    fprintf(output, "private:\n");
     EmitDecCache(output, 1);
+  }
+  if( ACWaitFlag ) {
+    for(int temp=1; temp<=5; temp++) {
+      for (ac_dec_instr *pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+        if (pinstr->cycles == temp) {
+          fprintf(output, "%ssc_time time_%dcycle;\n", INDENT[1], temp);
+          break;
+        }
+      }
+    }
+    fprintf( output, "\n");
   }
 
   fprintf( output, "public:\n\n");
@@ -1765,6 +1777,9 @@ if (HaveTLM2IntrPorts) {
     fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", 
             INDENT[2], project_name, project_name);
 
+  if (ACWaitFlag)
+    fprintf(output, "%sset_proc_freq(1000/module_period_ns);\n", INDENT[2]);
+
   fprintf( output, "%s}\n\n", INDENT[1]);  //end constructor
 
   if(ACDecCacheFlag) {
@@ -1803,6 +1818,10 @@ if (HaveTLM2IntrPorts) {
     fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
     fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", 
              INDENT[1], project_name);
+  }
+
+  if (ACWaitFlag) {
+    fprintf( output, "%svoid set_proc_freq(unsigned int proc_freq);\n\n", INDENT[1]);
   }
 
   fprintf( output, "%sunsigned get_ac_pc();\n\n", INDENT[1]);
@@ -2062,6 +2081,8 @@ void CreateProcessorImpl() {
   extern int HaveMemHier, ACGDBIntegrationFlag, largest_format_size;
   ac_sto_list *pstorage;
   
+  extern ac_dec_instr *instr_list;
+
   char* filename;
   FILE* output;
 
@@ -2360,6 +2381,24 @@ void CreateProcessorImpl() {
 
   fprintf(output, "}\n\n");
 
+  if (ACWaitFlag) {
+    /* set_proc_freq() */
+    fprintf(output, "// Assigns value to processor frequency and updates cycle time values\n");
+    fprintf(output, "void %s::set_proc_freq(unsigned int proc_freq) {\n", project_name);
+    fprintf(output, "%sac_module::set_proc_freq(proc_freq);\n", INDENT[1]);
+
+    for(int cycles=1; cycles<=5; cycles++) {
+      for (ac_dec_instr *pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+        if (pinstr->cycles == cycles) {
+          fprintf(output, "%stime_%dcycle=sc_time(%d*module_period_ns, SC_NS);\n", INDENT[1], cycles, cycles);
+          break;
+        }
+      }
+    }
+
+    fprintf(output, "}\n\n");
+
+  }
   /* GDB enable method */
   if (ACGDBIntegrationFlag) {
     fprintf(output, "// Enables GDB\n");
@@ -3836,9 +3875,12 @@ void EmitInstrExec( FILE *output, int base_indent){
         }
         fprintf(output, ");\n");
 
-        if( ACWaitFlag )
-            fprintf(output, "%sac_qk.inc(sc_time(module_period_ns*%d, SC_NS));\n", INDENT[base_indent + 1],
-                    pinstr->cycles);
+        if( ACWaitFlag ) {
+          if (pinstr->cycles <= 5)
+            fprintf(output, "%sac_qk.inc(time_%dcycle);\n", INDENT[base_indent + 1], pinstr->cycles);
+          else
+            fprintf(output, "%sac_qk.inc(sc_time(module_period_ns*%d, SC_NS));\n", INDENT[base_indent + 1], pinstr->cycles);
+        }
 
         if( ACThreading )
             fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
