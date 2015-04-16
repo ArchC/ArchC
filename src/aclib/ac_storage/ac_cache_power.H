@@ -17,10 +17,6 @@
 #define CACHE_MAX_POWER_STATS_NAME_SIZE 30
 #define CACHE_MAX_POWER_STATS_DESCR_SIZE 140
 
-/*#define CACHE_TYPE_LINE_NUM_PROFILE 0
-#define CACHE_TYPE_LINE_PROFILE     1
-#define CACHE_TYPE_LINE_IDLE        2
-#define CACHE_TYPE_LINE_ACTIVE      3*/
 enum cache_type_line_t {
   CTL_NUM_PROFILE,
   CTL_PROFILE,
@@ -80,13 +76,19 @@ class cache_power_stats {
 		int contador_debug;
 		#endif
 
+    string cache_name;
+    string generate_cache_name(const char* name) {
+      cache_name = (string)name + " cache";
+      return cache_name;
+    }
+    
 
 	public:
 		psc_cell_power_info psc_info;
 
 		// Constructor
-    cache_power_stats(const char* cache_name):
-    psc_info(cache_name, "Cache") 
+    cache_power_stats(const char* proc_name):
+    psc_info(generate_cache_name(proc_name), "Cache") 
     {
       PSC_NUM_FIRST_SAMPLES(0x7FFFFFFF);
 			init(CACHE_POWER_TABLE_FILE);
@@ -108,7 +110,7 @@ class cache_power_stats {
 			char filename[512];
 			strcpy(filename, CACHE_WINDOW_REPORT_FILE);
 			strcat(filename, "_");
-			strcat(filename, cache_name);
+			strcat(filename, cache_name.c_str());
 			strcat(filename, ".csv");
 			out_window_power_report = fopen(filename, "w");
 			if (out_window_power_report == NULL) {
@@ -122,7 +124,7 @@ class cache_power_stats {
 			#ifdef DEBUG 
 			strcpy (filename, "debug_power");
 			strcat(filename, "_");
-			strcat(filename, cache_name);
+			strcat(filename, cache_name.c_str());
 			strcat(filename, ".txt");
 			
 			debug_file = fopen(filename, "w");

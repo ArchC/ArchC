@@ -80,11 +80,6 @@ class ac_write_back_cache {
 	ac_write_back_cache(const ac_write_back_cache &);
 	
 	public:
-	ac_write_back_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
-
-		memory.setBlockSize (block_size);
-	}
-
 	ac_write_back_cache(backing_store &memory_, const char* proc_name="") : memory(memory_), trace_active(false),
   cache(proc_name) {
 
@@ -200,7 +195,8 @@ class ac_write_through_cache {
 	ac_write_through_cache(const ac_write_through_cache &);
 	
 	public:
-	ac_write_through_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
+	ac_write_through_cache(backing_store &memory_, const char* proc_name="") : memory(memory_), trace_active(false),
+  cache(proc_name) {
 
 		memory.setBlockSize (block_size);
 
