@@ -6,8 +6,6 @@
 	 table of values */
 
 // This group should be parameters, not defines
-#define CACHE_POWER_TABLE_FILE "../../table_cache_8k_2w_45nm.csv"
-
 #define CACHE_WINDOW_REPORT
 #define CACHE_WINDOW_REPORT_FILE "window_power_report"
 
@@ -77,8 +75,9 @@ class cache_power_stats {
 		#endif
 
     string cache_name;
-    string generate_cache_name(const char* name) {
-      cache_name = (string)name + " cache";
+    string generate_cache_name(const int id) {
+      //to_string() needs -std=c++11 to compile
+      cache_name = string("Proc") + to_string(id) + " cache";
       return cache_name;
     }
     
@@ -87,8 +86,8 @@ class cache_power_stats {
 		psc_cell_power_info psc_info;
 
 		// Constructor
-    cache_power_stats(const char* proc_name):
-    psc_info(generate_cache_name(proc_name), "Cache") 
+    cache_power_stats(const int proc_id):
+    psc_info(generate_cache_name(proc_id), "Cache") 
     {
       PSC_NUM_FIRST_SAMPLES(0x7FFFFFFF);
 			init(CACHE_POWER_TABLE_FILE);

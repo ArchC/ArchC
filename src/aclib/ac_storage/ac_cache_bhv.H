@@ -208,7 +208,7 @@ public:
    */
 /*  cache_bhv(unsigned int nb, unsigned int bs, unsigned int assoc = 1, 
             replacement_policy_t rp = random_policy); */
-	cache_bhv(const char* proc_name="");
+	cache_bhv(const int proc_id=-1);
 
   virtual void print_statistic(ostream &fsout) const;
 
@@ -563,10 +563,10 @@ template <
 > 
 cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS, 
           cache_status_t, replacement_policy>::
-cache_bhv(const char* proc_name) :
+cache_bhv(const int proc_id) :
   m_rep_pol(index_size*associativity, associativity),
 #ifdef POWER_SIM
-  ps(proc_name),
+  ps(proc_id),
 #endif
   m_read_miss(0),
   m_read_hit(0),
