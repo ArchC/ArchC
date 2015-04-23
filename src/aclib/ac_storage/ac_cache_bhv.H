@@ -132,7 +132,11 @@
 #include "ac_random_replacement_policy.H" 
 #include "ac_fifo_replacement_policy.H" 
 #include "ac_plrum_replacement_policy.H" 
-
+#ifdef POWER_SIM
+#include "ac_cache_power.H"
+#define READ_COMMAND 0
+#define WRITE_COMMAND 1
+#endif
 
 using namespace std;
 
@@ -204,7 +208,7 @@ public:
    */
 /*  cache_bhv(unsigned int nb, unsigned int bs, unsigned int assoc = 1, 
             replacement_policy_t rp = random_policy); */
-	cache_bhv();
+	cache_bhv(const int proc_id=-1);
 
   virtual void print_statistic(ostream &fsout) const;
 
@@ -422,7 +426,9 @@ public:
     return true;
   }
 
-
+#ifdef POWER_SIM
+  cache_power_stats ps;
+#endif
 
 private:
 
@@ -557,13 +563,16 @@ template <
 > 
 cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS, 
           cache_status_t, replacement_policy>::
-cache_bhv() :
-	 m_rep_pol(index_size*associativity, associativity),
-     m_read_miss(0),
-     m_read_hit(0),
-     m_write_miss(0),
-     m_write_hit(0),
-     m_evictions(0)
+cache_bhv(const int proc_id) :
+  m_rep_pol(index_size*associativity, associativity),
+#ifdef POWER_SIM
+  ps(proc_id),
+#endif
+  m_read_miss(0),
+  m_read_hit(0),
+  m_write_miss(0),
+  m_write_hit(0),
+  m_evictions(0)
 {	
 	
 	unsigned block_count = index_size*associativity;
@@ -719,6 +728,9 @@ write_block_single(const cache_status_t &st, const cpu_word *value, unsigned len
   cout << "Writing " << value << " at block index " << m_current_sa.index \
        << " (" << m_current_sa.tag << ", " << m_current_sa.offset << ")" << endl;
 #endif
+#ifdef POWER_SIM
+  ps.update_stat_power(WRITE_COMMAND); 
+#endif
 
   unsigned max_length = block_size - m_current_sa.offset*sizeof(cpu_word);
   if (length > max_length) abort();
@@ -752,6 +764,9 @@ write_block_single(const cpu_word *value, unsigned length)
   cout << "Writing " << value << " at block index " << m_current_sa.index \
        << " (" << m_current_sa.tag << ", " << m_current_sa.offset << ")" << endl;
 #endif
+#ifdef POWER_SIM
+  ps.update_stat_power(WRITE_COMMAND); 
+#endif
 
   unsigned max_length = block_size - m_current_sa.offset*sizeof(cpu_word);
   if (length > max_length) abort();
@@ -783,6 +798,9 @@ write_block(const cache_status_t &st, const cpu_word *blockdata)
 #ifdef CACHE_BHV_MSG 
   cout << "Writing a block at index " << m_current_sa.index << " (" \
           << m_current_sa.tag << ")" << endl;
+#endif
+#ifdef POWER_SIM
+  ps.update_stat_power(WRITE_COMMAND); 
 #endif
 
   *(m_current_block.status) = st;
@@ -843,6 +861,9 @@ const cpu_word *cache_bhv<index_size, block_size, associativity, cpu_word, ADDRE
        << m_current_sa.offset << " (" << *(m_current_block.tag) \
        << ")" << endl;
 #endif
+#ifdef POWER_SIM
+  ps.update_stat_power(READ_COMMAND); 
+#endif
 
   m_rep_pol.block_read(m_current_block.index);
 
@@ -866,6 +887,9 @@ read_block(void)
 #ifdef CACHE_BHV_MSG 
   cout << "Reading block index " << m_current_sa.index << " (" \
           << *(m_current_block.tag) << ")" << endl;
+#endif
+#ifdef POWER_SIM
+  ps.update_stat_power(READ_COMMAND); 
 #endif
 
   return m_current_block.data;

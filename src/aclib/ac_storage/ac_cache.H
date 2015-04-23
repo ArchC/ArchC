@@ -80,7 +80,8 @@ class ac_write_back_cache {
 	ac_write_back_cache(const ac_write_back_cache &);
 	
 	public:
-	ac_write_back_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
+	ac_write_back_cache(backing_store &memory_, const int proc_id=-1) : memory(memory_), trace_active(false),
+  cache(proc_id) {
 
 		memory.setBlockSize (block_size);
 	}
@@ -163,6 +164,10 @@ class ac_write_back_cache {
 	void print_statistics(ostream &out) {
 		cache.print_statistic(out);
 	}
+
+  void powersc_connect() {
+    cache.ps.powersc_connect();
+  }
 };
 
 template <
@@ -190,7 +195,8 @@ class ac_write_through_cache {
 	ac_write_through_cache(const ac_write_through_cache &);
 	
 	public:
-	ac_write_through_cache(backing_store &memory_) : memory(memory_), trace_active(false) {
+	ac_write_through_cache(backing_store &memory_, const int proc_id=-1) : memory(memory_), trace_active(false),
+  cache(proc_id) {
 
 		memory.setBlockSize (block_size);
 
@@ -262,6 +268,10 @@ class ac_write_through_cache {
 	void print_statistics(ostream &out) {
 		cache.print_statistic(out);
 	}
+  
+  void powersc_connect() {
+    cache.ps.powersc_connect();
+  }
 };
 
 #endif /* _AC_CACHE_H_INCLUDED_ */

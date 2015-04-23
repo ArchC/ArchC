@@ -2502,7 +2502,7 @@ void CreateArchImpl() {
         fprintf(output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
           } else {
         //It is an ac_cache object.
-        fprintf(output, "%s%s(%s)", INDENT[1], pstorage->name, pstorage->higher->name);
+        fprintf(output, "%s%s(%s,globalId)", INDENT[1], pstorage->name, pstorage->higher->name);
 
         if (HaveMemHier && pstorage->level == 0) {
             fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name, pstorage->name);
