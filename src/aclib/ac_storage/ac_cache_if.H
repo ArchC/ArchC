@@ -132,7 +132,7 @@ class ac_cache_if : public ac_inout_if {
 
 
 
-	virtual void read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info) {
+	virtual void read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info, unsigned int procId=0) {
 
 			this->read(buf,address,wordsize);
 		}
@@ -147,7 +147,7 @@ class ac_cache_if : public ac_inout_if {
 		*
 		*/
 		virtual void read(ac_ptr buf, uint32_t address,
-			    int wordsize, int n_words,sc_core::sc_time &time_info) {
+			    int wordsize, int n_words,sc_core::sc_time &time_info, unsigned int procId=0) {
 			abort();
 		}
 
@@ -160,7 +160,7 @@ class ac_cache_if : public ac_inout_if {
 		*
 		*/
 		virtual void write(ac_ptr buf, uint32_t address,
-			     int wordsize,sc_core::sc_time &time_info) {
+			     int wordsize,sc_core::sc_time &time_info, unsigned int procId=0) {
 
 
 			this->write(buf,address,wordsize);
@@ -176,7 +176,7 @@ class ac_cache_if : public ac_inout_if {
 		*
 		*/
 		virtual void write(ac_ptr buf, uint32_t address,
-			     int wordsize, int n_words,sc_core::sc_time &time_info) {
+			     int wordsize, int n_words,sc_core::sc_time &time_info, unsigned int procId=0) {
 			abort();
 		}
 

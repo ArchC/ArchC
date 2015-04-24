@@ -30,7 +30,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
-
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -75,7 +74,7 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
 	payload_global->set_data_ptr(data_pointer);
 
 	payload_global->deep_copy_from(payload);
-        payload_global->free_all_extensions();	
+    payload_global->free_all_extensions();	
 
 	#ifdef debugTLM2
   printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),(uint32_t) payload.get_address());        
@@ -102,7 +101,7 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
  * @param wordsize Word size in bits.
  * 
  */
-void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info)
+void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId)
 {
 
 	payload_global = new ac_tlm2_payload();
@@ -117,6 +116,11 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	payload_global->set_address((sc_dt::uint64)address);
 	payload_global->set_data_ptr(buf.ptr8);
 	
+  	/**/
+  	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+    payload_global->set_streaming_width((const unsigned int)procId);
+    /**/
+
 	if (wordsize % 8) {
 		printf("\n\nAC_TLM2_NB_PORT READ: wordsize not implemented");
 		exit(0);
@@ -136,15 +140,14 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	}
 
 	wait(this->wake_up);
-	
 	delete payload_global;
- 	
+	
 }
 
 /* read n_words */
 
 void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
-                         int wordsize, int n_words,sc_core::sc_time &time_info) {
+                         int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
 	payload_global = new ac_tlm2_payload();
 
@@ -155,6 +158,11 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	
+	/**/
+  	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+    payload_global->set_streaming_width((const unsigned int)procId);
+    /**/
+
 	#ifdef debugTLM2 
 	printf("\n\n*******AC_TLM2_NB_PORT READ N_WORDS: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_READ_COMMAND, address);
 	#endif
@@ -188,7 +196,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
  * @param wordsize Word size in bits.
  *
  */
-void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info) {
+void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId) {
 
   payload_global = new ac_tlm2_payload();
 
@@ -205,6 +213,13 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
   payload_global->set_address((uint64_t)address);
   payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
   payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+
+  /**/
+ /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+  payload_global->set_streaming_width((const unsigned int)procId);
+  /**/
+
+
   if (wordsize % 8) {
           printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
           exit(0);
@@ -236,7 +251,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
  * 
  */
 void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address,
-                         int wordsize, int n_words,sc_core::sc_time &time_info) {
+                         int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
   payload_global = new ac_tlm2_payload();
 
@@ -253,6 +268,12 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address,
   payload_global->set_address((uint64_t)address);
   payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
   payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+
+  /**/
+ /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+  payload_global->set_streaming_width((const unsigned int)procId);
+  /**/
+
   if (wordsize % 8) {
           printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
           exit(0);

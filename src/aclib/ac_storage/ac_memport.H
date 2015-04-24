@@ -15,20 +15,6 @@
  *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
  * 
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or 
- * (at your option) any later version. 
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details. 
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
  */
 
 //////////////////////////////////////////////////////////////////////////////
@@ -81,7 +67,7 @@ private:
   int bytesPerBlock;
 
   sc_core::sc_time time_info;
-
+  unsigned int procId;
 
  // Byte Swap functions
   inline uint16_t byte_swap(uint16_t value) {
@@ -174,16 +160,27 @@ public:
   }
   //////////////////////////////////////////////////////////////////////////////////////////
 
-  sc_core::sc_time getTimeInfo() {
-	return time_info;
+  sc_core::sc_time getTimeInfo()
+  {
+	   return time_info;
   }
 
-  void setTimeInfo(sc_core::sc_time time) {	time_info = time;  }
+  void setTimeInfo(sc_core::sc_time time)
+  {	
+      time_info = time;
+  }
+
+  void setProcId(unsigned int id)
+  {  
+      procId = id;  
+  }
+
 
   uint32_t byte_to_word(uint32_t a) {
      		return a/sizeof(ac_word);
      	}
 
+ 
 
 ///Reads a word
   inline ac_word read(uint32_t address) {
@@ -191,7 +188,7 @@ public:
 
 	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
-    storage->read(&aux_word, address, sizeof(ac_word) * 8,time);
+    storage->read(&aux_word, address, sizeof(ac_word) * 8,time,this->procId);
     if (!this->ac_mt_endian) {
     	aux_word = byte_swap(aux_word);
     }
@@ -204,7 +201,7 @@ public:
 
     //printf("\n\nAC_MEMPORT::read_byte->address=%x", address);
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-    storage->read(&aux_byte, address, 8,time);
+    storage->read(&aux_byte, address, 8,time,this->procId);
     setTimeInfo (time);
     return aux_byte;
   }
@@ -216,7 +213,7 @@ public:
 
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
-    storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8,time);
+    storage->read(&aux_Hword, address, sizeof(ac_Hword) * 8,time,this->procId);
 
     if (!this->ac_mt_endian) {
       aux_Hword = convert_endian(sizeof(ac_Hword), aux_Hword, 0);
@@ -232,8 +229,13 @@ public:
 
 	  ac_word *p = (ac_word*) buf.ptr8;
 
-          if (l % sizeof(ac_word)) { printf("Memory size not wordsize aligned\n"); exit(1); }
-          storage->read(p, address, sizeof(ac_word) * 8, l / sizeof(ac_word), time);
+          if (l % sizeof(ac_word))
+          { 
+            printf("Memory size not wordsize aligned\n");
+            exit(1);
+          }
+          
+          storage->read(p, address, sizeof(ac_word) * 8, l / sizeof(ac_word), time,this->procId);
           setTimeInfo (time);
       	  return p;
   }
@@ -250,7 +252,7 @@ public:
     	aux_word = byte_swap(datum);
 
       }
-      storage->write(&aux_word, address, sizeof(ac_word) * 8,time);
+      storage->write(&aux_word, address, sizeof(ac_word) * 8,time,this->procId);
       setTimeInfo (time);
     }
 
@@ -260,7 +262,7 @@ public:
   	    //printf("\n\nAC_MEMPORT::write_byte->address=%x datum=%x", address, datum);
 
         sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-        storage->write(&datum, address, 8,time);
+        storage->write(&datum, address, 8,time,this->procId);
         setTimeInfo (time);
     }
 
@@ -277,7 +279,7 @@ public:
           aux_Hword = convert_endian(sizeof(ac_Hword), datum, 0);
        }
 
-       storage->write(&aux_Hword, address, sizeof(ac_Hword) * 8,time);
+       storage->write(&aux_Hword, address, sizeof(ac_Hword) * 8,time,this->procId);
        setTimeInfo (time);
     }
 
@@ -286,8 +288,12 @@ public:
 
       	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
-        if (length % sizeof(ac_word)) { printf("Memory size not wordsize aligned\n"); exit(1); }
-        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time); //TODO Remove cast
+        if (length % sizeof(ac_word))
+        { 
+          printf("Memory size not wordsize aligned\n"); 
+          exit(1);
+        }
+        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time,this->procId); //TODO Remove cast
         setTimeInfo (time);
 
     }
