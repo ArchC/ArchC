@@ -9,4 +9,4 @@ noinst_LTLIBRARIES = libactlm.la
 ## ArchC library includes
 include_HEADERS = ac_tlm_protocol.H ac_tlm_port.H ac_tlm2_port.H ac_tlm2_nb_port.H ac_tlm_intr_port.H ac_tlm2_intr_port.H ac_intr_handler.H ac_tlm_dev_id.H ac_tlm2_payload.H 
 
-libactlm_la_SOURCES = ac_tlm_port.cpp ac_tlm2_port.cpp ac_tlm2_nb_port.cpp ac_tlm_intr_port.cpp ac_tlm2_intr_port.H ac_tlm_dev_id.cpp 
+libactlm_la_SOURCES = ac_tlm_port.cpp ac_tlm2_port.cpp ac_tlm2_nb_port.cpp ac_tlm_intr_port.cpp ac_tlm2_intr_port.cpp ac_tlm_dev_id.cpp 
