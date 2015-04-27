@@ -784,8 +784,14 @@ void CreateArchHeader() {
         break;
     }
   }
-  fprintf( output, "\n\n");
   
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+    fprintf( output, "%sac_reg<%s_parms::ac_word> intr_reg;\n", INDENT[1], project_name);
+
+  fprintf( output, "\n\n");
+
+
+
   //ac_resources constructor declaration
   COMMENT(INDENT[1],"Constructor.");
   fprintf( output, "%sexplicit %s_arch();\n\n", INDENT[1], project_name);
@@ -996,7 +1002,12 @@ if (HaveMemHier) {
     }
   }
 
+  
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+    fprintf( output, "%sac_reg<%s_parms::ac_word>& intr_reg;\n",INDENT[1], project_name);
+
   fprintf(output, "\n");
+
 
   //ac_resources constructor declaration
   COMMENT(INDENT[1],"Constructor.");
@@ -1055,10 +1066,12 @@ void CreateArchRefImpl() {
          if (pstorage->next != NULL) {
               fprintf(output, ", ");
          }
-
     }
 
-   
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+    fprintf(output, ", intr_reg(arch.intr_reg) ");
+
+
   fprintf(output, " {}\n\n");
   fclose( output);
 
@@ -1715,6 +1728,9 @@ if (HaveTLM2IntrPorts) {
   }
 
   fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], project_name);
+ 
+  fprintf( output, "%ssc_event wake;\n\n", INDENT[1]);
+
 
   //!Declaring ARCH Constructor.
   COMMENT(INDENT[1], "Constructor.");
@@ -1742,7 +1758,7 @@ if (HaveTLM2IntrPorts) {
   
   if (HaveTLMIntrPorts) {
     for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-      fprintf(output, ", %s_hnd(*this)", pport->name);
+      fprintf(output, ", %s_hnd(*this,&wake)", pport->name);
       fprintf(output, ", %s(\"%s\", %s_hnd)", 
               pport->name, pport->name, pport->name);
     }
@@ -1750,9 +1766,9 @@ if (HaveTLM2IntrPorts) {
 
 
    
-    if (HaveTLM2IntrPorts) {
-         for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
-    fprintf(output, ", %s_hnd(*this)", pport->name);
+   if (HaveTLM2IntrPorts) {
+       for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
+    fprintf(output, ", %s_hnd(*this,&wake)", pport->name);
     fprintf(output, ", %s(\"%s\", %s_hnd)", pport->name, pport->name, pport->name);
          }
        }
@@ -1761,6 +1777,7 @@ if (HaveTLM2IntrPorts) {
   fprintf(output, " {\n");
 
   fprintf( output, "%sSC_THREAD( behavior );\n", INDENT[2]);
+  fprintf( output, "%ssensitive << wake;\n", INDENT[2]);
 
   if (ACVerboseFlag) {
     fprintf( output, "%sSC_THREAD( ac_verify );\n", INDENT[2]);
@@ -2222,7 +2239,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#endif\n\n");
   fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
-  fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
+  fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
           INDENT[1]);
   fprintf(output, "%sInitStat();\n", INDENT[1]);
 
@@ -2268,7 +2285,7 @@ void CreateProcessorImpl() {
   fprintf(output, "#endif\n\n");
   fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
   fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
-  fprintf(output, "%scerr << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
+  fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
           INDENT[1]);
   fprintf(output, "%sInitStat();\n", INDENT[1]);
 
@@ -2296,7 +2313,7 @@ void CreateProcessorImpl() {
   fprintf(output, "//Stop simulation (may receive exit status)\n");
   fprintf(output, "void %s::stop(int status) {\n", project_name);
 
-   fprintf(output, "%scerr << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
+   fprintf(output, "%scerr << endl << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
           INDENT[1]);
   fprintf(output, "%sISA._behavior_end();\n", INDENT[1]);
   fprintf(output, "%sac_stop_flag = 1;\n", INDENT[1]);
@@ -2549,6 +2566,10 @@ case TLM2_PORT:
     if (pstorage->next != NULL)
       fprintf(output, ",\n");
   }
+
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+       fprintf( output, "\n%s,intr_reg(\"instr_reg\",1)",INDENT[1]);
+
 
   /* opening constructor body */
   fprintf(output, " {\n\n");
@@ -3161,15 +3182,20 @@ void CreateIntrTLM2Header() {
 
   // TODO: see what we need to do for tlm2 ports below
   /* Creating interrupt handler classes for each ac_tlm_intr_port */
+
   for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
     fprintf(output, "class %s_%s_handler :\n", project_name, pport->name);
     fprintf(output, "%spublic ac_intr_handler,\n", INDENT[1]);
     fprintf(output, "%spublic %s_arch_ref\n", INDENT[1], project_name);
     fprintf(output, "{\n");
     fprintf(output, " public:\n\n");
-    fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",
-            INDENT[1], project_name, pport->name, project_name, project_name);
+    //fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",    
+    //        INDENT[1], project_name, pport->name, project_name, project_name);
+    fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref,sc_event *event) : %s_arch_ref(ref) { wake = event; }\n\n",
+      INDENT[1], project_name, pport->name, project_name, project_name);
+
     fprintf(output, "%svoid handle(uint32_t value);\n\n", INDENT[1]);
+    fprintf(output, "%ssc_event *wake;\n", INDENT[1]);
     fprintf(output, "};\n\n\n");
   }
 
@@ -3179,9 +3205,6 @@ void CreateIntrTLM2Header() {
   fclose(output);
 
 }
-
-
-
 
 ///Creates the header file for interrupt handlers.
 void CreateIntrHeader() {
@@ -3294,8 +3317,7 @@ void CreateIntrMacrosHeader() {
   fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", upper_project_name);
 
   /* ac_behavior main macro */
-  fprintf(output, 
-          "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
+  fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
           project_name);
 
   fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", upper_project_name);
@@ -3396,6 +3418,10 @@ void CreateMakefile(){
   COMMENT_MAKE("These are the source files automatically generated  by ArchC that are included by other files in ACSRCS");
   fprintf( output, "ACINCS := $(MODULE)_isa_init.cpp\n\n");
 
+
+  if(HaveTLMIntrPorts || HaveTLM2IntrPorts)
+    fprintf( output, "INTRHAND := $(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H\n");
+
   //Declaring ACHEAD variable
   COMMENT_MAKE("These are the header files automatically generated by ArchC");
   fprintf( output, "ACHEAD := $(MODULE)_parms.H $(MODULE)_arch.H $(MODULE)_arch_ref.H $(MODULE)_isa.H $(MODULE)_bhv_macros.H ");
@@ -3403,13 +3429,15 @@ void CreateMakefile(){
     fprintf( output, "$(MODULE)_fmt_regs.H ");
   if(ACStatsFlag)
     fprintf( output, "%s_stats.H ", project_name);
-    fprintf( output, "$(MODULE).H ");
-  if(HaveTLMIntrPorts)
-    fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
-  fprintf( output, "\n\n");
+  fprintf( output, "$(MODULE).H $(INTRHAND)");
+    
+  //if(HaveTLMIntrPorts)
+  //  fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
+  //fprintf( output, "\n\n");
 
-  if(HaveTLM2IntrPorts)
-         fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
+  //if(HaveTLM2IntrPorts)
+  //       fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
+  
   fprintf( output, "\n\n");  
 
   //Declaring FILES variable
@@ -4333,6 +4361,20 @@ void EmitDispatch(FILE *output, int base_indent) {
            INDENT[base_indent], project_name);
 
   base_indent++;
+
+
+ if (HaveTLMIntrPorts || HaveTLM2IntrPorts)
+  {
+    fprintf(output, "%s/*************************************************************************************/\n",INDENT[base_indent]);
+    fprintf(output, "%s/* SLEEP / AWAKE mode control                                                        */\n",INDENT[base_indent]);
+    fprintf(output, "%s/* intr_reg may store 1 (AWAKE MODE) or 0 (SLEEP MODE) - default is AWAKE            */\n",INDENT[base_indent]);
+    fprintf(output, "%s/* if intr_reg == 0, the simulator will be suspended until it happens the wake event */\n",INDENT[base_indent]);   
+    fprintf(output, "%s/* wake - this event will happen in the moment the processor receives and            */\n",INDENT[base_indent]);
+    fprintf(output, "%s/* interrupt with code AWAKE (1)                                                     */\n",INDENT[base_indent]);    
+    fprintf(output, "%s/*************************************************************************************/\n",INDENT[base_indent]);
+    fprintf(output, "%sif (intr_reg.read() == 0)  wait(wake);\n",INDENT[base_indent]);  
+  }
+
 
   if( ACDebugFlag ){
     fprintf( output, "%sextern bool ac_do_trace;\n", INDENT[base_indent]);
