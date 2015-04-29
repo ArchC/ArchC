@@ -41,13 +41,14 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <ext/hash_map>
+//#include <ext/hash_map>
+#include <unordered_map>
 
 //#include "base/psc_obj_rep.h"
 #include "psc_obj_rep.h"
 
 using namespace std;
-using namespace __gnu_cxx;
+//using namespace __gnu_cxx;
 
 namespace psc_power_base
 {
@@ -91,7 +92,8 @@ class psc_macromodel {
 
 	protected:
 
-		typedef hash_map<string, double, hash<string>, eqstr> PowerMap;
+		// typedef hash_map<string, double, hash<string>, eqstr> PowerMap;
+		typedef unordered_map<string, double, hash<string>, eqstr> PowerMap;
 		typedef enum { DOWN, UP } direction_t;
 
 		PowerMap rtl_model;

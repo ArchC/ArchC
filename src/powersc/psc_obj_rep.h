@@ -39,7 +39,8 @@
 
 #include <systemc.h>
 #include <string>
-#include <ext/hash_map>
+//#include <ext/hash_map>
+#include <unordered_map>
 
 #include "debug_power.h"
 //#include "base/psc_objinfo_if.h"
@@ -50,21 +51,21 @@
 
 
 using namespace std;
-using namespace __gnu_cxx;
+//using namespace __gnu_cxx;
 
 
 // The code below is necessary to use as the hash_map's key the type 'string',
 // instead of 'const char *'
-namespace __gnu_cxx
-{
-   template<> struct hash< std::string >
-   {
-      size_t operator()( const std::string& s ) const
-      {
-	 return hash< const char* >()( s.c_str() );
-      }
-   };
-} // namespace __gnu_cxx
+//namespace __gnu_cxx
+//{
+//   template<> struct hash< std::string >
+//   {
+//      size_t operator()( const std::string& s ) const
+//      {
+//	 return hash< const char* >()( s.c_str() );
+//      }
+//   };
+//} // namespace __gnu_cxx
 
 namespace psc_power_base
 {
@@ -118,10 +119,14 @@ struct eqstr
    }
 };
 
-using __gnu_cxx::hash;
+//using __gnu_cxx::hash;
 
-typedef hash_map<string, repository_entry_t, hash<string>, eqstr> repository_map;
-typedef hash_map<string, cond_statement_t, hash<string>, eqstr> cond_stat_map;
+//typedef hash_map<string, repository_entry_t, hash<string>, eqstr> repository_map;
+//typedef hash_map<string, cond_statement_t, hash<string>, eqstr> cond_stat_map;
+
+typedef unordered_map<string, repository_entry_t, hash<string>, eqstr> repository_map;
+typedef unordered_map<string, cond_statement_t, hash<string>, eqstr> cond_stat_map;
+
 
 // ----------------------------------------------------------------------------
 //  CLASS : psc_obj_repository
