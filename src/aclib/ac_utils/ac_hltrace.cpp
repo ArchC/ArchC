@@ -552,7 +552,6 @@ static void print_src (const char *src, int lineno, int linecol, Dwarf_Die *cu, 
   //here we have the source path and the line number/ col number
   lineInfo->lineNumber = lineno;
   lineInfo->colNumber = linecol;
-  char completePath[1000];
   lineInfo->sourcePath = std::string(comp_dir) + std::string(comp_dir_sep) + std::string(src);
 }
 
@@ -613,10 +612,7 @@ static int handle_address (const char *string, Dwfl *dwfl, LineInfo *lineInfo )
   }
 
   Dwfl_Module *mod = dwfl_addrmodule (dwfl, addr);
-
-  print_dwarf_function (mod, addr, lineInfo) ;
-
-
+//  print_dwarf_function (mod, addr, lineInfo) ;
   Dwfl_Line *line = dwfl_module_getsrc (mod, addr);
 
   const char *src;
