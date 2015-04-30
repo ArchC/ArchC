@@ -3385,23 +3385,28 @@ void CreateMakefile(){
   fprintf( output, "LIB_SYSTEMC := %s\n",
            (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
 
-  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc %s %s\n",
-           (ACPowerEnable) ? "-lpowersc" : "", (ACHLTraceFlag) ? "-ldw -lelf" : "");
+  fprintf( output, "LIB_POWERSC := %s\n",
+           (ACPowerEnable) ? "-lpowersc" : "");
 
-  fprintf( output, "CC :=  %s\n", CC_PATH);
+  fprintf( output, "LIB_DWARF := %s\n",
+          (ACHLTraceFlag) ? "-ldw -lelf" : "" );
 
-  fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
+  fprintf( output, "LIBS := -larchc $(LIB_SYSTEMC) $(LIB_POWERSC) $(LIB_DWARF) -lm $(EXTRA_LIBS)\n");
 
-  fprintf( output, "DEBUG :=  %s\n", DEBUG_FLAGS);
+  fprintf( output, "CC :=  %s", CC_PATH);
 
-  fprintf( output, "OTHER := ");
+  fprintf( output, "OPT :=  %s", OPT_FLAGS);
+
+  fprintf( output, "DEBUG :=  %s", DEBUG_FLAGS);
+
+  fprintf( output, "OTHER := -std=c++11 ");
   //!< The guest arch is big endian?
   if ( ac_tgt_endian )
     fprintf( output, " -DAC_GUEST_BIG_ENDIAN");
   //!< The guest and host arch is the same endianness?
   if ( ac_match_endian )
     fprintf( output, " -DAC_MATCH_ENDIANNESS");
-  fprintf( output, " %s\n", OTHER_FLAGS);
+  fprintf( output, " %s", OTHER_FLAGS);
 
   fprintf( output, "CFLAGS := $(DEBUG) $(OPT) $(OTHER) %s %s\n",
            (ACGDBIntegrationFlag) ? "-DUSE_GDB" : "",
