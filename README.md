@@ -44,6 +44,16 @@ Installation
 make install
 ```
 
+Environment
+------------
+
+```bash
+. env.sh
+``` 
+
+The above command will set the ArchC Environment in the current terminal.
+Add it in ~/.bashrc to set the ArchC environment automatically
+
 Contributing
 ------------
 
