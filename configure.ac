@@ -32,20 +32,70 @@ if test "x${PKG_CONFIG}" = "x" ; then
    AC_MSG_ERROR([pkg-config tool not found. Install it or set PKG_CONFIG environment variable to that path tool. Exiting...])
 fi
 
-PKG_CHECK_MODULES(SYSTEMC, [systemc >= 2.3.0], [have_systemc=yes], [have_systemc=no])
-AS_IF([test "x$have_systemc" = "xyes"],
-      [AC_DEFINE([HAVE_SYSTEMC], [1], [Have SystemC])])
-AM_CONDITIONAL(HAVE_SYSTEMC, test "x$have_systemc" = "xyes")
+# Getting system configuration - copy from SystemC
+AC_CANONICAL_HOST
+TARGET_ARCH=
+case "$host" in
+  x86_64*linux*)
+    TARGET_ARCH="linux64"
+    ;;
+  *linux*)
+    TARGET_ARCH="linux"
+    ;;
+  *darwin*)
+    TARGET_ARCH="macosx"
+    ;;
+esac
 
-PKG_CHECK_MODULES(TLM, [tlm >= 1], [have_tlm=yes], [have_tlm=no])
-AS_IF([test "x$have_tlm" = "xyes"],
-      [AC_DEFINE([HAVE_TLM], [1], [Have TLM])])
-AM_CONDITIONAL(HAVE_TLM, test "x$have_tlm" = "xyes")
+AC_ARG_WITH(systemc,
+      AC_HELP_STRING([--with-systemc=PATH],
+                     [Sets the directory where SystemC is installed.]),
+[
+	# Hard set of SystemC configuration ignoring pkg-config to legacy support
+	AC_DEFINE([HAVE_CUSTOM_SYSTEMC], [1], [Custom SystemC])
+	SYSTEMC="$withval"
+	AM_CONDITIONAL(HAVE_SYSTEMC, true)
+	AC_DEFINE([HAVE_SYSTEMC], [1], [Have SystemC])
+	AM_CONDITIONAL(HAVE_TLM, true)
+	AC_DEFINE([HAVE_TLM], [1], [Have TLM])
+	AM_CONDITIONAL(HAVE_TLM2, true)
+	AC_DEFINE([HAVE_TLM2], [1], [Have TLM2])
+	SYSTEMC_CFLAGS="-pthread  -I$SYSTEMC/include"
+	SYSTEMC_LIBS="-L$SYSTEMC/lib-$TARGET_ARCH -lsystemc"
+	TLM_CFLAGS="-I$SYSTEMC/include"
+	TLM_LIBS="-L$SYSTEMC/lib-$TARGET_ARCH -lsystemc"
+	TLM2_CFLAGS="-I$SYSTEMC/include"
+	TLM2_LIBS="-L$SYSTEMC/lib-$TARGET_ARCH -lsystemc"
 
-PKG_CHECK_MODULES(TLM2, [tlm >= 2], [have_tlm2=yes], [have_tlm2=no])
-AS_IF([test "x$have_tlm2" = "xyes"],
-      [AC_DEFINE([HAVE_TLM2], [1], [Have TLM2])])
-AM_CONDITIONAL(HAVE_TLM2, test "x$have_tlm2" = "xyes")
+	EXPORT_SYSTEMC_LIB="$SYSTEMC/lib-$TARGET_ARCH"
+	AC_SUBST(EXPORT_SYSTEMC_LIB)
+	EXPORT_SYSTEMC_PKG="$SYSTEMC/lib-$TARGET_ARCH/pkgconfig"
+	AC_SUBST(EXPORT_SYSTEMC_PKG)
+],
+[
+	PKG_CHECK_MODULES(SYSTEMC, [systemc >= 2.3.0], [have_systemc=yes], [have_systemc=no])
+	AS_IF([test "x$have_systemc" = "xyes"],
+	      [
+		AC_DEFINE([HAVE_SYSTEMC], [1], [Have SystemC])
+		for SC_FLAG in $SYSTEMC_LIBS; do
+			[[[ $SC_FLAG == \-L* ]]] && EXPORT_SYSTEMC_LIB=${SC_FLAG:2} && break
+		done
+		AC_SUBST(EXPORT_SYSTEMC_LIB)
+		EXPORT_SYSTEMC_PKG="$EXPORT_SYSTEMC_LIB/pkgconfig"
+		AC_SUBST(EXPORT_SYSTEMC_PKG)
+	      ])
+	AM_CONDITIONAL(HAVE_SYSTEMC, test "x$have_systemc" = "xyes")
+
+	PKG_CHECK_MODULES(TLM, [tlm >= 1], [have_tlm=yes], [have_tlm=no])
+	AS_IF([test "x$have_tlm" = "xyes"],
+	      [AC_DEFINE([HAVE_TLM], [1], [Have TLM])])
+	AM_CONDITIONAL(HAVE_TLM, test "x$have_tlm" = "xyes")
+
+	PKG_CHECK_MODULES(TLM2, [tlm >= 2], [have_tlm2=yes], [have_tlm2=no])
+	AS_IF([test "x$have_tlm2" = "xyes"],
+	      [AC_DEFINE([HAVE_TLM2], [1], [Have TLM2])])
+	AM_CONDITIONAL(HAVE_TLM2, test "x$have_tlm2" = "xyes")
+])
 
 # SystemC base and TLM library options
 BINUTILS_DIR=
@@ -141,6 +191,7 @@ AC_CONFIG_FILES(
   src/powersc/Makefile
   pc/archc.pc
   pc/powersc.pc
+  env.sh
 ])
 
 # Output
