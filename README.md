@@ -28,9 +28,10 @@ files and install them into the host system. .
 ./configure
 ```
 Optional flags:
-  * --with-binutils=<binutils-path> -> if you plan to generate binary utilities
-  * --with-gdb=<gdb-path> -> if you plan to generate debugger (gdb)
-  * --prefix=<install-dir> -> By default, the installation process will install the package in the /usr/local directory. If you want any other directory to be used, just use the --prefix flag.
+  * --prefix=*\<install-dir\>* -> if you want install ArchC in any other directory. The default is /usr/local
+  * --with-systemc=*\<systemc-install-path\>*    -> if you plan to generate 'acsim' tool
+  * --with-binutils=*\<binutils-src-path\>* -> if you plan to generate binary utilities (acasm)
+  * --with-gdb=*\<gdb-src-path\>* -> if you plan to generate debugger (gdb)
 
 3.
 ```bash
