@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: ArchC
+Description: ArchC is a powerful and modern open-source architecture description language.
+Requires.private: 
+Version: @VERSION@
+Libs: -L${libdir} -larchc -lm
+Libs.private: 
+Cflags: -I${includedir}

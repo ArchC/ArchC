@@ -3650,28 +3650,12 @@ void CreateMakefile(){
 
   fprintf( output, "\n\n");
 
-  COMMENT_MAKE("Variable that points to SystemC installation path");
-  fprintf( output, "SYSTEMC := %s\n", SYSTEMC_PATH);
-
-  fprintf( output, "\n\n");
-  COMMENT_MAKE("Variable that points to ArchC installation path");
-  fprintf( output, "ARCHC := %s\n", ARCHCPATH);
-
-  fprintf( output, "\n");
-
-  COMMENT_MAKE("Target Arch used by SystemC");
-  fprintf( output, "TARGET_ARCH := %s\n", TARGET_ARCH);
-
-  fprintf( output, "\n\n");
-        
-  fprintf( output, "INC_DIR := -I. -I$(ARCHC)/include/archc -I$(SYSTEMC)/include\n");
-  fprintf( output, "LIB_DIR := -L. -L$(SYSTEMC)/lib-$(TARGET_ARCH) -L$(ARCHC)/lib\n");
+  fprintf( output, "INC_DIR := -I. `pkg-config --cflags systemc` `pkg-config --cflags archc`\n");
+  fprintf( output, "LIB_DIR := -L. `pkg-config --libs systemc` `pkg-config --libs archc`\n");
 
   fprintf( output, "\n");
  
-  fprintf( output, "LIB_SYSTEMC := %s\n",
-           (strlen(SYSTEMC_PATH) > 2) ? "-lsystemc" : "");
-  fprintf( output, "LIBS := $(LIB_SYSTEMC) -lm $(EXTRA_LIBS) -larchc\n");
+  fprintf( output, "LIBS := `pkg-config --libs systemc` -lm $(EXTRA_LIBS) `pkg-config --libs archc`\n");
   fprintf( output, "CC :=  %s\n", CC_PATH);
   //fprintf( output, "OPT :=  %s\n", OPT_FLAGS);
   fprintf( output, "OPT := \n");
@@ -3814,8 +3798,7 @@ void CreateMakefile(){
 
   fprintf( output, "all: $(ACFILESHEAD) $(MODULE)_syscall.H $(ACFILES) $(EXE)\n\n");
 
-  fprintf( output, "$(EXE): $(OBJS) %s libdummy.a\n",
-           (strlen(SYSTEMC_PATH) > 2) ? "$(SYSTEMC)/lib-$(TARGET_ARCH)/libsystemc.a" : "");
+  fprintf( output, "$(EXE): $(OBJS) libdummy.a\n");
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) -Xlinker --allow-multiple-definition 2>&1 | c++filt\n\n");
 
   COMMENT_MAKE("Create dummy library with possibly undefined functions");
@@ -4977,7 +4960,6 @@ void ReadConfFile(){
 
   char *conf_filename_global;
   //char *conf_filename;
-  extern char *SYSTEMC_PATH;
   extern char *CC_PATH;
   extern char *OPT_FLAGS;
   extern char *DEBUG_FLAGS;
@@ -5040,21 +5022,7 @@ void ReadConfFile(){
         sscanf(line, "%s",var);
         strcpy( value, strchr(line, '=')+1);
 
-        /* Does NOT read ARCHC_PATH again from config file (already using it from environment) */
-        /*   this allows to move/renane the ArchC directory without reconfiguration */
-/*         if( !strcmp(var, "ARCHC_PATH") ){ */
-/*           ARCHC_PATH =  (char*) malloc(strlen(value)+1); */
-/*           ARCHC_PATH = strcpy(ARCHC_PATH, value); */
-/*         } */
-        if( !strcmp(var, "SYSTEMC_PATH") ){
-          SYSTEMC_PATH = (char*) malloc(strlen(value)+1);
-          SYSTEMC_PATH = strcpy(SYSTEMC_PATH, value);
-          if ((!ACCompsimFlag) && (strlen(value) <= 2)) {
-            AC_ERROR("Please configure a SystemC path running install.sh script in ArchC directory.\n");
-            exit(1);
-          }
-        }
-        else if( !strcmp(var, "CC") ){
+        if( !strcmp(var, "CC") ){
           CC_PATH =  (char*) malloc(strlen(value)+1);
           CC_PATH = strcpy(CC_PATH, value);
         }
@@ -5070,11 +5038,6 @@ void ReadConfFile(){
           OTHER_FLAGS = (char*) malloc(strlen(value)+1);
           OTHER_FLAGS = strcpy(OTHER_FLAGS, value);
         }
-        else if( !strcmp(var, "TARGET_ARCH") ){
-          TARGET_ARCH = (char*) malloc(strlen(value)+1);
-          TARGET_ARCH = strcpy(TARGET_ARCH, value);
-        }
-
       }
     }
   }

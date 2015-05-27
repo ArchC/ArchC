@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Includes
-AM_CPPFLAGS = -std=c++11 -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib/ac_gdb -I$(top_srcdir)/src/aclib/ac_storage -I$(top_srcdir)/src/aclib/ac_syscall -I$(top_srcdir)/src/aclib/ac_core -I$(top_srcdir)/src/aclib/ac_rtld -I$(SC_DIR)/include -ldw -lelf
+AM_CPPFLAGS = -std=c++11 -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib/ac_gdb -I$(top_srcdir)/src/aclib/ac_storage -I$(top_srcdir)/src/aclib/ac_syscall -I$(top_srcdir)/src/aclib/ac_core -I$(top_srcdir)/src/aclib/ac_rtld @SYSTEMC_CFLAGS@ -ldw -lelf
 
 
 ## The ArchC library

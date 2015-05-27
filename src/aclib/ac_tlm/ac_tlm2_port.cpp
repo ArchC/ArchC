@@ -31,9 +31,6 @@
  *
  */
 
-//////////////////////////////////////////////////////////////////////////////
-
-
 // Standard includes
 
 // SystemC includes
@@ -60,7 +57,7 @@ ac_tlm2_port::ac_tlm2_port(char const* nm, uint32_t sz) : name(nm), size(sz) {
  * 
  * 
  */
-void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time& time_info)
+void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time& time_info, unsigned int procId)
 {
     //sc_core::sc_time time_info;
     unsigned char buffer[64];
@@ -69,6 +66,11 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
     payload->set_address((sc_dt::uint64)address);
     payload->set_data_ptr(buffer);
     
+    /**/
+   /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+    payload->set_streaming_width((const unsigned int)procId);
+    /**/
+
     if (wordsize==8)    payload->set_data_length(sizeof(uint8_t));
     else if (wordsize==16)  payload->set_data_length(sizeof(uint16_t));
     else if (wordsize==32)  payload->set_data_length(sizeof(uint32_t));
@@ -135,7 +137,7 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_t
 /* read n_words */
 
 void ac_tlm2_port::read(ac_ptr buf, uint32_t address,
-                         int wordsize, int n_words,sc_core::sc_time &time_info) {
+                         int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
     //sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
     payload->set_command(tlm::TLM_READ_COMMAND);
@@ -155,6 +157,12 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address,
                 payload->set_data_length(sizeof(uint8_t));
                 payload->set_data_ptr(p);
 
+                /**/
+               /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+                payload->set_streaming_width((const unsigned int)procId);
+                /**/
+
+
                 (*this)->b_transport(*payload, time_info); 
                 
                 for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
@@ -171,6 +179,11 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address,
                 payload->set_data_length(sizeof(uint16_t));
                 payload->set_data_ptr(p);
 
+                /**/
+               /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+                payload->set_streaming_width((const unsigned int)procId);
+                /**/
+
                 (*this)->b_transport(*payload, time_info); 
                 
                 for (int j = 0; (i < n_words) && (j < 2); j++, i++) {
@@ -186,6 +199,11 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address,
                 payload->set_address(address + (i * sizeof(uint32_t)));
                 payload->set_data_length(sizeof(uint32_t));
                 payload->set_data_ptr(p);
+
+                /**/
+               /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+                payload->set_streaming_width((const unsigned int)procId);
+                /**/
 
                 (*this)->b_transport(*payload, time_info);      
 
@@ -207,7 +225,7 @@ void ac_tlm2_port::read(ac_ptr buf, uint32_t address,
  * Writes a single word.
  * 
   */
-void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info) {
+void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId) {
 
   //sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
 
@@ -225,6 +243,13 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_
         payload->set_data_length(sizeof(uint8_t));
         payload->set_data_ptr(p);
         
+        /**/
+       /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+        payload->set_streaming_width((const unsigned int)procId);
+        /**/
+
+
+
         (*this)->b_transport(*payload, time_info); 
         
         payload->set_command(tlm::TLM_WRITE_COMMAND);
@@ -240,6 +265,12 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_
         payload->set_address((uint64_t)address);
         payload->set_data_length(sizeof(uint16_t));
         payload->set_data_ptr(p);
+
+        /**/
+       /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+        payload->set_streaming_width((const unsigned int)procId);
+        /**/
+
 
         (*this)->b_transport(*payload, time_info); 
 
@@ -260,6 +291,11 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_
         payload->set_command(tlm::TLM_WRITE_COMMAND);
         payload->set_data_ptr(p);
         payload->set_data_length(sizeof(uint32_t));
+
+        /**/
+       /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+        payload->set_streaming_width((const unsigned int)procId);
+        /**/
 
         
         uint32_t *T = reinterpret_cast<uint32_t*>(p);
@@ -285,7 +321,7 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_
  * 
  */
 void ac_tlm2_port::write(ac_ptr buf, uint32_t address,
-                         int wordsize, int n_words,sc_core::sc_time &time_info) {
+                         int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
   //sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
   payload->set_command(tlm::TLM_WRITE_COMMAND);
@@ -301,6 +337,12 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address,
     payload->set_data_length(sizeof(uint32_t));
     payload->set_address(address + (i * sizeof(uint32_t)));
     payload->set_data_ptr(p);
+    
+    /**/
+    /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+    payload->set_streaming_width((const unsigned int)procId);
+    /**/
+
     
     uint32_t *T = reinterpret_cast<uint32_t*>(p);
     *T = buf.ptr32[i];

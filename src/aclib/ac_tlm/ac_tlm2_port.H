@@ -33,8 +33,6 @@
  *
  */
 
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef _AC_TLM2_PORT_H_
@@ -97,54 +95,48 @@ public:
    * Reads a single word.
    * 
    */
-  virtual void read(ac_ptr buf, uint32_t address,
-		    int wordsize,sc_core::sc_time &time_info);
+  virtual void read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId = 0);
 
   /** 
    * Reads multiple words.
    * 
    */
   
-  virtual void read(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info);
+  virtual void read(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId = 0);
 
   /** 
    * Writes a single word.
    * 
    */
-  virtual void write(ac_ptr buf, uint32_t address,
-		     int wordsize,sc_core::sc_time &time_info);
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId = 0);
 
   /** 
    * Writes multiple words.
    * 
    */
-  virtual void write(ac_ptr buf, uint32_t address,
-		     int wordsize, int n_words,sc_core::sc_time &time_info);
-
-
-
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId = 0);
 
   // Just for compatibility
   virtual void read(ac_ptr buf, uint32_t address, int wordsize)
   {
-	  sc_core::sc_time time_info(0,SC_NS);
-	  read(buf, address, wordsize,time_info);
+    sc_core::sc_time time_info(0,SC_NS);
+    read(buf, address, wordsize,time_info);
   }
   virtual void read(ac_ptr buf, uint32_t address, int wordsize, int n_words)
   {
-	  sc_core::sc_time time_info(0,SC_NS);
-	  read(buf, address, wordsize,n_words,time_info);
+    sc_core::sc_time time_info(0,SC_NS);
+    read(buf, address, wordsize,n_words,time_info);
 
   }
   virtual void write(ac_ptr buf, uint32_t address, int wordsize)
   {
-	  sc_core::sc_time time_info(0,SC_NS);
-	  write(buf, address, wordsize,time_info);
+    sc_core::sc_time time_info(0,SC_NS);
+    write(buf, address, wordsize,time_info);
   }
   virtual void write(ac_ptr buf, uint32_t address,int wordsize, int n_words)
   {
-	  sc_core::sc_time time_info(0,SC_NS);
-	  write(buf, address, wordsize, n_words,time_info);
+    sc_core::sc_time time_info(0,SC_NS);
+    write(buf, address, wordsize, n_words,time_info);
   }
 
   virtual string get_name() const;

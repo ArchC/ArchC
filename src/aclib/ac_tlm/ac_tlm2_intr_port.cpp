@@ -50,7 +50,10 @@ using tlm::TLM_READ_COMMAND;
  */
 ac_tlm2_intr_port::ac_tlm2_intr_port(char const* nm, ac_intr_handler& hnd) :
   handler(hnd),
-  name(nm) { bind(*this); }
+  name(nm)
+  {
+    bind(*this);
+  }
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -70,21 +73,23 @@ ac_tlm2_intr_port::ac_tlm2_intr_port(char const* nm, ac_intr_handler& hnd) :
 
 void ac_tlm2_intr_port::b_transport(ac_tlm2_payload &payload, sc_core::sc_time &time_info)
 {
-    uint32_t* data = (uint32_t*) payload.get_data_ptr();  
+  //unsigned char *data = (unsigned char*) payload.get_data_ptr();  
+  tlm_command command = payload.get_command();
 
-    tlm_command command = payload.get_command();
+  unsigned char *p = payload.get_data_ptr();
 
-    switch( command )
-    {
-    	case TLM_WRITE_COMMAND:    
+  uint32_t *T = reinterpret_cast<uint32_t*>(p);
+  uint32_t data_p= T[0];
 
- 	     handler.handle(*data);	     
- 	     payload.set_response_status(tlm::TLM_OK_RESPONSE);
-
-	     break;
-    	default :
-
-             break; 
+  switch( command )
+  {
+    case TLM_WRITE_COMMAND:    
+      handler.handle(data_p);       
+      payload.set_response_status(tlm::TLM_OK_RESPONSE);
+      break;
+    
+    default : 
+      break; 
     }
 
 

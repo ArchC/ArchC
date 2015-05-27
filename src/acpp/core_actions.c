@@ -601,7 +601,7 @@ int add_storage(char* name, unsigned size, ac_sto_types type, char* typestr, cha
        tlm2_intr_port_list_tail = pstorage;
      }
      else {
-       tlm2_intr_port_list_tail = tlm_intr_port_list = pstorage;
+       tlm2_intr_port_list_tail = tlm2_intr_port_list = pstorage;
      }
 
   }
