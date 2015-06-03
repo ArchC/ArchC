@@ -69,7 +69,7 @@ ac_tlm2_intr_port::ac_tlm2_intr_port(char const* nm, ac_intr_handler& hnd) :
  */
 
 
-//ac_tlm_rsp ac_tlm_intr_port::transport(const ac_tlm_req& req) {
+
 
 void ac_tlm2_intr_port::b_transport(ac_tlm2_payload &payload, sc_core::sc_time &time_info)
 {
@@ -77,6 +77,7 @@ void ac_tlm2_intr_port::b_transport(ac_tlm2_payload &payload, sc_core::sc_time &
   tlm_command command = payload.get_command();
 
   unsigned char *p = payload.get_data_ptr();
+  uint64_t addr = payload.get_address();
 
   uint32_t *T = reinterpret_cast<uint32_t*>(p);
   uint32_t data_p= T[0];
@@ -84,15 +85,13 @@ void ac_tlm2_intr_port::b_transport(ac_tlm2_payload &payload, sc_core::sc_time &
   switch( command )
   {
     case TLM_WRITE_COMMAND:    
-      handler.handle(data_p);       
+      handler.handle(data_p,addr);       
       payload.set_response_status(tlm::TLM_OK_RESPONSE);
       break;
     
     default : 
       break; 
     }
-
-
 }
 
 //////////////////////////////////////////////////////////////////////////////

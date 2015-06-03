@@ -41,6 +41,7 @@
 #include "ac_tlm2_nb_port.H"
 #include "ac_tlm2_payload.H"
 
+#define DIR_ADDRESS      0x22000000
 
 // If you want to debug TLM 2.0, please uncomment the next line
 
@@ -69,12 +70,9 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
 	#endif
  	
 	unsigned char* data_pointer = payload.get_data_ptr();		 
-	
-
 	payload_global->set_data_ptr(data_pointer);
-
 	payload_global->deep_copy_from(payload);
-    payload_global->free_all_extensions();	
+  //payload_global->free_all_extensions();	
 
 	#ifdef debugTLM2
   printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),(uint32_t) payload.get_address());        
@@ -118,7 +116,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	
   	/**/
   	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
-    payload_global->set_streaming_width((const unsigned int)procId);
+  payload_global->set_streaming_width((const unsigned int)procId);
     /**/
 
 	if (wordsize % 8) {
@@ -253,7 +251,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address,
                          int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
-  payload_global = new ac_tlm2_payload();
+  //payload_global = new ac_tlm2_payload();
 
   tlm::tlm_phase phase = tlm::BEGIN_REQ;
   tlm::tlm_sync_enum status;
@@ -296,7 +294,156 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address,
 }
 
 
+bool ac_tlm2_nb_port::read_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info)
+{
 
+  payload_global = new ac_tlm2_payload();
+  payloadExt = new tlm_payload_dir_extension();
+  
+
+  tlm::tlm_sync_enum status;
+  tlm::tlm_phase phase = tlm::BEGIN_REQ;
+
+  int rule=1;
+  payloadExt->setNumberCache(nCache);
+  payloadExt->setAddress(address);
+  payloadExt->setCacheIndex(cacheIndex);
+  payloadExt->setRule(rule);
+
+
+  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+  payload_global->set_command(tlm::TLM_READ_COMMAND);
+  
+  payload_global->set_data_length(sizeof(uint32_t));
+  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
+  payload_global->set_extension(0,payloadExt);
+
+  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+  if(status != tlm::TLM_UPDATED)
+  {
+      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+      exit(0);
+  }
+
+  wait(this->wake_up);
+
+  delete payload_global;
+
+  return true;
+
+}
+
+
+bool ac_tlm2_nb_port::write_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info)
+{
+
+  payload_global = new ac_tlm2_payload();
+  payloadExt = new tlm_payload_dir_extension();
+  int rule=2;
+
+  tlm::tlm_sync_enum status;
+  tlm::tlm_phase phase = tlm::BEGIN_REQ;
+
+  payloadExt->setNumberCache(nCache);
+  payloadExt->setAddress(address);
+  payloadExt->setCacheIndex(cacheIndex);
+  payloadExt->setRule(rule);
+  
+  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+  payload_global->set_command(tlm::TLM_READ_COMMAND);
+  
+  payload_global->set_data_length(sizeof(uint32_t));
+  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
+  payload_global->set_extension(0,payloadExt);
+
+  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+  if(status != tlm::TLM_UPDATED)
+  {
+      printf("\nAC_TLM0_NB_PORT  WRITE ERROR");
+      exit(0);
+  }
+
+  wait(this->wake_up);
+
+ // delete payload_global;
+  
+  return true;
+}
+
+
+void ac_tlm2_nb_port::start_dir(int nWay, int index_size, sc_core::sc_time& time_info)
+{
+
+  payload_global = new ac_tlm2_payload();
+  payloadExt = new tlm_payload_dir_extension();
+
+  tlm::tlm_sync_enum status;
+  tlm::tlm_phase phase = tlm::BEGIN_REQ;
+
+
+  int rule=0;
+  payloadExt->setNWay(nWay);
+  payloadExt->setIndex_size(index_size);
+  payloadExt->setRule(rule);
+  
+  
+  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+  payload_global->set_command(tlm::TLM_READ_COMMAND);
+  
+  payload_global->set_data_length(sizeof(uint32_t));
+  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
+  payload_global->set_extension(0,payloadExt);
+
+  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+  if(status != tlm::TLM_UPDATED)
+  {
+      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+      exit(0);
+  }
+
+  wait(this->wake_up);
+
+  delete payload_global;
+  
+}
+bool ac_tlm2_nb_port::check_dir(uint32_t address,  int nCache, int cacheIndex, sc_core::sc_time& time_info)
+{
+  payload_global = new ac_tlm2_payload();
+  payloadExt = new tlm_payload_dir_extension();
+  tlm::tlm_sync_enum status;
+  tlm::tlm_phase phase = tlm::BEGIN_REQ;
+
+  int rule=3;
+
+  payloadExt->setNumberCache(nCache);
+  payloadExt->setAddress(address);
+  payloadExt->setRule(rule);
+  payloadExt->setCacheIndex(cacheIndex);
+  
+ 
+  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+  payload_global->set_command(tlm::TLM_READ_COMMAND);
+ 
+  payload_global->set_data_length(sizeof(uint32_t));
+  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
+  payload_global->set_extension(0,payloadExt);
+
+  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
+  if(status != tlm::TLM_UPDATED)
+  {
+      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+      exit(0);
+  }
+
+  wait(this->wake_up);
+
+  bool r = payloadExt->getValidation();  
+
+  delete payload_global;
+
+  return r;
+
+}
 
 string ac_tlm2_nb_port::get_name() const {
   return name;

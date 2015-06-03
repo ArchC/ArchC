@@ -15,6 +15,8 @@
 #define CACHE_MAX_POWER_STATS_NAME_SIZE 30
 #define CACHE_MAX_POWER_STATS_DESCR_SIZE 140
 
+#define CACHE_POWER_TABLE_FILE "/home/liana/repository/development/MPSoCBench/processors/table_cache_8k_2w_45nm.csv"
+
 enum cache_type_line_t {
   CTL_NUM_PROFILE,
   CTL_PROFILE,
@@ -51,7 +53,8 @@ class cache_power_stats {
 			double window_power;
 			long long window_count;
 			unsigned int window_size;
-		  double execution_time;
+		    double execution_time;
+		    sc_core::sc_time system_time;
 #endif
 
 			long long total_num_access; 
@@ -72,21 +75,22 @@ class cache_power_stats {
 		#ifdef DEBUG 
 		FILE* debug_file;
 		int contador_debug;
-		#endif
+	#endif
 
     string cache_name;
     string generate_cache_name(const int id) {
-      //to_string() needs -std=c++11 to compile
-      cache_name = string("Proc") + to_string(id) + " cache";
-      return cache_name;
+    //to_string() needs -std=c++11 to compile
+    cache_name = string("Proc") + to_string(id) + " cache";
+    return cache_name;
     }
     
 
 	public:
 		psc_cell_power_info psc_info;
+		FILE *inFile;
 
 		// Constructor
-    cache_power_stats(const int proc_id):
+    cache_power_stats(const int proc_id,  char *powerFileName=0):
     psc_info(generate_cache_name(proc_id), "Cache") 
     {
       PSC_NUM_FIRST_SAMPLES(0x7FFFFFFF);
@@ -105,6 +109,7 @@ class cache_power_stats {
 			dyn.window_power = 0;
 			dyn.window_count = 0;
 			dyn.execution_time = 0;
+			dyn.system_time = sc_time(0,SC_NS);
 
 			char filename[512];
 			strcpy(filename, CACHE_WINDOW_REPORT_FILE);
@@ -216,6 +221,7 @@ class cache_power_stats {
 
     void incr_execution_time(int num_access, int p)
     {
+    	  dyn.system_time = sc_time_stamp ();
 		  dyn.execution_time += num_access / (psc_data.p[dyn.actual_profile].freq * psc_data.p[dyn.actual_profile].freq_scale);
     }
 
@@ -241,7 +247,7 @@ class cache_power_stats {
 			dyn.total_power = dyn.total_energy / dyn.total_num_access;
 
 			#ifdef DEBUG
-			fprintf(debug_file,"\n\nCalculating total power = %f:", dyn.total_power);			
+			fprintf(debug_file,"\n\nCalculating total power = %.10lf:", dyn.total_power);			
 			#endif
 		}
 
