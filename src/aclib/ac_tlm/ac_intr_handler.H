@@ -66,7 +66,7 @@ public:
    * @param value Value received by the port, passed to the method.
    *
    */
-  virtual void handle(uint32_t value) = 0;
+  virtual void handle(uint32_t value, uint64_t addr=0) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////
