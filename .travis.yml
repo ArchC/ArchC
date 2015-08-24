@@ -1,0 +1,89 @@
+language: cpp
+sudo: false
+
+compiler:
+  - clang
+  - gcc
+
+addons:
+  apt:
+    sources:
+    - llvm-toolchain-precise
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-5
+    - g++-5
+    - clang-3.7
+    - llvm-3.7
+
+env:
+  global:
+    - GCC_VERSION=5
+    - LLVM_VERSION=3.7
+    - CFLAGS="-O3 -Wall -Wextra"
+    - CPPFLAGS="-O3 -Wall -Wextra"
+    - CXXFLAGS="-O3 -Wall -Wextra"
+    - PREFIX="/tmp/usr"
+
+os:
+  - linux
+
+notifications:
+  email: false
+  irc: 
+    channels:
+      - "chat.freenode.net#ArchC"
+    on_success: change
+    on_failure: always
+    on_start: false
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/ce13c79f5cdcf0e6788e
+    on_success: change
+    on_failure: always
+    on_start: false
+
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - uname -a
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then lsb_release -a ; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CC=/usr/bin/gcc-${GCC_VERSION} ; export CXX=/usr/bin/g++-${GCC_VERSION}; $CXX --version ; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then export PATH=/usr/lib/llvm-${LLVM_VERSION}/bin/:$PATH ; clang++ --version ; fi
+  - export PATH="${PREFIX}/bin:${PATH}"
+  - export LD_LIBRARY_PATH="${PREFIX}/lib:${LD_LIBRARY_PATH}"
+  - export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+  - git clone --depth 1 https://github.com/ArchC/SystemC.git /tmp/SystemC
+  - pushd /tmp/SystemC ; autoreconf -vif ; ./configure --prefix=${PREFIX} ; make install -j3 ; popd
+
+install:
+  - autoreconf -vif
+  - ./configure --prefix=$PREFIX --disable-hlt
+  - make -j3
+
+before_script:
+
+
+script:
+  - make check
+  - make install
+  - pkg-config archc
+
+after_success:
+
+
+after_failure:
+
+
+after_script:
+
+
+before_deployment:
+
+
+deployment:
+
+
+after_deployment:
+
+

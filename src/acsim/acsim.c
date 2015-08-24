@@ -3001,7 +3001,7 @@ void CreateIntrTLM2Tmpl() {
   //Declaring formatted register behavior methods.
   for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
     fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", pport->name);
-    fprintf(output, "void ac_behavior(%s, value) {\n}\n\n", pport->name);
+    fprintf(output, "void ac_behavior(%s, value, addr) {\n}\n\n", pport->name);
   }
 
   //END OF FILE.
@@ -3044,7 +3044,7 @@ void CreateIntrTmpl() {
   for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
     fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", 
             pport->name);
-    fprintf(output, "void ac_behavior(%s, value) {\n}\n\n", pport->name);
+    fprintf(output, "void ac_behavior(%s, value, addr) {\n}\n\n", pport->name);
   }
 
   //END OF FILE.
@@ -3052,46 +3052,6 @@ void CreateIntrTmpl() {
 }
 
 
-///Creates the .cpp template file for interrupt handlers.
-void CreateIntr2Tmpl() {
-  extern ac_sto_list *tlm2_intr_port_list;
-
-  extern char* project_name;
-
-  ac_sto_list *pport;
-
-  FILE *output;
-  char filename[256];
-  char description[] = "Interrupt Handlers implementation file.";
-
-  sprintf(filename, "%s_intr_handlers.cpp.tmpl", project_name);
-
-  if (!(output = fopen( filename, "w"))) {
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, description);
-
-  fprintf(output, "#include \"ac_intr_handler.H\"\n");
-  fprintf(output, "#include \"%s_intr_handlers.H\"\n\n", project_name);
-  fprintf(output, "#include \"%s_ih_bhv_macros.H\"\n\n", project_name);
-
-  COMMENT(INDENT[0], 
-          "'using namespace' statement to allow access to all %s-specific datatypes", 
-          project_name);
-  fprintf( output, "using namespace %s_parms;\n\n", project_name);
-
-  //Declaring formatted register behavior methods.
-  for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
-    fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", 
-            pport->name);
-    fprintf(output, "void ac_behavior(%s, value) {\n}\n\n", pport->name);
-  }
-
-  //END OF FILE.
-  fclose(output);
-}
 
 
 
@@ -3194,7 +3154,7 @@ void CreateIntrTLM2Header() {
     fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref,sc_event *event) : %s_arch_ref(ref) { wake = event; }\n\n",
       INDENT[1], project_name, pport->name, project_name, project_name);
 
-    fprintf(output, "%svoid handle(uint32_t value);\n\n", INDENT[1]);
+    fprintf(output, "%svoid handle(uint32_t value, uint64_t addr);\n\n", INDENT[1]);
     fprintf(output, "%ssc_event *wake;\n", INDENT[1]);
     fprintf(output, "};\n\n\n");
   }
@@ -3247,7 +3207,7 @@ void CreateIntrHeader() {
     fprintf(output, 
             "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",
             INDENT[1], project_name, pport->name, project_name, project_name);
-    fprintf(output, "%svoid handle(uint32_t value);\n\n", INDENT[1]);
+    fprintf(output, "%svoid handle(uint32_t value, uint64_t addr);\n\n", INDENT[1]);
     fprintf(output, "};\n\n\n");
   }
 
@@ -3281,7 +3241,7 @@ void CreateIntrTLM2MacrosHeader() {
   fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", upper_project_name);
 
   /* ac_behavior main macro */
-  fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
+  fprintf(output, "#define ac_behavior(intrp, value, addr) %s_##intrp##_handler::handle(uint32_t value, uint64_t addr)\n\n",
           project_name);
 
   fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", upper_project_name);
@@ -3317,7 +3277,7 @@ void CreateIntrMacrosHeader() {
   fprintf(output, "#define _%s_IH_BHV_MACROS_H\n\n\n", upper_project_name);
 
   /* ac_behavior main macro */
-  fprintf(output, "#define ac_behavior(intrp, value) %s_##intrp##_handler::handle(uint32_t value)\n\n",
+  fprintf(output, "#define ac_behavior(intrp, value, addr) %s_##intrp##_handler::handle(uint32_t value, uint64_t addr)\n\n",
           project_name);
 
   fprintf(output, "#endif // _%s_IH_BHV_MACROS_H\n", upper_project_name);

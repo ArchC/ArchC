@@ -4,7 +4,7 @@
 #include "ac_cache_bhv.H"
 #include "ac_cache_trace.H"
 
-
+#define MEM_SIZE_ 0x20000000
 
 struct write_back_state {
 	bool valid;
@@ -70,6 +70,18 @@ class ac_write_back_cache {
 	ac_cache_trace *cache_trace;
 	bool trace_active;
 
+	int idCache;
+	
+ 	void setId (int id)
+    {
+   		idCache = id;
+    }
+	int getId ()
+    {
+   		return idCache;
+    }
+
+
 	address byte_to_word(address a) {
 		return a/sizeof(cpu_word);
 	}
@@ -77,12 +89,13 @@ class ac_write_back_cache {
 		return a*sizeof(cpu_word);
 	}
 	
-	ac_write_back_cache(const ac_write_back_cache &);
+	ac_write_back_cache(const ac_write_back_cache &, const int proc_id=-1);
 	
 	public:
 	ac_write_back_cache(backing_store &memory_, const int proc_id=-1) : memory(memory_), trace_active(false),
   cache(proc_id) {
 
+  		setId(proc_id);
 		memory.setBlockSize (block_size);
 	}
 	
@@ -102,6 +115,14 @@ class ac_write_back_cache {
 		//printf("\nAC_CACHE WB::read -> address=%x  length=%d", a, length);
 
 		address b = byte_to_word(a);
+
+		if(a >= MEM_SIZE_){
+			a = a/block_size*block_size;
+			const cpu_word *d = memory.read_block(a, sizeof(cpu_word));
+			return d;
+		}
+
+
 		if (!cache.get_block_for_read(b)) {
 			cache.get_available_block();
 			if (cache.block_status().is_dirty()) {
@@ -127,6 +148,13 @@ class ac_write_back_cache {
 
 
 		address b = byte_to_word(a);
+
+		if(a >= MEM_SIZE_){
+			a = a/block_size*block_size;
+			memory.write_block(a, d, sizeof(cpu_word));
+			return;	
+		}
+
 		if (!cache.get_block_for_write(b)) {
 			cache.get_available_block();
 			if (cache.block_status().is_dirty()) {
@@ -165,9 +193,9 @@ class ac_write_back_cache {
 		cache.print_statistic(out);
 	}
 
-  void powersc_connect() {
-    cache.ps.powersc_connect();
-  }
+  	void powersc_connect() {
+   		cache.ps.powersc_connect();
+  	}
 };
 
 template <
@@ -185,6 +213,17 @@ class ac_write_through_cache {
 	backing_store &memory;
 	ac_cache_trace *cache_trace;
 	bool trace_active;
+
+	int idCache;
+	void setId (int id)
+    {
+   		idCache = id;
+    }
+	int getId ()
+    {
+   		return idCache;
+    }
+
 	address byte_to_word(address a) {
 		return a/sizeof(cpu_word);
 	}
@@ -192,12 +231,13 @@ class ac_write_through_cache {
 		return a*sizeof(cpu_word);
 	}
 	
-	ac_write_through_cache(const ac_write_through_cache &);
+	ac_write_through_cache(const ac_write_through_cache &, const int proc_id=-1);
 	
 	public:
 	ac_write_through_cache(backing_store &memory_, const int proc_id=-1) : memory(memory_), trace_active(false),
   cache(proc_id) {
 
+		setId(proc_id);
 		memory.setBlockSize (block_size);
 
 	}
@@ -213,19 +253,36 @@ class ac_write_through_cache {
 	
 	const cpu_word *read(address a, unsigned length) {
 
-		    //printf("\nAC_CACHE WT::read -> address=%x  length=%d", a, length);
+		   //printf("\nAC_CACHE WT::read -> address=%x  length=%d", a, length);
 		
-
-
 			address b = byte_to_word(a);
-			if (!cache.get_block_for_read(b)) {
-				cache.get_available_block();
-				a = a/block_size*block_size;
+
+			a = a/block_size*block_size;
+			if(a >= MEM_SIZE_){
+
+				const cpu_word *d = memory.read_block(a, length);
+				return d;
+			}
+			
+			int cacheIndex=0;
+			bool cacheAnswer = !cache.get_block_for_read(b, &cacheIndex);
+			bool cdir = !(memory.check_dir((uint32_t) a, getId(), cacheIndex));
+
+			if ( cacheAnswer || cdir) {
+				if(cacheAnswer)
+					cache.memory_read_hit();
+				cacheIndex = cache.get_available_block();
+				memory.read_dir((uint32_t) a, cacheIndex, getId());
 				const cpu_word *d = memory.read_block(a, block_size);
 				cache.write_block(d);
 				cache.block_status().set_valid();
 			}
+
 			if (trace_active) cache_trace->add(trace_read, word_to_byte(b), length);
+
+			const cpu_word *d = memory.read_block(a, block_size);
+			const cpu_word *cached = cache.read_block();
+
 			return cache.read_block_single();
 		}
 
@@ -234,20 +291,39 @@ class ac_write_through_cache {
 			//printf("\nAC_CACHE WT::write -> address=%x  length=%d", a, length);
    		    address b = byte_to_word(a);
 
-			if (!cache.get_block_for_write(b)) {
-				cache.get_available_block();
+			if(a >= MEM_SIZE_){
+
 				a = a/block_size*block_size;
+				memory.write_block(a, d, length);
+				return;	
+			}
+			a = a/block_size*block_size;
+			int cacheIndex=0;
+			int cacheBlock=0;
+
+			bool cacheAnswer = !cache.get_block_for_write(b, &cacheIndex, &cacheBlock);
+			bool cdir2 = !(memory.check_dir((uint32_t) a, getId(), cacheIndex));
+						
+			if ( cacheAnswer || cdir2) {
+				if(cacheAnswer)
+					cache.memory_write_hit();
+				cacheIndex = cache.get_available_block();
+				memory.read_dir((uint32_t) a, cacheIndex, getId());
 				const cpu_word *tmp_d = memory.read_block(a, block_size);
 				cache.write_block(tmp_d);
 				cache.block_status().set_valid();
 			}
 			if (trace_active) cache_trace->add(trace_write, word_to_byte(b), length);
+
+			const cpu_word *dd = memory.read_block(a, block_size);
+			const cpu_word *cached = cache.read_block();
+			if(*cached != *dd)
+				cout << "INCORRETO write" <<endl;
+
 			cache.write_block_single(d, length);
             memory.write_block(word_to_byte(cache.block_address()), cache.read_block(),block_size);
+            memory.write_dir((uint32_t) a, cacheBlock, getId());
 	}
-
-
-
 	
 	void get_statistics(cache_statistics *statistics) {
 		statistics->read_hit = cache.number_read_hit();
@@ -269,9 +345,9 @@ class ac_write_through_cache {
 		cache.print_statistic(out);
 	}
   
-  void powersc_connect() {
-    cache.ps.powersc_connect();
-  }
+ 	void powersc_connect() {
+   		cache.ps.powersc_connect();
+  	}
 };
 
 #endif /* _AC_CACHE_H_INCLUDED_ */

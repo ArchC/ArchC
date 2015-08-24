@@ -98,6 +98,15 @@ public:
   virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words) = 0;
   virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId=0) = 0;
 
+  ///* 
+  virtual bool read_dir (uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info);
+  virtual bool write_dir (uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info);
+  virtual void start_dir(int nWay, int index_size, sc_core::sc_time& time_info);
+  virtual bool check_dir(uint32_t address, int nCache, int cacheIndex, sc_core::sc_time& time_info);
+  //*/
+
+
+
   virtual std::string get_name() const = 0;
 
   virtual uint32_t get_size() const = 0;

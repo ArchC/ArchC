@@ -286,8 +286,8 @@ public:
    * you can use the remaining block operations to find out the state of
    * the block (if it should be evicted) and also issue read/write operations.
    */
-  void get_available_block(void);
-
+  //void get_available_block(void);
+  int get_available_block(void);
   /**
    * Write cache block (single version).
    * 
@@ -403,6 +403,16 @@ public:
   { return m_current_block; }
 
   // same as get_block(), but counts read miss/hit
+  inline void memory_read_hit()
+  {
+    m_read_hit--;
+  }
+  inline void memory_write_hit()
+  {
+    m_write_hit--;
+  }
+
+  // same as get_block(), but counts read miss/hit
   inline bool get_block_for_read(ADDRESS addr)
   {
     if (get_block(addr))
@@ -411,6 +421,20 @@ public:
       m_read_miss++;
       return false;
     }
+    return true;
+  }
+
+
+  bool get_block_for_read(ADDRESS addr, int *cIndex)
+  {
+    if (get_block(addr))
+      m_read_hit++;
+    else {
+      m_read_miss++;
+      *cIndex = cacheChecking;
+      return false;
+    }
+    *cIndex= cacheChecking;
     return true;
   }
 
@@ -423,6 +447,21 @@ public:
       m_write_miss++;
       return false;
     }
+    return true;
+  }
+
+  bool get_block_for_write(ADDRESS addr, int *cIndex, int *cBlock)
+  {
+    if (get_block(addr))
+      m_write_hit++;
+    else {
+      m_write_miss++;
+      *cIndex = cacheChecking;
+      *cBlock = cacheBlock;
+      return false;
+    }
+    *cIndex = cacheChecking;
+    *cBlock = cacheBlock;
     return true;
   }
 
@@ -485,6 +524,8 @@ private:
   cache_status_t m_cache_status[associativity*index_size]; /**< Pointer to the whole status data. */
   cache_block_t m_blocks[associativity*index_size];        /**< Pointer that organizes all the pointers above. */
 
+
+  int cacheIndex, cacheBlock, cacheChecking;
   // size of the address fields (in bits)
   unsigned int m_tag_size;
   unsigned int m_index_bits;
@@ -654,14 +695,16 @@ bool cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS,
 _internal_get_block(ADDRESS addr, split_address_t &sa, cache_block_t &cb)
 {
   split_address(addr, sa);
-
+  cacheBlock = sa.index;
   for (unsigned int i=0; i<associativity; i++) {
     if ( (! m_blocks[sa.index+i].status->is_invalid()) &&
          (block_tag(m_blocks[sa.index+i]) == sa.tag) ) {
       cb = m_blocks[sa.index+i];
+      cacheChecking = sa.index+i;
       return true;
     }
   }
+  cacheChecking = 0;
   return false;
 }
 
@@ -676,7 +719,7 @@ typename ADDRESS,
 typename cache_status_t,
 typename replacement_policy
 > 
-void cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS,
+int cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS,
                cache_status_t, replacement_policy>::
 get_available_block(void)
 {
@@ -691,22 +734,27 @@ get_available_block(void)
     for (unsigned int i=0; i<associativity; i++) {
       if ( m_blocks[m_current_sa.index+i].status->is_invalid() ) {
         m_current_block = m_blocks[m_current_sa.index+i];
-        return;
+        cacheIndex = m_current_sa.index+i;
+        return cacheIndex;
+
       }
     }
 
   // no INVALID block was found... choose line to evict
     unsigned int block_index = 
     m_rep_pol.block_to_replace(m_current_sa.index/associativity);
-
     m_current_block = m_blocks[m_current_sa.index+block_index];
+    cacheIndex = m_current_sa.index+block_index;
 
   }
   else { // direct-mapped caches
     m_current_block = m_blocks[m_current_sa.index];
+    cacheIndex = m_current_sa.index;
+    
   }
 
   m_evictions++;
+  return cacheIndex;
 }
 
 

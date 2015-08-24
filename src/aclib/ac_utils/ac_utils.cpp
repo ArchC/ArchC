@@ -95,7 +95,7 @@ void ac_init_opts( int ac, char* av[]){
     }
 }
 
-char* appfilename = '\0';
+char* appfilename = NULL;
 //Initialize arguments for application
 args_t ac_init_args( int ac, char* av[]){
 

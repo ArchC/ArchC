@@ -154,8 +154,6 @@ public:
   {
       // cacheBlockSize is the number of units of data in a cache block
       this->bytesPerBlock = (cacheBlockSize * sizeof(ac_word));
-      
-    
       this->initializeBuffer();
   }
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -180,8 +178,6 @@ public:
      		return a/sizeof(ac_word);
      	}
 
- 
-
 ///Reads a word
   inline ac_word read(uint32_t address) {
 	//printf("\n\nAC_MEMPORT::read-> address=%x", address);
@@ -198,7 +194,6 @@ public:
 
   ///Reads a byte
   inline uint8_t read_byte(uint32_t address) {
-
     //printf("\n\nAC_MEMPORT::read_byte->address=%x", address);
     sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
     storage->read(&aux_byte, address, 8,time,this->procId);
@@ -224,20 +219,37 @@ public:
   
 
   const ac_word *read_block(uint32_t address, unsigned l) {
-	  //printf("AC_MEMPORT::read_block-> address=%x length=%u bytes\n", address, l);
-	  sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+	 
+	    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+	    ac_word *p = (ac_word*) buf.ptr8;
 
-	  ac_word *p = (ac_word*) buf.ptr8;
-
-          if (l % sizeof(ac_word))
-          { 
-            printf("Memory size not wordsize aligned\n");
-            exit(1);
-          }
+      if (l % sizeof(ac_word))
+      { 
+        printf("Memory size not wordsize aligned\n");
+        exit(1);
+      }
           
-          storage->read(p, address, sizeof(ac_word) * 8, l / sizeof(ac_word), time,this->procId);
-          setTimeInfo (time);
-      	  return p;
+      storage->read(p, address, sizeof(ac_word) * 8, l/sizeof(ac_word), time,this->procId);
+      setTimeInfo (time);
+      return p;
+      
+    
+     /* sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+
+      ac_word *p = (ac_word*) buf.ptr8;
+
+      l = byte_to_word(l);
+
+      for (unsigned i=0; i<l; i++)
+      {
+        storage->read(&(p[i]), address+i*sizeof(ac_word), sizeof(ac_word) * 8,time,this->procId);
+        setTimeInfo (time);
+      }
+      
+
+      return p;      
+
+      */
   }
 
 
@@ -293,10 +305,67 @@ public:
           printf("Memory size not wordsize aligned\n"); 
           exit(1);
         }
-        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time,this->procId); //TODO Remove cast
+        
+        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length/sizeof(ac_word), time,this->procId); //TODO Remove cast
+        //storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time,this->procId); //TODO Remove cast
         setTimeInfo (time);
+        
 
+        /*sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+
+        unsigned l = byte_to_word(length);
+
+        for (unsigned i=0; i<l; i++)
+        {
+          aux_word = d[i];
+          storage->write(&aux_word, address+i*sizeof(ac_word), sizeof(ac_word) * 8,time,this->procId);
+          setTimeInfo (time);
+        }*/
+
+// read:  storage->read  (p,             address, sizeof(ac_word) * 8, l/sizeof(ac_word), time,this->procId);
+// write: storage->write ((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time,this->procId); //TODO Remove cast
     }
+
+
+    bool read_dir(uint32_t address, int cacheIndex, int nCache)
+    {
+      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      bool r=false;
+      r = storage->read_dir(address, cacheIndex, nCache, time);
+      setTimeInfo (time);
+      return r;
+   }
+
+    bool write_dir(uint32_t address, int cacheIndex, int nCache)
+    {
+      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      bool r=false;
+
+      
+      r = storage->write_dir(address, cacheIndex, nCache, time);
+      setTimeInfo (time);
+      return r;
+    }
+  
+    void start_dir(int nWay, int index_size)
+    {
+      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      storage->start_dir(nWay, index_size, time);
+      setTimeInfo (time);
+    }
+  
+    bool check_dir(uint32_t address, int nCache, int cacheIndex)
+    {
+      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      bool r=false;
+      r = storage->check_dir(address, nCache, cacheIndex, time);
+
+      setTimeInfo (time);
+      return r;
+    }
+
+
+
 
 #ifdef AC_DELAY
   //!Writing a word
