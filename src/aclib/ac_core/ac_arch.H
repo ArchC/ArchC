@@ -176,6 +176,32 @@ public:
     }
   }
 
+  void FilePrintStat(FILE* output) {
+    clock_t ac_run_real;
+
+    //Print statistics
+    fprintf(output, "ArchC: Simulation statistics\n");
+
+    ac_run_real = times(&ac_run_times) - ac_run_start_time;
+    fprintf(output, "    Times: %ld.%02ld user, %ld.%02ld system, %ld.%02ld real\n",
+            ac_run_times.tms_utime / 100, ac_run_times.tms_utime % 100,
+            ac_run_times.tms_stime / 100, ac_run_times.tms_stime % 100,
+            ac_run_real / 100, ac_run_real % 100
+           );
+
+    fprintf(output, "    Number of instructions executed: %llu\n", ac_instr_counter);
+
+    if (ac_run_times.tms_utime > 5) {
+      double ac_mips = (ac_instr_counter * 100) / ac_run_times.tms_utime;
+      fprintf(output, "    Simulation speed: %.2f K instr/s\n", ac_mips/1000);
+    }
+    else {
+      fprintf(output, "    Simulation speed: (too fast to be precise)\n");
+    }
+  }
+
+
+
   virtual void init() = 0;
 
   virtual void init(int ac, char *av[]) = 0;

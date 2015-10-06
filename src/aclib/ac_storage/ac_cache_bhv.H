@@ -145,18 +145,18 @@ namespace whitebox { class cache_bhv_test; }
 //enum replacement_policy_t {random_policy=0, fifo_policy=1, plrum_policy=2};
 
 
-
+#define OUTPUT_IN_FILE
 /*
  * Forward declarations.
  */
 template <
-	unsigned index_size,
-	unsigned block_size,
-	unsigned associativity,
-	typename cpu_word,
-	typename ADDRESS,
-	typename cache_status_t,
-	typename replacement_policy
+  unsigned index_size,
+  unsigned block_size,
+  unsigned associativity,
+  typename cpu_word,
+  typename ADDRESS,
+  typename cache_status_t,
+  typename replacement_policy
 > 
 class cache_bhv;
 
@@ -170,8 +170,8 @@ typename cache_status_t,
 typename replacement_policy
 > 
 ostream &operator << (ostream &fsout, 
-					  const cache_bhv<index_size, block_size, associativity, cpu_word,
-					  ADDRESS, cache_status_t, replacement_policy> &cache); 
+            const cache_bhv<index_size, block_size, associativity, cpu_word,
+            ADDRESS, cache_status_t, replacement_policy> &cache); 
 
 
 /**
@@ -179,13 +179,13 @@ ostream &operator << (ostream &fsout,
  *
  */
 template <
-	unsigned index_size,
-	unsigned block_size,
-	unsigned associativity,
-	typename cpu_word,
-	typename ADDRESS,
-	typename cache_status_t,
-	typename replacement_policy
+  unsigned index_size,
+  unsigned block_size,
+  unsigned associativity,
+  typename cpu_word,
+  typename ADDRESS,
+  typename cache_status_t,
+  typename replacement_policy
 > 
 class cache_bhv 
 {
@@ -208,7 +208,7 @@ public:
    */
 /*  cache_bhv(unsigned int nb, unsigned int bs, unsigned int assoc = 1, 
             replacement_policy_t rp = random_policy); */
-	cache_bhv(const int proc_id=-1);
+  cache_bhv(const int proc_id=-1);
 
   virtual void print_statistic(ostream &fsout) const;
 
@@ -237,8 +237,8 @@ protected:
   // replacement policy object pointer
   //cache_replacement_policy *m_rep_pol;
 
-	replacement_policy m_rep_pol;
-	
+  replacement_policy m_rep_pol;
+  
   /** Cache block structure. 
    *
    * Each block is made up of a status field, a tag and the data.
@@ -250,7 +250,7 @@ protected:
     cpu_word       *data;
     unsigned int   index; /* not really needed, but helps in retrieving the 
                              address assigned to a random cache block */
-						  // Note: this index is multiplied by associativity
+              // Note: this index is multiplied by associativity
   };
 
 
@@ -406,13 +406,36 @@ public:
   inline void memory_read_hit()
   {
     m_read_hit--;
+    m_read_miss++;
   }
   inline void memory_write_hit()
   {
     m_write_hit--;
+    m_write_miss++;
   }
 
   // same as get_block(), but counts read miss/hit
+
+  void invalidate(ADDRESS addr)
+  {
+
+    split_address_t sa;
+    split_address(addr, sa);
+    for (unsigned int i=0; i<associativity; i++) {
+      if ( (! m_blocks[sa.index+i].status->is_invalid()) &&
+           (block_tag(m_blocks[sa.index+i]) == sa.tag) ) {
+        m_blocks[sa.index+i].status->set_invalid();
+        return;
+      }
+    return;
+    }
+  }
+  ADDRESS get_tag(ADDRESS addr)
+  {
+    split_address_t sa;
+    split_address(addr, sa);
+    return sa.tag;
+  }
   inline bool get_block_for_read(ADDRESS addr)
   {
     if (get_block(addr))
@@ -568,14 +591,33 @@ void cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS,
                cache_status_t, replacement_policy>::
 print_statistic(ostream &fsout) const
 {
+
+
   unsigned long long int total_read = number_read_miss()+number_read_hit();
   unsigned long long int total_write = number_write_miss()+number_write_hit();
 
   if (total_read == 0) total_read = 1;
   if (total_write == 0) total_write = 1;
 
-  fsout << "Cache statistics:" << endl;
 
+  #ifdef OUTPUT_IN_FILE
+  FILE* output_temp;
+  output_temp = fopen ("cache_output.txt", "a");
+
+  fprintf(output_temp, "\nCache statistics:\n");
+
+  fprintf(output_temp,  "Read miss:  %f ", (number_read_miss()/(float)total_read)*100 );
+
+  fprintf(output_temp,"Read hit:   %f ", (number_read_hit()/(float)total_read)*100 );
+
+  fprintf(output_temp,"Write miss:  %f ", (number_write_miss()/(float)total_write)*100 );
+  fprintf(output_temp,"Write hit:   %f ", (number_write_hit()/(float)total_write)*100 );
+
+  fprintf(output_temp,"Number of block evictions: %lld", number_block_eviction() );
+  fclose(output_temp);
+  #endif
+
+  fsout << "Cache statistics:" << endl;
   fsout << "Read:   miss: " << number_read_miss() << " (" \
           << ((number_read_miss()/(float)total_read))*100 << "%) hit: " \
           << number_read_hit() << " (" \
@@ -614,9 +656,9 @@ cache_bhv(const int proc_id) :
   m_write_miss(0),
   m_write_hit(0),
   m_evictions(0)
-{	
-	
-	unsigned block_count = index_size*associativity;
+{ 
+  
+  unsigned block_count = index_size*associativity;
 //  m_blocks       = new cache_block_t[block_count];  // allocate memory for the blocks
 
   // make each data pointer from each cache block point to the right 
@@ -954,8 +996,8 @@ typename cache_status_t,
 typename replacement_policy
 > 
 ostream &operator << (ostream &fsout, 
-					  const cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS, 
-					                  cache_status_t, replacement_policy> &cache)
+            const cache_bhv<index_size, block_size, associativity, cpu_word, ADDRESS, 
+                            cache_status_t, replacement_policy> &cache)
 {
   fsout.fill('0');
   fsout << hex;

@@ -50,13 +50,13 @@
 #include "ac_inout_if.H"
 #include "ac_tlm_protocol.H"
 #include "ac_tlm_dev_id.H"
-#include "tlm_payload_dir_extension.h"
+
 
 //////////////////////////////////////////////////////////////////////////////
 
 // using statements
 using std::string;
-using user::tlm_payload_dir_extension;
+
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -74,7 +74,7 @@ class ac_tlm2_port : public sc_port<ac_tlm2_blocking_transport_if>,
 private:
     /// Persistent payload used in read/write transactions
     ac_tlm2_payload* payload;     /* PAYLOAD   */
-    tlm_payload_dir_extension* payloadExt;
+   
 public:
   string name;
   uint32_t size;
@@ -140,18 +140,7 @@ public:
     write(buf, address, wordsize, n_words,time_info);
   }
 
-   ///*
-  virtual bool read_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info);
   
-  virtual bool write_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info);
-  
-  virtual void start_dir(int nWay, int index_size, sc_core::sc_time& time_info);
-  
-  virtual bool check_dir(uint32_t address, int nCache, int cacheIndex, sc_core::sc_time& time_info);
-  //*/
-
-  
-
   virtual string get_name() const;
 
   virtual uint32_t get_size() const;

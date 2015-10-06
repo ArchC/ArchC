@@ -136,6 +136,7 @@ using namespace psc_power_base;
 
 #define PSC_REPORT_POWER \
 	psc_objinfo_base::cells.power_report()
+	//psc_objinfo_base::cells.power_report("pw_out.txt")
 
 #define PSC_REPORT_CELLS_INFO \
 	psc_objinfo_base::cells.print_cells()

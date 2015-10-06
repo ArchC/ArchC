@@ -53,8 +53,7 @@ class cache_power_stats {
 			double window_power;
 			long long window_count;
 			unsigned int window_size;
-		    double execution_time;
-		    sc_core::sc_time system_time;
+      double last_window_time;
 #endif
 
 			long long total_num_access; 
@@ -108,8 +107,7 @@ class cache_power_stats {
 			dyn.window_energy = 0;
 			dyn.window_power = 0;
 			dyn.window_count = 0;
-			dyn.execution_time = 0;
-			dyn.system_time = sc_time(0,SC_NS);
+			dyn.last_window_time = 0;
 
 			char filename[512];
 			strcpy(filename, CACHE_WINDOW_REPORT_FILE);
@@ -205,13 +203,17 @@ class cache_power_stats {
 
 		void calc_window_power()
     {
-			dyn.window_power = dyn.window_energy / dyn.window_num_access;
+      double window_total_time = sc_time_stamp().to_seconds() - dyn.last_window_time;
+      dyn.last_window_time = sc_time_stamp().to_seconds();
+      double window_active_time = dyn.window_num_access / (psc_data.p[dyn.actual_profile].freq_scale * psc_data.p[dyn.actual_profile].freq);
+      dyn.window_power = (dyn.window_energy + (window_total_time - window_active_time) * psc_data.p[dyn.actual_profile].idle_power )/ window_total_time; 
 		}
 
 		void window_power_report()
     {
 			//estimate_execution_time();
-			fprintf(out_window_power_report, "%d,%.10lf,%lld,%.10lf\n", dyn.actual_profile, dyn.execution_time, dyn.window_count, dyn.window_power);
+			fprintf(out_window_power_report, "%d,%.10lf,%lld,%.10lf,%.10lf\n", dyn.actual_profile, dyn.last_window_time,
+      dyn.window_count, dyn.window_power, sc_time_stamp().to_double());
 		}
 #endif
 
@@ -219,17 +221,16 @@ class cache_power_stats {
 			dyn.total_energy += v;
 		}
 
-    void incr_execution_time(int num_access, int p)
-    {
-    	  dyn.system_time = sc_time_stamp ();
-		  dyn.execution_time += num_access / (psc_data.p[dyn.actual_profile].freq * psc_data.p[dyn.actual_profile].freq_scale);
-    }
+    //void incr_execution_time(int num_access, int p)
+    //{
+		//  dyn.execution_time += num_access / (psc_data.p[dyn.actual_profile].freq * psc_data.p[dyn.actual_profile].freq_scale);
+    //}
 
 		void update_stat_power(int command)
     {
   		dyn.total_num_access++;
 			incr_total_energy(get_power_access(command, dyn.actual_profile));
-      incr_execution_time(1, dyn.actual_profile);
+      //incr_execution_time(1, dyn.actual_profile);
 #ifdef CACHE_WINDOW_REPORT
 			dyn.window_num_access++;
 			incr_window_energy(get_power_access(command, dyn.actual_profile));
@@ -244,7 +245,9 @@ class cache_power_stats {
 
 		void calc_total_power()
 		{
-			dyn.total_power = dyn.total_energy / dyn.total_num_access;
+      double total_time = sc_time_stamp().to_seconds();
+      double total_active_time = dyn.total_num_access / (psc_data.p[dyn.actual_profile].freq_scale * psc_data.p[dyn.actual_profile].freq);
+			dyn.total_power = ( dyn.total_energy + (total_time - total_active_time) * psc_data.p[dyn.actual_profile].idle_power ) / total_time;
 
 			#ifdef DEBUG
 			fprintf(debug_file,"\n\nCalculating total power = %.10lf:", dyn.total_power);			

@@ -39,8 +39,6 @@
 #include "ac_tlm2_port.H"
 #include "ac_tlm2_payload.H"
 
-#define DIR_ADDRESS      0x22000000
-
 // If you want to debug TLM 2.0, please uncomment the next line
 //#define debugTLM2
 
@@ -49,7 +47,7 @@
 ac_tlm2_port::ac_tlm2_port(char const* nm, uint32_t sz) : name(nm), size(sz) {
 
  payload = new ac_tlm2_payload();
- payloadExt = new user::tlm_payload_dir_extension();
+ 
  }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -359,76 +357,6 @@ void ac_tlm2_port::write(ac_ptr buf, uint32_t address,
 }
 
 
-bool ac_tlm2_port::read_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info)
-{
-  int rule=1;
-  payloadExt->setNumberCache(nCache);
-  payloadExt->setAddress(address);
-  payloadExt->setCacheIndex(cacheIndex);
-  payloadExt->setRule(rule);
-  payload->set_extension(0,payloadExt);
-  payload->set_command(tlm::TLM_READ_COMMAND);
-  payload->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload->set_data_length(sizeof(uint32_t));
-  
-
-  (*this)->b_transport(*payload, time_info);
-
-  return true;
-}
-bool ac_tlm2_port::write_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info)
-{
-  int rule=2;
-  payloadExt->setNumberCache(nCache);
-  payloadExt->setAddress(address);
-  payloadExt->setCacheIndex(cacheIndex);
-  payloadExt->setRule(rule);
-  payload->set_extension(0,payloadExt);
-  payload->set_command(tlm::TLM_READ_COMMAND);
-  payload->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload->set_data_length(sizeof(uint32_t));
-  
- 
-  (*this)->b_transport(*payload, time_info);
-  
-  return true;
-}
-void ac_tlm2_port::start_dir(int nWay, int index_size, sc_core::sc_time& time_info)
-{
-
-  int rule=0;
-  payloadExt->setNWay(nWay);
-  payloadExt->setIndex_size(index_size);
-  payloadExt->setRule(rule);
-  payload->set_extension(0,payloadExt);
-  payload->set_command(tlm::TLM_READ_COMMAND);
-  payload->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload->set_data_length(sizeof(uint32_t));
-  
-
-  (*this)->b_transport(*payload, time_info);
-
-  
-}
-bool ac_tlm2_port::check_dir(uint32_t address,  int nCache, int cacheIndex, sc_core::sc_time& time_info)
-{
-  int rule=3;
-
-  payloadExt->setNumberCache(nCache);
-  payloadExt->setAddress(address);
-  payloadExt->setRule(rule);
-  payloadExt->setCacheIndex(cacheIndex);
-  payload->set_extension(0,payloadExt);
-  payload->set_command(tlm::TLM_READ_COMMAND);
-  payload->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload->set_data_length(sizeof(uint32_t));
-  
-  (*this)->b_transport(*payload, time_info);
-
-
-  return payloadExt->getValidation();
-
-}
 string ac_tlm2_port::get_name() const {
   return name;
 }

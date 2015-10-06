@@ -239,6 +239,8 @@ struct cache_item {
 //Functions used to calculate the instr/s of the simulation
 void InitStat();
 void PrintStat();
+//void FilePrintStat(FILE*);
+
 
 //Initialize simulation
 void ac_initialize();

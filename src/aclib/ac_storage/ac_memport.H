@@ -36,7 +36,6 @@
 #include "ac_log.H"
 #include "ac_arch_ref.H"
 #include "ac_utils.H"
-
 //////////////////////////////////////////////////////////////////////////////
 
 // 'using' statements
@@ -160,11 +159,11 @@ public:
 
   sc_core::sc_time getTimeInfo()
   {
-	   return time_info;
+     return time_info;
   }
 
   void setTimeInfo(sc_core::sc_time time)
-  {	
+  { 
       time_info = time;
   }
 
@@ -175,18 +174,18 @@ public:
 
 
   uint32_t byte_to_word(uint32_t a) {
-     		return a/sizeof(ac_word);
-     	}
+        return a/sizeof(ac_word);
+      }
 
 ///Reads a word
   inline ac_word read(uint32_t address) {
-	//printf("\n\nAC_MEMPORT::read-> address=%x", address);
+  //printf("\n\nAC_MEMPORT::read-> address=%x", address);
 
-	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+  sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
     storage->read(&aux_word, address, sizeof(ac_word) * 8,time,this->procId);
     if (!this->ac_mt_endian) {
-    	aux_word = byte_swap(aux_word);
+      aux_word = byte_swap(aux_word);
     }
     setTimeInfo (time);
     return aux_word;
@@ -219,11 +218,11 @@ public:
   
 
   const ac_word *read_block(uint32_t address, unsigned l) {
-	 
-	    sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-	    ac_word *p = (ac_word*) buf.ptr8;
+   
+      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      ac_word *p = (ac_word*) buf.ptr8;
 
-      if (l % sizeof(ac_word))
+      /*if (l % sizeof(ac_word))
       { 
         printf("Memory size not wordsize aligned\n");
         exit(1);
@@ -232,11 +231,11 @@ public:
       storage->read(p, address, sizeof(ac_word) * 8, l/sizeof(ac_word), time,this->procId);
       setTimeInfo (time);
       return p;
-      
+      */
     
-     /* sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+      
 
-      ac_word *p = (ac_word*) buf.ptr8;
+      
 
       l = byte_to_word(l);
 
@@ -249,7 +248,9 @@ public:
 
       return p;      
 
-      */
+      
+      
+      
   }
 
 
@@ -261,7 +262,7 @@ public:
       sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
       aux_word = datum;
       if (!this->ac_mt_endian) {
-    	aux_word = byte_swap(datum);
+      aux_word = byte_swap(datum);
 
       }
       storage->write(&aux_word, address, sizeof(ac_word) * 8,time,this->procId);
@@ -271,7 +272,7 @@ public:
    //!Writing a byte
     inline void write_byte(uint32_t address, uint8_t datum) {
 
-  	    //printf("\n\nAC_MEMPORT::write_byte->address=%x datum=%x", address, datum);
+        //printf("\n\nAC_MEMPORT::write_byte->address=%x datum=%x", address, datum);
 
         sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
         storage->write(&datum, address, 8,time,this->procId);
@@ -298,20 +299,22 @@ public:
     void write_block(uint32_t address, const ac_word *d, unsigned length) {
         //printf("AC_MEMPORT::write_block-> address=%x length=%u bytes\n", address, length);
 
-      	sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+        sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
 
+        /*
         if (length % sizeof(ac_word))
         { 
           printf("Memory size not wordsize aligned\n"); 
           exit(1);
         }
         
-        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length/sizeof(ac_word), time,this->procId); //TODO Remove cast
-        //storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time,this->procId); //TODO Remove cast
-        setTimeInfo (time);
-        
 
-        /*sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
+        storage->write((uint32_t*) d, address, sizeof(ac_word) * 8, l/sizeof(ac_word), time,this->procId); //TODO Remove cast
+        
+        setTimeInfo (time);
+        */
+
+        /*This code works but is inneficient*/
 
         unsigned l = byte_to_word(length);
 
@@ -320,49 +323,16 @@ public:
           aux_word = d[i];
           storage->write(&aux_word, address+i*sizeof(ac_word), sizeof(ac_word) * 8,time,this->procId);
           setTimeInfo (time);
-        }*/
+        }
+        
+        
 
 // read:  storage->read  (p,             address, sizeof(ac_word) * 8, l/sizeof(ac_word), time,this->procId);
 // write: storage->write ((uint32_t*) d, address, sizeof(ac_word) * 8, length / (sizeof(ac_word) * 8), time,this->procId); //TODO Remove cast
     }
 
 
-    bool read_dir(uint32_t address, int cacheIndex, int nCache)
-    {
-      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-      bool r=false;
-      r = storage->read_dir(address, cacheIndex, nCache, time);
-      setTimeInfo (time);
-      return r;
-   }
 
-    bool write_dir(uint32_t address, int cacheIndex, int nCache)
-    {
-      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-      bool r=false;
-
-      
-      r = storage->write_dir(address, cacheIndex, nCache, time);
-      setTimeInfo (time);
-      return r;
-    }
-  
-    void start_dir(int nWay, int index_size)
-    {
-      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-      storage->start_dir(nWay, index_size, time);
-      setTimeInfo (time);
-    }
-  
-    bool check_dir(uint32_t address, int nCache, int cacheIndex)
-    {
-      sc_core::sc_time time = sc_core::sc_time(0, SC_NS);
-      bool r=false;
-      r = storage->check_dir(address, nCache, cacheIndex, time);
-
-      setTimeInfo (time);
-      return r;
-    }
 
 
 
@@ -442,7 +412,7 @@ public:
       output << "***************************************************\n";
       
       for (itor = changes.begin(); itor != changes.end(); itor++)
-	output << "*  " << *itor << "     *" << endl;
+  output << "*  " << *itor << "     *" << endl;
       
       output << "***************************************************\n";
     }
@@ -529,23 +499,23 @@ public:
         //Processing line
         while(line >> word){
 
-	  //Processing word
-	  if( is_addr ){
-	    addr = strtol(word.c_str(), NULL, 16);
-	    is_addr = 0;
-	    if( is_text && first_addr ){
-	      first_addr = 0;
-	      this->ac_start_addr = addr;
-	    }
-	  }
-	  else{
+    //Processing word
+    if( is_addr ){
+      addr = strtol(word.c_str(), NULL, 16);
+      is_addr = 0;
+      if( is_text && first_addr ){
+        first_addr = 0;
+        this->ac_start_addr = addr;
+      }
+    }
+    else{
                                         
-	    if(is_text)text_size++;
-	    data = strtoll( word.c_str(), NULL, 16);
-	    write(addr,(ac_word)data);
-	    addr+= sizeof(ac_word);
-	  }
-	}
+      if(is_text)text_size++;
+      data = strtoll( word.c_str(), NULL, 16);
+      write(addr,(ac_word)data);
+      addr+= sizeof(ac_word);
+    }
+  }
       }
     }
     if(!this->dec_cache_size)

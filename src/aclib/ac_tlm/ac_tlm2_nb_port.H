@@ -51,7 +51,6 @@
 #include <tlm.h>
 #include "tlm_utils/simple_initiator_socket.h"
 #include "tlm_utils/simple_target_socket.h"
-#include "tlm_payload_dir_extension.h"
 
 // ArchC includes
 
@@ -64,7 +63,7 @@
 
 // using statements
 using std::string;
-using user::tlm_payload_dir_extension;
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -81,7 +80,7 @@ private:
     /// Persistent payload used in read/write transactions
     
     ac_tlm2_payload *payload_global;     /* PAYLOAD   */
-    tlm_payload_dir_extension* payloadExt;
+    
 
 public:
   string name;
@@ -138,17 +137,7 @@ public:
       write(buf, address, wordsize, n_words,time_info);
   }
 
-///*
-  virtual bool read_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info);
-  
-  virtual bool write_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info);
-  
-  virtual void start_dir(int nWay, int index_size, sc_core::sc_time& time_info);
-  
-  virtual bool check_dir(uint32_t address, int nCache, int cacheIndex, sc_core::sc_time& time_info);
-  //*/
 
-  
   virtual string get_name() const;
 
   virtual uint32_t get_size() const;

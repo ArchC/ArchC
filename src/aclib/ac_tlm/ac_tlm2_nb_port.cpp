@@ -14,22 +14,9 @@
 
  *
  * @attention Copyright (C) 2002-2012 --- The ArchC Team
- * 
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or 
- * (at your option) any later version. 
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details. 
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
+
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -41,7 +28,6 @@
 #include "ac_tlm2_nb_port.H"
 #include "ac_tlm2_payload.H"
 
-#define DIR_ADDRESS      0x22000000
 
 // If you want to debug TLM 2.0, please uncomment the next line
 
@@ -58,6 +44,7 @@
 ac_tlm2_nb_port::ac_tlm2_nb_port(char const* nm, uint32_t sz) : name(nm), size(sz), LOCAL_init_socket() {
 
   LOCAL_init_socket.register_nb_transport_bw(this, &ac_tlm2_nb_port::nb_transport_bw);
+  //payload_global = new ac_tlm2_payload();
 
 }
 
@@ -68,16 +55,21 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
 	#ifdef debugTLM2
 	printf("\n\nNB_TRANSPORT_BW --> Processor is receiving a package");
 	#endif
+
+	/******/
+ 	payload_global = new ac_tlm2_payload();
  	
+
 	unsigned char* data_pointer = payload.get_data_ptr();		 
 	payload_global->set_data_ptr(data_pointer);
-	payload_global->deep_copy_from(payload);
-  //payload_global->free_all_extensions();	
+    
 
-	#ifdef debugTLM2
-  printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),(uint32_t) payload.get_address());        
+ 	payload_global->deep_copy_from(payload);
+	
+ 	#ifdef debugTLM2
+	printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),addr);        
 	printf("\nNotifying a event in BW TRANSPORT");
-  #endif
+        #endif
 
 	this->wake_up.notify();
 
@@ -85,8 +77,6 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
 	tlm::tlm_sync_enum status = tlm::TLM_COMPLETED;
 
 	return status;
-
-
 }
 
 
@@ -100,6 +90,7 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
  * 
  */
 void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId)
+
 {
 
 	payload_global = new ac_tlm2_payload();
@@ -108,27 +99,32 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	tlm::tlm_sync_enum status;
 
   	//sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
+	unsigned char p[32];
 
-	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	payload_global->set_address((sc_dt::uint64)address);
-	payload_global->set_data_ptr(buf.ptr8);
+	payload_global->set_data_ptr(p);
 	
-  	/**/
-  	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
-  payload_global->set_streaming_width((const unsigned int)procId);
-    /**/
-
-	if (wordsize % 8) {
+    if (wordsize == 8) payload_global->set_data_length(sizeof(uint8_t));
+    else if (wordsize == 16) payload_global->set_data_length(sizeof(uint16_t));
+    else if (wordsize == 32) payload_global->set_data_length(sizeof(uint32_t));
+	else {
 		printf("\n\nAC_TLM2_NB_PORT READ: wordsize not implemented");
 		exit(0);
 	}
-	payload_global->set_data_length(wordsize / 8);
 
+ 	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+    payload_global->set_streaming_width((const unsigned int)procId);
+    /**/
 
 	#ifdef debugTLM2 
 	printf("\n\n*******AC_TLM2_NB_PORT READ: command-->%d address-->%ld",tlm::TLM_READ_COMMAND, address);
 	#endif
+
+	/**********
+	To garantee that there are no extensions in the payload
+	**********/
+	payload_global->free_all_extensions();	
 
 	status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
 	if(status != tlm::TLM_UPDATED)
@@ -137,9 +133,56 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 		exit(0);
 	}
 
-	wait(this->wake_up);
+	/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
 	delete payload_global;
+
+
+	wait(this->wake_up);
 	
+	
+	uint8_t data8;
+	uint16_t data16;
+	uint32_t data32;
+
+	   switch (wordsize) 
+	   {
+	      case 8:
+	       	data8 = *((uint8_t*)payload_global->get_data_ptr());
+		*(buf.ptr8) = ((uint8_t*)&data8)[0];
+	        #ifdef debugTLM2 
+		printf("\nAC_TLM2_NB_PORT READ: wordsize-->%d  data8-->%d data-->%d, address-->%ld",wordsize,data8,*(payload_global->get_data_ptr()),payload_global->get_address());
+		#endif
+	       	break;
+
+	      case 16:
+	      
+		data16 = *((uint16_t*)payload_global->get_data_ptr());
+		*(buf.ptr16) = ((uint16_t*)&data16)[0];
+
+	  	#ifdef debugTLM2 
+                printf("\nAC_TLM2_NB_PORT READ: wordsize-->%d  data16-->%d data-->%d, address-->%ld",wordsize,data16,*(payload_global->get_data_ptr()),payload_global->get_address());
+		#endif
+                break;
+	      case 32:
+	       
+		data32 = *((uint32_t*)payload_global->get_data_ptr());
+
+		*(buf.ptr32) = ((uint32_t*)&data32)[0];
+
+        	#ifdef debugTLM2 
+		printf("\nAC_TLM2_NB_PORT READ: wordsize-->%d  data32-->%d data-->%d, address-->%ld",wordsize,data32,*(payload_global->get_data_ptr()),payload_global->get_address());
+		#endif
+        	break;
+	      case 64:
+	      default:
+        	printf("*** AC_TLM2_NB_PORT READ: wordsize-->%d not supported ****", wordsize);
+		exit(0);
+	        break;
+	   }
+
+	
+	delete payload_global;
+ 	
 }
 
 /* read n_words */
@@ -153,35 +196,124 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	tlm::tlm_sync_enum status;
 
 	//sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
-	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->set_command(tlm::TLM_READ_COMMAND);
 	
-	/**/
-  	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+	/** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
     payload_global->set_streaming_width((const unsigned int)procId);
     /**/
 
+	unsigned char p[32];
+	int i;
+	
 	#ifdef debugTLM2 
 	printf("\n\n*******AC_TLM2_NB_PORT READ N_WORDS: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_READ_COMMAND, address);
 	#endif
 
-	payload_global->set_address(address);
-	if (wordsize % 8) {
-		printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
-		exit(0);
-	}
-	payload_global->set_data_length(n_words * wordsize / 8);
-	payload_global->set_data_ptr(buf.ptr8);
+	/**********
+	To garantee that there are no extensions in the payload
+	**********/
+	payload_global->free_all_extensions();	
 
-	status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-	if(status != tlm::TLM_UPDATED)
+
+	switch (wordsize) 
 	{
-		printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
-		exit(0);
-	}
+	    case 8:
+   	       
+		for( i=0; i<n_words; i++)
+  		{	
+			payload_global->set_address(address +i);
+			payload_global->set_data_length(sizeof(uint8_t));
+			payload_global->set_data_ptr(p);
 
-	wait(this->wake_up);
+			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+			if(status != tlm::TLM_UPDATED)
+			{
+				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
+				exit(0);
+			}
+			
+			/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
+			delete payload_global;
 
+			wait(this->wake_up);
+			
+	
+			unsigned char* data_pointer = payload_global->get_data_ptr();		
+
+			for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
+				(buf.ptr8)[i] = ((uint8_t*)data_pointer)[j];
+			}
+			i--;
+			
+   		}
+		break;
+   
+ 	  case 16:
+		for( i=0; i<n_words; i++)
+  		{
+			payload_global->set_address(address + (i * sizeof(uint16_t)));
+			payload_global->set_data_length(sizeof(uint16_t));
+			payload_global->set_data_ptr(p);
+
+			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+			if(status != tlm::TLM_UPDATED)
+			{
+				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
+				exit(0);
+			}
+
+			/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
+			delete payload_global;
+
+	
+			wait(this->wake_up);
+
+    		unsigned char* data_pointer = payload_global->get_data_ptr();
+
+
+			for (int j = 0; (i < n_words) && (j < 4); j++, i++) {
+				buf.ptr16[i] = ((uint16_t*)data_pointer)[j];
+			}
+			i--;
+
+		}
+       		break;
+	  case 32:
+		
+		for( i=0; i<n_words; i++)
+  		{	
+			payload_global->set_address(address + (i * sizeof(uint32_t)));
+			payload_global->set_data_length(sizeof(uint32_t));
+		        payload_global->set_data_ptr(p);
+
+			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+			if(status != tlm::TLM_UPDATED)
+			{
+				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
+				exit(0);
+			}
+	
+
+			/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
+			delete payload_global;
+
+
+			wait(this->wake_up);
+
+			unsigned char* data_pointer = payload_global->get_data_ptr();
+			
+			buf.ptr32[i] = *((uint32_t*)data_pointer);
+
+   		}	
+	
+	        break;
+  	  case 64:
+	  default:
+		printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
+		exit(0);	
+		break;
+        }
+	 
 	delete payload_global;
  		
 }
@@ -194,7 +326,11 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
  * @param wordsize Word size in bits.
  *
  */
-void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId) {
+void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info, unsigned int procId) {
+
+  unsigned char p[32];
+  
+  unsigned char *ptr;
 
   payload_global = new ac_tlm2_payload();
 
@@ -208,32 +344,155 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
   printf("\n\n*******AC_TLM2_NB_PORT WRITE: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_WRITE_COMMAND, address);
   #endif
 
-  payload_global->set_address((uint64_t)address);
-  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-  payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+   /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
+   payload_global->set_streaming_width((const unsigned int)procId);
+   /**/
+	/**********
+	To garantee that there are no extensions in the payload
+	**********/
+	payload_global->free_all_extensions();	
 
-  /**/
- /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
-  payload_global->set_streaming_width((const unsigned int)procId);
-  /**/
 
 
-  if (wordsize % 8) {
-          printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
-          exit(0);
+
+  switch (wordsize) {
+  case 8:
+    payload_global->set_command(tlm::TLM_READ_COMMAND);
+    payload_global->set_address((uint64_t)address);
+    payload_global->set_data_length(sizeof(uint8_t));
+    payload_global->set_data_ptr(p);
+    
+    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+    if(status != tlm::TLM_UPDATED)
+    {
+	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+	exit(0);
+    }
+	
+    #ifdef debugTLM2 
+    printf("\n\nAC_TLM2_NB_PORT WRITE is waiting for wake_up event");
+    #endif
+
+    /*****/
+    delete payload_global;
+
+    wait(this->wake_up);
+
+    
+    payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+
+    ptr = payload_global->get_data_ptr();
+    ((uint8_t*)ptr)[0] = *(buf.ptr8);
+
+    payload_global->set_address((uint64_t)address);
+    payload_global->set_data_ptr(ptr);
+
+    
+	/**********	
+	To garantee that there are no extensions in the payload
+	**********/
+	payload_global->free_all_extensions();	
+
+    status =  LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+    if(status != tlm::TLM_UPDATED)
+    {
+	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+	exit(0);
+    }
+
+	/*****/
+    delete payload_global;
+
+    wait(this->wake_up);
+    
+
+	
+
+    break;
+  case 16:
+    payload_global->set_command(tlm::TLM_READ_COMMAND);
+    payload_global->set_address((uint64_t)address);
+    payload_global->set_data_length(sizeof(uint16_t));
+    payload_global->set_data_ptr(p);
+
+    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+    if(status != tlm::TLM_UPDATED)
+    {
+	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+	exit(0);
+    }
+	
+
+	/*****/
+    delete payload_global;
+
+    wait(this->wake_up);
+    
+    payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+    ptr = payload_global->get_data_ptr();
+
+    ((uint16_t*)ptr)[0] = *(buf.ptr16);
+    payload_global->set_address((uint64_t)address);
+    payload_global->set_data_ptr(ptr);
+
+	/**********	
+	To garantee that there are no extensions in the payload
+	**********/
+	payload_global->free_all_extensions();	
+
+
+    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+    if(status != tlm::TLM_UPDATED)
+    {
+	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+	exit(0);
+    } 
+    
+    /*****/
+    delete payload_global;
+    wait(this->wake_up);
+    
+
+    break;
+ 
+ case 32:
+    payload_global->set_address((uint64_t)address);
+    payload_global->set_command(tlm::TLM_WRITE_COMMAND);
+    payload_global->set_data_length(sizeof(uint32_t));
+
+    ((uint32_t*)p)[0]=*(buf.ptr32);
+
+    payload_global->set_data_ptr(p);    
+
+
+    /**********	
+	To garantee that there are no extensions in the payload
+	**********/
+	payload_global->free_all_extensions();	
+	
+    status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
+
+    if(status != tlm::TLM_UPDATED)
+    {
+	printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
+	exit(0);
+    } 
+
+
+   /*****/
+    delete payload_global;
+    wait(this->wake_up);
+	
+
+    break;
+ 
+  case 64:
+  default:
+	printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
+	exit(0);
+    break;
   }
-  payload_global->set_data_length(wordsize / 8);
 
-  payload_global->set_data_ptr(buf.ptr8);
-  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-
-  if(status != tlm::TLM_UPDATED)
-  {
-      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-      exit(0);
-  }
-
-  wait(this->wake_up);
   
   delete payload_global;
 
@@ -249,201 +508,14 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
  * 
  */
 void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address,
-                         int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
+                         int wordsize, int n_words,sc_core::sc_time &time_info, unsigned int procId) {
 
-  //payload_global = new ac_tlm2_payload();
-
-  tlm::tlm_phase phase = tlm::BEGIN_REQ;
-  tlm::tlm_sync_enum status;
-
-  //sc_core::sc_time time_info = sc_core::sc_time(0, SC_NS);
-
-
-  #ifdef debugTLM2
-  printf("\n\n*******AC_TLM2_NB_PORT WRITE: wordsize--> %d command-->%d address-->%ld",wordsize,tlm::TLM_WRITE_COMMAND, address);
-  #endif
-
-  payload_global->set_address((uint64_t)address);
-  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-  payload_global->set_command(tlm::TLM_WRITE_COMMAND);
-
-  /**/
- /** IMPORTANT: The procId has been stored at the streaming_width payload field just to avoid an extention, */
-  payload_global->set_streaming_width((const unsigned int)procId);
-  /**/
-
-  if (wordsize % 8) {
-          printf("\n\nAC_TLM2_NB_PORT WRITE: wordsize not implemented");
-          exit(0);
-  }
-  payload_global->set_data_length(n_words * wordsize / 8);
-
-  payload_global->set_data_ptr(buf.ptr8);
-  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-
-  if(status != tlm::TLM_UPDATED)
-  {
-      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-      exit(0);
-  }
-
-  wait(this->wake_up);
-  
-  delete payload_global;
+  printf("ac_tlm2_nb_port write isn't implemented");
   
 }
 
 
-bool ac_tlm2_nb_port::read_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info)
-{
 
-  payload_global = new ac_tlm2_payload();
-  payloadExt = new tlm_payload_dir_extension();
-  
-
-  tlm::tlm_sync_enum status;
-  tlm::tlm_phase phase = tlm::BEGIN_REQ;
-
-  int rule=1;
-  payloadExt->setNumberCache(nCache);
-  payloadExt->setAddress(address);
-  payloadExt->setCacheIndex(cacheIndex);
-  payloadExt->setRule(rule);
-
-
-  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-  payload_global->set_command(tlm::TLM_READ_COMMAND);
-  
-  payload_global->set_data_length(sizeof(uint32_t));
-  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload_global->set_extension(0,payloadExt);
-
-  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-  if(status != tlm::TLM_UPDATED)
-  {
-      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-      exit(0);
-  }
-
-  wait(this->wake_up);
-
-  delete payload_global;
-
-  return true;
-
-}
-
-
-bool ac_tlm2_nb_port::write_dir(uint32_t address, int cacheIndex, int nCache, sc_core::sc_time& time_info)
-{
-
-  payload_global = new ac_tlm2_payload();
-  payloadExt = new tlm_payload_dir_extension();
-  int rule=2;
-
-  tlm::tlm_sync_enum status;
-  tlm::tlm_phase phase = tlm::BEGIN_REQ;
-
-  payloadExt->setNumberCache(nCache);
-  payloadExt->setAddress(address);
-  payloadExt->setCacheIndex(cacheIndex);
-  payloadExt->setRule(rule);
-  
-  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-  payload_global->set_command(tlm::TLM_READ_COMMAND);
-  
-  payload_global->set_data_length(sizeof(uint32_t));
-  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload_global->set_extension(0,payloadExt);
-
-  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-  if(status != tlm::TLM_UPDATED)
-  {
-      printf("\nAC_TLM0_NB_PORT  WRITE ERROR");
-      exit(0);
-  }
-
-  wait(this->wake_up);
-
- // delete payload_global;
-  
-  return true;
-}
-
-
-void ac_tlm2_nb_port::start_dir(int nWay, int index_size, sc_core::sc_time& time_info)
-{
-
-  payload_global = new ac_tlm2_payload();
-  payloadExt = new tlm_payload_dir_extension();
-
-  tlm::tlm_sync_enum status;
-  tlm::tlm_phase phase = tlm::BEGIN_REQ;
-
-
-  int rule=0;
-  payloadExt->setNWay(nWay);
-  payloadExt->setIndex_size(index_size);
-  payloadExt->setRule(rule);
-  
-  
-  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-  payload_global->set_command(tlm::TLM_READ_COMMAND);
-  
-  payload_global->set_data_length(sizeof(uint32_t));
-  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload_global->set_extension(0,payloadExt);
-
-  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-  if(status != tlm::TLM_UPDATED)
-  {
-      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-      exit(0);
-  }
-
-  wait(this->wake_up);
-
-  delete payload_global;
-  
-}
-bool ac_tlm2_nb_port::check_dir(uint32_t address,  int nCache, int cacheIndex, sc_core::sc_time& time_info)
-{
-  payload_global = new ac_tlm2_payload();
-  payloadExt = new tlm_payload_dir_extension();
-  tlm::tlm_sync_enum status;
-  tlm::tlm_phase phase = tlm::BEGIN_REQ;
-
-  int rule=3;
-
-  payloadExt->setNumberCache(nCache);
-  payloadExt->setAddress(address);
-  payloadExt->setRule(rule);
-  payloadExt->setCacheIndex(cacheIndex);
-  
- 
-  payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-  payload_global->set_command(tlm::TLM_READ_COMMAND);
- 
-  payload_global->set_data_length(sizeof(uint32_t));
-  payload_global->set_address((sc_dt::uint64)DIR_ADDRESS);
-  payload_global->set_extension(0,payloadExt);
-
-  status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
-  if(status != tlm::TLM_UPDATED)
-  {
-      printf("\nAC_TLM2_NB_PORT  WRITE ERROR");
-      exit(0);
-  }
-
-  wait(this->wake_up);
-
-  bool r = payloadExt->getValidation();  
-
-  delete payload_global;
-
-  return r;
-
-}
 
 string ac_tlm2_nb_port::get_name() const {
   return name;
@@ -485,7 +557,7 @@ void ac_tlm2_nb_port::unlock()
  */
 ac_tlm2_nb_port::~ac_tlm2_nb_port() {
 
-
+	//delete payload_global;
  
 }
 
