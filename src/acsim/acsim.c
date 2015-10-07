@@ -785,8 +785,10 @@ void CreateArchHeader() {
     }
   }
   
-  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) { 
+    fprintf( output, "#define SLEEP_AWAKE_MODE\n");
     fprintf( output, "%sac_reg<%s_parms::ac_word> intr_reg;\n", INDENT[1], project_name);
+  }
 
   fprintf( output, "\n\n");
 
@@ -2562,8 +2564,9 @@ void CreateArchImpl() {
             fprintf(output, ",\n");
     }
 
-    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) {
         fprintf( output, "\n%s,intr_reg(\"instr_reg\",1)",INDENT[1]);
+    }
 
 
     /* opening constructor body */
