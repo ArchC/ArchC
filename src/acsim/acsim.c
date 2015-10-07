@@ -3312,7 +3312,7 @@ void CreateMakefile(){
   extern int HaveTLM2IntrPorts;
 
   FILE *output;
-  char filename[] = "Makefile.archc";
+  char filename[] = "Makefile";
 
   if ( !(output = fopen( filename, "w"))){
     perror("ArchC could not open output file");
@@ -3394,7 +3394,7 @@ void CreateMakefile(){
   //if(HaveTLM2IntrPorts)
   //       fprintf( output, "$(MODULE)_intr_handlers.H $(MODULE)_ih_bhv_macros.H ");
   
-  fprintf( output, "\n\n");  
+  fprintf( output, "\n");  
 
   //Declaring FILES variable
 //  COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
@@ -3452,10 +3452,8 @@ void CreateMakefile(){
           (ACGDBIntegrationFlag)?"$(MODULE)_gdb_funcs.cpp":""); 
   if (ACABIFlag)
       fprintf( output, " $(MODULE)_syscall.cpp");
-  if (HaveTLMIntrPorts)
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts )
       fprintf( output, " $(MODULE)_intr_handlers.cpp");
-  if (HaveTLM2IntrPorts)
-      fprintf(output, " $(MODULE)_intr_handlers.cpp");
   if (ACStatsFlag)
       fprintf( output, " $(MODULE)_stats.cpp");
   fprintf( output, "\n\n");
@@ -3528,7 +3526,7 @@ void CreateMakefile(){
   fprintf( output, "sim_clean: clean model_clean\n\n");
 
   fprintf( output, "distclean: sim_clean\n");
-  fprintf( output, "\trm -f main.cpp Makefile.archc\n\n");
+  fprintf( output, "\trm -f main.cpp Makefile\n\n");
 
 }
 
