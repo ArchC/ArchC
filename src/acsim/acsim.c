@@ -512,7 +512,7 @@ int main(int argc, char** argv) {
   if (HaveTLM2IntrPorts) {
     CreateIntrTLM2Header();
     CreateIntrTLM2MacrosHeader();
-    CreateIntrTLM2Tmpl();
+    //CreateIntrTLM2Tmpl();
   }
 
   
