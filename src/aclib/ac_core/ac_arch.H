@@ -55,7 +55,10 @@ private:
 
 public:
   /// Indicates the storage device from where instructions are fetched.
-  ac_memport<ac_word, ac_Hword>* IM;
+  ac_memport<ac_word, ac_Hword>* INST_PORT;
+
+  /// Indicates the storage device from where data are fetched (first level cache, memory, ...)
+  ac_memport<ac_word, ac_Hword>* DATA_PORT;
 
   /// Used by longjmp for ac_annul_sig.
   jmp_buf ac_env;

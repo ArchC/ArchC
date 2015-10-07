@@ -63,7 +63,7 @@ public:
     //Expand the instruction buffer word by word, the number necessary to read position index
     int read = (index + 1) - this->quant;
     for(int i=0; i<read; i++){
-      this->buffer[this->quant + i] = (this->IM)->read(this->decode_pc + (this->quant + i) * sizeof(ac_word));
+      this->buffer[this->quant + i] = (this->INST_PORT)->read(this->decode_pc + (this->quant + i) * sizeof(ac_word));
     }
     this->quant += read;
     return this->quant;
