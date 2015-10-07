@@ -57,9 +57,6 @@ public:
   /// Indicates the storage device from where instructions are fetched.
   ac_memport<ac_word, ac_Hword>* IM;
 
-  /// Indicates the storage device where applications are loaded.
-  ac_memport<ac_word, ac_Hword>* APP_MEM;
-
   /// Used by longjmp for ac_annul_sig.
   jmp_buf ac_env;
   

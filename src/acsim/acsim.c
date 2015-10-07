@@ -2134,7 +2134,7 @@ void CreateProcessorImpl() {
 
   /* Delayed program loading */
   fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
-  fprintf(output, "%sAPP_MEM->load(delayed_load_program);\n", INDENT[2]);
+  fprintf(output, "%s%s.load(delayed_load_program);\n", INDENT[2], load_device->name);
   fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[2]);
   fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
   fprintf(output, "%s}\n\n", INDENT[1]);
@@ -2264,7 +2264,7 @@ void CreateProcessorImpl() {
 //  fprintf(output, "%sac_init_opts( ac, av);\n", INDENT[1]);
   fprintf(output, "%sargs_t args = ac_init_args( ac, av);\n", INDENT[1]);
   fprintf(output, "%sset_args(args.size, args.app_args);\n", INDENT[1]);
-  fprintf(output, "%sAPP_MEM->load(args.app_filename);\n", INDENT[1]);
+  fprintf(output, "%s%s.load(args.app_filename);\n", INDENT[1], load_device->name);
 
   for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
   switch(pstorage->type) {
@@ -2326,7 +2326,7 @@ void CreateProcessorImpl() {
   /* Program loading functions */
   /* load() */
   fprintf(output, "void %s::load(char* program) {\n", project_name);
-  fprintf(output, "%sAPP_MEM->load(program);\n", INDENT[1]);
+  fprintf(output, "%s%s.load(program);\n", INDENT[1], load_device->name);
   fprintf(output, "}\n\n");
 
   /* delayed_load() */
@@ -2619,7 +2619,8 @@ case TLM2_PORT:
   if( load_device->level ==0 )
     load_device = fetch_device;
 
-  fprintf( output, "%sAPP_MEM = &%s;\n\n", INDENT[1], load_device->name);
+
+//  fprintf( output, "%sAPP_MEM = &%s;\n\n", INDENT[1], load_device->name);
 
   /* Connecting memory hierarchy */
   /*for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
@@ -3897,8 +3898,8 @@ void EmitFetchInit( FILE *output, int base_indent){
   
   if (ACPCAddress) {
     if (!ACDecCacheFlag)
-      fprintf( output, "%sif( ac_pc >= APP_MEM->get_size()){\n", 
-              INDENT[base_indent]);
+      fprintf( output, "%sif( ac_pc >= %s.get_size()){\n", 
+              INDENT[base_indent], load_device->name);
     else
       fprintf( output, "%sif( ac_pc >= dec_cache_size){\n", 
               INDENT[base_indent]);
