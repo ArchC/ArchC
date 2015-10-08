@@ -512,7 +512,7 @@ int main(int argc, char** argv) {
   if (HaveTLM2IntrPorts) {
     CreateIntrTLM2Header();
     CreateIntrTLM2MacrosHeader();
-    //CreateIntrTLM2Tmpl();
+    CreateIntrTLM2Tmpl();
   }
 
   
@@ -3012,7 +3012,25 @@ void CreateIntrTLM2Tmpl() {
   //Declaring formatted register behavior methods.
   for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
     fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", pport->name);
-    fprintf(output, "void ac_behavior(%s, value, addr) {\n}\n\n", pport->name);
+    fprintf(output, 
+    "void ac_behavior(%s, value, addr) {\n"
+   	"   if (value == INTR_PROC_OFF) { \n"
+	"       //printf(\"\\nINSTR_HANDLER: Processor %%d (%s) is sleeping.\" , id.read()); \n"
+	"       intr_reg.write(value); \n"
+	"   } \n"
+	"   else if (value == INTR_PROC_ON) { \n"
+	"       //printf(\"\\nINSTR_HANDLER: Processor %%d (%s) is waking up.\" , id.read()); \n"
+	"       intr_reg.write(value); \n"
+	"       wake->notify(sc_core::SC_ZERO_TIME); \n\n"
+	"       /* ac_release update a signal to re-start the processor simulator   */ \n"
+	"       /* See %s_isa::ac_behavior (instruction) (%s_isa.cpp)               */ \n"
+	"       //ac_release();	\n"
+	"   }\n"
+	"   else { \n"
+	"       printf(\"\\nINSTR_HANDLER: Processor %%d (%s) unrecognized interuption code %%d. Ignoring.\", id.read(), value); \n"
+	"   }\n}", pport->name, project_name,  project_name, project_name, project_name, project_name);
+
+
   }
 
   //END OF FILE.
@@ -3499,13 +3517,7 @@ void CreateMakefile(){
       fprintf(output, "\tcp %s_stats.cpp.tmpl %s_stats.cpp\n\n", project_name, project_name);
   }
 
-  if (HaveTLMIntrPorts) {
-      COMMENT_MAKE("Copy from template if %s_intr_handlers.cpp not exist", project_name);
-      fprintf( output, "%s_intr_handlers.cpp:\n", project_name);
-      fprintf( output, "\tcp %s_intr_handlers.cpp.tmpl %s_intr_handlers.cpp\n\n", project_name, project_name);
-  }
-
-  if (HaveTLM2IntrPorts) {
+  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) {
       COMMENT_MAKE("Copy from template if %s_intr_handlers.cpp not exist", project_name);
       fprintf( output, "%s_intr_handlers.cpp:\n", project_name);
       fprintf( output, "\tcp %s_intr_handlers.cpp.tmpl %s_intr_handlers.cpp\n\n", project_name, project_name);
