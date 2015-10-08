@@ -3540,7 +3540,7 @@ void CreateMakefile(){
   fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) -c $<\n\n");
 
   fprintf( output, "clean:\n");
-  fprintf( output, "\trm -f $(OBJS) *~ $(EXE) core *.o \n\n");
+  fprintf( output, "\trm -f $(OBJS) *~ $(EXE) core *.o *.a \n\n");
 
   fprintf( output, "model_clean:\n");
   //fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) $(ACFILESHEAD)  *.tmpl loader.ac \n\n");
