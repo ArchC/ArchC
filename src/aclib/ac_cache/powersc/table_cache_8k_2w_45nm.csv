@@ -1,0 +1,13 @@
+# Values retrieved from web-version of CACTI 5.3 (http://quid.hpl.hp.com:9081/cacti/index.y).
+# Parameters: cache size: 8192 bytes; line size: 32 bytes; associativity: 2; banks: 1; technology node: 45 nm
+# Equivalent cache ArchC declaration: ac_icache IC("2w", 128, 16, , );
+# Number of profiles,
+1
+# Characterization Frequency,Frequency Scale,EPI Scale,Characterization Name,Characterization Description
+2,1E9,1E-9,"Icache","2-way associativity, 8KB, 45nm Cache Characterization"
+# Idle consumption
+0.00
+# Read consumption
+0.01853197
+# Write consumption
+0.01853197
