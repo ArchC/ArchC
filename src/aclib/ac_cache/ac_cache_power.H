@@ -1,5 +1,6 @@
 #ifdef POWER_SIM
 #include <powersc.h>
+#include <stdlib.h>
 
 /* Data struct definition. You should think that it is a row in a table. Each profile will have a certain number of tables. 
 	 The basic idea is use a profile, with a pre-fixed number of operational frequencies. Each frequency, with a specific 
@@ -15,7 +16,7 @@
 #define CACHE_MAX_POWER_STATS_NAME_SIZE 30
 #define CACHE_MAX_POWER_STATS_DESCR_SIZE 140
 
-#define CACHE_POWER_TABLE_FILE "/home/liana/repository/development/MPSoCBench/processors/table_cache_8k_2w_45nm.csv"
+#define CACHE_POWER_TABLE_FILE "powersc/table_cache_8k_2w_45nm.csv"
 
 enum cache_type_line_t {
   CTL_NUM_PROFILE,
@@ -92,8 +93,11 @@ class cache_power_stats {
     cache_power_stats(const int proc_id,  char *powerFileName=0):
     psc_info(generate_cache_name(proc_id), "Cache") 
     {
-      PSC_NUM_FIRST_SAMPLES(0x7FFFFFFF);
-			init(CACHE_POWER_TABLE_FILE);
+            PSC_NUM_FIRST_SAMPLES(0x7FFFFFFF);
+
+            char prefix_table[1024];
+            sprintf(prefix_table, "%s/share/archc/%s", getenv("ARCHC_PREFIX"), CACHE_POWER_TABLE_FILE);
+			init(prefix_table);
 
       /*Initialize power state using profile 0*/
 			dyn.actual_profile = 0;
