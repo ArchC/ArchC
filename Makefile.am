@@ -15,7 +15,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = pc/archc.pc pc/powersc.pc
 
 ## Special ArchC configuration file installation
-sysconf_DATA = archc.conf
+sysconf_DATA = archc.conf env.sh
 archc.conf: archc.conf.m4 Makefile
 	m4 -P -Dcompiler=${CXX} -Dbinutils_path=${BINUTILS_DIR} -Dgdb_path=${GDB_DIR} $< > $@
 

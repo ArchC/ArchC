@@ -3527,10 +3527,10 @@ void CreateMakefile(){
       fprintf( output, "lib: %s.cpp $(OBJS)\n", project_name);
       fprintf( output, "\tar r lib$(TARGET).a $(OBJS)\n\n");
 
-      fprintf( output, "%s.cpp:\n", project_name);
-      fprintf( output, "\techo --- No simulator found, using acsim to generate one.\n");
-      fprintf( output, "\t$(ARCHC_PATH)/bin/acsim %s_$(TRANSPORT).ac -abi -ndc -pw\n", project_name);
-      fprintf( output, "\t$(MAKE) lib\n\n");
+//      fprintf( output, "%s.cpp:\n", project_name);
+//      fprintf( output, "\techo --- No simulator found, using acsim to generate one.\n");
+//      fprintf( output, "\t$(ARCHC_PATH)/bin/acsim %s_$(TRANSPORT).ac -abi -ndc -pw\n", project_name);
+//      fprintf( output, "\t$(MAKE) lib\n\n");
   }
 
   fprintf( output, ".cpp.o:\n");
