@@ -42,6 +42,7 @@
 #ifndef _AC_TOOLS_COMMON_H_
 #define _AC_TOOLS_COMMON_H_
 
+#include <stdbool.h>
 #include "ac_decoder.h"
 
 //! Enumeration type for storage device types
@@ -67,6 +68,7 @@ typedef struct _ac_sto_list
  unsigned width;               //!< Width of registers expressed in bits. Used for register banks.
  unsigned level;               //!< Memory hierachy level.
  ac_sto_types type;            //!< Type of the device.
+ bool has_memport;
  struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
  ac_cache_parms* parms;        //!< Parameter list used for (not generic) ac_cache  declarations.
  struct _ac_sto_list* next;    //!< Next element.

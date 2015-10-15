@@ -733,7 +733,7 @@ void CreateArchHeader() {
                         pstorage->class_declaration, pstorage->name);
                 /*****/
                 fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
-                        "%s_port;\n", INDENT[1], project_name, project_name, pstorage->name);
+                        "%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
             }
        }
         break;
@@ -1028,59 +1028,64 @@ if (HaveMemHier) {
 
 /*!Create ArchC Resources Reference Implementation File */
 void CreateArchRefImpl() {
-  extern ac_sto_list *storage_list;
-  extern char* project_name;
-  extern int HaveFormattedRegs, HaveMemHier;
+    extern ac_sto_list *storage_list;
+    extern char* project_name;
+    extern int HaveFormattedRegs, HaveMemHier;
 
-  ac_sto_list *pstorage;
+    ac_sto_list *pstorage;
 
-  FILE *output;
-  char filename[256];
+    FILE *output;
+    char filename[256];
 
-  sprintf(filename, "%s_arch_ref.cpp", project_name);
+    sprintf(filename, "%s_arch_ref.cpp", project_name);
 
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Resources implementation file.");
-
-  fprintf( output, "#include  \"%s_arch.H\"\n", project_name);
-  fprintf( output, "#include  \"%s_arch_ref.H\"\n\n", project_name);
-
-  //Declaring Architecture Resource references class.
-  COMMENT(INDENT[0],"/Default constructor.");
-  fprintf(output,
-          "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
-          project_name, project_name, project_name, project_name, project_name);
-
-  fprintf(output, "%sac_pc(arch.ac_pc),\n", INDENT[1]);
-
- /* Declaring storage devices */
-    for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
-        if ( pstorage->type == MEM )
-          fprintf(output, "%s%s_mport(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
-        else
-          fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
-      if (HaveMemHier && pstorage->level == 0) {
-        if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
-          fprintf(output, ", %s%s_port(arch.%s_port)", INDENT[1], pstorage->name, pstorage->name);
-            }
-         }
-         if (pstorage->next != NULL) {
-              fprintf(output, ", ");
-         }
+    if ( !(output = fopen( filename, "w"))){
+        perror("ArchC could not open output file");
+        exit(1);
     }
 
-  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
-    fprintf(output, ", intr_reg(arch.intr_reg) ");
+    print_comment( output, "ArchC Resources implementation file.");
+
+    fprintf( output, "#include  \"%s_arch.H\"\n", project_name);
+    fprintf( output, "#include  \"%s_arch_ref.H\"\n\n", project_name);
+
+    //Declaring Architecture Resource references class.
+    COMMENT(INDENT[0],"/Default constructor.");
+    fprintf(output,
+            "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
+            project_name, project_name, project_name, project_name, project_name);
+
+    fprintf(output, "%sac_pc(arch.ac_pc),\n", INDENT[1]);
+
+    /* Declaring storage devices */
+    for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+        if ( pstorage->has_memport ) {
+            fprintf(output, "%s%s_mport(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
+            if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
+                fprintf(output, ", %s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
+            }
+        }
+        else
+            fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
+        //if (HaveMemHier && pstorage->level == 0) {
+        //    //if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
+        //    if (pstorage->has_memport){ 
+        //        fprintf(output, ", %s%s_mport(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
+        //    }
+        //}
+        if (pstorage->next != NULL) {
+            fprintf(output, ", ");
+        }
+    }
+
+        if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+            fprintf(output, ", intr_reg(arch.intr_reg) ");
 
 
-  fprintf(output, " {}\n\n");
-  fclose( output);
+        fprintf(output, " {}\n\n");
+        fclose( output);
 
-}
+    }
 
 
 //!Creates Decoder Header File
@@ -2514,11 +2519,11 @@ void CreateArchImpl() {
                     fprintf(output, "%s%s(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
                 } else {
                     //It is an ac_cache object.
-                    fprintf(output, "%s%s(%s,globalId)", INDENT[1], pstorage->name, pstorage->higher->name);
+                    fprintf(output, "%s%s(%s_mport,globalId)", INDENT[1], pstorage->name, pstorage->higher->name);
 
                     if (HaveMemHier && pstorage->level == 0) {
                         fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name, pstorage->name);
-                        fprintf(output, ",\n%s%s_port(*this, %s_if)", INDENT[1], pstorage->name,
+                        fprintf(output, ",\n%s%s_mport(*this, %s_if)", INDENT[1], pstorage->name,
                                 pstorage->name);
                 
 //                        if ( pstorage->type == DCACHE ) {
