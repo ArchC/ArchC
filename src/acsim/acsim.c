@@ -751,8 +751,8 @@ void CreateArchHeader() {
         }*/
 
         if (!HaveMemHier) { //It is a generic mem. Just emit a base container object.
-          fprintf(output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+          fprintf(output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
             } else {
           //It is an ac_mem object.
           unsigned i = pstorage->size * 8 / wordsize;
@@ -763,23 +763,23 @@ void CreateArchHeader() {
         break;
 
        case TLM_PORT:
-        fprintf(output, "%sac_tlm_port %s_port;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+        fprintf(output, "%sac_tlm_port %s;\n", INDENT[1], pstorage->name);
+        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
         break;  
 
       case TLM2_PORT:
-        fprintf(output, "%sac_tlm2_port %s_port;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+        fprintf(output, "%sac_tlm2_port %s;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
         break;
 
       case TLM2_NB_PORT:
-          fprintf(output, "%sac_tlm2_nb_port %s_port;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+          fprintf(output, "%sac_tlm2_nb_port %s;\n", INDENT[1], pstorage->name);
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
           break;
 
       default:
-        fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", 
+        fprintf( output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", 
                 INDENT[1], project_name, project_name, pstorage->name);
         break;
     }
@@ -971,7 +971,7 @@ if (HaveMemHier) {
         if (!HaveMemHier) { //It is a generic cache. Just emit a base container object.
               /*****/
 
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n",
+          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n",
             INDENT[1], project_name, project_name, pstorage->name);
             } else {
           //It is an ac_cache object.
@@ -981,14 +981,14 @@ if (HaveMemHier) {
               /*****/
 
               fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
-                      "&%s_port;\n", INDENT[1], project_name, project_name, pstorage->name);
+                      "&%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
           }
         }
         break;
 
       case MEM:
        if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
+        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
         }
        else{
          //It is an ac_mem object.
@@ -998,7 +998,7 @@ if (HaveMemHier) {
         break;
 
       default:
-        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", 
+        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", 
                  INDENT[1], project_name, project_name, pstorage->name);
         break;
     }
@@ -1059,7 +1059,10 @@ void CreateArchRefImpl() {
 
  /* Declaring storage devices */
     for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
-      fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
+        if ( pstorage->type == MEM )
+          fprintf(output, "%s%s_mport(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
+        else
+          fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
       if (HaveMemHier && pstorage->level == 0) {
         if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
           fprintf(output, ", %s%s_port(arch.%s_port)", INDENT[1], pstorage->name, pstorage->name);
@@ -2136,7 +2139,7 @@ void CreateProcessorImpl() {
 
   /* Delayed program loading */
   fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
-  fprintf(output, "%s%s.load(delayed_load_program);\n", INDENT[2], load_device->name);
+  fprintf(output, "%s%s_mport.load(delayed_load_program);\n", INDENT[2], load_device->name);
   fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[2]);
   fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
   fprintf(output, "%s}\n\n", INDENT[1]);
@@ -2266,7 +2269,7 @@ void CreateProcessorImpl() {
 //  fprintf(output, "%sac_init_opts( ac, av);\n", INDENT[1]);
   fprintf(output, "%sargs_t args = ac_init_args( ac, av);\n", INDENT[1]);
   fprintf(output, "%sset_args(args.size, args.app_args);\n", INDENT[1]);
-  fprintf(output, "%s%s.load(args.app_filename);\n", INDENT[1], load_device->name);
+  fprintf(output, "%s%s_mport.load(args.app_filename);\n", INDENT[1], load_device->name);
 
   for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
   switch(pstorage->type) {
@@ -2328,7 +2331,7 @@ void CreateProcessorImpl() {
   /* Program loading functions */
   /* load() */
   fprintf(output, "void %s::load(char* program) {\n", project_name);
-  fprintf(output, "%s%s.load(program);\n", INDENT[1], load_device->name);
+  fprintf(output, "%s%s_mport.load(program);\n", INDENT[1], load_device->name);
   fprintf(output, "}\n\n");
 
   /* delayed_load() */
@@ -2440,7 +2443,7 @@ void CreateArchImpl() {
     extern int HaveMemHier, HaveTLMPorts, HaveTLM2IntrPorts, HaveTLM2Ports, HaveTLM2NBPorts, HaveTLM2IntrPorts;
     extern ac_sto_list* load_device;
     extern char *project_name;
-    ac_sto_list *pstorage, *first_level_data_device = NULL;
+    ac_sto_list *pstorage; //, *first_level_data_device = NULL;
     FILE *output;
     char filename[256];
 
@@ -2506,9 +2509,9 @@ void CreateArchImpl() {
             case ICACHE:
             case DCACHE:
                 if (!pstorage->parms) { //It is a generic cache. Just emit a base container object.
-                    fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name,
+                    fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
                             pstorage->name, pstorage->size);
-                    fprintf(output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+                    fprintf(output, "%s%s(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
                 } else {
                     //It is an ac_cache object.
                     fprintf(output, "%s%s(%s,globalId)", INDENT[1], pstorage->name, pstorage->higher->name);
@@ -2518,46 +2521,46 @@ void CreateArchImpl() {
                         fprintf(output, ",\n%s%s_port(*this, %s_if)", INDENT[1], pstorage->name,
                                 pstorage->name);
                 
-                        if ( pstorage->type == DCACHE ) {
-                           first_level_data_device = pstorage;
-                        }
+//                        if ( pstorage->type == DCACHE ) {
+//                           first_level_data_device = pstorage;
+//                        }
                     }
                 }
                 break;
 
             case MEM:
                 if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-                    fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                    fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
-                    first_level_data_device = pstorage;
+                    fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                    fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
+//                    first_level_data_device = pstorage;
                 }
                 else{
                     //It is an ac_mem object.
                     //fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
                     //fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
-                    fprintf(output, "%s%s()", INDENT[1], pstorage->name);
+                    fprintf(output, "%s%s_mport()", INDENT[1], pstorage->name);
                 }
                 break;
 
             case TLM_PORT:
-                fprintf(output, "%s%s_port(\"%s_port\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
+                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
                 break;
 
             case TLM2_PORT:
-                fprintf(output, "%s%s_port(\"%s_port\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
+                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
                 break;
 
             case TLM2_NB_PORT:
-                fprintf(output, "%s%s_port(\"%s_port\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s(*this, %s_port)", INDENT[1], pstorage->name, pstorage->name);
+                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
                 break;
 
 
             default:
-                fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
                 break;
         }
         if (pstorage->next != NULL)
@@ -2567,7 +2570,6 @@ void CreateArchImpl() {
     if (HaveTLMIntrPorts || HaveTLM2IntrPorts) {
         fprintf( output, "\n%s,intr_reg(\"instr_reg\",1)",INDENT[1]);
     }
-
 
     /* opening constructor body */
     fprintf(output, " {\n\n");
@@ -2595,19 +2597,19 @@ void CreateArchImpl() {
         }
     }
 
-
-    if ( !first_level_data_device ) {
-        AC_INTERNAL_ERROR("Could not determine a device for fetching.");
-        exit(1);
-    }
+//    if ( !first_level_data_device ) {
+//        AC_INTERNAL_ERROR("Could not determine a device for fetching.");
+//        exit(1);
+//    }
 
     // fprintf( output, "%sIM = &%s;\n", INDENT[1], fetch_device->name);
     /*CACHE*/
-    if (!HaveMemHier) {
-        fprintf(output, "%sINST_PORT = &%s;\n", INDENT[1], fetch_device->name);
+    int fetch_type = fetch_device->type;
+    if ( fetch_type == TLM_PORT || fetch_type == TLM2_PORT || fetch_type == ICACHE ) {
+        fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
     }
     else {
-        fprintf(output, "%sINST_PORT = &%s_port;\n", INDENT[1], fetch_device->name);
+        fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
     }
 
     /* Determining which device is going to be used for loading applications*/
@@ -2631,10 +2633,16 @@ void CreateArchImpl() {
       */  
 
     // DATA_PORT 
-    if (!HaveMemHier) {
-        fprintf(output, "%sDATA_PORT = &%s;\n", INDENT[1], load_device->name);
+//    if (!HaveMemHier) {
+//        fprintf(output, "%sDATA_PORT = &%s;\n", INDENT[1], load_device->name);
+//    } else {
+//        fprintf(output, "%sDATA_PORT = &%s_port;\n", INDENT[1], first_level_data_device->name);
+//    }
+    int load_type = load_device->type;
+    if (load_type == TLM_PORT || load_type == TLM2_PORT || load_type == DCACHE ) {
+        fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], load_device->name);
     } else {
-        fprintf(output, "%sDATA_PORT = &%s_port;\n", INDENT[1], first_level_data_device->name);
+        fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], load_device->name);
     }
 
 
