@@ -553,476 +553,438 @@ int main(int argc, char** argv) {
 
 /*!Create ArchC Resources Header File */
 void CreateArchHeader() {
-  extern ac_sto_list *storage_list;
-  extern char* project_name;
-  extern char* upper_project_name;
-  extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, HaveTLM2NBPorts, HaveTLM2Ports, HaveTLM2IntrPorts;
+    extern ac_sto_list *storage_list;
+    extern char* project_name;
+    extern char* upper_project_name;
+    extern int HaveFormattedRegs, HaveMemHier, HaveTLMPorts, HaveTLMIntrPorts, HaveTLM2NBPorts, HaveTLM2Ports, HaveTLM2IntrPorts;
 
-  ac_sto_list *pstorage;
+    ac_sto_list *pstorage;
 
-  FILE *output;
-  char filename[256];
+    FILE *output;
+    char filename[256];
 
-  sprintf(filename, "%s_arch.H", project_name);
+    sprintf(filename, "%s_arch.H", project_name);
 
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Resources header file.");
-  fprintf( output, "#ifndef  %s_ARCH_H\n", upper_project_name);
-  fprintf( output, "#define  %s_ARCH_H\n\n", upper_project_name);
-
-  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
-  fprintf( output, "#include  \"ac_arch_dec_if.H\"\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
-  fprintf( output, "#include  \"ac_memport.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
-  fprintf( output, "#include  \"ac_reg.H\"\n");
-
-  if (HaveTLMPorts)
-    fprintf(output, "#include  \"ac_tlm_port.H\"\n");
-
-  if (HaveTLMIntrPorts)
-    fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
-
-  if (HaveTLM2Ports)
-         fprintf(output, "#include  \"ac_tlm2_port.H\"\n");
-
-  if (HaveTLM2NBPorts)
-         fprintf(output, "#include  \"ac_tlm2_nb_port.H\"\n");
-
-  if (HaveTLM2IntrPorts)
-         fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
-
-
-  if( HaveFormattedRegs )
-    fprintf( output, "#include  \"%s_fmt_regs.H\"\n", project_name);
-  
-  fprintf( output, " \n");
-
-  if (ACGDBIntegrationFlag) {
-    fprintf(output, "// AC_GDB template class forward declaration\n");
-    fprintf(output, "template <typename ac_word> class AC_GDB;\n\n");
-  }
-
-
- /*cache*/
- if (HaveMemHier) {
-      fprintf(output, "#include \"ac_cache.H\"\n");
-      fprintf(output, "#include \"ac_mem.H\"\n");
-      fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_lru_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_cache_if.H\"\n");
-        }
-
-
-
-  //Declaring Architecture Resources class.
-  COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.\n");
-  fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", 
-           project_name, project_name, project_name);
-  
-  fprintf( output, "public:\n\n");
-  
-  /* Declaring Program Counter */
-  COMMENT(INDENT[1], "Program Counter.");
-  fprintf(output, "%sac_reg<unsigned> ac_pc;\n\n", INDENT[1]);
-
-  /* Declaring storage devices */
-  COMMENT(INDENT[1],"Storage Devices.");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    switch( pstorage->type ) {
-      case REG:
-        //Formatted registers have a special class.
-        if( pstorage->format != NULL ){
-          fprintf( output, "%s%s_fmt_%s %s;\n", INDENT[1], 
-                   project_name, pstorage->name, pstorage->name);
-        }
-        else{
-          switch((unsigned)(pstorage->width)) {
-            case 0:
-              fprintf( output, "%sac_reg<%s_parms::ac_word> %s;\n", 
-                       INDENT[1], project_name, pstorage->name);
-              break;
-            case 1:
-              fprintf( output, "%sac_reg<bool> %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 8:
-              fprintf( output, "%sac_reg<unsigned char> %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 16:
-              fprintf( output, "%sac_reg<unsigned short> %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 32:
-              fprintf( output, "%sac_reg<unsigned long> %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 64:
-              fprintf( output, "%sac_reg<unsigned long long> %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            default:
-              AC_ERROR("Register width not supported: %d\n", 
-                       pstorage->width);
-              break;
-          }
-        }
-        break;
-
-      case REGBANK:
-        //Emiting register bank. Checking is a register width was declared.
-        switch((unsigned)(pstorage->width)) {
-          case 0:
-            fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword> %s;\n", 
-                     INDENT[1], pstorage->size, project_name, 
-                     project_name, pstorage->name);
-            break;
-          case 8:
-            fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char> %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          case 16:
-            fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long> %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          case 32:
-            fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long> %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          case 64:
-            fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long> %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          default:
-            AC_ERROR("Register width not supported: %d\n", 
-                     pstorage->width);
-            break;
-        }
-        break;
-
-      case CACHE:
-      case ICACHE:
-      case DCACHE:
-
-         /*cache*/
-         if (!HaveMemHier) {  //It is a generic cache. Just emit a base container object.
-            fprintf(output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-            /*****/
-            fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
-              INDENT[1], project_name, project_name, pstorage->name);
-        }
-        else {
-            //It is an ac_cache object.
-            ac_cache_parms *p = pstorage->parms;
-            if (p == NULL)
-                abort();
-
-            fprintf(output, "%s%s %s;\n", INDENT[1], pstorage->class_declaration,
-              pstorage->name);
-
-            if (pstorage->level == 0) {
-                fprintf(output, "%sac_cache_if<%s_parms::ac_word, %s_parms::ac_Hword, %s >"
-                        " %s_if;\n", INDENT[1], project_name, project_name,
-                        pstorage->class_declaration, pstorage->name);
-                /*****/
-                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
-                        "%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-            }
-       }
-        break;
-      /*cache*/  
-      case MEM:
-
-        /*if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-          fprintf( output, "%sac_storage %s_stg;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n", INDENT[1], project_name, project_name, pstorage->name);
-        }
-        else
-        {
-          //It is an ac_mem object.
-          fprintf( output, "%sac_mem %s;\n", INDENT[1], pstorage->name);
-        }*/
-
-        if (!HaveMemHier) { //It is a generic mem. Just emit a base container object.
-          fprintf(output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-            } else {
-          //It is an ac_mem object.
-          unsigned i = pstorage->size * 8 / wordsize;
-          fprintf(output, "%sac_mem<%u, %s_parms::ac_word> %s;\n", INDENT[1], i, project_name,
-            pstorage->name);
-            }
-
-        break;
-
-       case TLM_PORT:
-        fprintf(output, "%sac_tlm_port %s;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-        break;  
-
-      case TLM2_PORT:
-        fprintf(output, "%sac_tlm2_port %s;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-        break;
-
-      case TLM2_NB_PORT:
-          fprintf(output, "%sac_tlm2_nb_port %s;\n", INDENT[1], pstorage->name);
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-          break;
-
-      default:
-        fprintf( output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
-        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", 
-                INDENT[1], project_name, project_name, pstorage->name);
-        break;
+    if ( !(output = fopen( filename, "w"))){
+        perror("ArchC could not open output file");
+        exit(1);
     }
-  }
-  
-  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) { 
-    fprintf( output, "#define SLEEP_AWAKE_MODE\n");
-    fprintf( output, "%sac_reg<%s_parms::ac_word> intr_reg;\n", INDENT[1], project_name);
-  }
 
-  fprintf( output, "\n\n");
+    print_comment( output, "ArchC Resources header file.");
+    fprintf( output, "#ifndef  %s_ARCH_H\n", upper_project_name);
+    fprintf( output, "#define  %s_ARCH_H\n\n", upper_project_name);
 
+    fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
+    fprintf( output, "#include  \"ac_arch_dec_if.H\"\n");
+    fprintf( output, "#include  \"ac_storage.H\"\n");
+    fprintf( output, "#include  \"ac_memport.H\"\n");
+    fprintf( output, "#include  \"ac_regbank.H\"\n");
+    fprintf( output, "#include  \"ac_reg.H\"\n");
 
+    if (HaveTLMPorts)
+        fprintf(output, "#include  \"ac_tlm_port.H\"\n");
 
-  //ac_resources constructor declaration
-  COMMENT(INDENT[1],"Constructor.");
-  fprintf( output, "%sexplicit %s_arch();\n\n", INDENT[1], project_name);
-  
-  COMMENT(INDENT[1],"Module initialization method.");
-  fprintf( output, "%svirtual void init(int ac, char* av[]) = 0;\n\n", 
-           INDENT[1]);
+    if (HaveTLMIntrPorts)
+        fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
 
-  COMMENT(INDENT[1],"Module finalization method.");
-  fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
+    if (HaveTLM2Ports)
+        fprintf(output, "#include  \"ac_tlm2_port.H\"\n");
 
-  if (ACGDBIntegrationFlag) {
-    COMMENT(INDENT[1], "GDB stub access virtual method declaration.");
-    fprintf(output, "%svirtual AC_GDB<%s_parms::ac_word>* get_gdbstub() = 0;\n\n", 
-            INDENT[1], project_name);
-  }
+    if (HaveTLM2NBPorts)
+        fprintf(output, "#include  \"ac_tlm2_nb_port.H\"\n");
 
-  COMMENT(INDENT[1],"Virtual destructor declaration.");
-  fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
-
-  fprintf( output, "%sstatic int globalId;\n", INDENT[1]);
-  fprintf( output, "%sint getId() { return id.read(); }\n",INDENT[1]);
+    if (HaveTLM2IntrPorts)
+        fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
 
 
-  fprintf( output, "};\n\n"); //End of ac_resources class
+    if( HaveFormattedRegs )
+        fprintf( output, "#include  \"%s_fmt_regs.H\"\n", project_name);
 
-  fprintf( output, "#endif  //_%s_ARCH_H\n", upper_project_name);
-  fclose( output);
+    fprintf( output, " \n");
+
+    if (ACGDBIntegrationFlag) {
+        fprintf(output, "// AC_GDB template class forward declaration\n");
+        fprintf(output, "template <typename ac_word> class AC_GDB;\n\n");
+    }
+
+    /*cache*/
+    if (HaveMemHier) {
+        fprintf(output, "#include \"ac_cache.H\"\n");
+        fprintf(output, "#include \"ac_mem.H\"\n");
+        fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_lru_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_cache_if.H\"\n");
+    }
+
+    //Declaring Architecture Resources class.
+    COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.\n");
+    fprintf( output, "class %s_arch : public ac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword> {\n", 
+            project_name, project_name, project_name);
+
+    fprintf( output, "public:\n\n");
+
+    /* Declaring Program Counter */
+    COMMENT(INDENT[1], "Program Counter.");
+    fprintf(output, "%sac_reg<unsigned> ac_pc;\n\n", INDENT[1]);
+
+    /* Declaring storage devices */
+    COMMENT(INDENT[1],"Storage Devices.");
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+        switch( pstorage->type ) {
+            case REG:
+                //Formatted registers have a special class.
+                if( pstorage->format != NULL ){
+                    fprintf( output, "%s%s_fmt_%s %s;\n", INDENT[1], 
+                            project_name, pstorage->name, pstorage->name);
+                }
+                else{
+                    switch((unsigned)(pstorage->width)) {
+                        case 0:
+                            fprintf( output, "%sac_reg<%s_parms::ac_word> %s;\n", 
+                                    INDENT[1], project_name, pstorage->name);
+                            break;
+                        case 1:
+                            fprintf( output, "%sac_reg<bool> %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 8:
+                            fprintf( output, "%sac_reg<unsigned char> %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 16:
+                            fprintf( output, "%sac_reg<unsigned short> %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 32:
+                            fprintf( output, "%sac_reg<unsigned long> %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 64:
+                            fprintf( output, "%sac_reg<unsigned long long> %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        default:
+                            AC_ERROR("Register width not supported: %d\n", 
+                                    pstorage->width);
+                            break;
+                    }
+                }
+                break;
+
+            case REGBANK:
+                //Emiting register bank. Checking is a register width was declared.
+                switch((unsigned)(pstorage->width)) {
+                    case 0:
+                        fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword> %s;\n", 
+                                INDENT[1], pstorage->size, project_name, 
+                                project_name, pstorage->name);
+                        break;
+                    case 8:
+                        fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char> %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    case 16:
+                        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long> %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    case 32:
+                        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long> %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    case 64:
+                        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long> %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    default:
+                        AC_ERROR("Register width not supported: %d\n", 
+                                pstorage->width);
+                        break;
+                }
+                break;
+
+            case CACHE:
+            case ICACHE:
+            case DCACHE:
+                if (!HaveMemHier) {  //It is a generic cache. Just emit a base container object.
+                    fprintf(output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+                    fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n",  INDENT[1], project_name, project_name, pstorage->name);
+                }
+                else {
+                    //It is an ac_cache object.
+                    ac_cache_parms *p = pstorage->parms;
+                    if (p == NULL)
+                        abort();
+
+                    fprintf(output, "%s%s %s;\n", INDENT[1], pstorage->class_declaration, pstorage->name);
+
+                    if (pstorage->level == 0) {
+                        fprintf(output, "%sac_cache_if<%s_parms::ac_word, %s_parms::ac_Hword, %s >" 
+                                " %s_if;\n", INDENT[1], project_name, project_name,
+                                pstorage->class_declaration, pstorage->name);
+                        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
+                                "%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                    }
+                }
+                break;
+            
+            case MEM:
+ 
+                if (!HaveMemHier) { //It is a generic mem. Just emit a base container object.
+                    fprintf(output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+                    fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                } else {
+                    //It is an ac_mem object.
+                    unsigned i = pstorage->size * 8 / wordsize;
+                    fprintf(output, "%sac_mem<%u, %s_parms::ac_word> %s;\n", INDENT[1], i, project_name, pstorage->name);
+                }
+                break;
+            
+            case TLM_PORT:
+                fprintf(output, "%sac_tlm_port %s;\n", INDENT[1], pstorage->name);
+                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                break;  
+
+            case TLM2_PORT:
+                fprintf(output, "%sac_tlm2_port %s;\n", INDENT[1], pstorage->name);
+                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                break;
+
+            case TLM2_NB_PORT:
+                fprintf(output, "%sac_tlm2_nb_port %s;\n", INDENT[1], pstorage->name);
+                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                break;
+
+            default:
+                fprintf( output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", 
+                        INDENT[1], project_name, project_name, pstorage->name);
+                break;
+        }
+    }
+
+    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) { 
+        fprintf( output, "#define SLEEP_AWAKE_MODE\n");
+        fprintf( output, "%sac_reg<%s_parms::ac_word> intr_reg;\n", INDENT[1], project_name);
+    }
+
+    fprintf( output, "\n\n");
+
+    //ac_resources constructor declaration
+    COMMENT(INDENT[1],"Constructor.");
+    fprintf( output, "%sexplicit %s_arch();\n\n", INDENT[1], project_name);
+
+    COMMENT(INDENT[1],"Module initialization method.");
+    fprintf( output, "%svirtual void init(int ac, char* av[]) = 0;\n\n", 
+            INDENT[1]);
+
+    COMMENT(INDENT[1],"Module finalization method.");
+    fprintf( output, "%svirtual void stop(int status = 0) = 0;\n\n", INDENT[1]);
+
+    if (ACGDBIntegrationFlag) {
+        COMMENT(INDENT[1], "GDB stub access virtual method declaration.");
+        fprintf(output, "%svirtual AC_GDB<%s_parms::ac_word>* get_gdbstub() = 0;\n\n", 
+                INDENT[1], project_name);
+    }
+
+    COMMENT(INDENT[1],"Virtual destructor declaration.");
+    fprintf( output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
+
+    fprintf( output, "%sstatic int globalId;\n", INDENT[1]);
+    fprintf( output, "%sint getId() { return id.read(); }\n",INDENT[1]);
+
+
+    fprintf( output, "};\n\n"); //End of ac_resources class
+
+    fprintf( output, "#endif  //_%s_ARCH_H\n", upper_project_name);
+    fclose( output);
 }
 
 
 /*!Create ArchC Resources Reference Header File */
 void CreateArchRefHeader() {
-  extern ac_sto_list *storage_list;
-  extern char* project_name;
-  extern char* upper_project_name;
-  extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts, HaveTLM2IntrPorts;
+    extern ac_sto_list *storage_list;
+    extern char* project_name;
+    extern char* upper_project_name;
+    extern int HaveFormattedRegs, HaveMemHier, HaveTLMIntrPorts, HaveTLM2IntrPorts;
 
-  ac_sto_list *pstorage;
+    ac_sto_list *pstorage;
 
-  FILE *output;
-  char filename[256];
+    FILE *output;
+    char filename[256];
 
-  sprintf(filename, "%s_arch_ref.H", project_name);
+    sprintf(filename, "%s_arch_ref.H", project_name);
 
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
-
-  print_comment( output, "ArchC Resources header file.");
-  fprintf( output, "#ifndef  _%s_ARCH_REF_H\n", upper_project_name);
-  fprintf( output, "#define  _%s_ARCH_REF_H\n\n", upper_project_name);
-
-  fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
-  fprintf( output, "#include  \"ac_arch_ref.H\"\n");
-  fprintf( output, "#include  \"ac_memport.H\"\n");
-  fprintf( output, "#include  \"ac_reg.H\"\n");
-  fprintf( output, "#include  \"ac_regbank.H\"\n");
-
-  if (HaveTLMIntrPorts)
-    fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
-
-  fprintf(output, "\n");
-
-  if (HaveTLM2IntrPorts)
-         fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
-
-  fprintf(output, "\n");   
-
-
-if (HaveMemHier) {
-      fprintf(output, "#include \"ac_cache.H\"\n");
-      fprintf(output, "#include \"ac_mem.H\"\n");
-      fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
-      fprintf(output, "#include \"ac_lru_replacement_policy.H\"\n");
-        }
-
-
-
-  COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
-  fprintf(output, "class %s_arch;\n\n", project_name);
-
-  //Declaring Architecture Resource references class.
-  COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.");
-  fprintf( output, "class %s_arch_ref : public ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword> {\n", 
-           project_name, project_name, project_name);
-  fprintf( output, "public:\n");
-  fprintf( output, " \n");
-
-  /* Declaring Program Counter */
-  COMMENT(INDENT[1], "Program Counter.");
-  fprintf(output, "%sac_reg<unsigned>& ac_pc;\n\n", INDENT[1]);
-
-  /* Declaring storage devices */
-  COMMENT(INDENT[1],"Storage Devices.");
-  for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-    switch( pstorage->type ) {
-      case REG:
-        //Formatted registers have a special class.
-        if( pstorage->format != NULL ){
-          fprintf( output, "%s%s_fmt_%s& %s;\n", 
-                   INDENT[1], project_name, pstorage->name, pstorage->name);
-        }
-        else{
-          switch((unsigned)(pstorage->width)) {
-            case 0:
-              fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n", 
-                       INDENT[1], project_name, pstorage->name);
-              break;
-            case 1:
-              fprintf( output, "%sac_reg<bool>& %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 8:
-              fprintf( output, "%sac_reg<unsigned char>& %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 16:
-              fprintf( output, "%sac_reg<unsigned short>& %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 32:
-              fprintf( output, "%sac_reg<unsigned long>& %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            case 64:
-              fprintf( output, "%sac_reg<unsigned long long>& %s;\n", 
-                       INDENT[1], pstorage->name);
-              break;
-            default:
-              AC_ERROR("Register width not supported: %d\n", 
-                       pstorage->width);
-              break;
-          }
-        }
-        break;
-
-      case REGBANK:
-        //Emiting register bank. Checking is a register width was declared.
-        switch((unsigned)(pstorage->width)) {
-          case 0:
-            fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n", 
-                     INDENT[1], pstorage->size, project_name, 
-                     project_name, pstorage->name);
-            break;
-          case 8:
-            fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          case 16:
-            fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          case 32:
-            fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          case 64:
-            fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n", 
-                     INDENT[1], pstorage->size, pstorage->name);
-            break;
-          default:
-            AC_ERROR("Register width not supported: %d\n", 
-                     pstorage->width);
-            break;
-        }
-        break;
-
-      case CACHE:
-      case ICACHE:
-      case DCACHE:
-        if (!HaveMemHier) { //It is a generic cache. Just emit a base container object.
-              /*****/
-
-          fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n",
-            INDENT[1], project_name, project_name, pstorage->name);
-            } else {
-          //It is an ac_cache object.
-          fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration,
-            pstorage->name);
-          if (pstorage->level == 0) {
-              /*****/
-
-              fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
-                      "&%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-          }
-        }
-        break;
-
-      case MEM:
-       if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-        }
-       else{
-         //It is an ac_mem object.
-         fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration,
-          pstorage->name);
-        }
-        break;
-
-      default:
-        fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", 
-                 INDENT[1], project_name, project_name, pstorage->name);
-        break;
+    if ( !(output = fopen( filename, "w"))){
+        perror("ArchC could not open output file");
+        exit(1);
     }
-  }
 
-  
-  if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
-    fprintf( output, "%sac_reg<%s_parms::ac_word>& intr_reg;\n",INDENT[1], project_name);
+    print_comment( output, "ArchC Resources header file.");
+    fprintf( output, "#ifndef  _%s_ARCH_REF_H\n", upper_project_name);
+    fprintf( output, "#define  _%s_ARCH_REF_H\n\n", upper_project_name);
 
-  fprintf(output, "\n");
+    fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
+    fprintf( output, "#include  \"ac_arch_ref.H\"\n");
+    fprintf( output, "#include  \"ac_memport.H\"\n");
+    fprintf( output, "#include  \"ac_reg.H\"\n");
+    fprintf( output, "#include  \"ac_regbank.H\"\n");
+
+    if (HaveTLMIntrPorts)
+        fprintf(output, "#include  \"ac_tlm_intr_port.H\"\n");
+
+    fprintf(output, "\n");
+
+    if (HaveTLM2IntrPorts)
+        fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
+
+    fprintf(output, "\n");   
 
 
-  //ac_resources constructor declaration
-  COMMENT(INDENT[1],"Constructor.");
-  fprintf(output, "%s %s_arch_ref(%s_arch& arch);\n", 
-          INDENT[1], project_name, project_name);
-      
-  fprintf( output, "\n");
+    if (HaveMemHier) {
+        fprintf(output, "#include \"ac_cache.H\"\n");
+        fprintf(output, "#include \"ac_mem.H\"\n");
+        fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
+        fprintf(output, "#include \"ac_lru_replacement_policy.H\"\n");
+    }
 
-  fprintf( output, "};\n\n"); //End of _arch_ref class
 
-  fprintf( output, "#endif  //_%s_ARCH_REF_H\n", upper_project_name);
-  fclose( output);
 
+    COMMENT(INDENT[0], "Forward class declaration, needed to compile.");
+    fprintf(output, "class %s_arch;\n\n", project_name);
+
+    //Declaring Architecture Resource references class.
+    COMMENT(INDENT[0],"ArchC class for model-specific architectural resources.");
+    fprintf( output, "class %s_arch_ref : public ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword> {\n", project_name, project_name, project_name);
+    fprintf( output, "public:\n");
+    fprintf( output, " \n");
+
+    /* Declaring Program Counter */
+    COMMENT(INDENT[1], "Program Counter.");
+    fprintf(output, "%sac_reg<unsigned>& ac_pc;\n\n", INDENT[1]);
+
+    /* Declaring storage devices */
+    COMMENT(INDENT[1],"Storage Devices.");
+    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+        switch( pstorage->type ) {
+            case REG:
+                //Formatted registers have a special class.
+                if( pstorage->format != NULL ){
+                    fprintf( output, "%s%s_fmt_%s& %s;\n", INDENT[1], project_name, pstorage->name, pstorage->name);
+                }
+                else{
+                    switch((unsigned)(pstorage->width)) {
+                        case 0:
+                            fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n", 
+                                    INDENT[1], project_name, pstorage->name);
+                            break;
+                        case 1:
+                            fprintf( output, "%sac_reg<bool>& %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 8:
+                            fprintf( output, "%sac_reg<unsigned char>& %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 16:
+                            fprintf( output, "%sac_reg<unsigned short>& %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 32:
+                            fprintf( output, "%sac_reg<unsigned long>& %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        case 64:
+                            fprintf( output, "%sac_reg<unsigned long long>& %s;\n", 
+                                    INDENT[1], pstorage->name);
+                            break;
+                        default:
+                            AC_ERROR("Register width not supported: %d\n", 
+                                    pstorage->width);
+                            break;
+                    }
+                }
+                break;
+
+            case REGBANK:
+                //Emiting register bank. Checking is a register width was declared.
+                switch((unsigned)(pstorage->width)) {
+                    case 0:
+                        fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n", 
+                                INDENT[1], pstorage->size, project_name, 
+                                project_name, pstorage->name);
+                        break;
+                    case 8:
+                        fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    case 16:
+                        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    case 32:
+                        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    case 64:
+                        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n", 
+                                INDENT[1], pstorage->size, pstorage->name);
+                        break;
+                    default:
+                        AC_ERROR("Register width not supported: %d\n", 
+                                pstorage->width);
+                        break;
+                }
+                break;
+
+            case CACHE:
+            case ICACHE:
+            case DCACHE:
+                if (!HaveMemHier) { //It is a generic cache. Just emit a base container object.
+
+                    fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", 
+                            INDENT[1], project_name, project_name, pstorage->name);
+                } else {
+                    //It is an ac_cache object.
+                    fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration, pstorage->name);
+
+                    if (pstorage->level == 0) {
+                        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> &%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                    }
+                }
+                break;
+
+            case MEM:
+                if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
+                    fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                }
+                else{
+                    //It is an ac_mem object.
+                    fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration, pstorage->name);
+                }
+                break;
+
+            default:
+                fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                break;
+        }
+    }
+
+    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+        fprintf( output, "%sac_reg<%s_parms::ac_word>& intr_reg;\n",INDENT[1], project_name);
+
+    fprintf(output, "\n");
+
+    //ac_resources constructor declaration
+    COMMENT(INDENT[1],"Constructor.");
+    fprintf(output, "%s %s_arch_ref(%s_arch& arch);\n", INDENT[1], project_name, project_name);
+    fprintf( output, "\n");
+    fprintf( output, "};\n\n"); //End of _arch_ref class
+    fprintf( output, "#endif  //_%s_ARCH_REF_H\n", upper_project_name);
+    fclose( output);
 }
 
 
@@ -1051,8 +1013,7 @@ void CreateArchRefImpl() {
 
     //Declaring Architecture Resource references class.
     COMMENT(INDENT[0],"/Default constructor.");
-    fprintf(output,
-            "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
+    fprintf(output, "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
             project_name, project_name, project_name, project_name, project_name);
 
     fprintf(output, "%sac_pc(arch.ac_pc),\n", INDENT[1]);
@@ -1067,25 +1028,18 @@ void CreateArchRefImpl() {
         }
         else
             fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
-        //if (HaveMemHier && pstorage->level == 0) {
-        //    //if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
-        //    if (pstorage->has_memport){ 
-        //        fprintf(output, ", %s%s_mport(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
-        //    }
-        //}
         if (pstorage->next != NULL) {
             fprintf(output, ", ");
         }
     }
 
-        if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
-            fprintf(output, ", intr_reg(arch.intr_reg) ");
+    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+        fprintf(output, ", intr_reg(arch.intr_reg) ");
 
+    fprintf(output, " {}\n\n");
+    fclose( output);
 
-        fprintf(output, " {}\n\n");
-        fclose( output);
-
-    }
+}
 
 
 //!Creates Decoder Header File
@@ -2103,342 +2057,342 @@ void CreateStatsImplTmpl() {
 
 //!Creates Processor Module Implementation File
 void CreateProcessorImpl() {
-  extern ac_sto_list *storage_list;
-  extern char *project_name;
-  extern int HaveMemHier, ACGDBIntegrationFlag, largest_format_size;
-  ac_sto_list *pstorage;
-  
-  extern ac_dec_instr *instr_list;
+    extern ac_sto_list *storage_list;
+    extern char *project_name;
+    extern int HaveMemHier, ACGDBIntegrationFlag, largest_format_size;
+    ac_sto_list *pstorage;
 
-  char* filename;
-  FILE* output;
+    extern ac_dec_instr *instr_list;
 
-  filename = (char*) malloc(strlen(project_name)+strlen(".cpp")+1);
-  sprintf( filename, "%s.cpp", project_name);
+    char* filename;
+    FILE* output;
 
-  if ( !(output = fopen( filename, "w"))){
-    perror("ArchC could not open output file");
-    exit(1);
-  }
+    filename = (char*) malloc(strlen(project_name)+strlen(".cpp")+1);
+    sprintf( filename, "%s.cpp", project_name);
 
-  print_comment( output, "Processor Module Implementation File.");
-  fprintf( output, "#include  \"%s.H\"\n", project_name);
-  fprintf( output, "#include  \"%s_isa.cpp\"\n\n", project_name);
-
-  if( ACABIFlag )
-    fprintf( output, "#include  \"%s_syscall.H\"\n\n", project_name);
-
-  if( ACThreading )
-    EmitDispatch(output, 0);
-  
-  fprintf( output, "void %s::behavior() {\n\n", project_name);
-  if( ACDebugFlag ){
-    fprintf( output, "%sextern bool ac_do_trace;\n", INDENT[1]);
-    fprintf( output, "%sextern ofstream trace_file;\n", INDENT[1]);
-  }
-  
-  if( ACThreading ) 
-    EmitVetLabelAt(output, 1);
-  else
-    fprintf( output, "%sunsigned ins_id;\n", INDENT[1]);
-
-  /* Delayed program loading */
-  fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
-  fprintf(output, "%s%s_mport.load(delayed_load_program);\n", INDENT[2], load_device->name);
-  fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[2]);
-  fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
-  fprintf(output, "%s}\n\n", INDENT[1]);
-
-  /*if( HaveMemHier ) {
-    fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[1]);
-    fprintf( output, "%sreturn;\n", INDENT[2]);
-    fprintf( output, "%s}\n\n", INDENT[1]);
-  }*/
-    
-  if( ACFullDecode ) {
-    fprintf(output, "%sfor (decode_pc = ac_pc; decode_pc < dec_cache_size; decode_pc += %d) {\n", 
-            INDENT[1], largest_format_size / 8);
-    EmitDecodification(output, 2);
-    fprintf( output, "%s}\n\n", INDENT[1]);
-  }
-  
-  if ( ACThreading && ACABIFlag && ACDecCacheFlag) {
-    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[1]);
-    fprintf( output, "%sinstr_dec = (DEC_CACHE + (LOCATION", INDENT[1]);
-    if( ACIndexFix ) 
-      fprintf( output, " / %d", largest_format_size / 8);
-    fprintf( output, ")); \\\n");
-    
-    if ( !ACFullDecode )
-      fprintf( output, "%sinstr_dec->valid = true; \\\n", INDENT[1]);
-    
-    fprintf( output, "%sinstr_dec->id = 0; \\\n", INDENT[1]);
-    fprintf( output, "%sinstr_dec->end_rot = &&Sys_##LOCATION;\n\n", INDENT[1]);
-
-    fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[1]);
-    fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[1]);
-  }
-  
-  // Longjmp of ac_annul_sig and ac_stop_flag  
-  fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
-  if (ACLongJmpStop || ACThreading)
-    fprintf( output, "%sif (action == AC_ACTION_STOP) return;\n\n", INDENT[1]);
-  
-  //Emiting processor behavior method implementation.
-  if( ACThreading )
-    EmitInstrExec(output, 1);
-  else
-    EmitProcessorBhv(output, 1);
-  
-  fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
-
-  //Emiting Verification Method.
-  if (ACVerboseFlag) {
-    COMMENT(INDENT[0],"Verification method.\n");
-    fprintf( output, "%svoid %s::ac_verify(){\n", INDENT[0], project_name);
-    fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
-
-    fprintf( output, "%sif( done.read() ) {\n", INDENT[1]);
-
-    fprintf( output, "#ifdef AC_VERBOSE\n");
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-      fprintf( output, "%s%s.change_dump(cerr);\n", 
-               INDENT[2],pstorage->name );
+    if ( !(output = fopen( filename, "w"))){
+        perror("ArchC could not open output file");
+        exit(1);
     }
-    fprintf( output, "#endif\n");
-    
-    fprintf( output, "#ifdef AC_UPDATE_LOG\n");
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-      fprintf( output, "%s%s.reset_log();\n", 
-               INDENT[2],pstorage->name );
+
+    print_comment( output, "Processor Module Implementation File.");
+    fprintf( output, "#include  \"%s.H\"\n", project_name);
+    fprintf( output, "#include  \"%s_isa.cpp\"\n\n", project_name);
+
+    if( ACABIFlag )
+        fprintf( output, "#include  \"%s_syscall.H\"\n\n", project_name);
+
+    if( ACThreading )
+        EmitDispatch(output, 0);
+
+    fprintf( output, "void %s::behavior() {\n\n", project_name);
+    if( ACDebugFlag ){
+        fprintf( output, "%sextern bool ac_do_trace;\n", INDENT[1]);
+        fprintf( output, "%sextern ofstream trace_file;\n", INDENT[1]);
     }
-    fprintf( output, "#endif\n");
-    
-    fprintf( output, "%sdone.write(0);\n", INDENT[2]);
-    fprintf( output, "%s}\n\n", INDENT[1]);
 
-    fprintf(output, "%swait();\n\n", INDENT[1]);
-    fprintf(output, "%s}\n", INDENT[1]);
-    fprintf( output, "%s}\n\n", INDENT[0]);
-  }
+    if( ACThreading ) 
+        EmitVetLabelAt(output, 1);
+    else
+        fprintf( output, "%sunsigned ins_id;\n", INDENT[1]);
 
-  /* SIGNAL HANDLERS */
-  fprintf(output, "#include <ac_sighandlers.H>\n\n");
+    /* Delayed program loading */
+    fprintf(output, "%sif (has_delayed_load) {\n", INDENT[1]);
+    fprintf(output, "%s%s_mport.load(delayed_load_program);\n", INDENT[2], load_device->name);
+    fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[2]);
+    fprintf(output, "%shas_delayed_load = false;\n", INDENT[2]);
+    fprintf(output, "%s}\n\n", INDENT[1]);
 
-  /* init() and stop() */
-  /* init() with no parameters */
-  fprintf(output, "void %s::init() {\n", project_name);
+    /*if( HaveMemHier ) {
+      fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[1]);
+      fprintf( output, "%sreturn;\n", INDENT[2]);
+      fprintf( output, "%s}\n\n", INDENT[1]);
+      }*/
 
-  /*CACHE*/
-  for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
+    if( ACFullDecode ) {
+        fprintf(output, "%sfor (decode_pc = ac_pc; decode_pc < dec_cache_size; decode_pc += %d) {\n", 
+                INDENT[1], largest_format_size / 8);
+        EmitDecodification(output, 2);
+        fprintf( output, "%s}\n\n", INDENT[1]);
+    }
+
+    if ( ACThreading && ACABIFlag && ACDecCacheFlag) {
+        fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[1]);
+        fprintf( output, "%sinstr_dec = (DEC_CACHE + (LOCATION", INDENT[1]);
+        if( ACIndexFix ) 
+            fprintf( output, " / %d", largest_format_size / 8);
+        fprintf( output, ")); \\\n");
+
+        if ( !ACFullDecode )
+            fprintf( output, "%sinstr_dec->valid = true; \\\n", INDENT[1]);
+
+        fprintf( output, "%sinstr_dec->id = 0; \\\n", INDENT[1]);
+        fprintf( output, "%sinstr_dec->end_rot = &&Sys_##LOCATION;\n\n", INDENT[1]);
+
+        fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[1]);
+        fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[1]);
+    }
+
+    // Longjmp of ac_annul_sig and ac_stop_flag  
+    fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
+    if (ACLongJmpStop || ACThreading)
+        fprintf( output, "%sif (action == AC_ACTION_STOP) return;\n\n", INDENT[1]);
+
+    //Emiting processor behavior method implementation.
+    if( ACThreading )
+        EmitInstrExec(output, 1);
+    else
+        EmitProcessorBhv(output, 1);
+
+    fprintf( output, "%s} // behavior()\n\n", INDENT[0]);
+
+    //Emiting Verification Method.
+    if (ACVerboseFlag) {
+        COMMENT(INDENT[0],"Verification method.\n");
+        fprintf( output, "%svoid %s::ac_verify(){\n", INDENT[0], project_name);
+        fprintf(output, "%sfor (;;) {\n\n", INDENT[1]);
+
+        fprintf( output, "%sif( done.read() ) {\n", INDENT[1]);
+
+        fprintf( output, "#ifdef AC_VERBOSE\n");
+        for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+            fprintf( output, "%s%s.change_dump(cerr);\n", 
+                    INDENT[2],pstorage->name );
+        }
+        fprintf( output, "#endif\n");
+
+        fprintf( output, "#ifdef AC_UPDATE_LOG\n");
+        for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
+            fprintf( output, "%s%s.reset_log();\n", 
+                    INDENT[2],pstorage->name );
+        }
+        fprintf( output, "#endif\n");
+
+        fprintf( output, "%sdone.write(0);\n", INDENT[2]);
+        fprintf( output, "%s}\n\n", INDENT[1]);
+
+        fprintf(output, "%swait();\n\n", INDENT[1]);
+        fprintf(output, "%s}\n", INDENT[1]);
+        fprintf( output, "%s}\n\n", INDENT[0]);
+    }
+
+    /* SIGNAL HANDLERS */
+    fprintf(output, "#include <ac_sighandlers.H>\n\n");
+
+    /* init() and stop() */
+    /* init() with no parameters */
+    fprintf(output, "void %s::init() {\n", project_name);
+
+    /*CACHE*/
+    for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
         switch(pstorage->type) {
-        case CACHE:
-        case ICACHE:
-        case DCACHE:
-            fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
-                            "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
-                            INDENT[1], pstorage->name, pstorage->name, pstorage->name);
+            case CACHE:
+            case ICACHE:
+            case DCACHE:
+                fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
+                        "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
+                        INDENT[1], pstorage->name, pstorage->name, pstorage->name);
             default: 
-          continue;
+                continue;
         }
 
-  }
-
-  fprintf(output, "\n#ifdef AC_VERIFY\n");
-  fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
-  fprintf(output, "#endif\n\n");
-  fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
-  fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
-  fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
-          INDENT[1]);
-  fprintf(output, "%sInitStat();\n", INDENT[1]);
-
-//  if(ACABIFlag)
-//    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
-  fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
-  if( ACDecCacheFlag )
-    fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
-
-  fprintf(output, "%ssignal(SIGINT, sigint_handler);\n", INDENT[1]);
-  fprintf(output, "%ssignal(SIGTERM, sigint_handler);\n", INDENT[1]);
-  fprintf(output, "%ssignal(SIGSEGV, sigsegv_handler);\n", INDENT[1]);
-  fprintf(output, "%ssignal(SIGUSR1, sigusr1_handler);\n", INDENT[1]);
-  fprintf(output, "#ifdef USE_GDB\n");
-  fprintf(output, "%ssignal(SIGUSR2, sigusr2_handler);\n", INDENT[1]);
-  fprintf(output, "#endif\n");
-  fprintf(output, "%sset_running();\n", INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  /* init() with 3 parameters */
-  fprintf(output, "void %s::init(int ac, char *av[]) {\n\n", project_name);
-//  fprintf(output, "%sac_init_opts( ac, av);\n", INDENT[1]);
-  fprintf(output, "%sargs_t args = ac_init_args( ac, av);\n", INDENT[1]);
-  fprintf(output, "%sset_args(args.size, args.app_args);\n", INDENT[1]);
-  fprintf(output, "%s%s_mport.load(args.app_filename);\n", INDENT[1], load_device->name);
-
-  for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
-  switch(pstorage->type) {
-  case CACHE:
-  case ICACHE:
-  case DCACHE:
-      fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
-                      "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
-                      INDENT[1], pstorage->name, pstorage->name, pstorage->name);
-       
-       default: continue;
-
-     }
-  }
-
-  fprintf(output, "#ifdef AC_VERIFY\n");
-  fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
-  fprintf(output, "#endif\n\n");
-  fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
-  fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
-  fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
-          INDENT[1]);
-  fprintf(output, "%sInitStat();\n", INDENT[1]);
-
-//  if(ACABIFlag)
-//    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
-  fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
-  if( ACDecCacheFlag )
-    fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
-
-  fprintf(output, "%ssignal(SIGINT, sigint_handler);\n", INDENT[1]);
-  fprintf(output, "%ssignal(SIGTERM, sigint_handler);\n", INDENT[1]);
-  fprintf(output, "%ssignal(SIGSEGV, sigsegv_handler);\n", INDENT[1]);
-  fprintf(output, "%ssignal(SIGUSR1, sigusr1_handler);\n", INDENT[1]);
-  fprintf(output, "#ifdef USE_GDB\n");
-  fprintf(output, "%ssignal(SIGUSR2, sigusr2_handler);\n", INDENT[1]);
-  fprintf(output, "#endif\n");
-  fprintf(output, "%sset_running();\n", INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  fprintf(output, "void %s::set_prog_args(){\n", project_name); 
-  fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  /* stop() */
-  fprintf(output, "//Stop simulation (may receive exit status)\n");
-  fprintf(output, "void %s::stop(int status) {\n", project_name);
-
-   fprintf(output, "%scerr << endl << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
-          INDENT[1]);
-  fprintf(output, "%sISA._behavior_end();\n", INDENT[1]);
-  fprintf(output, "%sac_stop_flag = 1;\n", INDENT[1]);
-  fprintf(output, "%sac_exit_status = status;\n", INDENT[1]);
-  fprintf(output, "%sset_stopped();\n", INDENT[1]);
-  if (ACLongJmpStop)
-    fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  /* Program loading functions */
-  /* load() */
-  fprintf(output, "void %s::load(char* program) {\n", project_name);
-  fprintf(output, "%s%s_mport.load(program);\n", INDENT[1], load_device->name);
-  fprintf(output, "}\n\n");
-
-  /* delayed_load() */
-  fprintf(output, "void %s::delayed_load(char* program) {\n", project_name);
-  fprintf(output, "%shas_delayed_load = true;\n", INDENT[1]);
-  fprintf(output, "%sdelayed_load_program = new char[strlen(program)];\n", 
-          INDENT[1]);
-  fprintf(output, "%sstrcpy(delayed_load_program, program);\n", INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  /* Some simple GDB support methods */
-  if (ACGDBIntegrationFlag) {
-    /* get_gdbstub() */
-    fprintf(output, "// Returns pointer to gdbstub\n");
-    fprintf(output, "AC_GDB<%s_parms::ac_word>* %s::get_gdbstub() {\n", 
-            project_name, project_name);
-    fprintf(output, "%sreturn gdbstub;\n", INDENT[1]);
-    fprintf(output, "}\n\n");
-
-    /* get_ac_tgt_endian() */
-    fprintf(output, "// Returns true if model endianness doesn't match with host's, false otherwise\n");
-    fprintf(output, "bool %s::get_ac_tgt_endian() {\n", project_name);
-    fprintf(output, "%sreturn ac_tgt_endian;\n", INDENT[1]);
-    fprintf(output, "}\n\n");
-
-    /* ac_stop() */
-    fprintf(output, "// Stops the processor\n");
-    fprintf(output, "void %s::ac_stop() {\n", project_name);
-    fprintf(output, "%sstop();\n", INDENT[1]);
-    fprintf(output, "}\n\n");
-  }
-
-  /* get_ac_pc() */
-  fprintf(output, "// Returns ac_pc value\n");
-  fprintf(output, "unsigned %s::get_ac_pc() {\n", project_name);
-  fprintf(output, "%sreturn ac_pc;\n", INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  /* set_ac_pc() */
-  fprintf(output, "// Assigns value to ac_pc\n");
-  fprintf(output, "void %s::set_ac_pc(unsigned int value) {\n", project_name);
-  fprintf(output, "%sac_pc = value;\n", INDENT[1]);
-  fprintf(output, "}\n\n");
-
-  /* PrintStat() */
-  fprintf(output, "// Wrapper function to PrintStat().\n");
-  fprintf(output, "void %s::PrintStat() {\n", project_name);
-  fprintf(output, "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n", 
-          INDENT[1], project_name, project_name);
-
-
-
-   if (HaveMemHier) {
-  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
-      switch(pstorage->type) {
-      case CACHE:
-      case ICACHE:
-      case DCACHE:
-    fprintf(output, "%sstd::cerr << \"cache: %s\\n\";\n", INDENT[1], pstorage->name);
-    fprintf(output, "%s%s.print_statistics(std::cerr);\n", INDENT[1], pstorage->name);
-    break;
-      default:
-    continue;
-      }
-  }
-  }
- 
-
-
-  fprintf(output, "}\n\n");
-
-  if (ACWaitFlag) {
-    /* set_proc_freq() */
-    fprintf(output, "// Assigns value to processor frequency and updates cycle time values\n");
-    fprintf(output, "void %s::set_proc_freq(unsigned int proc_freq) {\n", project_name);
-    fprintf(output, "%sac_module::set_proc_freq(proc_freq);\n", INDENT[1]);
-
-    for(int cycles=1; cycles<=5; cycles++) {
-      for (ac_dec_instr *pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-        if (pinstr->cycles == cycles) {
-          fprintf(output, "%stime_%dcycle=sc_time(%d*module_period_ns, SC_NS);\n", INDENT[1], cycles, cycles);
-          break;
-        }
-      }
     }
 
+    fprintf(output, "\n#ifdef AC_VERIFY\n");
+    fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
+    fprintf(output, "#endif\n\n");
+    fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
+    fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
+    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
+            INDENT[1]);
+    fprintf(output, "%sInitStat();\n", INDENT[1]);
+
+    //  if(ACABIFlag)
+    //    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+    fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
+    if( ACDecCacheFlag )
+        fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
+
+    fprintf(output, "%ssignal(SIGINT, sigint_handler);\n", INDENT[1]);
+    fprintf(output, "%ssignal(SIGTERM, sigint_handler);\n", INDENT[1]);
+    fprintf(output, "%ssignal(SIGSEGV, sigsegv_handler);\n", INDENT[1]);
+    fprintf(output, "%ssignal(SIGUSR1, sigusr1_handler);\n", INDENT[1]);
+    fprintf(output, "#ifdef USE_GDB\n");
+    fprintf(output, "%ssignal(SIGUSR2, sigusr2_handler);\n", INDENT[1]);
+    fprintf(output, "#endif\n");
+    fprintf(output, "%sset_running();\n", INDENT[1]);
     fprintf(output, "}\n\n");
 
-  }
-  /* GDB enable method */
-  if (ACGDBIntegrationFlag) {
-    fprintf(output, "// Enables GDB\n");
-    fprintf(output, "void %s::enable_gdb(int port) {\n", project_name);
-    fprintf(output, "%sgdbstub->set_port(port);\n", INDENT[1]);
-    fprintf(output, "%sgdbstub->enable();\n", INDENT[1]);
-    fprintf(output, "%sgdbstub->connect();\n", INDENT[1]);
-    fprintf(output, "}\n\n");
-  }
+    /* init() with 3 parameters */
+    fprintf(output, "void %s::init(int ac, char *av[]) {\n\n", project_name);
+    //  fprintf(output, "%sac_init_opts( ac, av);\n", INDENT[1]);
+    fprintf(output, "%sargs_t args = ac_init_args( ac, av);\n", INDENT[1]);
+    fprintf(output, "%sset_args(args.size, args.app_args);\n", INDENT[1]);
+    fprintf(output, "%s%s_mport.load(args.app_filename);\n", INDENT[1], load_device->name);
 
-  //!END OF FILE.
-  fclose(output);
-  free(filename);
+    for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
+        switch(pstorage->type) {
+            case CACHE:
+            case ICACHE:
+            case DCACHE:
+                fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
+                        "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
+                        INDENT[1], pstorage->name, pstorage->name, pstorage->name);
+
+            default: continue;
+
+        }
+    }
+
+    fprintf(output, "#ifdef AC_VERIFY\n");
+    fprintf(output, "%sset_queue(av[0]);\n", INDENT[1]);
+    fprintf(output, "#endif\n\n");
+    fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
+    fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
+    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
+            INDENT[1]);
+    fprintf(output, "%sInitStat();\n", INDENT[1]);
+
+    //  if(ACABIFlag)
+    //    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+    fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
+    if( ACDecCacheFlag )
+        fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
+
+    fprintf(output, "%ssignal(SIGINT, sigint_handler);\n", INDENT[1]);
+    fprintf(output, "%ssignal(SIGTERM, sigint_handler);\n", INDENT[1]);
+    fprintf(output, "%ssignal(SIGSEGV, sigsegv_handler);\n", INDENT[1]);
+    fprintf(output, "%ssignal(SIGUSR1, sigusr1_handler);\n", INDENT[1]);
+    fprintf(output, "#ifdef USE_GDB\n");
+    fprintf(output, "%ssignal(SIGUSR2, sigusr2_handler);\n", INDENT[1]);
+    fprintf(output, "#endif\n");
+    fprintf(output, "%sset_running();\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    fprintf(output, "void %s::set_prog_args(){\n", project_name); 
+    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* stop() */
+    fprintf(output, "//Stop simulation (may receive exit status)\n");
+    fprintf(output, "void %s::stop(int status) {\n", project_name);
+
+    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
+            INDENT[1]);
+    fprintf(output, "%sISA._behavior_end();\n", INDENT[1]);
+    fprintf(output, "%sac_stop_flag = 1;\n", INDENT[1]);
+    fprintf(output, "%sac_exit_status = status;\n", INDENT[1]);
+    fprintf(output, "%sset_stopped();\n", INDENT[1]);
+    if (ACLongJmpStop)
+        fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* Program loading functions */
+    /* load() */
+    fprintf(output, "void %s::load(char* program) {\n", project_name);
+    fprintf(output, "%s%s_mport.load(program);\n", INDENT[1], load_device->name);
+    fprintf(output, "}\n\n");
+
+    /* delayed_load() */
+    fprintf(output, "void %s::delayed_load(char* program) {\n", project_name);
+    fprintf(output, "%shas_delayed_load = true;\n", INDENT[1]);
+    fprintf(output, "%sdelayed_load_program = new char[strlen(program)];\n", 
+            INDENT[1]);
+    fprintf(output, "%sstrcpy(delayed_load_program, program);\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* Some simple GDB support methods */
+    if (ACGDBIntegrationFlag) {
+        /* get_gdbstub() */
+        fprintf(output, "// Returns pointer to gdbstub\n");
+        fprintf(output, "AC_GDB<%s_parms::ac_word>* %s::get_gdbstub() {\n", 
+                project_name, project_name);
+        fprintf(output, "%sreturn gdbstub;\n", INDENT[1]);
+        fprintf(output, "}\n\n");
+
+        /* get_ac_tgt_endian() */
+        fprintf(output, "// Returns true if model endianness doesn't match with host's, false otherwise\n");
+        fprintf(output, "bool %s::get_ac_tgt_endian() {\n", project_name);
+        fprintf(output, "%sreturn ac_tgt_endian;\n", INDENT[1]);
+        fprintf(output, "}\n\n");
+
+        /* ac_stop() */
+        fprintf(output, "// Stops the processor\n");
+        fprintf(output, "void %s::ac_stop() {\n", project_name);
+        fprintf(output, "%sstop();\n", INDENT[1]);
+        fprintf(output, "}\n\n");
+    }
+
+    /* get_ac_pc() */
+    fprintf(output, "// Returns ac_pc value\n");
+    fprintf(output, "unsigned %s::get_ac_pc() {\n", project_name);
+    fprintf(output, "%sreturn ac_pc;\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* set_ac_pc() */
+    fprintf(output, "// Assigns value to ac_pc\n");
+    fprintf(output, "void %s::set_ac_pc(unsigned int value) {\n", project_name);
+    fprintf(output, "%sac_pc = value;\n", INDENT[1]);
+    fprintf(output, "}\n\n");
+
+    /* PrintStat() */
+    fprintf(output, "// Wrapper function to PrintStat().\n");
+    fprintf(output, "void %s::PrintStat() {\n", project_name);
+    fprintf(output, "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n", 
+            INDENT[1], project_name, project_name);
+
+
+
+    if (HaveMemHier) {
+        for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+            switch(pstorage->type) {
+                case CACHE:
+                case ICACHE:
+                case DCACHE:
+                    fprintf(output, "%sstd::cerr << \"cache: %s\\n\";\n", INDENT[1], pstorage->name);
+                    fprintf(output, "%s%s.print_statistics(std::cerr);\n", INDENT[1], pstorage->name);
+                    break;
+                default:
+                    continue;
+            }
+        }
+    }
+
+
+
+    fprintf(output, "}\n\n");
+
+    if (ACWaitFlag) {
+        /* set_proc_freq() */
+        fprintf(output, "// Assigns value to processor frequency and updates cycle time values\n");
+        fprintf(output, "void %s::set_proc_freq(unsigned int proc_freq) {\n", project_name);
+        fprintf(output, "%sac_module::set_proc_freq(proc_freq);\n", INDENT[1]);
+
+        for(int cycles=1; cycles<=5; cycles++) {
+            for (ac_dec_instr *pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
+                if (pinstr->cycles == cycles) {
+                    fprintf(output, "%stime_%dcycle=sc_time(%d*module_period_ns, SC_NS);\n", INDENT[1], cycles, cycles);
+                    break;
+                }
+            }
+        }
+
+        fprintf(output, "}\n\n");
+
+    }
+    /* GDB enable method */
+    if (ACGDBIntegrationFlag) {
+        fprintf(output, "// Enables GDB\n");
+        fprintf(output, "void %s::enable_gdb(int port) {\n", project_name);
+        fprintf(output, "%sgdbstub->set_port(port);\n", INDENT[1]);
+        fprintf(output, "%sgdbstub->enable();\n", INDENT[1]);
+        fprintf(output, "%sgdbstub->connect();\n", INDENT[1]);
+        fprintf(output, "}\n\n");
+    }
+
+    //!END OF FILE.
+    fclose(output);
+    free(filename);
 }
 
 
@@ -2448,7 +2402,7 @@ void CreateArchImpl() {
     extern int HaveMemHier, HaveTLMPorts, HaveTLM2IntrPorts, HaveTLM2Ports, HaveTLM2NBPorts, HaveTLM2IntrPorts;
     extern ac_sto_list* load_device;
     extern char *project_name;
-    ac_sto_list *pstorage; //, *first_level_data_device = NULL;
+    ac_sto_list *pstorage; 
     FILE *output;
     char filename[256];
 
@@ -2469,7 +2423,6 @@ void CreateArchImpl() {
     }
 
     fprintf(output, "\n");
-
 
     /* Emitting Constructor */
     fprintf(output, "%s%s_arch::%s_arch() :\n", 
@@ -2525,10 +2478,6 @@ void CreateArchImpl() {
                         fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name, pstorage->name);
                         fprintf(output, ",\n%s%s_mport(*this, %s_if)", INDENT[1], pstorage->name,
                                 pstorage->name);
-                
-//                        if ( pstorage->type == DCACHE ) {
-//                           first_level_data_device = pstorage;
-//                        }
                     }
                 }
                 break;
@@ -2537,12 +2486,8 @@ void CreateArchImpl() {
                 if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
                     fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
                     fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-//                    first_level_data_device = pstorage;
                 }
-                else{
-                    //It is an ac_mem object.
-                    //fprintf(output, "%s%s_stg(\"%s_stg\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                    //fprintf( output, "%s%s(*this, %s_stg)", INDENT[1], pstorage->name, pstorage->name);
+                else {
                     fprintf(output, "%s%s_mport()", INDENT[1], pstorage->name);
                 }
                 break;
@@ -2602,60 +2547,24 @@ void CreateArchImpl() {
         }
     }
 
-//    if ( !first_level_data_device ) {
-//        AC_INTERNAL_ERROR("Could not determine a device for fetching.");
-//        exit(1);
-//    }
-
-    // fprintf( output, "%sIM = &%s;\n", INDENT[1], fetch_device->name);
-    /*CACHE*/
-    int fetch_type = fetch_device->type;
-    if ( fetch_type == TLM_PORT || fetch_type == TLM2_PORT || fetch_type == ICACHE ) {
-        fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
-    }
-    else {
-        fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
-    }
+    fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
 
     /* Determining which device is going to be used for loading applications*/
-    /* The device used for loading applications must be the one in the highest
-       level of a memory hierachy.*/
+    /* The device used for loading applications must be the one in the highest level of a memory hierachy.*/
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
         if(pstorage->level > load_device->level)
             load_device = pstorage;
     }
 
-    /* If there is only one level, which is gonna be zero, then it is the same
-       object used for fetching. */
+    /* If there is only one level, which is gonna be zero, then it is the same object used for fetching. */
     if( load_device->level ==0 )
         load_device = fetch_device;
 
-    /* Connecting memory hierarchy */
-    /*for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
-      if( pstorage->higher )
-      fprintf( output, "%s%s.bindToNext(%s);\n", 
-      INDENT[1], pstorage->name, pstorage->higher->name );
-      */  
-
-    // DATA_PORT 
-//    if (!HaveMemHier) {
-//        fprintf(output, "%sDATA_PORT = &%s;\n", INDENT[1], load_device->name);
-//    } else {
-//        fprintf(output, "%sDATA_PORT = &%s_port;\n", INDENT[1], first_level_data_device->name);
-//    }
-    int load_type = load_device->type;
-    if (load_type == TLM_PORT || load_type == TLM2_PORT || load_type == DCACHE ) {
-        fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], load_device->name);
-    } else {
-        fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], load_device->name);
-    }
-
+    fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], load_device->name);
 
     fprintf( output, "}\n\n");
 
-
     fprintf( output, "int %s_arch::globalId = 0;", project_name);
-
 }
 
 
