@@ -1,5 +1,24 @@
-## Future
+## 2.4.0 (2015-10-19)
 
+###### ac_cache
+* All ac_cache files was moved from aclib/ac_storage to aclib/ac_cache
+* The cache PowerSC table is keeped in ac_cache and it is copied to share/archc/powersc during installation
+* Including cache coherence based on Directory
+
+###### HLTrace
+* Improving the performance: some debugging function was removed
+
+###### acsim
+* All acsim simulators are c++11 compatible
+* Simulators use pkg-config to check and setup SystemC and TLM
+* The boot.sh script was replaced by autogen.sh
+* Creating a environment file called 'env.sh' and it is copied in ArchC 'etc' directory during installation. 
+* Two new reserved words to use in <model>_isa.cpp and <model>_syscall.cpp for access the first level of memory automatically. See the [commit message](https://github.com/ArchC/ArchC/commit/4b136d669c684d32789bedee2756c8c21bd2dec5).
+* Simulators with interrupt handler support
+* Better integration with MPSoCBench project
+* Many BUGFIX and code refactoring 
+
+[Full changelog](https://github.com/ArchC/ArchC/compare/v2.3.0...v2.4.0)
 
 ## 2.3.0 (2015-05-27)
 
