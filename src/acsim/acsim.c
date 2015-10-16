@@ -943,32 +943,12 @@ void CreateArchRefHeader() {
             case CACHE:
             case ICACHE:
             case DCACHE:
-                if (!HaveMemHier) { //It is a generic cache. Just emit a base container object.
-
-                    fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", 
-                            INDENT[1], project_name, project_name, pstorage->name);
-                } else {
-                    //It is an ac_cache object.
-                    fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration, pstorage->name);
-
-                    if (pstorage->level == 0) {
-                        fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> &%s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-                    }
-                }
-                break;
-
             case MEM:
-                if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-                    fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-                }
-                else{
-                    //It is an ac_mem object.
-                    fprintf(output, "%s%s& %s;\n", INDENT[1], pstorage->class_declaration, pstorage->name);
-                }
+                fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
                 break;
 
             default:
-                fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
+                fprintf( output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword>& %s;\n", INDENT[1], project_name, project_name, pstorage->name);
                 break;
         }
     }
@@ -1020,14 +1000,11 @@ void CreateArchRefImpl() {
 
     /* Declaring storage devices */
     for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
-        if ( pstorage->has_memport ) {
-            fprintf(output, "%s%s_mport(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
-            if (pstorage->type == CACHE || pstorage->type == ICACHE || pstorage->type == DCACHE) {
-                fprintf(output, ", %s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
-            }
-        }
+        if ( pstorage->has_memport ) 
+            fprintf(output, "%s%s(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
         else
             fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
+    
         if (pstorage->next != NULL) {
             fprintf(output, ", ");
         }
