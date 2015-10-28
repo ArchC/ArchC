@@ -1,13 +1,19 @@
 # Values retrieved from web-version of CACTI 5.3 (http://quid.hpl.hp.com:9081/cacti/index.y).
 # Parameters: cache size: 8192 bytes; line size: 32 bytes; associativity: 2; banks: 1; technology node: 45 nm
 # Equivalent cache ArchC declaration: ac_icache IC("2w", 128, 16, , );
-# Number of profiles,
+# CACTI values:
+## Access time (ns): 0.510379915433
+## Random cycle time (ns):0.312618121796
+## Total read dynamic energy per read port(nJ): 0.0185319745073
+## Total standby leakage power per bank (W): 0.0057084274013
+# Number of profiles
 1
-# Characterization Frequency,Frequency Scale,EPI Scale,Characterization Name,Characterization Description
-2,1E9,1E-9,"Icache","2-way associativity, 8KB, 45nm Cache Characterization"
-# Idle consumption
+# Characterization Frequency, Frequency Scale, Energy Scale, Characterization Name, Characterization Description
+#32, 1E8, 1E-9, "Icache", "2-way associativity, 8KB, 45nm Cache Characterization"
+2, 1E9, 1E-9, "Icache", "2-way associativity, 8KB, 45nm Cache Characterization"
+# Idle power consumption
 0.00
-# Read consumption
+# Read energy consumption
 0.01853197
-# Write consumption
+# Write energy consumption
 0.01853197
