@@ -91,8 +91,7 @@ int reg_width;
 int largest_format_size;
 
 ac_sto_list* fetch_device;
-
-
+ac_sto_list* first_level_data_device;
 
 void init_core_actions()
 {
@@ -149,6 +148,7 @@ void init_core_actions()
   largest_format_size = 0;
 
   fetch_device = NULL;
+  first_level_data_device = NULL;
 
   return;
 }
@@ -579,10 +579,6 @@ int add_storage(char* name, unsigned size, ac_sto_types type, char* typestr, cha
   pstorage->higher = NULL;
   pstorage->level = 0;
   pstorage->width = 0;
-
-  if(  type == ICACHE  ){
-    fetch_device = pstorage;
-  }
 
   //Checking if the user declared a specific register width
   if(  ((type == REGBANK) || (type == REG)) && reg_width != 0  ){

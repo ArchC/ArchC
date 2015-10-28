@@ -239,6 +239,7 @@ void TLMMemoryClassDeclaration(ac_sto_list *memory);
 void EnumerateCaches(void);
 void GetFetchDevice(void);
 void GetLoadDevice(void);
+void GetFirstLevelDataDevice(void);
 
 
 //@}

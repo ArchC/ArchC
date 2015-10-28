@@ -472,6 +472,7 @@ int main(int argc, char** argv) {
   EnumerateCaches();
   GetFetchDevice();
   GetLoadDevice();
+  GetFirstLevelDataDevice();
 
   //Creating Resources Header File
   CreateArchHeader();
@@ -2375,7 +2376,7 @@ void CreateProcessorImpl() {
 
 /** Creates the _arch.cpp Implementation File. */
 void CreateArchImpl() {
-    extern ac_sto_list *storage_list, *fetch_device;
+    extern ac_sto_list *storage_list, *fetch_device, *first_level_data_device;
     extern int HaveMemHier, HaveTLMPorts, HaveTLM2IntrPorts, HaveTLM2Ports, HaveTLM2NBPorts, HaveTLM2IntrPorts;
     extern ac_sto_list* load_device;
     extern char *project_name;
@@ -2526,18 +2527,7 @@ void CreateArchImpl() {
 
     fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
 
-    /* Determining which device is going to be used for loading applications*/
-    /* The device used for loading applications must be the one in the highest level of a memory hierachy.*/
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-        if(pstorage->level > load_device->level)
-            load_device = pstorage;
-    }
-
-    /* If there is only one level, which is gonna be zero, then it is the same object used for fetching. */
-    if( load_device->level ==0 )
-        load_device = fetch_device;
-
-    fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], load_device->name);
+    fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], first_level_data_device->name);
 
     fprintf( output, "}\n\n");
 
@@ -4706,17 +4696,16 @@ void GetFetchDevice()
 
     /* Determining which device is gonna be used for fetching instructions */
     if (!fetch_device) {
-  //The parser has not determined because there is not an ac_icache obj declared.
-  //In this case, look for the object with the lowest (zero) hierarchy level.
-  for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
-      if (pstorage->level == 0 && pstorage->type != REG && pstorage->type != REGBANK
-    && pstorage->type != TLM_INTR_PORT)
-    fetch_device = pstorage;
+        //The parser has not determined because there is not an ac_icache obj declared.
+        //In this case, look for the object with the lowest (zero) hierarchy level.
+        for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
+            if (pstorage->level == 0 && ( pstorage->type == MEM || pstorage->type == ICACHE ))
+                fetch_device = pstorage;
 
-  if (!fetch_device) {  //Couldn't find a fetch device. Error!
-      AC_INTERNAL_ERROR("Could not determine a device for fetching.");
-      exit(EXIT_FAILURE);
-  }
+        if (!fetch_device) {  //Couldn't find a fetch device. Error!
+            AC_INTERNAL_ERROR("Could not determine a device for fetching.");
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -4725,17 +4714,41 @@ void GetLoadDevice()
     extern ac_sto_list *storage_list, *fetch_device;
     ac_sto_list *pstorage;
     load_device = storage_list;
+
     /* Determining which device is going to be used for loading applications */
     /* The device used for loading applications must be the one in the highest
        level of a memory hierachy. */
     for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
-  if (pstorage->level > load_device->level)
-      load_device = pstorage;
+        if (pstorage->level > load_device->level)
+            load_device = pstorage;
     }
 
     /* If there is only one level, which is gonna be zero, then it is the same
        object used for fetching. */
     if (load_device->level == 0)
-  load_device = fetch_device;
+        load_device = fetch_device;
 }
+
+
+void GetFirstLevelDataDevice()
+{
+    extern ac_sto_list *first_level_data_device, *storage_list;
+    ac_sto_list *pstorage;
+
+    /* Determining which device is gonna be used for fetching instructions */
+    if (!first_level_data_device) {
+        //The parser has not determined because there is not an ac_icache obj declared.
+        //In this case, look for the object with the lowest (zero) hierarchy level.
+        for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
+            if (pstorage->level == 0 && ( pstorage->type == MEM || pstorage->type == DCACHE ))
+                first_level_data_device = pstorage;
+
+        if (!first_level_data_device) {  //Couldn't find a fetch device. Error!
+            AC_INTERNAL_ERROR("Could not determine a device for fetching.");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+
 
