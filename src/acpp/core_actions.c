@@ -555,6 +555,12 @@ int add_storage(char* name, unsigned size, ac_sto_types type, char* typestr, cha
   else
     pstorage->has_memport = false;
 
+  if ( type == TLM_PORT || type == TLM2_PORT || type == TLM2_NB_PORT ||
+       type == TLM_INTR_PORT || type == TLM2_INTR_PORT ) 
+      pstorage->is_tlm = true;
+  else
+      pstorage->is_tlm = false;
+
   /* In this case we may have a cache declaration with a parameter list or a generic cache*/
   if( (type == CACHE || type == ICACHE || type == DCACHE)  ){
 

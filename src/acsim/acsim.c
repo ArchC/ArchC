@@ -4692,15 +4692,20 @@ void EnumerateCaches()
 void GetFetchDevice()
 {
     extern ac_sto_list *fetch_device, *storage_list;
-    ac_sto_list *pstorage;
+    ac_sto_list *pstorage; 
+    int lowest_level = 10;
 
     /* Determining which device is gonna be used for fetching instructions */
     if (!fetch_device) {
         //The parser has not determined because there is not an ac_icache obj declared.
-        //In this case, look for the object with the lowest (zero) hierarchy level.
+        //In this case, look for the object with the lowest hierarchy level.
         for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
-            if (pstorage->level == 0 && ( pstorage->type == MEM || pstorage->type == ICACHE ))
-                fetch_device = pstorage;
+            if ( pstorage->type == MEM || pstorage->type == ICACHE || pstorage->is_tlm ) {
+                if ( pstorage->level < lowest_level ) {
+                   fetch_device = pstorage;
+                   lowest_level = pstorage->level;
+                }
+            }
 
         if (!fetch_device) {  //Couldn't find a fetch device. Error!
             AC_INTERNAL_ERROR("Could not determine a device for fetching.");
@@ -4734,17 +4739,23 @@ void GetFirstLevelDataDevice()
 {
     extern ac_sto_list *first_level_data_device, *storage_list;
     ac_sto_list *pstorage;
+    int lowest_level = 10;
 
-    /* Determining which device is gonna be used for fetching instructions */
+    /* Determining which device is gonna be used for data access */
     if (!first_level_data_device) {
-        //The parser has not determined because there is not an ac_icache obj declared.
-        //In this case, look for the object with the lowest (zero) hierarchy level.
-        for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next)
-            if (pstorage->level == 0 && ( pstorage->type == MEM || pstorage->type == DCACHE ))
-                first_level_data_device = pstorage;
+        //The parser has not determined because there is not an ac_dcache obj declared.
+        //In this case, look for the object with the lowest hierarchy level.
+        for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+            if ( pstorage->type == MEM || pstorage->type == DCACHE || pstorage->is_tlm ) {
+                if ( pstorage->level < lowest_level ) {
+                   first_level_data_device = pstorage;
+                   lowest_level = pstorage->level;
+                }
+            }
+        }
 
-        if (!first_level_data_device) {  //Couldn't find a fetch device. Error!
-            AC_INTERNAL_ERROR("Could not determine a device for fetching.");
+        if (!first_level_data_device) {  //Couldn't find a data device. Error!
+            AC_INTERNAL_ERROR("Could not determine a device for data access.");
             exit(EXIT_FAILURE);
         }
     }

@@ -68,12 +68,13 @@ typedef struct _ac_sto_list
  unsigned width;               //!< Width of registers expressed in bits. Used for register banks.
  unsigned level;               //!< Memory hierachy level.
  ac_sto_types type;            //!< Type of the device.
- bool has_memport;
  struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
  ac_cache_parms* parms;        //!< Parameter list used for (not generic) ac_cache  declarations.
  struct _ac_sto_list* next;    //!< Next element.
  struct CacheObject *cache_object;
  char *class_declaration;      //!< String with class name and template parameters
+ bool has_memport;
+ bool is_tlm;
 
 } ac_sto_list;
 
