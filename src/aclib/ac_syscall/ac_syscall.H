@@ -1013,23 +1013,25 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int fd = get_int(0);
     int iovcnt = get_int(2);
     struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
-    get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
+    // Read input assuming guest is 32-bit linux (4 bytes for pointer size)
+    const uint32_t guest_iovec_sz = 8;
+    uint32_t *input = (uint32_t *) malloc(guest_iovec_sz * iovcnt);
+    get_buffer(1, (unsigned char *) input, guest_iovec_sz * iovcnt);
     for (int i = 0; i < iovcnt; i++) {
       unsigned char *tmp;
-      // FIXME: this should be checked on x64 systems
-      unsigned long endian_tmp = CORRECT_ENDIAN((unsigned)(long) buf[i].iov_base, sizeof(void *));
-      buf[i].iov_base = (void *) endian_tmp;
-      buf[i].iov_len  = CORRECT_ENDIAN(buf[i].iov_len, sizeof(size_t));
-      set_int(1, (int)(long) buf[i].iov_base); // FIXME: this should be checked on x64 systems
-      tmp = (unsigned char *) malloc(buf[i].iov_len);
+      uint32_t endian_tmp = CORRECT_ENDIAN(input[2 * i], 4);
+      buf[i].iov_len = CORRECT_ENDIAN(input[2 * i + 1], 4);
+      set_int(1, endian_tmp);
+      tmp = (unsigned char *)malloc(buf[i].iov_len);
       buf[i].iov_base = (void *)tmp;
       get_buffer(1, tmp, buf[i].iov_len);
     }
     ret = ::writev(fd, buf, iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      free (buf[i].iov_base);
+      free(buf[i].iov_base);
     }
     free(buf);
+    free(input);
     set_int(0, ret);
     return 0;
 
