@@ -906,8 +906,6 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int flags = get_int(3);
     Elf32_Addr addr = get_int(0);
     Elf32_Word size = get_int(1);
-    fprintf(stderr, "mmap addr= %x\n", addr);
-    fprintf(stderr, "mmap size= %x\n", size);
     if ((flags & 0x20) == 0) { // Not anonymous
       set_int(0, -EINVAL);
     } else {
