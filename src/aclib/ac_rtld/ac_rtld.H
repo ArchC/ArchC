@@ -102,7 +102,7 @@ namespace ac_dynlink {
     
     bool is_glibc();
     
-    void initiate(Elf32_Addr start_addr, Elf32_Word size, Elf32_Word memsize, Elf32_Word brkaddr, int fd, bool match_endian);
+    void initiate(Elf32_Addr start_addr, Elf32_Word end_addr, Elf32_Word memsize, Elf32_Word brkaddr, int fd, bool match_endian);
     
     void loadnlink_all(Elf32_Addr dynaddr, const char *pinterp, unsigned char *mem, Elf32_Addr& start_addr, Elf32_Word size,
                        unsigned char word_size, bool match_endian, Elf32_Word mem_size,
