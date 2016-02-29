@@ -70,6 +70,8 @@ public:
 
   //!Target dependent functions
   virtual void get_buffer(int argn, unsigned char* buf, unsigned int size) =0;
+  virtual void get_buffer_addr(uint32_t addr, unsigned char *buf,
+                               unsigned int size);
   virtual void set_buffer(int argn, unsigned char* buf, unsigned int size) =0;
   virtual int  get_int(int argn) =0;
   virtual void set_int(int argn, int val) =0;
@@ -135,6 +137,16 @@ template <class ac_word, class ac_Hword>
 unsigned ac_syscall<ac_word, ac_Hword>::get_return() {
   AC_RUN_ERROR << "You must implement get_return() in your model syscall module."
                << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::get_buffer_addr(uint32_t addr,
+                                                    unsigned char *buf,
+                                                    unsigned int size) {
+  AC_RUN_ERROR
+      << "You must implement get_buffer_addr() in your model syscall module."
+      << std::endl;
   exit(EXIT_FAILURE);
 }
 
@@ -894,6 +906,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int flags = get_int(3);
     Elf32_Addr addr = get_int(0);
     Elf32_Word size = get_int(1);
+    fprintf(stderr, "mmap addr= %x\n", addr);
+    fprintf(stderr, "mmap size= %x\n", size);
     if ((flags & 0x20) == 0) { // Not anonymous
       set_int(0, -EINVAL);
     } else {
@@ -1021,10 +1035,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
       unsigned char *tmp;
       uint32_t endian_tmp = CORRECT_ENDIAN(input[2 * i], 4);
       buf[i].iov_len = CORRECT_ENDIAN(input[2 * i + 1], 4);
-      set_int(1, endian_tmp);
       tmp = (unsigned char *)malloc(buf[i].iov_len);
       buf[i].iov_base = (void *)tmp;
-      get_buffer(1, tmp, buf[i].iov_len);
+      get_buffer_addr(endian_tmp, tmp, buf[i].iov_len);
     }
     ret = ::writev(fd, buf, iovcnt);
     for (int i = 0; i < iovcnt; i++) {
