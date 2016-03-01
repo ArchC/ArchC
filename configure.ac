@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([archc], [2.2])
+AC_INIT([archc], [2.4.1])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADER(config.h)
 #AC_CONFIG_MACRO_DIR([m4])
