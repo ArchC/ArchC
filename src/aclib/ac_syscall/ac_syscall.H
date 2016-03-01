@@ -80,6 +80,7 @@ public:
   virtual void set_pc(unsigned val);
   virtual void set_return(unsigned val);
   virtual unsigned get_return();
+  virtual bool is_mmap_anonymous(uint32_t flags);
   virtual int *get_syscall_table();
 };
 
@@ -136,6 +137,13 @@ void ac_syscall<ac_word, ac_Hword>::set_return(unsigned val) {
 template <class ac_word, class ac_Hword>
 unsigned ac_syscall<ac_word, ac_Hword>::get_return() {
   AC_RUN_ERROR << "You must implement get_return() in your model syscall module."
+               << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+bool ac_syscall<ac_word, ac_Hword>::is_mmap_anonymous(uint32_t flags) {
+  AC_RUN_ERROR << "You must implement is_mmap_anonymous() in your model syscall module."
                << std::endl;
   exit(EXIT_FAILURE);
 }
@@ -906,8 +914,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int flags = get_int(3);
     Elf32_Addr addr = get_int(0);
     Elf32_Word size = get_int(1);
-    if ((flags & 0x20) == 0) { // Not anonymous
+    if (!is_mmap_anonymous(flags)) { // Not anonymous
       set_int(0, -EINVAL);
+      fprintf(stderr, "not anonymous - returned error\n");
     } else {
       set_int(0, ref.ac_dyn_loader.mem_map.mmap_anon(addr, size));
     }
