@@ -70,10 +70,12 @@ public:
 
   //!Target dependent functions
   virtual void get_buffer(int argn, unsigned char* buf, unsigned int size) =0;
-  virtual void get_buffer_addr(uint32_t addr, unsigned char *buf,
-                               unsigned int size);
-  virtual void set_buffer(int argn, unsigned char* buf, unsigned int size) =0;
-  virtual int  get_int(int argn) =0;
+  virtual void guest2hostmemcpy(unsigned char *dst, uint32_t src,
+                                unsigned int size);
+  virtual void set_buffer(int argn, unsigned char *buf, unsigned int size) = 0;
+  virtual void host2guestmemcpy(uint32_t dst, unsigned char *src,
+                                unsigned int size);
+  virtual int get_int(int argn) = 0;
   virtual void set_int(int argn, int val) =0;
   virtual void return_from_syscall() =0;
   virtual void set_prog_args(int argc, char *argv[]) =0;
@@ -149,11 +151,21 @@ bool ac_syscall<ac_word, ac_Hword>::is_mmap_anonymous(uint32_t flags) {
 }
 
 template <class ac_word, class ac_Hword>
-void ac_syscall<ac_word, ac_Hword>::get_buffer_addr(uint32_t addr,
-                                                    unsigned char *buf,
-                                                    unsigned int size) {
+void ac_syscall<ac_word, ac_Hword>::guest2hostmemcpy(unsigned char *dst,
+                                                     uint32_t src,
+                                                     unsigned int size) {
   AC_RUN_ERROR
-      << "You must implement get_buffer_addr() in your model syscall module."
+      << "You must implement guest2hostmemcpy() in your model syscall module."
+      << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::host2guestmemcpy(uint32_t dst,
+                                                     unsigned char *src,
+                                                     unsigned int size) {
+  AC_RUN_ERROR
+      << "You must implement host2guestmemcpy() in your model syscall module."
       << std::endl;
   exit(EXIT_FAILURE);
 }
@@ -1009,22 +1021,25 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret;
     int fd = get_int(0);
     int iovcnt = get_int(2);
-    int *addresses = (int *) malloc(sizeof(int)*iovcnt);
-    struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
-    get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
+    // Read input assuming guest is 32-bit linux (4 bytes for pointer size)
+    // Check struct iovec for more info
+    const uint32_t guest_iovec_sz = 8;
+    uint32_t *input = (uint32_t *) malloc(guest_iovec_sz * iovcnt);
+    get_buffer(1, (unsigned char *) input, guest_iovec_sz * iovcnt);
+    struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec) * iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      addresses[i] = (int)(long) buf[i].iov_base; // FIXME: this should be checked on x64 systems
-      unsigned char *tmp = (unsigned char *) malloc(buf[i].iov_len);
+      unsigned char *tmp = (unsigned char *) malloc(input[2 * i + 1]);
       buf[i].iov_base = (void *)tmp;
+      buf[i].iov_len = CORRECT_ENDIAN(input[2 * i + 1], 4);
     }
     ret = ::readv(fd, buf, iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      set_int(1, addresses[i]);
-      set_buffer(1, (unsigned char *)buf[i].iov_base, buf[i].iov_len);
-      free (buf[i].iov_base);
+      host2guestmemcpy(CORRECT_ENDIAN(input[2 * i], 4),
+                       (unsigned char *)buf[i].iov_base, buf[i].iov_len);
+      free(buf[i].iov_base);
     }
-    free(addresses);
     free(buf);
+    free(input);
     set_int(0, ret);
     return 0;
 
@@ -1044,7 +1059,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
       buf[i].iov_len = CORRECT_ENDIAN(input[2 * i + 1], 4);
       tmp = (unsigned char *)malloc(buf[i].iov_len);
       buf[i].iov_base = (void *)tmp;
-      get_buffer_addr(endian_tmp, tmp, buf[i].iov_len);
+      guest2hostmemcpy(tmp, endian_tmp, buf[i].iov_len);
     }
     ret = ::writev(fd, buf, iovcnt);
     for (int i = 0; i < iovcnt; i++) {
