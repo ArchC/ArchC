@@ -687,15 +687,15 @@ AC_SYSCALL::ac_rtld_fini()
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SET_BUFFER_CORRECT_ENDIAN(reg, buf, size)                       \
+#define SET_BUFFER_CORRECT_ENDIAN(addr, buf, size)                       \
   do {                                                                  \
     unsigned char *ptr = (unsigned char*) buf;                          \
     for (int ndx = 0; ndx < (size); ndx += sizeof(ac_word)) {           \
       *((ac_word *)(ptr + ndx)) = (ac_word)                             \
         convert_endian(sizeof(ac_word), (unsigned) *((ac_word *)(ptr + ndx)), \
                        ref.ac_mt_endian);                               \
-  }                                                                     \
-    set_buffer((reg), ptr, (size));                                     \
+    }                                                                   \
+    host2guestmemcpy(addr, ptr, (size));                                \
   } while(0)
 
 #define CORRECT_ENDIAN(word, size) (convert_endian((size),              \
@@ -811,7 +811,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     unsigned count = get_int(2);
     unsigned char *buf = (unsigned char*) malloc(count);
     int ret = ::read(fd, buf, count);
-    set_buffer(1, buf, ret);
+    uint32_t guest_addr = get_int(1);
+    host2guestmemcpy(guest_addr, buf, ret);
     set_int(0, ret);
     free(buf);
     return 0;
@@ -868,8 +869,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("time");
     time_t param;
     time_t ret = ::time(&param);
-    if (get_int(0) != 0 && ret != (time_t)-1)
-      SET_BUFFER_CORRECT_ENDIAN(0, (unsigned char *)&param,(unsigned) sizeof(time_t));
+    if (get_int(0) != 0 && ret != (time_t)-1) {
+      uint32_t guest_addr = get_int(0);
+      SET_BUFFER_CORRECT_ENDIAN(guest_addr, (unsigned char *)&param,
+                                (unsigned)sizeof(time_t));
+    }
     set_int(0, ret);
     return 0;
 
@@ -914,9 +918,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("times");
     struct tms buf;
     clock_t ret = ::times(&buf);
-    if (ret != (clock_t)-1)
-      SET_BUFFER_CORRECT_ENDIAN(0, (unsigned char*)&buf, 
+    if (ret != (clock_t)-1) {
+      uint32_t guest_addr = get_int(0);
+      SET_BUFFER_CORRECT_ENDIAN(guest_addr, (unsigned char *)&buf,
                                 (unsigned)sizeof(struct tms));
+    }
     set_int(0, ret);
     return 0;
 
@@ -958,7 +964,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::stat((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf, sizeof(struct stat));
     }
     set_int(0, ret);
     return 0;
@@ -971,7 +978,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::lstat((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf, sizeof(struct stat));
     }
     set_int(0, ret);
     return 0;
@@ -983,7 +991,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::fstat(fd, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf, sizeof(struct stat));
     }
     set_int(0, ret);
     return 0;
@@ -992,27 +1001,29 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("uname");
     struct utsname *buf = (struct utsname*) malloc(sizeof(utsname));
     int ret = ::uname(buf);
-    set_buffer(0, (unsigned char *) buf, sizeof(utsname));
+    uint32_t guest_addr = get_int(0);
+    host2guestmemcpy(guest_addr, (unsigned char *) buf, sizeof(utsname));
     free(buf);
     set_int(0, ret);
-    return 0; 
+    return 0;
 
   } else if (syscall == sctbl[22]) { // _llseek
     DEBUG_SYSCALL("_llseek");
     unsigned fd = get_int(0);
     unsigned long offset_high = get_int(1);
     unsigned long offset_low = get_int(2);
-    off_t ret_off;
     int ret;
     unsigned whence = get_int(4);
     if (offset_high == 0) {
+      uint64_t ret_off;
+      // Assume 64-bit offsets for all systems
       ret_off = ::lseek(fd, offset_low, whence);
       if (ret_off >= 0) {
-        // FIXME: This doesn't properly simulate llseek
-	//loff_t result = ret_off;
-	//SET_BUFFER_CORRECT_ENDIAN(3, (unsigned char*)&result,
-        //                          (unsigned) sizeof(loff_t));
-	ret = 0;
+        uint32_t guest_addr = get_int(3);
+        uint64_t ret_off_cvt =
+            ref.ac_mt_endian ? ret_off : (ret_off >> 32) | (ret_off << 32);
+        SET_BUFFER_CORRECT_ENDIAN(guest_addr, (unsigned char *)&ret_off_cvt, 8);
+        ret = 0;
       } else {
 	ret = -1;
       }
@@ -1087,7 +1098,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::stat64((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf,
+                       sizeof(struct stat64));
     }
     set_int(0, ret);
     return 0;
@@ -1100,7 +1113,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::lstat64((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf,
+                       sizeof(struct stat64));
     }
     set_int(0, ret);
     return 0;
@@ -1112,7 +1127,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::fstat64(fd, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf,
+                       sizeof(struct stat64));
     }
     set_int(0, ret);
     return 0;
@@ -1206,10 +1223,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
         ret = ::accept(args[0], &addr, &addrlen);
         CORRECT_SOCKADDR_STRUCT_TO_GUEST(addr);
         addrlen = CORRECT_ENDIAN(addrlen, sizeof(socklen_t));
-        set_int(0, args[1]);
-        set_buffer(0, (unsigned char*)&addr, sizeof(struct sockaddr));
-        set_int(0, args[2]);
-        set_buffer(0, (unsigned char*)&addrlen, sizeof(socklen_t));
+        host2guestmemcpy(args[1], (unsigned char *)&addr,
+                         sizeof(struct sockaddr));
+        host2guestmemcpy(args[2], (unsigned char *)&addrlen, sizeof(socklen_t));
         break;
       }
     default:
@@ -1226,8 +1242,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     ret = ::gettimeofday(&tv, &tz);
     CORRECT_TIMEVAL_STRUCT(tv);
     CORRECT_TIMEZONE_STRUCT(tz);
-    set_buffer(0, (unsigned char*)&tv, sizeof(struct timeval));
-    set_buffer(1, (unsigned char*)&tz, sizeof(struct timezone));   
+    uint32_t guest_addr1 = get_int(0);
+    host2guestmemcpy(guest_addr1, (unsigned char *)&tv, sizeof(struct timeval));
+    uint32_t guest_addr2 = get_int(1);
+    host2guestmemcpy(guest_addr2, (unsigned char *)&tz,
+                     sizeof(struct timezone));
     set_int(0, ret);
     return 0;
   } else if (syscall == sctbl[37]) { // settimeofday
