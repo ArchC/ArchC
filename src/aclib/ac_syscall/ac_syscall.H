@@ -83,6 +83,7 @@ public:
   virtual void set_return(unsigned val);
   virtual unsigned get_return();
   virtual bool is_mmap_anonymous(uint32_t flags);
+  virtual uint32_t convert_open_flags(uint32_t flags);
   virtual int *get_syscall_table();
 };
 
@@ -148,6 +149,11 @@ bool ac_syscall<ac_word, ac_Hword>::is_mmap_anonymous(uint32_t flags) {
   AC_RUN_ERROR << "You must implement is_mmap_anonymous() in your model syscall module."
                << std::endl;
   exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+uint32_t ac_syscall<ac_word, ac_Hword>::convert_open_flags(uint32_t flags) {
+  return flags;
 }
 
 template <class ac_word, class ac_Hword>
@@ -831,7 +837,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 #endif*/
     unsigned char pathname[100];
     get_buffer(0, pathname, 100);
-    int flags = get_int(1);
+    int flags = convert_open_flags(get_int(1));
     int mode = get_int(2);
     int ret = ::open((char*)pathname, flags, mode);
     set_int(0, ret);
