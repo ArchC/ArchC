@@ -1255,6 +1255,19 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     AC_WARN("settimeofday: Ignored attempt to change host date");
     set_int(0, ret);
     return 0;
+  } else if (syscall == sctbl[38]) { // clock_gettime
+    DEBUG_SYSCALL("clock_gettime");
+    uint32_t clockid = get_int(0);
+    uint32_t guest_addr = get_int(1);
+    struct timespec ts;
+    // Assume a 32-bit guest
+    uint32_t guest_ts[2];
+    int32_t ret = ::clock_gettime(clockid, &ts);
+    guest_ts[0] = ts.tv_sec;
+    guest_ts[1] = ts.tv_nsec;
+    set_int(0, ret);
+    host2guestmemcpy(guest_addr, (unsigned char *)&guest_ts, 8);
+    return 0;
   }
 
   /* Default case */
