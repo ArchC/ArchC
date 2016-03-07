@@ -1,5 +1,6 @@
 #include <elf.h>
 #include <libelf.h>
+#include <elfutils/libdw.h>
 #include <elfutils/libdwfl.h>
 #include <dwarf.h>
 
