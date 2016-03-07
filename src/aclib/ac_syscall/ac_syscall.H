@@ -70,14 +70,20 @@ public:
 
   //!Target dependent functions
   virtual void get_buffer(int argn, unsigned char* buf, unsigned int size) =0;
-  virtual void set_buffer(int argn, unsigned char* buf, unsigned int size) =0;
-  virtual int  get_int(int argn) =0;
+  virtual void guest2hostmemcpy(unsigned char *dst, uint32_t src,
+                                unsigned int size);
+  virtual void set_buffer(int argn, unsigned char *buf, unsigned int size) = 0;
+  virtual void host2guestmemcpy(uint32_t dst, unsigned char *src,
+                                unsigned int size);
+  virtual int get_int(int argn) = 0;
   virtual void set_int(int argn, int val) =0;
   virtual void return_from_syscall() =0;
   virtual void set_prog_args(int argc, char *argv[]) =0;
   virtual void set_pc(unsigned val);
   virtual void set_return(unsigned val);
   virtual unsigned get_return();
+  virtual bool is_mmap_anonymous(uint32_t flags);
+  virtual uint32_t convert_open_flags(uint32_t flags);
   virtual int *get_syscall_table();
 };
 
@@ -135,6 +141,38 @@ template <class ac_word, class ac_Hword>
 unsigned ac_syscall<ac_word, ac_Hword>::get_return() {
   AC_RUN_ERROR << "You must implement get_return() in your model syscall module."
                << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+bool ac_syscall<ac_word, ac_Hword>::is_mmap_anonymous(uint32_t flags) {
+  AC_RUN_ERROR << "You must implement is_mmap_anonymous() in your model syscall module."
+               << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+uint32_t ac_syscall<ac_word, ac_Hword>::convert_open_flags(uint32_t flags) {
+  return flags;
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::guest2hostmemcpy(unsigned char *dst,
+                                                     uint32_t src,
+                                                     unsigned int size) {
+  AC_RUN_ERROR
+      << "You must implement guest2hostmemcpy() in your model syscall module."
+      << std::endl;
+  exit(EXIT_FAILURE);
+}
+
+template <class ac_word, class ac_Hword>
+void ac_syscall<ac_word, ac_Hword>::host2guestmemcpy(uint32_t dst,
+                                                     unsigned char *src,
+                                                     unsigned int size) {
+  AC_RUN_ERROR
+      << "You must implement host2guestmemcpy() in your model syscall module."
+      << std::endl;
   exit(EXIT_FAILURE);
 }
 
@@ -649,15 +687,15 @@ AC_SYSCALL::ac_rtld_fini()
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SET_BUFFER_CORRECT_ENDIAN(reg, buf, size)                       \
+#define SET_BUFFER_CORRECT_ENDIAN(addr, buf, size)                       \
   do {                                                                  \
     unsigned char *ptr = (unsigned char*) buf;                          \
     for (int ndx = 0; ndx < (size); ndx += sizeof(ac_word)) {           \
       *((ac_word *)(ptr + ndx)) = (ac_word)                             \
         convert_endian(sizeof(ac_word), (unsigned) *((ac_word *)(ptr + ndx)), \
                        ref.ac_mt_endian);                               \
-  }                                                                     \
-    set_buffer((reg), ptr, (size));                                     \
+    }                                                                   \
+    host2guestmemcpy(addr, ptr, (size));                                \
   } while(0)
 
 #define CORRECT_ENDIAN(word, size) (convert_endian((size),              \
@@ -773,7 +811,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     unsigned count = get_int(2);
     unsigned char *buf = (unsigned char*) malloc(count);
     int ret = ::read(fd, buf, count);
-    set_buffer(1, buf, ret);
+    uint32_t guest_addr = get_int(1);
+    host2guestmemcpy(guest_addr, buf, ret);
     set_int(0, ret);
     free(buf);
     return 0;
@@ -799,7 +838,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
 #endif*/
     unsigned char pathname[100];
     get_buffer(0, pathname, 100);
-    int flags = get_int(1);
+    int flags = convert_open_flags(get_int(1));
     int mode = get_int(2);
     int ret = ::open((char*)pathname, flags, mode);
     set_int(0, ret);
@@ -830,8 +869,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("time");
     time_t param;
     time_t ret = ::time(&param);
-    if (get_int(0) != 0 && ret != (time_t)-1)
-      SET_BUFFER_CORRECT_ENDIAN(0, (unsigned char *)&param,(unsigned) sizeof(time_t));
+    if (get_int(0) != 0 && ret != (time_t)-1) {
+      uint32_t guest_addr = get_int(0);
+      SET_BUFFER_CORRECT_ENDIAN(guest_addr, (unsigned char *)&param,
+                                (unsigned)sizeof(time_t));
+    }
     set_int(0, ret);
     return 0;
 
@@ -876,9 +918,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("times");
     struct tms buf;
     clock_t ret = ::times(&buf);
-    if (ret != (clock_t)-1)
-      SET_BUFFER_CORRECT_ENDIAN(0, (unsigned char*)&buf, 
+    if (ret != (clock_t)-1) {
+      uint32_t guest_addr = get_int(0);
+      SET_BUFFER_CORRECT_ENDIAN(guest_addr, (unsigned char *)&buf,
                                 (unsigned)sizeof(struct tms));
+    }
     set_int(0, ret);
     return 0;
 
@@ -894,8 +938,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int flags = get_int(3);
     Elf32_Addr addr = get_int(0);
     Elf32_Word size = get_int(1);
-    if ((flags & 0x20) == 0) { // Not anonymous
+    if (!is_mmap_anonymous(flags)) { // Not anonymous
       set_int(0, -EINVAL);
+      fprintf(stderr, "not anonymous - returned error\n");
     } else {
       set_int(0, ref.ac_dyn_loader.mem_map.mmap_anon(addr, size));
     }
@@ -919,7 +964,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::stat((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf, sizeof(struct stat));
     }
     set_int(0, ret);
     return 0;
@@ -932,7 +978,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::lstat((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf, sizeof(struct stat));
     }
     set_int(0, ret);
     return 0;
@@ -944,7 +991,8 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::fstat(fd, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf, sizeof(struct stat));
     }
     set_int(0, ret);
     return 0;
@@ -953,27 +1001,29 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("uname");
     struct utsname *buf = (struct utsname*) malloc(sizeof(utsname));
     int ret = ::uname(buf);
-    set_buffer(0, (unsigned char *) buf, sizeof(utsname));
+    uint32_t guest_addr = get_int(0);
+    host2guestmemcpy(guest_addr, (unsigned char *) buf, sizeof(utsname));
     free(buf);
     set_int(0, ret);
-    return 0; 
+    return 0;
 
   } else if (syscall == sctbl[22]) { // _llseek
     DEBUG_SYSCALL("_llseek");
     unsigned fd = get_int(0);
     unsigned long offset_high = get_int(1);
     unsigned long offset_low = get_int(2);
-    off_t ret_off;
     int ret;
     unsigned whence = get_int(4);
     if (offset_high == 0) {
+      uint64_t ret_off;
+      // Assume 64-bit offsets for all systems
       ret_off = ::lseek(fd, offset_low, whence);
       if (ret_off >= 0) {
-        // FIXME: This doesn't properly simulate llseek
-	//loff_t result = ret_off;
-	//SET_BUFFER_CORRECT_ENDIAN(3, (unsigned char*)&result,
-        //                          (unsigned) sizeof(loff_t));
-	ret = 0;
+        uint32_t guest_addr = get_int(3);
+        uint64_t ret_off_cvt =
+            ref.ac_mt_endian ? ret_off : (ret_off >> 32) | (ret_off << 32);
+        SET_BUFFER_CORRECT_ENDIAN(guest_addr, (unsigned char *)&ret_off_cvt, 8);
+        ret = 0;
       } else {
 	ret = -1;
       }
@@ -988,22 +1038,25 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret;
     int fd = get_int(0);
     int iovcnt = get_int(2);
-    int *addresses = (int *) malloc(sizeof(int)*iovcnt);
-    struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
-    get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
+    // Read input assuming guest is 32-bit linux (4 bytes for pointer size)
+    // Check struct iovec for more info
+    const uint32_t guest_iovec_sz = 8;
+    uint32_t *input = (uint32_t *) malloc(guest_iovec_sz * iovcnt);
+    get_buffer(1, (unsigned char *) input, guest_iovec_sz * iovcnt);
+    struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec) * iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      addresses[i] = (int)(long) buf[i].iov_base; // FIXME: this should be checked on x64 systems
-      unsigned char *tmp = (unsigned char *) malloc(buf[i].iov_len);
+      unsigned char *tmp = (unsigned char *) malloc(input[2 * i + 1]);
       buf[i].iov_base = (void *)tmp;
+      buf[i].iov_len = CORRECT_ENDIAN(input[2 * i + 1], 4);
     }
     ret = ::readv(fd, buf, iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      set_int(1, addresses[i]);
-      set_buffer(1, (unsigned char *)buf[i].iov_base, buf[i].iov_len);
-      free (buf[i].iov_base);
+      host2guestmemcpy(CORRECT_ENDIAN(input[2 * i], 4),
+                       (unsigned char *)buf[i].iov_base, buf[i].iov_len);
+      free(buf[i].iov_base);
     }
-    free(addresses);
     free(buf);
+    free(input);
     set_int(0, ret);
     return 0;
 
@@ -1013,23 +1066,24 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int fd = get_int(0);
     int iovcnt = get_int(2);
     struct iovec *buf = (struct iovec *) malloc(sizeof(struct iovec)*iovcnt);
-    get_buffer(1, (unsigned char *) buf, sizeof(struct iovec)*iovcnt);
+    // Read input assuming guest is 32-bit linux (4 bytes for pointer size)
+    const uint32_t guest_iovec_sz = 8;
+    uint32_t *input = (uint32_t *) malloc(guest_iovec_sz * iovcnt);
+    get_buffer(1, (unsigned char *) input, guest_iovec_sz * iovcnt);
     for (int i = 0; i < iovcnt; i++) {
       unsigned char *tmp;
-      // FIXME: this should be checked on x64 systems
-      unsigned long endian_tmp = CORRECT_ENDIAN((unsigned)(long) buf[i].iov_base, sizeof(void *));
-      buf[i].iov_base = (void *) endian_tmp;
-      buf[i].iov_len  = CORRECT_ENDIAN(buf[i].iov_len, sizeof(size_t));
-      set_int(1, (int)(long) buf[i].iov_base); // FIXME: this should be checked on x64 systems
-      tmp = (unsigned char *) malloc(buf[i].iov_len);
+      uint32_t endian_tmp = CORRECT_ENDIAN(input[2 * i], 4);
+      buf[i].iov_len = CORRECT_ENDIAN(input[2 * i + 1], 4);
+      tmp = (unsigned char *)malloc(buf[i].iov_len);
       buf[i].iov_base = (void *)tmp;
-      get_buffer(1, tmp, buf[i].iov_len);
+      guest2hostmemcpy(tmp, endian_tmp, buf[i].iov_len);
     }
     ret = ::writev(fd, buf, iovcnt);
     for (int i = 0; i < iovcnt; i++) {
-      free (buf[i].iov_base);
+      free(buf[i].iov_base);
     }
     free(buf);
+    free(input);
     set_int(0, ret);
     return 0;
 
@@ -1044,7 +1098,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::stat64((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf,
+                       sizeof(struct stat64));
     }
     set_int(0, ret);
     return 0;
@@ -1057,7 +1113,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::lstat64((char *)pathname, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf,
+                       sizeof(struct stat64));
     }
     set_int(0, ret);
     return 0;
@@ -1069,7 +1127,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = ::fstat64(fd, &buf);
     if (ret >= 0) {
       CORRECT_STAT_STRUCT(buf);
-      set_buffer(1, (unsigned char*)&buf, sizeof(struct stat64));
+      uint32_t guest_addr = get_int(1);
+      host2guestmemcpy(guest_addr, (unsigned char *)&buf,
+                       sizeof(struct stat64));
     }
     set_int(0, ret);
     return 0;
@@ -1163,10 +1223,9 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
         ret = ::accept(args[0], &addr, &addrlen);
         CORRECT_SOCKADDR_STRUCT_TO_GUEST(addr);
         addrlen = CORRECT_ENDIAN(addrlen, sizeof(socklen_t));
-        set_int(0, args[1]);
-        set_buffer(0, (unsigned char*)&addr, sizeof(struct sockaddr));
-        set_int(0, args[2]);
-        set_buffer(0, (unsigned char*)&addrlen, sizeof(socklen_t));
+        host2guestmemcpy(args[1], (unsigned char *)&addr,
+                         sizeof(struct sockaddr));
+        host2guestmemcpy(args[2], (unsigned char *)&addrlen, sizeof(socklen_t));
         break;
       }
     default:
@@ -1183,8 +1242,11 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     ret = ::gettimeofday(&tv, &tz);
     CORRECT_TIMEVAL_STRUCT(tv);
     CORRECT_TIMEZONE_STRUCT(tz);
-    set_buffer(0, (unsigned char*)&tv, sizeof(struct timeval));
-    set_buffer(1, (unsigned char*)&tz, sizeof(struct timezone));   
+    uint32_t guest_addr1 = get_int(0);
+    host2guestmemcpy(guest_addr1, (unsigned char *)&tv, sizeof(struct timeval));
+    uint32_t guest_addr2 = get_int(1);
+    host2guestmemcpy(guest_addr2, (unsigned char *)&tz,
+                     sizeof(struct timezone));
     set_int(0, ret);
     return 0;
   } else if (syscall == sctbl[37]) { // settimeofday
@@ -1192,6 +1254,19 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret = -EPERM;
     AC_WARN("settimeofday: Ignored attempt to change host date");
     set_int(0, ret);
+    return 0;
+  } else if (syscall == sctbl[38]) { // clock_gettime
+    DEBUG_SYSCALL("clock_gettime");
+    uint32_t clockid = get_int(0);
+    uint32_t guest_addr = get_int(1);
+    struct timespec ts;
+    // Assume a 32-bit guest
+    uint32_t guest_ts[2];
+    int32_t ret = ::clock_gettime(clockid, &ts);
+    guest_ts[0] = ts.tv_sec;
+    guest_ts[1] = ts.tv_nsec;
+    set_int(0, ret);
+    host2guestmemcpy(guest_addr, (unsigned char *)&guest_ts, 8);
     return 0;
   }
 

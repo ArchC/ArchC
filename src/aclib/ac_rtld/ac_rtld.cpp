@@ -150,11 +150,11 @@ namespace ac_dynlink {
   }
 
   /* Initiate the run time dynamic linker */
-  void ac_rtld::initiate(Elf32_Addr start_addr, Elf32_Word size, Elf32_Word memsize, Elf32_Word brkaddr, int fd, bool match_endian) {
+  void ac_rtld::initiate(Elf32_Addr start_addr, Elf32_Word end_addr, Elf32_Word memsize, Elf32_Word brkaddr, int fd, bool match_endian) {
     if (!initiated) {
       initiated = true;
       mem_map.set_memsize(memsize);
-      mem_map.add_region(start_addr, size);
+      mem_map.add_region(start_addr, end_addr - start_addr);
       mem_map.set_brk_addr(brkaddr);
       detect_static_glibc(fd, match_endian);
     }
