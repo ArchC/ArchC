@@ -127,9 +127,10 @@ AS_IF([ test "$disable_hlt" != "yes" ],
 
 AM_CONDITIONAL([HLT_SUPPORT], [ ! test "$disable_hlt" = "yes" ])
 
-#Uncomment this lines to use clang compiler or redefine CC and CXX in command line
 #CC="clang-3.5 -std=c11"
 #CXX="clang++-3.5 -std=c++11"
+CC="gcc -std=gnu99"
+CXX="g++ -std=c++11"
 
 # Sets global flags
 CFLAGS="$CFLAGS -Wall"

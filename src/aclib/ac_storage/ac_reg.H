@@ -67,7 +67,7 @@ protected:
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
   double& time_step;
-#endif // AC_DELAY
+#endif 
 
 public:
   
@@ -96,7 +96,7 @@ public:
   /// Constructor with delay parameter
   ac_reg(string name, T value, double& ts):
     Data(value), Name(name), time_step(ts) {}
-#endif // AC_DELAY
+#endif 
 
 #ifdef AC_DELAY
   //!Writing to an address. Overloaded Method.
@@ -121,7 +121,7 @@ public:
     delays.push_back( data );
     return *this;
   }
-#endif  //AC_DELAY
+#endif 
 
   //!Convertion operator
   operator const T& () const { 

@@ -71,12 +71,22 @@ protected:
 #ifdef AC_DELAY
   log_list delays;                  //!< Delayed update queue.
   double& time_step;
-#endif // AC_DELAY
+#endif
 
 public:
   
   string Name;
   ac_word Data[nregs];
+
+  /// Default Constructor
+  ac_regbank(string nm):
+    Name(nm) {}
+
+#ifdef AC_DELAY
+  /// Constructor with delay parameter.
+  ac_regbank(string nm, double& ts) : 
+    time_step(ts), Name(nm) {}
+#endif 
 
   //!Reading the content of an address. Overloaded Method.
   ac_word read( unsigned address ){
@@ -115,24 +125,6 @@ public:
   
   }
 
-
-#ifdef AC_DELAY
-  //!Writing to a register. Overloaded Method.
-  void write(unsigned address , ac_word datum,
-             unsigned time) {
-    delays.push_back( chg_log( address, datum, (time * time_step) + time_step + sc_simulation_time()));
-  }
-#endif
-
-  /// Default Constructor
-  ac_regbank(string nm):
-    Name(nm) {}
-
-#ifdef AC_DELAY
-  /// Constructor with delay parameter.
-  ac_regbank(string nm, double& ts) : 
-    time_step(ts), Name(nm) {}
-#endif // AC_DELAY
 
   //!Dump the entire contents of a regbank device
   void dump(){
@@ -206,12 +198,16 @@ public:
   }
 
 #ifdef AC_DELAY
+  //!Writing to a register. Overloaded Method.
+  void write(unsigned address , ac_word datum,
+             unsigned time) {
+    delays.push_back( chg_log( address, datum, (time * time_step) + time_step + sc_simulation_time()));
+  }
 
-//!Method to commit delayed updates.
+
+  //!Method to commit delayed updates.
   void commit_delays( double time ){
-    typename log_list::iterator itor;
-    
-    itor = delays.begin();
+    auto itor = delays.begin();
     
     //Sometimes, when a memory hierarchy is present and the processor spends some
     //cycles in a wait status, we may have to commit changes for every cycle <=

@@ -1535,13 +1535,13 @@ void CreateProcessorHeader() {
   fprintf( output, "#ifndef  _%s_H\n", upper_project_name);
   fprintf( output, "#define  _%s_H\n\n", upper_project_name);
 
+  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"systemc.h\"\n");
   fprintf( output, "#include \"ac_module.H\"\n");
   fprintf( output, "#include \"ac_utils.H\"\n");
 #ifdef HLT_SUPPORT
   fprintf( output, "#include \"ac_hltrace.H\"\n");
 #endif
-  fprintf( output, "#include \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
   fprintf( output, "#include \"%s_isa.H\"\n", project_name);
   
@@ -3473,9 +3473,12 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   
   if( ACDelayFlag ){
     fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[base_indent]);
-    for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next )
-      fprintf( output, "%s%s.commit_delays( (double)ac_cycle_counter );\n", 
-               INDENT[base_indent + 1], pstorage->name);
+    for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next ) {
+        if (pstorage->has_memport)
+            fprintf( output, "%s%s_mport.commit_delays( (double)ac_cycle_counter );\n", INDENT[base_indent + 1], pstorage->name);
+        else
+            fprintf( output, "%s%s.commit_delays( (double)ac_cycle_counter );\n", INDENT[base_indent + 1], pstorage->name);
+    }
       
     fprintf( output, "%sac_pc.commit_delays(  (double)ac_cycle_counter );\n", 
              INDENT[base_indent + 1]);
