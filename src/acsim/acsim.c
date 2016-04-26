@@ -66,7 +66,7 @@
 #define PRINT_TRACE "%strace_file << hex << ac_pc << dec <<\"\\n\";\n"
 
 //Command-line options flags
-int  ACABIFlag=0;                               //!<Indicates whether an ABI was provided or not
+int  ACABIFlag=1;                               //!<Indicates whether an ABI was provided or not
 int  ACDebugFlag=0;                             //!<Indicates whether debugger option is turned on or not
 int  ACHLTraceFlag=0;                           //!<Indicates whether high level trace option is turned on or not
 int  ACDecCacheFlag=1;                          //!<Indicates whether the simulator will cache decoded instructions or not
@@ -118,6 +118,7 @@ ac_sto_list* load_device=0;
   for each option encountered; the first one that matches, wins.  */
 struct option_map option_map[] = {
   {"--abi-included"    , "-abi","Indicate that an ABI for system call emulation was provided." ,"o"},
+  {"--abi-not-included", "-noabi","Indicate that an ABI for system call emulation was NOT provided." ,"o"},
   {"--debug"           , "-g"  ,"Enable simulation debug features: traces, update logs." ,"o"},
 #ifdef HLT_SUPPORT
   {"--high-level-trace", "-hlt","Enable generation of high level traces" ,"o"},
@@ -297,6 +298,10 @@ int main(int argc, char** argv) {
           switch (i) {
             case OPABI:
               ACABIFlag = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPNOABI:
+              ACABIFlag = 0;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             case OPDebug:

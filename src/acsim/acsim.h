@@ -101,6 +101,7 @@ char *OTHER_FLAGS;    //!<Miscellaneous flags to be passed to the compiler
 //! Enumeration type for command line options
 enum _ac_cmd_options {
   OPABI,
+  OPNOABI,
   OPDebug,
 #if HLT_SUPPORT
   OPHLTrace,
