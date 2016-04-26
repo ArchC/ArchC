@@ -12,7 +12,7 @@ Usage: $0 [options] <model-file>
 Create binary utilities source files and optionally build them.
 
 Options:
-  -a<name>   sets the architecture name (if ommitted, it defaults to 
+  -a<name>   sets the architecture name (if omitted, it defaults to 
              <model-file> without the extension)
   -i<dir>    build and install the binary utilities in directory <dir>
              NOTE: <dir> -MUST- be an absolute path

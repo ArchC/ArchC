@@ -74,7 +74,7 @@ void ac_verify::add_log( log_list  *pdevchg, unsigned address, unsigned datum, d
 
     
 /*!Match device's behavioral and structural logs at a given simulation time. 
-  Modifications ocurred to the same address, with the same value at the same
+  Modifications occurred to the same address, with the same value at the same
   time can be discarded. Used for both timed and untimed  verification.
   
   \param pdevice A pointer to the device object being checked.

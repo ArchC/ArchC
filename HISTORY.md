@@ -180,7 +180,7 @@ Example: acsim powerpc.ac -pw .
    should the processor need the assumption of context switching at each
    instruction (for instance, when it relies on instant response from
    non-blocking methods). In that case you need the...
- - set_instr_batch_size(sz) method: avaliable on acsim-generated simulators.
+ - set_instr_batch_size(sz) method: available on acsim-generated simulators.
    sz is an integer that determines the number of instructions to execute
    before switching context. Set it to 1 if you need beta2-like behavior.
  - if you want a standalone simulator (eg. just to run benchmark programs),

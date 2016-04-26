@@ -80,7 +80,7 @@ char* helper_contents;                //!< Contents of the ac_helper declaration
 int wordsize;                         //!< Size of the word type in bits for the current project.
 int fetchsize;                        //!< Size of the fetch word type in bits for the current project.
 int fetchbuffersize;                  //!< Size of the fetch buffer in bytes for the current project.
-int ac_tgt_endian;                    //!< Indicate the endianess of the target architecture.
+int ac_tgt_endian;                    //!< Indicate the endianness of the target architecture.
 int force_setasm_syntax;              //!< tools should set this flag if the new set_asm syntax is required
 
 /* lexer interface variable */

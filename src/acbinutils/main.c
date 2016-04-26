@@ -231,7 +231,7 @@ int main(int argc, char **argv)
     exit(1);
   }
  
-  create_operand_list(); /* this MUST preceed create_relocation_list */
+  create_operand_list(); /* this MUST precede create_relocation_list */
   create_relocation_list();
 
   strcpy(buffer, GEN_DIR);

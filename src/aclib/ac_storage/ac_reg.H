@@ -104,7 +104,7 @@ public:
     delays.push_back( chg_log( 0, datum, (time * time_step) + time_step + sc_simulation_time()));
   }
 
-  //!Commiting delayed updates
+  //!Committing delayed updates
   void commit_delays( double time ){
     typename log_list::iterator itor;
     

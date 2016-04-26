@@ -228,7 +228,7 @@ int accs_main()
   if ((accs_ReadElf(ACCompsimProg) == EXIT_FAILURE) &&
       (accs_ReadHexProgram(ACCompsimProg) == EXIT_FAILURE) &&
       (accs_ReadObjdumpHex(ACCompsimProg) == EXIT_FAILURE)) {
-    AC_ERROR("Aplication program %s: Format not recognized (tried ELF and HEX)\n", ACCompsimProg);
+    AC_ERROR("Application program %s: Format not recognized (tried ELF and HEX)\n", ACCompsimProg);
     exit(EXIT_FAILURE);
   }
 
@@ -3902,7 +3902,7 @@ ac_sto_list *accs_FindLoadDevice()
 
   /* Determining which device is going to be used for loading applications*/
   /* The device used for loading applications must be the one in the highest
-     level of a memory hierachy.*/
+     level of a memory hierarchy.*/
   for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
     if(pstorage->level > load_device->level)
       load_device = pstorage;

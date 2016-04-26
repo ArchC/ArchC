@@ -40,7 +40,7 @@
  *  & Capabilities                                                         *
  *   - DSO loading                                                         *
  *   - Memory map management, assigning free space to a new library        *
- *   - Finding libraries using AC_LIBRARY_PATH enviroment variable         *
+ *   - Finding libraries using AC_LIBRARY_PATH environment variable         *
  *   - Symbol management & binding                                         *
  *   - Dynamic relocation                                                  *
  *   - Symbol version handling                                             *

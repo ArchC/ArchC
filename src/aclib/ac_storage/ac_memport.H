@@ -541,7 +541,7 @@ public:
 
 #ifdef AC_DELAY
 
-  //!Commiting delayed updates
+  //!Committing delayed updates
   virtual void commit_delays(double time) {
     typename log_list::iterator itor;
 

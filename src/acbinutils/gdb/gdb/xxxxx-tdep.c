@@ -323,7 +323,7 @@ static struct `'___arch_name___`_frame_cache *'
   CORE_ADDR start_addr;
 
   find_pc_partial_function (pc, NULL, &start_addr, NULL);    
-  /* We can't analyze the prologue if we couldn't find the begining of the function.  */
+  /* We can't analyze the prologue if we couldn't find the beginning of the function.  */
   if (start_addr == 0)
     return cache;  
 

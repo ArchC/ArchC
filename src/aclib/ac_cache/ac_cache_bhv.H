@@ -14,7 +14,7 @@
  *
  * 0.4 - 
  *       . replacement algorithm now is implemented in a separate class and
- *       must be choosen while instatiating the cache (defaults to random);
+ *       must be chosen while instatiating the cache (defaults to random);
  *       . added support for counting the number of block evictions.
  *
  * 0.3 - replacement algorithm must be specified in a derived class.

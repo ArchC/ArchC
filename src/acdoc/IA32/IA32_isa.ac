@@ -50,7 +50,7 @@ AC_ISA(IA32)
   ac_format Type_op1b_rm32 = "%op1b:8 %rm:3 %regop:3 %mod:2 %sib:8 %disp:32 %imm:32";
   ac_format Type_op2b_rm32 = "%op2b:16 %rm2:3 %regop2:3 %mod2:2 %sib2:8 %disp2:32 %imm2:32";
 
-  // Debug formats (nonexistant in the instruction set)
+  // Debug formats (nonexistent in the instruction set)
   ac_format Type_op2b_debug = "%op2b:16 %iadd:32 %eadd:32";
 
   // Instruction naming patterns:
@@ -155,7 +155,7 @@ AC_ISA(IA32)
 				shr_rm8_imm8, div_rm8, shr_rm8, and_r8_rm8,
 				or_r8_rm8, xor_r8_rm8, sal_rm8_imm8, cmp_r8_rm8;
 
-  // Debug instructions, nonexistant in the instruction set
+  // Debug instructions, nonexistent in the instruction set
   ac_instr<Type_op2b_debug>	dump_registers, dump_memory, dump_stack;
 
   ISA_CTOR(IA32)

@@ -197,7 +197,7 @@ void CreateStatsImplTmpl();                       //!< Create the implementation
 void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls.
 void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
 void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.
-void CreateMakefile(void);                        //!< Creates a Makefile for teh ArchC nodel.
+void CreateMakefile(void);                        //!< Creates a Makefile for the ArchC model.
 void CreateRegsImpl(void);                        //!< Creates the .cpp template file for formatted registers.
 void CreateImplTmpl(void);                        //!< Creates the .cpp template file for behavior description.
 void CreateIntrTmpl(void);                        //!< Creates the .cpp template file for interrupt handlers.

@@ -27,7 +27,7 @@
 
 /*****************************************************************************
 
-  psc_misc.cpp -- Miscelaneous functions
+  psc_misc.cpp -- Miscellaneous functions
 
   Original Author: Felipe Vieira Klein <felipe.klein@ic.unicamp.br>, IC/UNICAMP, 2004.
   

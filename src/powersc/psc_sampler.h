@@ -173,7 +173,7 @@ protected:
    double m_tmon;								// time monitoring transition activity
    int m_n_mon;								// number of samples monitoring the activity
    double m_total_tmon;						// total monitored simulation time
-   bool m_first_mon;							// first time monitoring after inital samples
+   bool m_first_mon;							// first time monitoring after initial samples
    double m_tpred;							// time using predicted average
    int m_n_pred;								// number of samples using predicted average
    double m_global_pred_avg;				// predicted average (monitored+stopped)

@@ -79,7 +79,7 @@ void print_operand_info(FILE *stream, unsigned int indent, unsigned int opid)
  * 1 = big, 0 = little
  *
  * limitations:
- * . endianess affects 8-bit bytes
+ * . endianness affects 8-bit bytes
  * . maximum word size: 64-bit
  */
 long long getbits(unsigned int bitsize, char *location, int endian)
@@ -286,7 +286,7 @@ char list_results_get_separator(list_op_results lr)
   return lr->separator;
 }
 
-/* The function of which main responsability is to access the data
+/* The function of which main responsibility is to access the data
  of next node in the linked list presented as a parameter. It shoud do
 it in an automated fashion, to a degree such the user should not be
  aware of pointers.

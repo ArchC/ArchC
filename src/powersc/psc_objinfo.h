@@ -417,7 +417,7 @@ void psc_objinfo<W, T>::update_static_prob( const uint64 & changed )
 	sc_uint<W> changed_bits = changed;
 
 	// temporary variables used to detect which 
-	// change has ocurred (0->1 or 1->0)
+	// change has occurred (0->1 or 1->0)
 	sc_uint<W> curval = uint64value(m_cur_val);
 	sc_uint<W> newval = uint64value(m_new_val);
 	

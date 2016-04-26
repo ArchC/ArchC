@@ -85,7 +85,7 @@ the simulation tool.
 
    If, even after reading our documentation, should you encounter
    problems in using any of the new features of ArchC, feel free to
-   contact the ArchC team, preferrably via the forums. We'll be there
+   contact the ArchC team, preferably via the forums. We'll be there
    to answer your questions, and hear about bugs or things like that.
 
 All the best,

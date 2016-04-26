@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a name="l00074"></a>00074                         <span class="keywordflow">else</span> {
 <a name="l00075"></a>00075                                 npc+=4;
 <a name="l00076"></a>00076                         }
-<a name="l00077"></a>00077                         dbg_printf(<span class="stringliteral">&quot;Delay instruction annuled\n&quot;</span>);
+<a name="l00077"></a>00077                         dbg_printf(<span class="stringliteral">&quot;Delay instruction annulled\n&quot;</span>);
 <a name="l00078"></a>00078                         ac_pc = npc;
 <a name="l00079"></a>00079                         npc+=4;
 <a name="l00080"></a>00080                 }
@@ -656,7 +656,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a name="l00694"></a>00694     REGS[i+24] = REGS[i+8];
 <a name="l00695"></a>00695   }
 <a name="l00696"></a>00696 
-<a name="l00697"></a>00697   <span class="comment">//realy change reg window</span>
+<a name="l00697"></a>00697   <span class="comment">//really change reg window</span>
 <a name="l00698"></a>00698   CWP = (CWP-0x10);
 <a name="l00699"></a>00699   <span class="keywordflow">if</span> (CWP == WIM) <a class="code" href="sparcv8__isa_8cpp.html#a1d2f996b32c1bac3e3f537731cb02e49">trap_reg_window_overflow</a>(DM, RB, WIM);
 <a name="l00700"></a>00700 
@@ -686,7 +686,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a name="l00725"></a>00725     REGS[i+8] = REGS[i+24];
 <a name="l00726"></a>00726   }
 <a name="l00727"></a>00727 
-<a name="l00728"></a>00728   <span class="comment">//realy change reg window</span>
+<a name="l00728"></a>00728   <span class="comment">//really change reg window</span>
 <a name="l00729"></a>00729   CWP = (CWP+0x10);
 <a name="l00730"></a>00730   <span class="keywordflow">if</span> (CWP == WIM) <a class="code" href="sparcv8__isa_8cpp.html#abb245cfe2236a18fc28174a0e60f9840">trap_reg_window_underflow</a>(DM, RB, WIM);
 <a name="l00731"></a>00731 
@@ -1366,7 +1366,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a name="l01460"></a>01460     REGS[i+24] = REGS[i+8];
 <a name="l01461"></a>01461   }
 <a name="l01462"></a>01462 
-<a name="l01463"></a>01463   <span class="comment">//realy change reg window</span>
+<a name="l01463"></a>01463   <span class="comment">//really change reg window</span>
 <a name="l01464"></a>01464   CWP = (CWP-0x10);
 <a name="l01465"></a>01465   <span class="keywordflow">if</span> (CWP == WIM) <a class="code" href="sparcv8__isa_8cpp.html#a1d2f996b32c1bac3e3f537731cb02e49">trap_reg_window_overflow</a>(DM, RB, WIM);
 <a name="l01466"></a>01466 
@@ -1396,7 +1396,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a name="l01491"></a>01491     REGS[i+8] = REGS[i+24];
 <a name="l01492"></a>01492   }
 <a name="l01493"></a>01493 
-<a name="l01494"></a>01494   <span class="comment">//realy change reg window</span>
+<a name="l01494"></a>01494   <span class="comment">//really change reg window</span>
 <a name="l01495"></a>01495   CWP = (CWP+0x10);
 <a name="l01496"></a>01496   <span class="keywordflow">if</span> (CWP == WIM) <a class="code" href="sparcv8__isa_8cpp.html#abb245cfe2236a18fc28174a0e60f9840">trap_reg_window_underflow</a>(DM, RB, WIM);
 <a name="l01497"></a>01497 

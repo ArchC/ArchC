@@ -4,7 +4,7 @@
 <title>IA32_isa.ac Source Code</title>
 </head>
 <body>
-<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=IA32_index.html>IA32 Architechture Description</a></div><div class='definfo'><a href=IA32_isa.html>IA32 Instruction Set and Formats</a></div><div class='definfo'><a href=IA32_other.html>IA32 Other Properties</a></div><div class='source'><ul>
+<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div><div class='definfo'><a href=IA32_index.html>IA32 Architecture Description</a></div><div class='definfo'><a href=IA32_isa.html>IA32 Instruction Set and Formats</a></div><div class='definfo'><a href=IA32_other.html>IA32 Other Properties</a></div><div class='source'><ul>
 <li><a name=l1>00001</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" >/**
  </font></li><li><a name=l2>00002</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @file      IA32_isa.ac
  </font></li><li><a name=l3>00003</a>&nbsp&nbsp&nbsp&nbsp <font color="gray" > * @author    Rodolfo Jardim de Azevedo
@@ -57,7 +57,7 @@
 </li><li><a name=l50>00050</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_format </font> Type_op1b_rm32 = <font color="brown" >"%op1b:8 %rm:3 %regop:3 %mod:2 %sib:8 %disp:32 %imm:32" </font>;
 </li><li><a name=l51>00051</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_format </font> Type_op2b_rm32 = <font color="brown" >"%op2b:16 %rm2:3 %regop2:3 %mod2:2 %sib2:8 %disp2:32 %imm2:32" </font>;
 </li><li><a name=l52>00052</a>&nbsp&nbsp&nbsp&nbsp 
-</li><li><a name=l53>00053</a>&nbsp&nbsp&nbsp&nbsp   <font color="gray" >// Debug formats (nonexistant in the instruction set)
+</li><li><a name=l53>00053</a>&nbsp&nbsp&nbsp&nbsp   <font color="gray" >// Debug formats (nonexistent in the instruction set)
  </font></li><li><a name=l54>00054</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_format </font> Type_op2b_debug = <font color="brown" >"%op2b:16 %iadd:32 %eadd:32" </font>;
 </li><li><a name=l55>00055</a>&nbsp&nbsp&nbsp&nbsp 
 </li><li><a name=l56>00056</a>&nbsp&nbsp&nbsp&nbsp   <font color="gray" >// Instruction naming patterns:
@@ -162,7 +162,7 @@
 </li><li><a name=l155>00155</a>&nbsp&nbsp&nbsp&nbsp 				shr_rm8_imm8, div_rm8, shr_rm8, and_r8_rm8,
 </li><li><a name=l156>00156</a>&nbsp&nbsp&nbsp&nbsp 				or_r8_rm8, xor_r8_rm8, sal_rm8_imm8, cmp_r8_rm8;
 </li><li><a name=l157>00157</a>&nbsp&nbsp&nbsp&nbsp 
-</li><li><a name=l158>00158</a>&nbsp&nbsp&nbsp&nbsp   <font color="gray" >// Debug instructions, nonexistant in the instruction set
+</li><li><a name=l158>00158</a>&nbsp&nbsp&nbsp&nbsp   <font color="gray" >// Debug instructions, nonexistent in the instruction set
  </font></li><li><a name=l159>00159</a>&nbsp&nbsp&nbsp&nbsp   <font color="green" >ac_instr </font><Type_op2b_debug>	dump_registers, dump_memory, dump_stack;
 </li><li><a name=l160>00160</a>&nbsp&nbsp&nbsp&nbsp 
 </li><li><a name=l161>00161</a>&nbsp&nbsp&nbsp&nbsp   <font color="purple" >ISA_CTOR </font>(IA32)

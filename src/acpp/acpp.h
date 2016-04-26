@@ -95,7 +95,7 @@ extern void acppUnload();
  * After returning from this function, the parser will have filled the main
  * data structures (and hence they can be used by generation tools)
  *
- * \return  1 if an error ocurred while parsing, 0 otherwise
+ * \return  1 if an error occurred while parsing, 0 otherwise
  */
 extern int acppRun();
 
