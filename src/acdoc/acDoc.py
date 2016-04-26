@@ -633,7 +633,7 @@ class HtmlISA():
 	html = "<link href='style.css' rel='stylesheet' type='text/css' />\n"
 	html += "<title>"+ self.name +" ISA Documentation</title>\n</head>\n<body>\n"
 	html += "<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div>"
-	html += "<div class='definfo'><a href="+self.name+"_index.html>"+self.name+" Architechture Description</a></div>"
+	html += "<div class='definfo'><a href="+self.name+"_index.html>"+self.name+" Architecture Description</a></div>"
 	html += "<div class='definfo'><a href="+self.name+"_other.html>"+self.name+" Other Properties</a></div>"
 	html += ast.generateIsaHtml()
 	self.index.write(html)
@@ -652,7 +652,7 @@ class HtmlOther():
 	html = "<link href='style.css' rel='stylesheet' type='text/css' />\n"
 	html += "<title>"+ self.name +" ISA Documentation</title>\n</head>\n<body>\n"
 	html += "<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div>"
-	html += "<div class='definfo'><a href="+self.name+"_index.html>"+self.name+" Architechture Description</a></div>"
+	html += "<div class='definfo'><a href="+self.name+"_index.html>"+self.name+" Architecture Description</a></div>"
 	html += "<div class='definfo'><a href="+self.name+"_isa.html>"+self.name+" Instruction Set and Formats</a></div>"
 	html += ast.generateOtherHtml()
 	self.index.write(html)
@@ -746,7 +746,7 @@ class HtmlSource():
 	html += "<link href='style.css' rel='stylesheet' type='text/css' />\n"
 	html += "<title>"+ filename +" Source Code</title>\n</head>\n<body>\n"
 	html += "<div class='definfo'>This documentation was automatically generated with AcDoc tool.</div>"
-	html += "<div class='definfo'><a href="+self.name+"_index.html>"+self.name+" Architechture Description</a></div>"
+	html += "<div class='definfo'><a href="+self.name+"_index.html>"+self.name+" Architecture Description</a></div>"
 	html += "<div class='definfo'><a href="+self.name+"_isa.html>"+self.name+" Instruction Set and Formats</a></div>"
 	html += "<div class='definfo'><a href="+self.name+"_other.html>"+self.name+" Other Properties</a></div>"   
 	html += "<div class='source'><ul>\n"

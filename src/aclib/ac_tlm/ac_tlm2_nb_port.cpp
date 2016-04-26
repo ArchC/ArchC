@@ -122,7 +122,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	#endif
 
 	/**********
-	To garantee that there are no extensions in the payload
+	To guarantee that there are no extensions in the payload
 	**********/
 	payload_global->free_all_extensions();	
 
@@ -210,7 +210,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 	#endif
 
 	/**********
-	To garantee that there are no extensions in the payload
+	To guarantee that there are no extensions in the payload
 	**********/
 	payload_global->free_all_extensions();	
 
@@ -348,7 +348,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
    payload_global->set_streaming_width((const unsigned int)procId);
    /**/
 	/**********
-	To garantee that there are no extensions in the payload
+	To guarantee that there are no extensions in the payload
 	**********/
 	payload_global->free_all_extensions();	
 
@@ -389,7 +389,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 
     
 	/**********	
-	To garantee that there are no extensions in the payload
+	To guarantee that there are no extensions in the payload
 	**********/
 	payload_global->free_all_extensions();	
 
@@ -436,7 +436,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     payload_global->set_data_ptr(ptr);
 
 	/**********	
-	To garantee that there are no extensions in the payload
+	To guarantee that there are no extensions in the payload
 	**********/
 	payload_global->free_all_extensions();	
 
@@ -466,7 +466,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 
 
     /**********	
-	To garantee that there are no extensions in the payload
+	To guarantee that there are no extensions in the payload
 	**********/
 	payload_global->free_all_extensions();	
 	

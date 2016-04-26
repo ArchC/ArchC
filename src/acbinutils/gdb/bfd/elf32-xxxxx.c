@@ -173,7 +173,7 @@ bfd_elf_archc_reloc (bfd *abfd,
    
   /*
    * Taken from bfd_elf_generic_reloc
-   * It is basicly a short circuit if the output is relocatable
+   * It is basically a short circuit if the output is relocatable
    * 
    * TODO: maybe print an error message if output is relocatable?
    */

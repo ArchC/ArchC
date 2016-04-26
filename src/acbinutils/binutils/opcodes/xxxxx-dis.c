@@ -145,7 +145,7 @@ unsigned long get_value_from_fields(unsigned int oper_id,
 
   for (; i < num_fields; i++) {
     /* If we don't encode both start and end bits, we don't know 
-       which field a start bit is refering to */
+       which field a start bit is referring to */
     unsigned field_start = get_bit_pos(operands[oper_id].fields_positions, i*2);
     unsigned field_end = get_bit_pos(operands[oper_id].fields_positions, (i*2)+1);
     unsigned field_size = field_end-field_start+1;
@@ -178,8 +178,8 @@ long sign_extend_to_long(long v, unsigned int bit_size) {
 /*
   Function that makes the disassembler of an instruction of the object file, making the decoding using the field dmask of the file xxxxx-opc.c
 
-1- Using the insn apllies the mask (dmaks fiels of opcodes)
-2- Search in instruction table the corresponding instruction of (insn & dmask), and prints the intruction mnemonic.
+1- Using the insn apllies the mask (dmaks fields of opcodes)
+2- Search in instruction table the corresponding instruction of (insn & dmask), and prints the instruction mnemonic.
 3- For each operand, is generated a mask in the position of the field in insn and size (e.g. bit 16 to the 24), after verified if is a register, or immediate, address, etc...
 4- if is a register, is called the method replace to put the name of the register in the final string that it will be printed 
 5- is an immediate one!,  then it verifies the modifiers, and it applies them, after calls the method replace to put the value in the final string(bufFinal). 
@@ -464,7 +464,7 @@ ac_symbol* parse(char *args){
       *ptr_buf = '\0';
       args++; 
 
-      //operand_id is the index of fiels in the struct operands
+      //operand_id is the index of fields in the struct operands
       unsigned int operand_id = atoi(buf);
       unsigned int count;
 
@@ -473,7 +473,7 @@ ac_symbol* parse(char *args){
       for (count=0; count < strlen(operands[operand_id].name); count++)
         ptr_bufInitial++;
 
-      //verify aditional fiels
+      //verify aditional fields
       if (*args == '+') {
         strcat(ptr_bufInitial, "+");
         ptr_bufInitial++;

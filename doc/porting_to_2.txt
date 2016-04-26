@@ -148,7 +148,7 @@ ac_reg<8> WIM;
    exact same way the unsigned char variables were. Also, notice that
    ac_regs now can have their width specified inside angle brackets
    (which were previously used only to specify the format, when you
-   wanted to use a formated register). That's right, this is a new
+   wanted to use a formatted register). That's right, this is a new
    feature of ArchC 2.0, because in 1.6.x every register you declared
    had the same width specified by ac_wordsize, meaning you couldn't
    declare a register with width different from the word size. But now
@@ -192,7 +192,7 @@ void ac_behavior(begin)
    same reasons: what once were global variables now are fields of an
    object, so you need their reference to modify them.
 
-   For exemple, our SPARC V8 had an npc global variable that we
+   For example, our SPARC V8 had an npc global variable that we
    modified to become a register (which is much saner), and since the
    global function update_pc() modified npc, we had to pass it as an
    extra reference parameter. So we essentially changed:

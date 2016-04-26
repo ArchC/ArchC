@@ -779,11 +779,11 @@ int AC_GDB<ac_word>::hex(unsigned char ch)
 
 
 /**
- * Change word endianess.
+ * Change word endianness.
  *
  * \param src source word
  *
- * \return endianess swapped word
+ * \return endianness swapped word
  */
 template <typename ac_word>
 ac_word AC_GDB<ac_word>::changeendianess( ac_word src )

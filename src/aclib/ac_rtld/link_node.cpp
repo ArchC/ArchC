@@ -627,7 +627,7 @@ namespace ac_dynlink {
     return 0;
   }
 
-  /* Writes data to an address correcting endianess */
+  /* Writes data to an address correcting endianness */
   void link_node::patch_code(unsigned char *location, Elf32_Addr data, unsigned char target_size)
   {
     unsigned int i, mask, num_bits = target_size *8;

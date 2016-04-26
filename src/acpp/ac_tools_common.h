@@ -66,7 +66,7 @@ typedef struct _ac_sto_list
  char* format;                 //!< Device format. Only possible for registers.
  unsigned size;                //!< Size expressed in bytes. Used for memories and generic caches.
  unsigned width;               //!< Width of registers expressed in bits. Used for register banks.
- unsigned level;               //!< Memory hierachy level.
+ unsigned level;               //!< Memory hierarchy level.
  ac_sto_types type;            //!< Type of the device.
  struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
  ac_cache_parms* parms;        //!< Parameter list used for (not generic) ac_cache  declarations.

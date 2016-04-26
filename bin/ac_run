@@ -24,7 +24,7 @@ help(){
     if [ -n $1 ] ; then echo $1; fi
     cat <<EOF 1>&2
 This script must be called inside an ArchC model directory and will prepare a
-new simulator if nescessary (compiled simulation is selected using the
+new simulator if necessary (compiled simulation is selected using the
 simulator option -l or --load).
 
 Usage: ac_run [options] <arch> [simulator_options] <program> [program_arguments]

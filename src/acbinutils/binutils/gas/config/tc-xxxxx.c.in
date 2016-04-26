@@ -214,7 +214,7 @@ static int log_table[] = {  0 /*invalid*/,  0, 1, 1,
 
 
 /* every error msg due to a parser error is stored here 
-   NULL implies no error has occured  */
+   NULL implies no error has occurred  */
 static char *insn_error;
 
 /* a flag variable - if set, the parser is in 'imm' mode, that is, getting an
@@ -377,7 +377,7 @@ md_assemble(char *str)
 
   insn_error = ""; 
 
-  /* outer loop stop condition       : -parsing was succesful (no errors) (happy end)
+  /* outer loop stop condition       : -parsing was successful (no errors) (happy end)
                                        -no more mnemonic possibilities (s_pos == str) 
                                             (condition implemented in the inner loop)
      outer loop step: s_pos--
@@ -405,12 +405,12 @@ md_assemble(char *str)
       if (s_pos == str)
         {
           if (last_error == NULL) {
-            /* so we had never reached a succesful mnemonic hash, and we have no idea what is that
+            /* so we had never reached a successful mnemonic hash, and we have no idea what is that
               mnemonic */
 	          as_bad (_("unrecognized mnemonic: %s"), p_mnemonic);
 	          return;
           } else {
-            /* report the error when parsing the operands of the last succesful mnemonic substring */
+            /* report the error when parsing the operands of the last successful mnemonic substring */
             as_bad(_("%s in insn: '%s'"), last_error, p_mnemonic);
             return;
           }
@@ -491,7 +491,7 @@ md_assemble(char *str)
       if (insn_error)
 	{
 	  /* in the outer loop step, we'll try another mnemonic size. if this search fails, we must
-	     report the last error since a succesful mnemonic hash find (correct mnemonic size) */
+	     report the last error since a successful mnemonic hash find (correct mnemonic size) */
 	  last_error = insn_error;
 	}
       if (go_next == STOP_INSN)
@@ -597,7 +597,7 @@ int ac_parse_operands(char *s_pos, char *args)
       args++;
       s_pos++;
       /* note that it's not possible to have a space as the last char of an
-         'args' string, so we dont need to check for '\0' */
+         'args' string, so we don't need to check for '\0' */
     }
 
     /* eats any space from s_pos so that multiples whitespaces can be handled correctly between
@@ -796,7 +796,7 @@ int ac_parse_operands(char *s_pos, char *args)
 	  /* NEVER!!! discomment the line below O.O */
 	  /* if (out_insn.is_pseudo) return; */
   
-	  /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
+	  /* if we have reached here, we successfully got a valid symbol's value; so we encode it */
 	    if (!is_list)
               encode_field(symbol_value, operand_id, NULL);
             else
@@ -969,7 +969,7 @@ int ac_parse_mnemonic_suffixes(char **s_pos, char **args)
           }
         }
 
-        /* if we have reached here, we sucessfully got a valid symbol's value; so we encode it */
+        /* if we have reached here, we successfully got a valid symbol's value; so we encode it */
         encode_field(symbol_value, operand_id, NULL);
       }
       else
@@ -1335,7 +1335,7 @@ ___arch_name___`_cons_fix_new'(struct frag *frag, int where, unsigned int nbytes
 /* ac_parse_reloc() is used to parse special symbol modifiers, parenthesis next to a symbol
   name with "got", "gotoff" or "plt" markers to flag the use of a different relocation
   for this symbol. ac_parse_reloc() uses input_line_pointer to parse these constructs
-  and returns the apropriate relocation type for this symbol.
+  and returns the appropriate relocation type for this symbol.
 
   If no special relocation marker is found, it returns BFD_RELOC_UNUSED.   
 

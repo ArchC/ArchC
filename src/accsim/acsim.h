@@ -139,7 +139,7 @@ typedef struct _ac_sto_list{
   char *format;                 //!< Device format. Only possible for registers.
   unsigned size;                //!< Size expressed in bytes. Used for memories and generic caches.
   unsigned width;               //!< Width of registers expressed in bits. Used for register banks.
-  unsigned level;               //!< Memory hierachy level. 
+  unsigned level;               //!< Memory hierarchy level. 
   ac_sto_types type;            //!< Type of the device
   struct _ac_sto_list* higher;  //!< Points to the successor in the memory hierarchy.
   ac_cache_parms *parms;        //!< Parameter list used for (not generic) ac_cache  declarations.
@@ -161,7 +161,7 @@ typedef struct _ac_pipe_list{
   struct _ac_pipe_list *next;   //!< Next element
 } ac_pipe_list;
 
-//!Used to check the endianess of the host machine.
+//!Used to check the endianness of the host machine.
 typedef union  {
   int i;
   char c[4];
@@ -196,7 +196,7 @@ void CreateRegsHeader(void);                      //!< Create the header file fo
 void CreateCoverifHeader(void);                   //!< Create the header file for ArchC co-verification class.
 void CreateStatsHeader(void);                     //!< Create the header file for ArchC statistics collection class.    
 void CreateArchSyscallHeader(void);               //!< Create the header file for ArchC model syscalls. 
-void CreateMakefile(void);                        //!< Create a Makefile for teh ArchC nodel.
+void CreateMakefile(void);                        //!< Create a Makefile for the ArchC model.
 void CreateDummy(int, char*);                     //!< Create dummy function to use if real one is undefined
 
 void CreateResourceImpl(void);                    //!< Create the .cpp file for ac_resources class.

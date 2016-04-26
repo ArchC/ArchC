@@ -126,8 +126,8 @@ fetch_data (struct disassemble_info *info, bfd_byte *addr){
 /*
   Function that makes the disassembler of an instruction of the object file, making the decoding using the field dmask of the file xxxxx-opc.c
 
-1- Using the insn apllies the mask (dmaks fiels of opcodes)
-2- Search in instruction table the corresponding instruction of (insn & dmask), and prints the intruction mnemonic.
+1- Using the insn apllies the mask (dmaks fields of opcodes)
+2- Search in instruction table the corresponding instruction of (insn & dmask), and prints the instruction mnemonic.
 3- For each operand, is generated a mask in the position of the field in insn and size (e.g. bit 16 to the 24), after verified if is a register, or immediate, address, etc...
 4- if is a register, is called the method replace to put the name of the register in the final string that it will be printed 
 5- is an immediate one!,  then it verifies the modifiers, and it applies them, after calls the method replace to put the value in the final string(bufFinal). 
@@ -181,22 +181,22 @@ static int disassemble (bfd_vma memaddr, struct disassemble_info *info, unsigned
         }
 
         unsigned int i = 0;
-        unsigned long begining = 0;
+        unsigned long beginning = 0;
         for (i=0; i<=fid; i++)
-          begining += get_field_size(op->format_id, i);
+          beginning += get_field_size(op->format_id, i);
 
         unsigned long dmask = 0x00;
         for (i=0; i<size; i++)
           dmask = (dmask << 1) + 1;
 
         //operand dmask
-        dmask = dmask << (FORMAT_SIZE - begining);
+        dmask = dmask << (FORMAT_SIZE - beginning);
 
         unsigned long value = dmask & insn;
 
         // Align bits to the least significant position, in
 	// order to use its value
-        value = value >> (FORMAT_SIZE - begining);
+        value = value >> (FORMAT_SIZE - beginning);
 	
 	if (acs->is_list){
 	  node_list_op_results *p_list;
@@ -418,7 +418,7 @@ ac_symbol* parse(char *args){
       *ptr_buf = '\0';
       args++; 
 
-      //operand_id is the index of fiels in the struct operands
+      //operand_id is the index of fields in the struct operands
       unsigned int operand_id = atoi(buf);
       unsigned int count;
 
@@ -427,7 +427,7 @@ ac_symbol* parse(char *args){
       for (count=0; count < strlen(operands[operand_id].name); count++)
         ptr_bufInitial++;
 
-      //verify aditional fiels
+      //verify aditional fields
       if (*args == '+') {
         strcat(ptr_bufInitial, "+");
         ptr_bufInitial++;

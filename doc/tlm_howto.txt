@@ -151,7 +151,7 @@ ext_module.out_port(proc_module.inta);
    This small tutorial covers how to use the TLM features of this
    ArchC 2.0 beta. However, if you have any doubts, questions or
    suggestions regarding the ArchC TLM features, feel free to contact
-   us ArchC developers, preferrably via the forums, to hear from you
+   us ArchC developers, preferably via the forums, to hear from you
    and answer your questions.
 
 All the best,
