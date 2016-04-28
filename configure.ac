@@ -18,6 +18,7 @@ AC_DISABLE_SHARED
 
 # Checks for programs.
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_11
 AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_MAKE_SET
@@ -25,6 +26,7 @@ AC_PROG_LIBTOOL
 AC_PROG_LEX
 AC_PROG_YACC
 AC_PROG_INSTALL
+
 
 # pkg-config
 PKG_PROG_PKG_CONFIG
@@ -120,17 +122,11 @@ AC_ARG_ENABLE(hlt,
               AS_HELP_STRING([--disable-hlt], [Disable High Level Trace feature]),
               [disable_hlt=yes],[])
 
-AS_IF([ test "$disable_hlt" != "yes" ],
-      [ AC_CHECK_HEADER([elfutils/libdwfl.h],[],[AC_MSG_ERROR(["Please, install libdw-dev"])])], 
-      [])
-
-
-AM_CONDITIONAL([HLT_SUPPORT], [ ! test "$disable_hlt" = "yes" ])
-
-#CC="clang-3.5 -std=c11"
-#CXX="clang++-3.5 -std=c++11"
-CC="gcc -std=gnu99"
-CXX="g++ -std=c++11"
+PKG_CHECK_MODULES(LIBELF, [libelf >= 0.166 libdw >= 0.166],
+                  [have_libelf=yes],
+                  [have_libelf=no])
+AM_CONDITIONAL(HAVE_LIBELF, test "x$have_libelf" = "xyes")
+AM_CONDITIONAL([HLT_SUPPORT], [ test "x$disable_hlt" != "xyes" -a "x$have_libelf" = "xyes" ])
 
 # Sets global flags
 CFLAGS="$CFLAGS -Wall"

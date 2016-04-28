@@ -1,36 +1,45 @@
-language: cpp
-sudo: false
-
-compiler:
-  - clang
-  - gcc
-
-addons:
-  apt:
-    sources:
-    - llvm-toolchain-precise
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-5
-    - g++-5
-    - clang-3.7
-    - llvm-3.7
-
 env:
   global:
-    - GCC_VERSION=5
-    - LLVM_VERSION=3.7
-    - CFLAGS="-O3 -Wall -Wextra"
-    - CPPFLAGS="-O3 -Wall -Wextra"
-    - CXXFLAGS="-O3 -Wall -Wextra"
     - PREFIX="/tmp/usr"
 
-os:
-  - linux
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      language: generic
+      sudo: required
+      compiler: gcc
+      env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra"
+    - os: linux
+      dist: trusty
+      language: generic
+      sudo: required
+      compiler: gcc
+      env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra" CONFIGURE="--target=i686-linux-gnu"
+    - os: linux
+      dist: trusty
+      language: generic
+      sudo: required
+      compiler: clang
+      env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra"
+    - os: linux
+      dist: trusty
+      language: generic
+      sudo: required
+      compiler: clang
+      env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra" CONFIGURE="--target=i686-linux-gnu"
+    - os: osx
+      compiler: gcc
+      env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra"
+      osx_image: xcode7.3
+    - os: osx
+      compiler: clang
+      env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra"
+      osx_image: xcode7.3
 
 notifications:
   email: false
-  irc: 
+  irc:
     channels:
       - "chat.freenode.net#ArchC"
     on_success: change
@@ -46,19 +55,20 @@ notifications:
 before_install:
   - echo $LANG
   - echo $LC_ALL
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CONFIGURE" == "--target=i686-linux-gnu" ] ; then sudo apt-get install -y gcc-multilib g++-multilib; fi
   - uname -a
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then lsb_release -a ; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CC=/usr/bin/gcc-${GCC_VERSION} ; export CXX=/usr/bin/g++-${GCC_VERSION}; $CXX --version ; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then export PATH=/usr/lib/llvm-${LLVM_VERSION}/bin/:$PATH ; clang++ --version ; fi
+  - env
   - export PATH="${PREFIX}/bin:${PATH}"
   - export LD_LIBRARY_PATH="${PREFIX}/lib:${LD_LIBRARY_PATH}"
   - export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
   - git clone --depth 1 https://github.com/ArchC/SystemC.git /tmp/SystemC
-  - pushd /tmp/SystemC ; autoreconf -vif ; ./configure --prefix=${PREFIX} ; make install -j3 ; popd
+  - pushd /tmp/SystemC ; autoreconf -vif ; ./configure --prefix=${PREFIX}; make install -j3 ; popd
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git clone --depth 1 git://git.fedorahosted.org/git/elfutils.git /tmp/elfutils; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then pushd /tmp/elfutils ; autoreconf -vif ; ./configure --prefix=${PREFIX} --enable-maintainer-mode; make install -j3 ; popd; fi
 
 install:
   - autoreconf -vif
-  - ./configure --prefix=$PREFIX --disable-hlt
+  - ./configure --prefix=$PREFIX $CONFIGURE
   - make -j3
 
 before_script:
@@ -85,5 +95,3 @@ deployment:
 
 
 after_deployment:
-
-
