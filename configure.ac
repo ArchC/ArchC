@@ -62,16 +62,26 @@ AC_ARG_WITH(systemc,
 	AC_DEFINE([HAVE_TLM], [1], [Have TLM])
 	AM_CONDITIONAL(HAVE_TLM2, true)
 	AC_DEFINE([HAVE_TLM2], [1], [Have TLM2])
-	SYSTEMC_CFLAGS="-pthread  -I$SYSTEMC/include"
-	SYSTEMC_LIBS="-L$SYSTEMC/lib-$TARGET_ARCH -lsystemc"
-	TLM_CFLAGS="-I$SYSTEMC/include"
-	TLM_LIBS="-L$SYSTEMC/lib-$TARGET_ARCH -lsystemc"
-	TLM2_CFLAGS="-I$SYSTEMC/include"
-	TLM2_LIBS="-L$SYSTEMC/lib-$TARGET_ARCH -lsystemc"
 
-	EXPORT_SYSTEMC_LIB="$SYSTEMC/lib-$TARGET_ARCH"
+	EXPORT_SYSTEMC_LIB="$SYSTEMC/lib"
+	AS_IF([test ! -e "$EXPORT_SYSTEMC_LIB/libsystemc.so" ],
+		[
+		EXPORT_SYSTEMC_LIB="$SYSTEMC/lib-$TARGET_ARCH"
+		AS_IF([test ! -e "$EXPORT_SYSTEMC_LIB/libsystemc.so" ],
+			[
+			AC_MSG_ERROR([systemc not found at $SYSTEMC. Exiting...])
+			])
+		])
+	EXPORT_SYSTEMC_PKG="EXPORT_SYSTEMC_LIB/pkgconfig"
+
+	SYSTEMC_CFLAGS="-pthread  -I$SYSTEMC/include"
+	SYSTEMC_LIBS="-L$EXPORT_SYSTEMC_LIB -lsystemc"
+	TLM_CFLAGS="-I$SYSTEMC/include"
+	TLM_LIBS="-L$EXPORT_SYSTEMC_LIB -lsystemc"
+	TLM2_CFLAGS="-I$SYSTEMC/include"
+	TLM2_LIBS="-L$EXPORT_SYSTEMC_LIB -lsystemc"
+
 	AC_SUBST(EXPORT_SYSTEMC_LIB)
-	EXPORT_SYSTEMC_PKG="$SYSTEMC/lib-$TARGET_ARCH/pkgconfig"
 	AC_SUBST(EXPORT_SYSTEMC_PKG)
 ],
 [
