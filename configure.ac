@@ -132,7 +132,7 @@ AC_ARG_ENABLE(hlt,
               AS_HELP_STRING([--disable-hlt], [Disable High Level Trace feature]),
               [disable_hlt=yes],[])
 
-PKG_CHECK_MODULES(LIBELF, [libelf >= 0.166 libdw >= 0.166],
+PKG_CHECK_MODULES(LIBELF, [ libelf libdw ],
                   [have_libelf=yes],
                   [have_libelf=no])
 AM_CONDITIONAL(HAVE_LIBELF, test "x$have_libelf" = "xyes")
