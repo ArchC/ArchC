@@ -66,7 +66,7 @@ using std::string;
 
 //////////////////////////////////////////////////////////////////////////////
 
-/// ArchC TLM initiator port class.    /**** retirei public ac_inout_if,  ****//
+/// ArchC TLM initiator port class.    
 class ac_tlm2_port : public sc_port<ac_tlm2_blocking_transport_if>,
                      public ac_inout_if,
                      public ac_tlm_dev_id {
