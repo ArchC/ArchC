@@ -103,6 +103,10 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address, int wordsize) {
   }
 }
 
+void ac_tlm_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId ){
+    read(buf, address, wordsize);
+}
+
 /** 
  * Reads multiple words.
  * 
@@ -182,6 +186,10 @@ void ac_tlm_port::read(ac_ptr buf, uint32_t address,
   }
 }
 
+void ac_tlm_port::read(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId ) {
+    read (buf, address, wordsize, n_words);
+}
+
 /** 
  * Writes a single word.
  * 
@@ -245,6 +253,10 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize) {
   default:
     break;
   }
+}
+
+void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::sc_time &time_info,unsigned int procId){
+    write (buf, address, wordsize);
 }
 
 /** 
@@ -324,6 +336,10 @@ void ac_tlm_port::write(ac_ptr buf, uint32_t address,
   default:
     break;
   }
+}
+
+void ac_tlm_port::write(ac_ptr buf, uint32_t address, int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
+    write (buf, address, wordsize, n_words);
 }
 
 string ac_tlm_port::get_name() const {
