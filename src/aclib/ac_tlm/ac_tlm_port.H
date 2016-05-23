@@ -92,8 +92,9 @@ public:
    * @param wordsize Word size in bits.
    * 
    */
-  virtual void read(ac_ptr buf, uint32_t address,
-		    int wordsize);
+  virtual void read(ac_ptr buf, uint32_t address, int wordsize);
+  virtual void read(ac_ptr buf, uint32_t address, int wordsize,
+                    sc_core::sc_time &time_info, unsigned int procId = 0);
 
   /** 
    * Reads multiple words.
@@ -104,8 +105,9 @@ public:
    * @param n_words Number of words to be read.
    * 
    */
-  virtual void read(ac_ptr buf, uint32_t address,
-		    int wordsize, int n_words);
+  virtual void read(ac_ptr buf, uint32_t address, int wordsize, int n_words);
+  virtual void read(ac_ptr buf, uint32_t address, int wordsize, int n_words,
+                    sc_core::sc_time &time_info, unsigned int procId = 0);
 
   /** 
    * Writes a single word.
@@ -115,8 +117,9 @@ public:
    * @param wordsize Word size in bits.
    *
    */
-  virtual void write(ac_ptr buf, uint32_t address,
-		     int wordsize);
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize);
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize,
+                     sc_core::sc_time &time_info, unsigned int procId = 0);
 
   /** 
    * Writes multiple words.
@@ -127,8 +130,9 @@ public:
    * @param n_words Number of words to be written.
    * 
    */
-  virtual void write(ac_ptr buf, uint32_t address,
-		     int wordsize, int n_words);
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words);
+  virtual void write(ac_ptr buf, uint32_t address, int wordsize, int n_words,
+                     sc_core::sc_time &time_info, unsigned int procId = 0);
 
   virtual string get_name() const;
 
@@ -151,4 +155,3 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 
 #endif // _AC_TLM_PORT_H_
-
