@@ -3284,8 +3284,7 @@ void CreateMakefile(){
   if (HaveTLMPorts || HaveTLMIntrPorts || HaveTLM2Ports || HaveTLM2NBPorts || HaveTLM2IntrPorts)
      fprintf(output, "`pkg-config --cflags tlm`");
 
-  fprintf( output, "\nLIB_DIR := -L. `pkg-config --libs systemc` -L%s\n\n", LIBDIR);
-  fprintf( output, "LIB_SYSTEMC := `pkg-config --libs systemc`\n");
+  fprintf( output, "\n\nLIB_SYSTEMC := `pkg-config --libs systemc`\n");
   fprintf( output, "LIB_ARCHC := `pkg-config --libs archc`\n");
   fprintf( output, "LIB_POWERSC := %s\n", (ACPowerEnable) ? "`pkg-config --libs powersc`" : "");
   fprintf( output, "LIB_DWARF := %s\n", (ACHLTraceFlag) ? "-ldw -lelf" : "" );
