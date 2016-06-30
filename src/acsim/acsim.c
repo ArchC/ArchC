@@ -529,8 +529,10 @@ int main(int argc, char** argv) {
   }
 
   //Creating model syscall header file.
-  if( ACABIFlag )
+  if( ACABIFlag ) {
     CreateArchSyscallHeader();
+    CreateArchSyscallTmpl();
+  }
 
   /* Create the template for the .cpp instruction and format behavior file */
   CreateImplTmpl();
@@ -3030,7 +3032,46 @@ void CreateArchSyscallHeader()
   fclose( output);
 }
 
+void CreateArchSyscallTmpl() {
+    extern char *project_name;
+    FILE *output;
+    char filename[50];
 
+    char description[] = "Syscall implementation file template.";
+
+    sprintf(filename, "%s_syscall.cpp.tmpl", project_name);
+    if (!(output = fopen(filename, "w"))) {
+        perror("ArchC could not open output file");
+        exit(1);
+    }
+
+    print_comment(output, description);
+    fprintf(output, "#include  \"%s_syscall.H\"\n", project_name);
+    fprintf(output, "\n");
+
+    COMMENT(INDENT[0], "'using namespace' statement to allow access to all "
+                       "%s-specific datatypes",
+            project_name);
+    fprintf(output, "using namespace %s_parms;\n\n", project_name);
+
+    fprintf(output, "void %s_syscall::get_buffer(int argn, unsigned char* buf, "
+                    "unsigned int size) { }\n",
+            project_name);
+    fprintf(output, "void %s_syscall::set_buffer(int argn, unsigned char* buf, "
+                    "unsigned int size) { }\n",
+            project_name);
+    fprintf(output, "void %s_syscall::set_buffer_noinvert(int argn, unsigned "
+                    "char* buf, unsigned int size) { }\n",
+            project_name);
+    fprintf(output, "int  %s_syscall::get_int(int argn) { }\n", project_name);
+    fprintf(output, "void %s_syscall::set_int(int argn, int val) { }\n",
+            project_name);
+    fprintf(output, "void %s_syscall::return_from_syscall() { }\n",
+            project_name);
+    fprintf(output,
+            "void %s_syscall::set_prog_args(int argc, char **argv) { } \n",
+            project_name);
+}
 
 ///Creates the header file for interrupt handlers.
 void CreateIntrTLM2Header() {
@@ -4768,6 +4809,4 @@ void GetFirstLevelDataDevice()
         }
     }
 }
-
-
 

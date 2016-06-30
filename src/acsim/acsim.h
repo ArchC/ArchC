@@ -196,6 +196,7 @@ void CreateRegsHeader(void);                      //!< Creates the header file f
 void CreateStatsHeaderTmpl(void);                 //!< Creates the header file for ArchC statistics collection class.
 void CreateStatsImplTmpl();                       //!< Create the implementation file for ArchC statistics collection class.
 void CreateArchSyscallHeader(void);               //!< Creates the header file for ArchC model syscalls.
+void CreateArchSyscallTmpl(void);               //!< Creates the header file for ArchC model syscalls.
 void CreateIntrHeader(void);                      //!< Creates the header file for interrupt handlers.
 void CreateIntrMacrosHeader(void);                //!< Creates the header file for interrupt handler macros.
 void CreateMakefile(void);                        //!< Creates a Makefile for the ArchC model.
