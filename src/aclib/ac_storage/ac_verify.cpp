@@ -81,7 +81,7 @@ void ac_verify::add_log( log_list  *pdevchg, unsigned address, unsigned datum, d
   \param pdevice A pointer to the structural change list for this device.
   \param time    The simulation time being checked.
 */
-void ac_verify::match_logs( ac_storage *pbhvdevice,
+void ac_verify::match_logs( ac_mem *pbhvdevice,
                             log_list *pdevchange,
                             double time ) {
 
@@ -125,7 +125,7 @@ void ac_verify::match_logs( ac_storage *pbhvdevice,
   \param pdevice A pointer to the device object being checked.
   \param pdevice A pointer to the structural change list for this device.
 */
-void ac_verify::check_final( ac_storage *pbhvdevice,
+void ac_verify::check_final( ac_mem *pbhvdevice,
                              log_list *pdevchange){
 
   log_list *pbhvchange;

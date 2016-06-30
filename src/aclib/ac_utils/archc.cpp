@@ -89,7 +89,7 @@ ac_word buffer[AC_MAX_BUFFER];
 unsigned int quant, decode_pc;
 unsigned int ac_heap_ptr;
 unsigned dec_cache_size;
-ac_storage *IMem;
+ac_mem *IMem;
 
 //Command line arguments used inside ArchC Simulator
 int ac_argc;                       

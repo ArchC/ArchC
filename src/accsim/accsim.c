@@ -305,7 +305,7 @@ int accs_main()
   // There are 2 methods for storage and resources:
   // 1) use special template classes for storage and namespace resources.
   //    (this is faster, but still cannot have formatted registers)
-  // 2) use default ArchC provided ac_storage and ac_resources classes.
+  // 2) use default ArchC provided ac_mem and ac_resources classes.
   //    (compatible with formatted registers, but slower and does not support delay assignment (with is implemented in systemc))
   //
   // Method 1 is default. To select method 2 use variation "-l 2 <filename>" in the command line
@@ -774,7 +774,7 @@ void CreateBhvMacroEmpty()
   fprintf(output, "\n");
 
   fprintf(output, "#ifdef AC_COMPSIM \n");
-  fprintf(output, "#define ac_memory ac_storage\n");
+  fprintf(output, "#define ac_memory ac_mem\n");
   fprintf(output, "#endif \n\n\n"); 
  
   fprintf(output, "#include \"%s.H\"\n", project_name );
@@ -830,7 +830,7 @@ void accs_CreateCompsimHeader()
   if (!ACMulticoreFlag)
 	fprintf( output, "#include \"ac_resources.H\"\n");
 
-  fprintf( output, "#include \"ac_storage.H\"\n");
+  fprintf( output, "#include \"ac_mem.H\"\n");
   fprintf( output, "#include \"ac_rtld.H\"\n");
   fprintf( output, "\n");
  
@@ -2271,7 +2271,7 @@ void fast_CreateStorageHeader()
   extern char *project_name;
   FILE *output;
 
-  output = fopen("ac_storage.H", "w");
+  output = fopen("ac_mem.H", "w");
 
   print_comment( output, "ArchC Storage header file.");
 
@@ -2442,7 +2442,7 @@ void fast_CreateStorageHeader()
           "// STORAGE CLASS\n"
           "\n"
           "template <class elem_t, class access_t>\n"
-          "class ac_storage_tmpl {\n"
+          "class ac_mem_tmpl {\n"
           "\n"
           "protected:\n"
           "  elem_t *Data;\n"
@@ -2585,7 +2585,7 @@ void fast_CreateStorageHeader()
           "  }\n"
           "\n"
           "  //!Constructors.\n"
-          "  ac_storage_tmpl( char *n, unsigned _size=0, unsigned _start=0, unsigned char *contents=0, unsigned c_size=0 ){\n"
+          "  ac_mem_tmpl( char *n, unsigned _size=0, unsigned _start=0, unsigned char *contents=0, unsigned c_size=0 ){\n"
           "    name = n;\n"
           "    start = _start;\n"
           "    size = (_size > c_size)? _size : c_size;\n"
@@ -2600,7 +2600,7 @@ void fast_CreateStorageHeader()
           "  }\n"
           "\n"
           "  //!Destructor\n"
-          "  ~ac_storage_tmpl() {\n"
+          "  ~ac_mem_tmpl() {\n"
           "    delete[] Data;\n"
           "  }\n"
           "\n"
@@ -2677,14 +2677,14 @@ void fast_CreateStorageHeader()
           "\n"
           "\n"
           "//!Types for storages\n"
-          "typedef ac_storage_tmpl<ac_byte, ac_Uword> ac_storage;\n"
-          //"typedef ac_storage_Uword_Uword ac_regbank;\n"
+          "typedef ac_mem_tmpl<ac_byte, ac_Uword> ac_mem;\n"
+          //"typedef ac_mem_Uword_Uword ac_regbank;\n"
           "\n"
           "\n"
 
           //"//!Types for storages\n"
-          //"typedef ac_storage_tmpl<ac_byte, ac_Uword> ac_storage;\n"
-          //"typedef ac_storage_tmpl<ac_Uword, ac_Uword> ac_regbank;\n"
+          //"typedef ac_mem_tmpl<ac_byte, ac_Uword> ac_mem;\n"
+          //"typedef ac_mem_tmpl<ac_Uword, ac_Uword> ac_regbank;\n"
           //"\n"
           //"\n"
           "#endif\n"
@@ -2704,14 +2704,14 @@ void fast_CreateStorageHeader()
 void fast_CreateStorageImpl()
 {
   FILE *output;
-  output = fopen("ac_storage.cpp", "w");
+  output = fopen("ac_mem.cpp", "w");
   extern char *project_name;
 
   print_comment( output, "ArchC Storage implementation file.");
 
   fprintf(output,
           "#include <errno.h>\n"
-          "#include \"ac_storage.H\"\n"
+          "#include \"ac_mem.H\"\n"
 //          "#include \"archc.H\"\n"
           "#include \"%s_parms.H\"\n"
           "#include \"ac_utils.H\""
@@ -2745,7 +2745,7 @@ void fast_CreateStorageImpl()
   fprintf(output,
 "//!Method to load  content from a file.\n"
 "template <class elem_t, class access_t>\n"
-"void ac_storage_tmpl<elem_t, access_t>::load( char* file ){\n"
+"void ac_mem_tmpl<elem_t, access_t>::load( char* file ){\n"
 "\n"
 "  FILE *prog;\n"
 "  char word[50];\n"
@@ -2847,7 +2847,7 @@ void fast_CreateFileResourcesHeader()
   fprintf( output, "#define  _AC_RESOURCES_H\n\n");
 
   fprintf( output, "#include  \"%s_parms.H\"\n\n", project_name);
-  fprintf( output, "#include  \"ac_storage.H\"\n");
+  fprintf( output, "#include  \"ac_mem.H\"\n");
   //fprintf( output, "#include  \"ac_reg.H\"\n\n");
 
   if( HaveMemHier ){
@@ -2914,7 +2914,7 @@ void fast_CreateFileResourcesHeader()
     case DCACHE:
 
       if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sextern ac_storage %s;\n", INDENT[1], pstorage->name);
+        fprintf( output, "%sextern ac_mem %s;\n", INDENT[1], pstorage->name);
       }
       else{
         //It is an ac_cache object.
@@ -2926,7 +2926,7 @@ void fast_CreateFileResourcesHeader()
     case MEM:
 
       if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sextern ac_storage %s;\n", INDENT[1], pstorage->name);
+        fprintf( output, "%sextern ac_mem %s;\n", INDENT[1], pstorage->name);
       }
       else{
         //It is an ac_mem object.
@@ -2937,7 +2937,7 @@ void fast_CreateFileResourcesHeader()
 
       
     default:
-      fprintf( output, "%sextern ac_storage %s;\n", INDENT[1], pstorage->name);      
+      fprintf( output, "%sextern ac_mem %s;\n", INDENT[1], pstorage->name);      
       break;
     }
   }
@@ -3035,7 +3035,7 @@ void fast_CreateFileResourcesImpl()
     case DCACHE:
 
       if( !pstorage->parms ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage %s(\"%s\", %d);\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf( output, "%sac_mem %s(\"%s\", %d);\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       }
       else{
         //It is an ac_cache object.
@@ -3046,7 +3046,7 @@ void fast_CreateFileResourcesImpl()
     case MEM:
 
       if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage %s(\"%s\", %d);\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+        fprintf( output, "%sac_mem %s(\"%s\", %d);\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       }
       else{
         //It is an ac_mem object.
@@ -3055,7 +3055,7 @@ void fast_CreateFileResourcesImpl()
       break;
 
     default:
-      fprintf( output, "%sac_storage %s(\"%s\", %d);\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
+      fprintf( output, "%sac_mem %s(\"%s\", %d);\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
       break;
     }
   }
@@ -3177,7 +3177,7 @@ void fast_CreateResourcesHeader(FILE *stream)
     case DCACHE:
 
       if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage %s;\n", INDENT[6], pstorage->name);
+        fprintf( output, "%sac_mem %s;\n", INDENT[6], pstorage->name);
       }
       else{
         //It is an ac_cache object.
@@ -3189,7 +3189,7 @@ void fast_CreateResourcesHeader(FILE *stream)
     case MEM:
 
       if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sac_storage %s;\n", INDENT[6], pstorage->name);
+        fprintf( output, "%sac_mem %s;\n", INDENT[6], pstorage->name);
       }
       else{
         //It is an ac_mem object.
@@ -3200,7 +3200,7 @@ void fast_CreateResourcesHeader(FILE *stream)
 
       
     default:
-      fprintf( output, "%sac_storage %s;\n", INDENT[6], pstorage->name);      
+      fprintf( output, "%sac_mem %s;\n", INDENT[6], pstorage->name);      
       break;
     }
   }

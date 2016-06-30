@@ -574,7 +574,7 @@ void CreateArchHeader(void)
  fprintf(output, "\n");
  fprintf(output, "#include \"%s_parms.H\"\n", project_name);
  fprintf(output, "#include \"ac_arch_dec_if.H\"\n");
- fprintf(output, "#include \"ac_storage.H\"\n");
+ fprintf(output, "#include \"ac_mem.H\"\n");
  fprintf(output, "#include \"ac_memport.H\"\n");
  fprintf(output, "#include \"ac_sync_reg.H\"\n");
  fprintf(output, "#include \"ac_regbank.H\"\n");
@@ -697,7 +697,7 @@ void CreateArchHeader(void)
    case DCACHE:
     if (!pstorage->parms)
     { // It is a generic cache. Just emit a base container object.
-     fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
+     fprintf(output, "%sac_mem %s_stg;\n", INDENT[2], pstorage->name);
      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
              INDENT[2], project_name, project_name, pstorage->name);
     }
@@ -707,7 +707,7 @@ void CreateArchHeader(void)
    case MEM:
     if (!HaveMemHier)
     { // It is a generic mem. Just emit a base container object.
-     fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
+     fprintf(output, "%sac_mem %s_stg;\n", INDENT[2], pstorage->name);
      fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
              INDENT[2], project_name, project_name, pstorage->name);
     }
@@ -724,7 +724,7 @@ void CreateArchHeader(void)
     fprintf(output, "%sac_tlm_intr_port %s;\n", INDENT[2], pstorage->name);
     break;
    default:
-    fprintf(output, "%sac_storage %s_stg;\n", INDENT[2], pstorage->name);
+    fprintf(output, "%sac_mem %s_stg;\n", INDENT[2], pstorage->name);
     fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s;\n",
             INDENT[2], project_name, project_name, pstorage->name);
   }
@@ -2132,7 +2132,7 @@ void CreateCoverifHeader(void) // TODO -- maybe.
  fprintf(output, "#include \"archc.H\"\n");
  fprintf(output, "#include \"ac_parms.H\"\n");
  fprintf(output, "#include \"ac_resources.H\"\n");
- fprintf(output, "#include \"ac_storage.H\"\n");
+ fprintf(output, "#include \"ac_mem.H\"\n");
  fprintf(output, "\n");
  COMMENT(INDENT[0], "ArchC Co-verification class.\n");
  fprintf(output, "%sclass ac_verify:public ac_resources\n%s{\n", INDENT[0],
@@ -2202,11 +2202,11 @@ void CreateCoverifHeader(void) // TODO -- maybe.
          INDENT[2]);
  // Printing match_logs method.
  COMMENT(INDENT[2], "Match device's behavioral and structural logs at a given simulation time.");
- fprintf(output, "%svoid match_logs(ac_storage* pdevice, log_list* pdevchange, double time);\n",
+ fprintf(output, "%svoid match_logs(ac_mem* pdevice, log_list* pdevchange, double time);\n",
          INDENT[2]);
  // Printing check_final method.
  COMMENT(INDENT[2], "Check behavioral and structural logs for a given device in the end of simulation.");
- fprintf(output, "%svoid check_final(ac_storage* pdevice, log_list* pdevchange);\n",
+ fprintf(output, "%svoid check_final(ac_mem* pdevice, log_list* pdevchange);\n",
          INDENT[2]);
  fprintf(output, "%s};\n", INDENT[0]);
  // End of file.
@@ -2502,7 +2502,7 @@ void CreateMakefile(void)
  // Declaring ACLIBFILES variable
  COMMENT_MAKE("These are the library files provided by ArchC.");
  COMMENT_MAKE("They are stored in the archc/lib directory.");
- fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o");
+ fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_mem.o ac_utils.o");
  if (ACABIFlag)
   fprintf(output, " ac_syscall.o");
  if (HaveTLMPorts)

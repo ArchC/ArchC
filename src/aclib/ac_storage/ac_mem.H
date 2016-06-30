@@ -1,5 +1,5 @@
 /**
- * @file      ac_storage.H
+ * @file      ac_mem.H
  * @author    Thiago Massariolli Sigrist
  *
  *            The ArchC Team
@@ -49,7 +49,7 @@ using std::string;
 //////////////////////////////////////////////////////////////////////////////
 
 /// Models a basic storage device, used as main memory by default.
-class ac_storage : public ac_inout_if {
+class ac_mem : public ac_inout_if {
 private:
   ac_ptr data;
   string name;
@@ -57,10 +57,10 @@ private:
 
 public:
   // constructor
-  ac_storage(string nm, uint32_t sz);
+  ac_mem(string nm, uint32_t sz);
 
   // destructor
-  virtual ~ac_storage();
+  virtual ~ac_mem();
 
   // getters and setters
   void set_name(string n);

@@ -93,7 +93,7 @@ void ac_init_app( int ac, char* av[]);
   extern char* appfilename; \
   ac_init_opt( ac, av);\
   ac_init_app( ac, av);\
-  extern ac_storage* IMem; \
+  extern ac_mem* IMem; \
   IMem = processor.IM; \
   processor.APP_MEM->load(appfilename); \
   processor.time_step =  clk_cycle; \
@@ -107,7 +107,7 @@ void ac_init_app( int ac, char* av[]);
   extern char* appfilename; \
   ac_init_opt( ac, av);\
   ac_init_app( ac, av);\
-  extern ac_storage* IMem; \
+  extern ac_mem* IMem; \
   IMem = processor.IM; \
   processor.APP_MEM->load(appfilename); \
   processor.time_step =  clk_cycle; \

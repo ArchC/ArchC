@@ -584,7 +584,7 @@ void CreateArchHeader() {
 
     fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
     fprintf( output, "#include  \"ac_arch_dec_if.H\"\n");
-    fprintf( output, "#include  \"ac_storage.H\"\n");
+    fprintf( output, "#include  \"ac_mem.H\"\n");
     fprintf( output, "#include  \"ac_memport.H\"\n");
     fprintf( output, "#include  \"ac_regbank.H\"\n");
     fprintf( output, "#include  \"ac_reg.H\"\n");
@@ -715,7 +715,7 @@ void CreateArchHeader() {
             case ICACHE:
             case DCACHE:
                 if (!HaveMemHier) {  //It is a generic cache. Just emit a base container object.
-                    fprintf(output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+                    fprintf(output, "%sac_mem %s;\n", INDENT[1], pstorage->name);
                     fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n",  INDENT[1], project_name, project_name, pstorage->name);
                 }
                 else {
@@ -737,7 +737,7 @@ void CreateArchHeader() {
                 break;
 
             case MEM:
-                fprintf(output, "%sac_storage %s;\n", INDENT[1],
+                fprintf(output, "%sac_mem %s;\n", INDENT[1],
                         pstorage->name);
                 fprintf(output, "%sac_memport<%s_parms::ac_word, "
                                 "%s_parms::ac_Hword> %s_mport;\n",
@@ -760,7 +760,7 @@ void CreateArchHeader() {
                 break;
 
             default:
-                fprintf( output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
+                fprintf( output, "%sac_mem %s;\n", INDENT[1], pstorage->name);
                 fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", 
                         INDENT[1], project_name, project_name, pstorage->name);
                 break;
@@ -3352,7 +3352,7 @@ void CreateMakefile(){
   COMMENT_MAKE("These are the library files provided by ArchC");
   COMMENT_MAKE("They are stored in the archc/lib directory");
 
-  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_storage.o ac_utils.o "HLT_OBJ" ");
+  fprintf(output, "ACLIBFILES := ac_decoder_rt.o ac_module.o ac_mem.o ac_utils.o "HLT_OBJ" ");
   if(ACABIFlag)
       fprintf(output, "ac_syscall.o ");
   if(HaveTLMPorts)
@@ -3370,7 +3370,7 @@ void CreateMakefile(){
 //  //Declaring FILESHEAD variable
 //  COMMENT_MAKE("These are the headers files provided by ArchC");
 //  COMMENT_MAKE("They are stored in the archc/include directory");
-//  fprintf( output, "ACFILESHEAD := ac_decoder_rt.H ac_module.H ac_storage.H ac_utils.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H "HLT_HEADER" ");
+//  fprintf( output, "ACFILESHEAD := ac_decoder_rt.H ac_module.H ac_mem.H ac_utils.H ac_regbank.H ac_debug_model.H ac_sighandlers.H ac_ptr.H ac_memport.H ac_arch.H ac_arch_dec_if.H ac_arch_ref.H "HLT_HEADER" ");
 //  if (ACABIFlag)
 //      fprintf(output, "ac_syscall.H ");
 //  if (HaveTLMPorts)

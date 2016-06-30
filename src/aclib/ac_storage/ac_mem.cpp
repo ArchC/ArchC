@@ -1,5 +1,5 @@
 /**
- * @file      ac_storage.cpp
+ * @file      ac_mem.cpp
  * @author    The ArchC Team
  *            http://www.archc.org/
  *
@@ -30,34 +30,34 @@
  *
  */
 
-#include "ac_storage.H"
+#include "ac_mem.H"
 
 // constructor
-ac_storage::ac_storage(string nm, uint32_t sz) :
+ac_mem::ac_mem(string nm, uint32_t sz) :
   name(nm),
   size(sz) {
   data.ptr8 = new unsigned char[sz];
 }
 
 // destructor
-ac_storage::~ac_storage() {
+ac_mem::~ac_mem() {
   delete[] data.ptr8;
 }
 
 // getters and setters
-void ac_storage::set_name(string n) {
+void ac_mem::set_name(string n) {
   name = n;
 }
 
-string ac_storage::get_name() const {
+string ac_mem::get_name() const {
   return name;
 }
 
-uint32_t ac_storage::get_size() const {
+uint32_t ac_mem::get_size() const {
   return size;
 }
 
-void ac_storage::read(ac_ptr buf, uint32_t address,
+void ac_mem::read(ac_ptr buf, uint32_t address,
 		      int wordsize) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -81,7 +81,7 @@ void ac_storage::read(ac_ptr buf, uint32_t address,
   }
 }
 
-void ac_storage::read(ac_ptr buf, uint32_t address,
+void ac_mem::read(ac_ptr buf, uint32_t address,
 		      int wordsize, int n_words) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -109,7 +109,7 @@ void ac_storage::read(ac_ptr buf, uint32_t address,
   }
 }
 
-void ac_storage::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(ac_ptr buf, uint32_t address,
 		       int wordsize) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -133,7 +133,7 @@ void ac_storage::write(ac_ptr buf, uint32_t address,
   }
 }
 
-void ac_storage::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(ac_ptr buf, uint32_t address,
 		       int wordsize, int n_words) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -163,7 +163,7 @@ void ac_storage::write(ac_ptr buf, uint32_t address,
 
 // Just for TLM2 support and compatibility
 
-void ac_storage::read(ac_ptr buf, uint32_t address,
+void ac_mem::read(ac_ptr buf, uint32_t address,
           int wordsize,sc_core::sc_time &time_info,unsigned int procId) {
 
 
@@ -171,20 +171,20 @@ void ac_storage::read(ac_ptr buf, uint32_t address,
 
 }
 
-void ac_storage::read(ac_ptr buf, uint32_t address,
+void ac_mem::read(ac_ptr buf, uint32_t address,
           int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
   this->read(buf,address,wordsize,n_words);
 }
 
-void ac_storage::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(ac_ptr buf, uint32_t address,
            int wordsize,sc_core::sc_time &time_info,unsigned int procId) {
 
 
   this->write(buf,address,wordsize);
 }
 
-void ac_storage::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(ac_ptr buf, uint32_t address,
            int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
   this->write(buf,address,wordsize,n_words);
@@ -195,14 +195,14 @@ void ac_storage::write(ac_ptr buf, uint32_t address,
  * Locks the device.
  * 
  */
-void ac_storage::lock()
+void ac_mem::lock()
 {} // empty == there's no point locking the internal storage
 
 /** 
  * Unlocks the device.
  * 
  */
-void ac_storage::unlock()
+void ac_mem::unlock()
 {} // empty == there's no point locking the internal storage
 
 //////////////////////////////////////////////////////////////////////////////

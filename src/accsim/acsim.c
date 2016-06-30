@@ -705,7 +705,7 @@ void CreateResourceHeader() {
   fprintf( output, "#ifndef  _AC_RESOURCES_H\n");
   fprintf( output, "#define  _AC_RESOURCES_H\n\n");
   
-  fprintf( output, "#include  \"ac_storage.H\"\n");
+  fprintf( output, "#include  \"ac_mem.H\"\n");
   //fprintf( output, "#include  \"ac_regbank_old.H\"\n");
   fprintf( output, "#include  \"ac_reg.H\"\n");
 
@@ -792,8 +792,8 @@ void CreateResourceHeader() {
     case DCACHE:
 
       if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sstatic ac_storage %s;\n", INDENT[1], pstorage->name);
-        Globals_p += sprintf( Globals_p, "extern ac_storage &%s;\n", pstorage->name);
+        fprintf( output, "%sstatic ac_mem %s;\n", INDENT[1], pstorage->name);
+        Globals_p += sprintf( Globals_p, "extern ac_mem &%s;\n", pstorage->name);
       }
       else{
         //It is an ac_cache object.
@@ -806,8 +806,8 @@ void CreateResourceHeader() {
     case MEM:
 
       if( !HaveMemHier ) { //It is a generic mem. Just emit a base container object.
-        fprintf( output, "%sstatic ac_storage %s;\n", INDENT[1], pstorage->name);
-        Globals_p += sprintf( Globals_p, "extern ac_storage &%s;\n", pstorage->name);
+        fprintf( output, "%sstatic ac_mem %s;\n", INDENT[1], pstorage->name);
+        Globals_p += sprintf( Globals_p, "extern ac_mem &%s;\n", pstorage->name);
       }
       else{
         //It is an ac_mem object.
@@ -819,19 +819,19 @@ void CreateResourceHeader() {
 
       
     default:
-      fprintf( output, "%sstatic ac_storage %s;\n", INDENT[1], pstorage->name);      
-      Globals_p += sprintf( Globals_p, "extern ac_storage &%s;\n", pstorage->name);
+      fprintf( output, "%sstatic ac_mem %s;\n", INDENT[1], pstorage->name);      
+      Globals_p += sprintf( Globals_p, "extern ac_mem &%s;\n", pstorage->name);
       break;
     }
   }
 
   //Pointer that stores the object used for fetch.
   COMMENT(INDENT[1],"Indicates the storage device from where instructions are fetched.");
-  fprintf(output , "%sstatic ac_storage *IM;\n\n", INDENT[1]);
+  fprintf(output , "%sstatic ac_mem *IM;\n\n", INDENT[1]);
   
   //Pointer that stores the object used for loading applications.
   COMMENT(INDENT[1],"Indicates the storage device where applications are loaded.");
-  fprintf(output , "%sstatic ac_storage *APP_MEM;\n\n", INDENT[1]);
+  fprintf(output , "%sstatic ac_mem *APP_MEM;\n\n", INDENT[1]);
   
   COMMENT(INDENT[1],"Control Variables.");
 
@@ -1080,7 +1080,7 @@ void CreateTypeHeader() {
   fprintf( output, "#define  _AC_TYPES_H\n\n");
   
   fprintf( output, "#include  <systemc.h>\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
+  fprintf( output, "#include  \"ac_mem.H\"\n");
   fprintf( output, "#include  \"ac_resources.H\"\n");
   fprintf( output, "#include  \"archc_cs.H\"\n\n");
 
@@ -1726,7 +1726,7 @@ void CreateARCHHeader() {
   
   fprintf( output, "#include \"systemc.h\"\n");
   fprintf( output, "#include \"archc_cs.H\"\n");
-  fprintf( output, "#include \"ac_storage.H\"\n");
+  fprintf( output, "#include \"ac_mem.H\"\n");
   fprintf( output, "#include \"ac_resources.H\"\n");
   
   if( stage_list ){
@@ -2189,7 +2189,7 @@ void CreateRegsHeader() {
         fprintf( output, "#ifndef  _AC_FMT_REGS_H\n");
         fprintf( output, "#define  _AC_FMT_REGS_H\n\n");
         
-        fprintf( output, "#include  \"ac_storage.H\"\n");
+        fprintf( output, "#include  \"ac_mem.H\"\n");
         fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
         fprintf( output, "\n\n");
 
@@ -2266,7 +2266,7 @@ void CreateCoverifHeader(void){
   fprintf( output, "#include  \"archc_cs.H\"\n");
   fprintf( output, "#include  \"%s_parms.H\"\n", project_name);
   fprintf( output, "#include  \"ac_resources.H\"\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
+  fprintf( output, "#include  \"ac_mem.H\"\n");
   fprintf( output, "\n\n");
 
   COMMENT(INDENT[0],"ArchC Co-verification class.\n");
@@ -2353,12 +2353,12 @@ void CreateCoverifHeader(void){
   //Printing match_logs method.
   COMMENT(INDENT[1],"Match device's behavioral and structural logs at a given simulation time");
 
-  fprintf( output, "%svoid match_logs( ac_storage *pdevice, log_list *pdevchange, double time );\n\n", INDENT[1]);
+  fprintf( output, "%svoid match_logs( ac_mem *pdevice, log_list *pdevchange, double time );\n\n", INDENT[1]);
 
   //Printing check_final method.
   COMMENT(INDENT[1],"Check behavioral and structural logs for a given device in the end of simulation");
 
-  fprintf( output, "%svoid check_final( ac_storage *pdevice, log_list *pdevchange );\n\n", INDENT[1]);
+  fprintf( output, "%svoid check_final( ac_mem *pdevice, log_list *pdevchange );\n\n", INDENT[1]);
 
   fprintf( output, "};\n");
 
@@ -2814,7 +2814,7 @@ void CreateResourceImpl() {
   print_comment( output, "ArchC Resources Implementation file.");
   
   fprintf( output, "#include  \"ac_resources.H\"\n");
-  fprintf( output, "#include  \"ac_storage.H\"\n");
+  fprintf( output, "#include  \"ac_mem.H\"\n");
   //fprintf( output, "#include  \"ac_regbank_old.H\"\n");
 
   fprintf( output, "#include  \"ac_reg.H\"\n");
@@ -2885,8 +2885,8 @@ void CreateResourceImpl() {
     case DCACHE:
 
       if( !pstorage->parms ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
-        Globals_p += sprintf( Globals_p, "ac_storage &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
+        fprintf( output, "%sac_mem ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
+        Globals_p += sprintf( Globals_p, "ac_mem &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
       }
       else{
         //It is an ac_cache object.
@@ -2898,8 +2898,8 @@ void CreateResourceImpl() {
     case MEM:
 
       if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-        fprintf( output, "%sac_storage ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
-        Globals_p += sprintf( Globals_p, "ac_storage &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
+        fprintf( output, "%sac_mem ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);
+        Globals_p += sprintf( Globals_p, "ac_mem &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
       }
       else{
         //It is an ac_mem object.
@@ -2909,14 +2909,14 @@ void CreateResourceImpl() {
       break;
 
     default:
-      fprintf( output, "%sac_storage ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
-      Globals_p += sprintf( Globals_p, "ac_storage &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
+      fprintf( output, "%sac_mem ac_resources::%s(\"%s\", %d);\n", INDENT[0], pstorage->name, pstorage->name, pstorage->size);      
+      Globals_p += sprintf( Globals_p, "ac_mem &%s = ac_resources::%s;\n", pstorage->name, pstorage->name);
       break;
     }
   }
 
-  fprintf( output, "%sac_storage *ac_resources::IM;\n\n", INDENT[0]);
-  fprintf( output, "%sac_storage *ac_resources::APP_MEM;\n\n", INDENT[0]);
+  fprintf( output, "%sac_mem *ac_resources::IM;\n\n", INDENT[0]);
+  fprintf( output, "%sac_mem *ac_resources::APP_MEM;\n\n", INDENT[0]);
   
   COMMENT(INDENT[0],"Control Variables.");
   fprintf( output, "ac_reg<unsigned> ac_resources::ac_pc(\"ac_pc\", 0xffffffff);\n");
@@ -3715,7 +3715,7 @@ void CreateMakefile(){
   //Declaring ACHEAD variable
 
   COMMENT_MAKE("These are the header files automatically generated by ArchC");
-  fprintf( output, "ACHEAD := ac_progmem.H ac_resources.H ac_types.H $(MODULE)_parms.H $(MODULE)_isa.H $(MODULE)_bhv_macros.H $(MODULE)_syscall_macros.H ac_storage.H ");
+  fprintf( output, "ACHEAD := ac_progmem.H ac_resources.H ac_types.H $(MODULE)_parms.H $(MODULE)_isa.H $(MODULE)_bhv_macros.H $(MODULE)_syscall_macros.H ac_mem.H ");
 
   if(HaveFormattedRegs)
     fprintf( output, "ac_fmt_regs.H ");
@@ -3751,7 +3751,7 @@ void CreateMakefile(){
   //Declaring FILES variable
   COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
   COMMENT_MAKE("They are stored in the archc/src/aclib directory");
-  fprintf( output, "ACFILES := ac_storage.cpp  %s",
+  fprintf( output, "ACFILES := ac_mem.cpp  %s",
            (ACGDBIntegrationFlag)?"ac_gdb.cpp breakpoints.cpp ":"");
 
   if( HaveMemHier )
@@ -3836,7 +3836,7 @@ void CreateMakefile(){
   fprintf( output, "distclean: sim_clean\n");
   fprintf( output, "\trm -f main.cpp Makefile.archc\n\n");
 
-  fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_storage/%%.cpp\n");
+  fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_mem/%%.cpp\n");
   fprintf( output, "\tcp $< $@\n");
 
   fprintf( output, "%%.cpp: $(ARCHC)/src/aclib/ac_syscall/%%.cpp\n");
