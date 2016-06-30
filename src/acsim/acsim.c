@@ -734,19 +734,15 @@ void CreateArchHeader() {
                     }
                 }
                 break;
-            
+
             case MEM:
- 
-                if (!HaveMemHier) { //It is a generic mem. Just emit a base container object.
-                    fprintf(output, "%sac_storage %s;\n", INDENT[1], pstorage->name);
-                    fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
-                } else {
-                    //It is an ac_mem object.
-                    unsigned i = pstorage->size * 8 / wordsize;
-                    fprintf(output, "%sac_mem<%u, %s_parms::ac_word> %s;\n", INDENT[1], i, project_name, pstorage->name);
-                }
+                fprintf(output, "%sac_storage %s;\n", INDENT[1],
+                        pstorage->name);
+                fprintf(output, "%sac_memport<%s_parms::ac_word, "
+                                "%s_parms::ac_Hword> %s_mport;\n",
+                        INDENT[1], project_name, project_name, pstorage->name);
                 break;
-            
+
             case TLM_PORT:
                 fprintf(output, "%sac_tlm_port %s;\n", INDENT[1], pstorage->name);
                 fprintf(output, "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> %s_mport;\n", INDENT[1], project_name, project_name, pstorage->name);
@@ -2466,13 +2462,10 @@ void CreateArchImpl() {
                 break;
 
             case MEM:
-                if( !HaveMemHier ) { //It is a generic cache. Just emit a base container object.
-                    fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                    fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-                }
-                else {
-                    fprintf(output, "%s%s_mport()", INDENT[1], pstorage->name);
-                }
+                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1],
+                        pstorage->name, pstorage->name, pstorage->size);
+                fprintf(output, "%s%s_mport(*this, %s)", INDENT[1],
+                        pstorage->name, pstorage->name);
                 break;
 
             case TLM_PORT:
@@ -4621,15 +4614,6 @@ void ParseCache(ac_sto_list * cache_in)
     }
 }
 
-void MemoryClassDeclaration(ac_sto_list * memory)
-{
-    const unsigned s = 20;
-    unsigned i = memory->size * 8 / wordsize;
-    memory->class_declaration = malloc(s);
-    if (snprintf(memory->class_declaration, s, "ac_mem<%d>", i) >= s)
-  abort();
-}
-
 void TLMMemoryClassDeclaration(ac_sto_list * memory)
 {
     extern char *project_name;
@@ -4659,18 +4643,15 @@ void CacheClassDeclaration(ac_sto_list * storage)
     extern char *project_name;
     struct CacheObject *cache = storage->cache_object;
     if (storage->higher->class_declaration == NULL) {
-  if (storage->higher->type == MEM) {
-      MemoryClassDeclaration(storage->higher);
-  }
-        else if (storage->higher->type == TLM_PORT || storage->higher->type == TLM2_PORT || storage->higher->type ==TLM2_NB_PORT)
-        {
-        /*****/
-          TLMMemoryClassDeclaration(storage->higher);
+        if (storage->higher->type == MEM || storage->higher->type == TLM_PORT ||
+            storage->higher->type == TLM2_PORT ||
+            storage->higher->type == TLM2_NB_PORT) {
+            /*****/
+            TLMMemoryClassDeclaration(storage->higher);
+        } else {
+            ParseCache(storage->higher);
+            CacheClassDeclaration(storage->higher);
         }
-        else {
-      ParseCache(storage->higher);
-      CacheClassDeclaration(storage->higher);
-  }
     }
     storage->class_declaration = malloc(s);
     int r = snprintf(storage->class_declaration, s,
