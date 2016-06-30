@@ -7,8 +7,7 @@ AM_CPPFLAGS = -I. -I$(top_srcdir)/src/aclib/ac_decoder -I$(top_srcdir)/src/aclib
 noinst_LTLIBRARIES = libacstorage.la
 
 ## ArchC library includes
-#include_HEADERS = ac_mem.H ac_memport.H ac_ptr.H ac_inout_if.H ac_regbank.H ac_reg.H ac_storage.H ac_sync_reg.H
-include_HEADERS = ac_inout_if.H ac_mem.H ac_memport.H ac_ptr.H ac_regbank.H ac_reg.H ac_storage.H ac_sync_reg.H  
+include_HEADERS = ac_inout_if.H ac_memport.H ac_ptr.H ac_regbank.H ac_reg.H ac_storage.H ac_sync_reg.H  
 
 #libacstorage_la_SOURCES = ac_storage.cpp ac_cache_trace.cpp
 libacstorage_la_SOURCES = ac_storage.cpp

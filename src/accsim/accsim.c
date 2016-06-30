@@ -2851,7 +2851,6 @@ void fast_CreateFileResourcesHeader()
   //fprintf( output, "#include  \"ac_reg.H\"\n\n");
 
   if( HaveMemHier ){
-    fprintf( output, "#include  \"ac_mem.H\"\n");
     fprintf( output, "#include  \"ac_cache.H\"\n");
   }
 

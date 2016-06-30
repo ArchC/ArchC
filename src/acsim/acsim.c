@@ -618,7 +618,6 @@ void CreateArchHeader() {
     /*cache*/
     if (HaveMemHier) {
         fprintf(output, "#include \"ac_cache.H\"\n");
-        fprintf(output, "#include \"ac_mem.H\"\n");
         fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
         fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
         fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");
@@ -848,7 +847,6 @@ void CreateArchRefHeader() {
 
     if (HaveMemHier) {
         fprintf(output, "#include \"ac_cache.H\"\n");
-        fprintf(output, "#include \"ac_mem.H\"\n");
         fprintf(output, "#include \"ac_fifo_replacement_policy.H\"\n");
         fprintf(output, "#include \"ac_random_replacement_policy.H\"\n");
         fprintf(output, "#include \"ac_plrum_replacement_policy.H\"\n");

@@ -596,7 +596,6 @@ void CreateArchHeader(void)
 #if 0 // More unmantained stuff. --Marilia
  if (HaveMemHier)
  {
-  fprintf(output, "#include \"ac_mem.H\"\n");
   fprintf(output, "#include \"ac_cache.H\"\n");
  }
 #endif
@@ -942,7 +941,6 @@ void CreateArchRefHeader(void)
   fprintf(output, "#include \"ac_tlm_intr_port.H\"\n");
  if (HaveMemHier)
  {
-  fprintf(output, "#include \"ac_mem.H\"\n");
   fprintf(output, "#include \"ac_cache.H\"\n");
  }
  if (HaveFormattedRegs)

@@ -710,7 +710,6 @@ void CreateResourceHeader() {
   fprintf( output, "#include  \"ac_reg.H\"\n");
 
   if( HaveMemHier ){
-    fprintf( output, "#include  \"ac_mem.H\"\n");
     fprintf( output, "#include  \"ac_cache.H\"\n");
   }
 
