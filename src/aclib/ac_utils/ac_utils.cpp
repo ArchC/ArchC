@@ -133,16 +133,16 @@ args_t ac_init_args( int ac, char* av[]){
             ac_argc--;
             ac--;
 
-            // Remove --load from ac_argv
+            // Remove -- from ac_argv
             for (int i = 1; i < ac; i++) {
-                ac_argv[i] = ac_argv[i+1];
+                ac_argv[i] = ac_argv[i + 1];
             }
 
             size = strlen(av[1]);
-            appname = (char*)malloc(size);
+            appname = (char *)malloc(size + 1);
             strcpy(appname, av[1]);
             // ac_argv[1] = appname;
-            appfilename = (char*) malloc(sizeof(char)*(size));
+            appfilename = (char *)malloc(sizeof(char) * (size + 1));
             strcpy(appfilename, appname);
 
             av++;
