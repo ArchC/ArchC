@@ -1020,7 +1020,7 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     int ret;
     unsigned whence = get_int(4);
     if (offset_high == 0) {
-      uint64_t ret_off;
+      int64_t ret_off;
       // Assume 64-bit offsets for all systems
       ret_off = ::lseek(fd, offset_low, whence);
       if (ret_off >= 0) {
