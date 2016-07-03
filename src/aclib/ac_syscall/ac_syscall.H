@@ -106,6 +106,11 @@ public:
 #include <sys/times.h>
 #include <time.h>
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 #undef AC_RUN_ERROR
 #if 0 /// Changed to iostream-type. --Marilia
 #define AC_RUN_ERROR( str, args...) \
@@ -1259,13 +1264,24 @@ int ac_syscall<ac_word, ac_Hword>::process_syscall(int syscall) {
     DEBUG_SYSCALL("clock_gettime");
     uint32_t clockid = get_int(0);
     uint32_t guest_addr = get_int(1);
-    struct timespec ts;
     // Assume a 32-bit guest
     uint32_t guest_ts[2];
+    #ifdef __MACH__
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    guest_ts[0] = mts.tv_sec;
+    guest_ts[1] = mts.tv_nsec;
+    set_int(0, 0);
+    #else
+    struct timespec ts;
     int32_t ret = ::clock_gettime(clockid, &ts);
     guest_ts[0] = ts.tv_sec;
     guest_ts[1] = ts.tv_nsec;
     set_int(0, ret);
+    #endif
     host2guestmemcpy(guest_addr, (unsigned char *)&guest_ts, 8);
     return 0;
   }
