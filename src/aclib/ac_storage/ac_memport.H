@@ -526,7 +526,7 @@ public:
 
   /// ***** EDIT *****
   //!Method to load device content from an array.
-  void load_array(const uint8_t* d, const uint32_t s) {
+  void load_array(uint8_t* d, const uint32_t s) {
     unsigned char* Data;
     if (storage->get_size() < s) {
       fprintf(stderr, "Storage %s: trying to load an array bigger then storage size.\n", storage->get_name().c_str());
