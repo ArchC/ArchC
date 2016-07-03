@@ -109,7 +109,7 @@ void ac_mem::read(ac_ptr buf, uint32_t address,
   }
 }
 
-void ac_mem::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(const ac_ptr buf, uint32_t address,
 		       int wordsize) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -133,7 +133,7 @@ void ac_mem::write(ac_ptr buf, uint32_t address,
   }
 }
 
-void ac_mem::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(const ac_ptr buf, uint32_t address,
 		       int wordsize, int n_words) {
   switch (wordsize) {
   case 8: { // unsigned char
@@ -177,14 +177,14 @@ void ac_mem::read(ac_ptr buf, uint32_t address,
   this->read(buf,address,wordsize,n_words);
 }
 
-void ac_mem::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(const ac_ptr buf, uint32_t address,
            int wordsize,sc_core::sc_time &time_info,unsigned int procId) {
 
 
   this->write(buf,address,wordsize);
 }
 
-void ac_mem::write(ac_ptr buf, uint32_t address,
+void ac_mem::write(const ac_ptr buf, uint32_t address,
            int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId) {
 
   this->write(buf,address,wordsize,n_words);

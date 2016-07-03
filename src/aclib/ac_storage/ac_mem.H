@@ -75,10 +75,10 @@ public:
   void read(ac_ptr buf, uint32_t address,
 		   int wordsize, int n_words);
 
-  void write(ac_ptr buf, uint32_t address,
+  void write(const ac_ptr buf, uint32_t address,
 		    int wordsize);
 
-  void write(ac_ptr buf, uint32_t address,
+  void write(const ac_ptr buf, uint32_t address,
 		    int wordsize, int n_words);
 
 
@@ -89,10 +89,10 @@ public:
   void read(ac_ptr buf, uint32_t address,
          int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId=0);
 
-  void write(ac_ptr buf, uint32_t address,
+  void write(const ac_ptr buf, uint32_t address,
           int wordsize,sc_core::sc_time &time_info,unsigned int procId=0);
 
-  void write(ac_ptr buf, uint32_t address,
+  void write(const ac_ptr buf, uint32_t address,
           int wordsize, int n_words,sc_core::sc_time &time_info,unsigned int procId=0);
 
 
