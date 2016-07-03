@@ -475,7 +475,7 @@ public:
 #endif
 
   //!Method to provide the name of the device.
-  inline char* get_name() {
+  inline const char* get_name() {
     return "";
   }
 
