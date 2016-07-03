@@ -36,6 +36,8 @@ matrix:
       compiler: clang
       env: CFLAGS="-O3 -Wall -Wextra" CXXFLAGS="-O3 -Wall -Wextra"
       osx_image: xcode7.3
+  allow_failures:
+    - os: osx
 
 notifications:
   email: false
