@@ -2,7 +2,6 @@
 
 EXTRA_DIST = archc.conf.m4 \
              BUGS \
-             acstone \
              doc
 
 ## Automake options
