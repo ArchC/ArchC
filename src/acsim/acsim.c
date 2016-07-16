@@ -2232,8 +2232,6 @@ void CreateProcessorImpl() {
             INDENT[1]);
     fprintf(output, "%sInitStat();\n", INDENT[1]);
 
-    //  if(ACABIFlag)
-    //    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
     fprintf( output, "%sstart_up = 0;\n", INDENT[1]);
     if( ACDecCacheFlag )
         fprintf( output, "%sinit_dec_cache();\n", INDENT[1]);
@@ -2248,8 +2246,10 @@ void CreateProcessorImpl() {
     fprintf(output, "%sset_running();\n", INDENT[1]);
     fprintf(output, "}\n\n");
 
-    fprintf(output, "void %s::set_prog_args(){\n", project_name); 
-    fprintf( output, "%sISA.syscall.set_prog_args(argc, argv);\n",INDENT[1]);
+    fprintf(output, "void %s::set_prog_args(){\n", project_name);
+    if (ACABIFlag)
+        fprintf(output, "%sISA.syscall.set_prog_args(argc, argv);\n",
+                INDENT[1]);
     fprintf(output, "}\n\n");
 
     /* stop() */
@@ -4787,4 +4787,3 @@ void GetFirstLevelDataDevice()
         }
     }
 }
-
