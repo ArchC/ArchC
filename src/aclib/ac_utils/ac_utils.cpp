@@ -62,7 +62,6 @@ char *appfilename = NULL;
 std::map<std::string, std::ofstream*> ac_cache_traces;
 
 
-
 unsigned int convert_endian(unsigned int size, unsigned int num, bool match_endian)
 {
   unsigned char *in = (unsigned char*) &num;
