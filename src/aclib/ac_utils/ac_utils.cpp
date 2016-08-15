@@ -82,7 +82,7 @@ void ac_init_opts( int ac, char* av[]){
             cerr << "  -- <prog_path>          Load target application\n";
             cerr << "  --trace-cache=<cache>,<file> Trace cache access\n";
 #ifdef USE_GDB
-            //      cerr << "  --gdb[=<port>]          Enable GDB support\n";
+            cerr << "  --port=<port>          Set a different GDB port (5000 default)\n";
 #endif /* USE_GDB */
             exit(1);
         }
@@ -103,6 +103,9 @@ args_t ac_init_args( int ac, char* av[]){
     char *appname=0;
     int ac_argc;
     char** ac_argv;
+    
+    // return structure
+    args_t args;
 
     ac_argc = ac-1;   //Skiping program's name
     ac_argv = av;
@@ -148,20 +151,15 @@ args_t ac_init_args( int ac, char* av[]){
             av++;
         }
 #ifdef USE_GDB
-        //     if( (size>=5) && (!strncmp( av[1], "--gdb", 5))){ //Enable GDB support
-        //       int port = 0;
-        //       if ( size > 6 )
-        //         {
-        //           port = atoi( av[1] + 6 );
-        //           if ( ( port > 1024 ) && gdbstub )
-        //             gdbstub->set_port( port );
-        //         }
-        //       if ( gdbstub )
-        //         gdbstub->enable();
-        //     }
-#endif /* USE_GDB */
+        else if ((size >= 7) &&
+            (!strncmp(av[1], "--port=", 7))) { // Enable GDB support
+            unsigned port = atoi(av[1] + 8);
+            if (port > 1024)
+                args.gdb_port = port;
 
-        else if ( (size>14) && (!strncmp(av[1], "--trace-cache=", 14)) ) {
+        }
+#endif /* USE_GDB */
+        else if ((size > 14) && (!strncmp(av[1], "--trace-cache=", 14))) {
             char *comma = strchr(av[1], ',');
             if (comma == NULL) {
                 std::cerr << "Error: invalid argument syntax.\n";
@@ -196,7 +194,6 @@ args_t ac_init_args( int ac, char* av[]){
     }
     ac_argv++;
 
-    args_t args;
     args.size = ac_argc;
     args.app_args = ac_argv;
     args.app_filename = appfilename;

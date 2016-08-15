@@ -82,6 +82,9 @@ typedef struct {
     int     size;
     char**  app_args;
     char*   app_filename;
+#ifdef USE_GDB
+    unsigned gdb_port;
+#endif
 } args_t;
 
 // Prototypes
