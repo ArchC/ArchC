@@ -1098,9 +1098,6 @@ void CreateParmHeader() {
   fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n", 
            load_device->size, load_device->name);
 
-  if (ACGDBIntegrationFlag)
-  fprintf( output, "static const unsigned int GDB_PORT_NUM = 5000; \t //!< GDB port number.\n");
-
   fprintf( output, "\n\n");
   COMMENT(INDENT[0],"Word type definitions.");
 
@@ -1735,10 +1732,6 @@ if (HaveTLM2IntrPorts) {
   fprintf( output, "%sid.write(globalId++);\n", INDENT[2]);
  
     
-  if (ACGDBIntegrationFlag)
-    fprintf(output, "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, %s_parms::GDB_PORT_NUM);\n\n", 
-            INDENT[2], project_name, project_name);
-
   if (ACWaitFlag)
     fprintf(output, "%sset_proc_freq(1000/module_period_ns);\n", INDENT[2]);
 
@@ -1797,7 +1790,7 @@ if (HaveTLM2IntrPorts) {
   fprintf( output, "%svoid stop(int status = 0);\n\n", INDENT[1]);
 
   if (ACGDBIntegrationFlag)
-    fprintf(output, "%svoid enable_gdb(int port = 5000);\n\n", INDENT[1]);
+    fprintf(output, "%svoid enable_gdb(int port = 0);\n\n", INDENT[1]);
 
   fprintf( output, "%svirtual ~%s() {};\n\n", INDENT[1], project_name);
 
@@ -2367,8 +2360,12 @@ void CreateProcessorImpl() {
     if (ACGDBIntegrationFlag) {
         fprintf(output, "// Enables GDB\n");
         fprintf(output, "void %s::enable_gdb(int port) {\n", project_name);
-        fprintf(output, "%sif (port > 1024)\n", INDENT[1]);
-        fprintf(output, "%sgdbport = port;\n", INDENT[2]);
+        fprintf(output, "%sif (port > 1024)\n\n", INDENT[1]);
+        fprintf(output, "%sgdbport = port;\n\n", INDENT[2]);
+
+        fprintf(output,
+                "%sgdbstub = new AC_GDB<%s_parms::ac_word>(this, gdbport);\n",
+                INDENT[1], project_name);
         fprintf(output, "%sgdbstub->set_port(gdbport);\n", INDENT[1]);
         fprintf(output, "%sgdbstub->enable();\n", INDENT[1]);
         fprintf(output, "%sgdbstub->connect();\n", INDENT[1]);
