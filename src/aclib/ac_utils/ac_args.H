@@ -104,9 +104,7 @@ args_t ac_init_args( int ac, char* av[]){
         }
 #ifdef USE_GDB
         else if (size>=7 && (!strncmp( av[1], "--port=", 7))){ //Enable GDB support
-            // char *cport = (char *) malloc (size - 6)
-            // strcpy (cport, av[1] + 7)
-            unsigned port = atoi(av[1] + 8);
+            unsigned port = atoi(av[1] + 7);
             if (port > 1024)
                 args.gdb_port = port;
         }
