@@ -1649,9 +1649,11 @@ if (HaveTLM2IntrPorts) {
   //fprintf( output, "%sunsigned id;\n", INDENT[1]);
   fprintf( output, "%sbool start_up;\n", INDENT[1]);
 
-  if (ACGDBIntegrationFlag)
-    fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n\n", 
+  if (ACGDBIntegrationFlag) {
+    fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n", 
             INDENT[1], project_name);
+    fprintf(output, "%sunsigned gdbport;\n", INDENT[1]);
+  }
   
   fprintf( output, "\n");
   
@@ -2156,7 +2158,8 @@ void CreateProcessorImpl() {
     }
 
     /* SIGNAL HANDLERS */
-    fprintf(output, "#include <ac_sighandlers.H>\n\n");
+    fprintf(output, "#include <ac_sighandlers.H>\n");
+    fprintf(output, "#include <ac_args.H>\n\n");
 
     /* init() and stop() */
     /* init() with no parameters */
@@ -2208,6 +2211,7 @@ void CreateProcessorImpl() {
     fprintf(output, "%sargs_t args = ac_init_args( ac, av);\n", INDENT[1]);
     fprintf(output, "%sset_args(args.size, args.app_args);\n", INDENT[1]);
     fprintf(output, "%s%s_mport.load(args.app_filename);\n", INDENT[1], load_device->name);
+    fprintf(output, "%sgdbport = args.gdb_port;\n", INDENT[1]);
 
     for (pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next) {
         switch(pstorage->type) {
@@ -2363,7 +2367,9 @@ void CreateProcessorImpl() {
     if (ACGDBIntegrationFlag) {
         fprintf(output, "// Enables GDB\n");
         fprintf(output, "void %s::enable_gdb(int port) {\n", project_name);
-        fprintf(output, "%sgdbstub->set_port(port);\n", INDENT[1]);
+        fprintf(output, "%sif (port > 1024)\n", INDENT[1]);
+        fprintf(output, "%sgdbport = port;\n", INDENT[2]);
+        fprintf(output, "%sgdbstub->set_port(gdbport);\n", INDENT[1]);
         fprintf(output, "%sgdbstub->enable();\n", INDENT[1]);
         fprintf(output, "%sgdbstub->connect();\n", INDENT[1]);
         fprintf(output, "}\n\n");
@@ -2574,11 +2580,12 @@ void CreateMainTmpl() {
            INDENT[1], project_name);
   fprintf( output, "#endif \n\n");
 
+  fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
+  fprintf(output, "%s%s_proc1.set_prog_args();\n", INDENT[1], project_name);
+  
   if (ACGDBIntegrationFlag == 1)
     fprintf(output, "%s%s_proc1.enable_gdb();\n", INDENT[1], project_name);
 
-  fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
-  fprintf(output, "%s%s_proc1.set_prog_args();\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf(output, "%ssc_start();\n\n", INDENT[1]);
