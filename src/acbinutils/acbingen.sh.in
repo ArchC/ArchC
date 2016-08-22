@@ -449,9 +449,10 @@ if [ ! -z ${BINUTILS_INST_DIR} ]; then
     cd ..
     mkdir -p build_gdb
     cd build_gdb
-    $GDB_DIR/configure --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
+    $GDB_DIR/configure --without-docdir --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
     [ $? -ne 0 ] && exit $?
-    make 
+    echo "MAKEINFO = :" >> Makefile
+    make
     [ $? -ne 0 ] && exit $?
     make install
     [ $? -ne 0 ] && exit $?
