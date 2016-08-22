@@ -16,6 +16,7 @@ Options:
              <model-file> without the extension)
   -i<dir>    build and install the binary utilities in directory <dir>
              NOTE: <dir> -MUST- be an absolute path
+  -j         parallelize build when running make
   -c         only create the files, do not copy to binutils tree
   -f         force patching binutils and gdb tree even if an architecture
              with the same name already exists
@@ -32,6 +33,7 @@ Try \`$me -h for more information."
 
 ARCH_NAME=""
 CREATE_ONLY=0
+PARALLEL_BUILD=0
 BINUTILS_INST_DIR=""
 PATCH_BINUTILS=1  #1 means to patch, 0 otherwise
 PATCH_GDB=1  #1 means to patch, 0 otherwise
@@ -39,11 +41,12 @@ FORCE_PATCH=0
 TEMP_DIR="acbingenbuilddir"
 
 # Parse command line
-while getopts  ":hvfca:i:" flag
+while getopts  ":hvfjca:i:" flag
 do
   case $flag in
     h) echo "$usage"; exit 0 ;;
     v) echo "$version" ; exit 0 ;;
+    j) PARALLEL_BUILD=1 ;;
     c) CREATE_ONLY=1 ;;
     f) FORCE_PATCH=1 ;;
     a) ARCH_NAME="$OPTARG" ;;
@@ -439,7 +442,11 @@ if [ ! -z ${BINUTILS_INST_DIR} ]; then
     cd build
     $BINUTILS_DIR/configure --disable-werror --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
     [ $? -ne 0 ] && exit $?
-    make 
+    if [ "$PARALLEL_BUILD" -ne 0 ]; then
+        make -j
+    else
+        make
+    fi
     [ $? -ne 0 ] && exit $?
     make install
     [ $? -ne 0 ] && exit $?
@@ -452,7 +459,11 @@ if [ ! -z ${BINUTILS_INST_DIR} ]; then
     $GDB_DIR/configure --without-docdir --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
     [ $? -ne 0 ] && exit $?
     echo "MAKEINFO = :" >> Makefile
-    make
+    if [ "$PARALLEL_BUILD" -ne 0 ]; then
+        make -j
+    else
+        make
+    fi
     [ $? -ne 0 ] && exit $?
     make install
     [ $? -ne 0 ] && exit $?
