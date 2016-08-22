@@ -37,7 +37,7 @@ FILES_TO_PATCH = \
 	opcodes/disassemble.c \
 	ld/configure.tgt \
 	ld/Makefile.in \
-  	include/dis-asm.h
+	include/dis-asm.h
 
 FILES_TO_COPY = \
 	gas/config/tc-xxxxx.c \
@@ -122,6 +122,7 @@ install-data-hook:
 	for file in $(FILES_TO_COPY); do \
 	  cp -f $(srcdir)/$(BINUTILS_ROOT)/$${file} $(pkgdatadir)/$(BINUTILS_ROOT)/$${file}; \
 	done
+	cp binutils/gas/config/tc-xxxxx.c $(pkgdatadir)/$(BINUTILS_ROOT)/gas/config/tc-xxxxx.c
 	for directory in $(GDB_ROOT) $(GDB_TREE); do \
 	  mkdir -p $(pkgdatadir)/$${directory}; \
 	done;	
