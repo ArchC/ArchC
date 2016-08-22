@@ -437,7 +437,7 @@ if [ ! -z ${BINUTILS_INST_DIR} ]; then
   if [ ! -z ${BINUTILS_DIR} ]; then
     mkdir -p build
     cd build
-    $BINUTILS_DIR/configure --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
+    $BINUTILS_DIR/configure --disable-werror --target=${ARCH_NAME}-elf --prefix=`pwd` --bindir=${BINUTILS_INST_DIR}
     [ $? -ne 0 ] && exit $?
     make 
     [ $? -ne 0 ] && exit $?
