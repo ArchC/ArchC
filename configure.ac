@@ -172,6 +172,15 @@ AC_CHECK_FUNC([getopt_long_only],,
   AC_LIBOBJ(getopt1)
 ])
 
+# Check for flex
+AC_CHECK_PROG(FLEX, flex, flex)
+AS_IF([test -z "$FLEX"], [AC_MSG_ERROR([flex not found, please install flex package])])
+
+# Check for bison
+AC_CHECK_PROG(BISON, bison, bison)
+AS_IF([test -z "$BISON"], [AC_MSG_ERROR([bison not found, please install bison package])])
+
+
 # Configuration files
 AC_CONFIG_FILES(
 [
