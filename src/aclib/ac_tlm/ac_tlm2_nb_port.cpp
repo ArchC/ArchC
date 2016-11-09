@@ -56,16 +56,6 @@ tlm::tlm_sync_enum  ac_tlm2_nb_port::nb_transport_bw(ac_tlm2_payload &payload, t
 	printf("\n\nNB_TRANSPORT_BW --> Processor is receiving a package");
 	#endif
 
-	/******/
- 	payload_global = new ac_tlm2_payload();
- 	
-
-	unsigned char* data_pointer = payload.get_data_ptr();		 
-	payload_global->set_data_ptr(data_pointer);
-    
-
- 	payload_global->deep_copy_from(payload);
-	
  	#ifdef debugTLM2
 	printf("\nAC_TLM2_NB_PORT NB_TRANSPORT_BW: command-->%d  data-->%d payload_global data->%d address-->%ld",payload_global->get_command(),*data_pointer,*(payload_global->get_data_ptr()),addr);        
 	printf("\nNotifying a event in BW TRANSPORT");
@@ -133,9 +123,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 		printf("\nAC_TLM2_NB_PORT READ ERROR");
 		exit(0);
 	}
-
-	/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
-	delete payload_global;
 
 
 	wait(this->wake_up);
@@ -233,9 +220,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
 				exit(0);
 			}
-			
-			/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
-			delete payload_global;
 
 			wait(this->wake_up);
 			
@@ -264,9 +248,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 				printf("\nAC_TLM2_NB_PORT n_words READ ERROR");
 				exit(0);
 			}
-
-			/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
-			delete payload_global;
 
 	
 			wait(this->wake_up);
@@ -297,10 +278,6 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 				exit(0);
 			}
 	
-
-			/**** TENTATIVA PARA EVITAR MEMORY LEAK*/
-			delete payload_global;
-
 
 			wait(this->wake_up);
 
@@ -378,9 +355,6 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     printf("\n\nAC_TLM2_NB_PORT WRITE is waiting for wake_up event");
     #endif
 
-    /*****/
-    delete payload_global;
-
     wait(this->wake_up);
 
     
@@ -406,13 +380,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	exit(0);
     }
 
-	/*****/
-    delete payload_global;
-
     wait(this->wake_up);
-    
-
-	
 
     break;
   case 16:
@@ -429,10 +397,6 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	exit(0);
     }
 	
-
-	/*****/
-    delete payload_global;
-
     wait(this->wake_up);
     
     payload_global->set_command(tlm::TLM_WRITE_COMMAND);
@@ -456,10 +420,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	exit(0);
     } 
     
-    /*****/
-    delete payload_global;
     wait(this->wake_up);
-    
 
     break;
  
@@ -487,11 +448,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	exit(0);
     } 
 
-
-   /*****/
-    delete payload_global;
     wait(this->wake_up);
-	
 
     break;
  
