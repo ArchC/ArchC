@@ -124,6 +124,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address, int wordsize,sc_core::s
 	/**********
 	To guarantee that there are no extensions in the payload
 	**********/
+	payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 	payload_global->free_all_extensions();	
 
 	status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info);
@@ -225,6 +226,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 			payload_global->set_data_length(sizeof(uint8_t));
 			payload_global->set_data_ptr(p);
 
+			payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
 			if(status != tlm::TLM_UPDATED)
 			{
@@ -255,6 +257,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 			payload_global->set_data_length(sizeof(uint16_t));
 			payload_global->set_data_ptr(p);
 
+			payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
 			if(status != tlm::TLM_UPDATED)
 			{
@@ -286,6 +289,7 @@ void ac_tlm2_nb_port::read(ac_ptr buf, uint32_t address,
 			payload_global->set_data_length(sizeof(uint32_t));
 		        payload_global->set_data_ptr(p);
 
+			payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
 			status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
 			if(status != tlm::TLM_UPDATED)
 			{
@@ -362,6 +366,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     payload_global->set_data_length(sizeof(uint8_t));
     payload_global->set_data_ptr(p);
     
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
     if(status != tlm::TLM_UPDATED)
     {
@@ -393,6 +398,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	**********/
 	payload_global->free_all_extensions();	
 
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     status =  LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
     if(status != tlm::TLM_UPDATED)
     {
@@ -415,6 +421,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
     payload_global->set_data_length(sizeof(uint16_t));
     payload_global->set_data_ptr(p);
 
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
     if(status != tlm::TLM_UPDATED)
     {
@@ -441,6 +448,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	payload_global->free_all_extensions();	
 
 
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
     if(status != tlm::TLM_UPDATED)
     {
@@ -470,6 +478,7 @@ void ac_tlm2_nb_port::write(ac_ptr buf, uint32_t address, int wordsize,sc_core::
 	**********/
 	payload_global->free_all_extensions();	
 	
+    payload_global->set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
     status = LOCAL_init_socket->nb_transport_fw(*payload_global, phase, time_info); 
 
     if(status != tlm::TLM_UPDATED)
