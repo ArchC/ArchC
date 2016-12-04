@@ -4550,16 +4550,13 @@ void ReadConfFile(){
   free(conf_filename_global);
 }
 
-
-
-
-void ParseCache(ac_sto_list * cache_in)
-{
+void ParseCache(ac_sto_list *cache_in) {
     ac_cache_parms *p;
     bool fully_associative = false;
     extern char *project_name;
     struct CacheObject *cache_out;
-    if (cache_in->cache_object != NULL)  abort();
+    if (cache_in->cache_object != NULL)
+        abort();
 
     // Let the OS free this in the end
     cache_in->cache_object = malloc(sizeof(struct CacheObject));
@@ -4567,27 +4564,23 @@ void ParseCache(ac_sto_list * cache_in)
 
     // 1st parameter
     p = cache_in->parms;
-   
-    if (!strcmp(p->str, "dm") || !strcmp(p->str, "DM"))
-    {
-          cache_out->associativity = 1;
-    } 
-    else if (!strcmp(p->str, "fully") || !strcmp(p->str, "FULLY"))
-    {
-          fully_associative = true;
-    }
-    else if (sscanf(p->str, " %d", &cache_out->associativity) <= 0 || cache_out->associativity < 1)
-    {
-        AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
+
+    if (!strcmp(p->str, "dm") || !strcmp(p->str, "DM")) {
+        cache_out->associativity = 1;
+    } else if (!strcmp(p->str, "fully") || !strcmp(p->str, "FULLY")) {
+        fully_associative = true;
+    } else if (sscanf(p->str, " %d", &cache_out->associativity) <= 0 ||
+               cache_out->associativity < 1) {
+        AC_ERROR("Invalid parameter in cache declaration: %s\n",
+                 cache_in->name);
         printf("The first parameter must be a valid associativity: \"dm\","
-         " \"2w\", \"4w\", ..., \"fully\" \n");
+               " \"2w\", \"4w\", ..., \"fully\" \n");
         exit(EXIT_FAILURE);
     }
-    
+
     // 2nd parameter
     p = p->next;
-    if (fully_associative)
-    {
+    if (fully_associative) {
         cache_out->associativity = p->value;
     }
 
@@ -4599,60 +4592,46 @@ void ParseCache(ac_sto_list * cache_in)
 
     // 4th parameter
     p = p->next;
-    if (!strcmp(p->str, "wt") || !strcmp(p->str, "WT"))
-    {
+    if (!strcmp(p->str, "wt") || !strcmp(p->str, "WT")) {
         cache_out->type = WriteThrough;
-    }
-    else if (!strcmp(p->str, "wb") || !strcmp(p->str, "WB"))
-    {
+    } else if (!strcmp(p->str, "wb") || !strcmp(p->str, "WB")) {
         cache_out->type = WriteBack;
-    }
-    else
-    {
-        AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
-        printf("The fourth parameter must be a valid write policy: \"wt\" or \"wb\".\n");
+    } else {
+        AC_ERROR("Invalid parameter in cache declaration: %s\n",
+                 cache_in->name);
+        printf("The fourth parameter must be a valid write policy: \"wt\" or "
+               "\"wb\".\n");
     }
 
     // 5th parameter
     p = p->next;
-    
-    //if (p == NULL)
-    if (cache_out->associativity == 1)
-    {
-        if ( strcmp(p->str, "none") && strcmp(p->str, "NONE") ) 
-        {
-            printf("The replacement policy will be ignored because it is a direct-mapped cache\n");     
-        } 
+
+    // if (p == NULL)
+    if (cache_out->associativity == 1) {
+        if (strcmp(p->str, "none") && strcmp(p->str, "NONE")) {
+            printf("The replacement policy will be ignored because it is a "
+                   "direct-mapped cache\n");
+        }
         cache_out->replacement_policy = None;
 
-    }
-    else
-    {
-        if (!strcmp(p->str, "plrum") || !strcmp(p->str, "PLRUM"))
-        {
+    } else {
+        if (!strcmp(p->str, "plrum") || !strcmp(p->str, "PLRUM")) {
 
-          cache_out->replacement_policy = PLRUM;
-        }
-        else if (!strcmp(p->str, "random") || !strcmp(p->str, "RANDOM"))
-        {
+            cache_out->replacement_policy = PLRUM;
+        } else if (!strcmp(p->str, "random") || !strcmp(p->str, "RANDOM")) {
             cache_out->replacement_policy = Random;
-        }
-        else if (!strcmp(p->str, "fifo") || !strcmp(p->str, "FIFO"))
-        {
+        } else if (!strcmp(p->str, "fifo") || !strcmp(p->str, "FIFO")) {
             cache_out->replacement_policy = FIFO;
-        }
-        else if (!strcmp(p->str, "lru") || !strcmp(p->str, "LRU"))
-        {
+        } else if (!strcmp(p->str, "lru") || !strcmp(p->str, "LRU")) {
             cache_out->replacement_policy = LRU;
+        } else {
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
+                     cache_in->name);
+            printf("The fifth parameter must be a valid replacement strategy:"
+                   "\"plrum\", \"random\", \"fifo\" or \"lru\" (or \"none\" "
+                   "for direct-mapped caches.\")\n");
+            exit(EXIT_FAILURE);
         }
-        else
-        {
-          AC_ERROR("Invalid parameter in cache declaration: %s\n", cache_in->name);
-          printf("The fifth parameter must be a valid replacement strategy:"     
-         "\"plrum\", \"random\", \"fifo\" or \"lru\" (or \"none\" for direct-mapped caches.\")\n");
-          exit(EXIT_FAILURE);
-        }
-     
     }
 }
 
