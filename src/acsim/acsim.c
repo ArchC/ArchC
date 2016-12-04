@@ -4705,18 +4705,17 @@ void CacheClassDeclaration(ac_sto_list * storage)
   abort();
 }
 
-void EnumerateCaches()
-{
+void EnumerateCaches() {
     extern ac_sto_list *storage_list;
     ac_sto_list *i;
     for (i = storage_list; i != NULL; i = i->next) {
-        //printf("\nprinting i->type = %d", i->type);
+        // printf("\nprinting i->type = %d", i->type);
         if (i->type == ICACHE || i->type == DCACHE || i->type == CACHE) {
-           if (i->parms != NULL) {
-    ParseCache(i);
-    CacheClassDeclaration(i);
-      }
-  }
+            if (i->parms != NULL) {
+                ParseCache(i);
+                CacheClassDeclaration(i);
+            }
+        }
     }
 }
 
