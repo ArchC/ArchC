@@ -2484,13 +2484,10 @@ void CreateArchImpl() {
                 // It is an ac_cache object.
                 fprintf(output, "%s%s(%s_mport,globalId)", INDENT[1],
                         pstorage->name, pstorage->higher->name);
-
-                if (HaveMemHier && pstorage->level == 0) {
-                    fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name,
-                            pstorage->name);
-                    fprintf(output, ",\n%s%s_mport(*this, %s_if)", INDENT[1],
-                            pstorage->name, pstorage->name);
-                }
+                fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name,
+                        pstorage->name);
+                fprintf(output, ",\n%s%s_mport(*this, %s_if)", INDENT[1],
+                        pstorage->name, pstorage->name);
             }
             break;
 
