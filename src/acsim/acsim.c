@@ -737,18 +737,15 @@ void CreateArchHeader() {
                 fprintf(output, "%s%s %s;\n", INDENT[1],
                         pstorage->class_declaration, pstorage->name);
 
-                if (pstorage->level == 0) {
-                    fprintf(output, "%sac_cache_if<%s_parms::ac_word, "
-                                    "%s_parms::ac_Hword, %s >"
-                                    " %s_if;\n",
-                            INDENT[1], project_name, project_name,
-                            pstorage->class_declaration, pstorage->name);
-                    fprintf(
-                        output,
+                fprintf(output, "%sac_cache_if<%s_parms::ac_word, "
+                                "%s_parms::ac_Hword, %s >"
+                                " %s_if;\n",
+                        INDENT[1], project_name, project_name,
+                        pstorage->class_declaration, pstorage->name);
+                fprintf(output,
                         "%sac_memport<%s_parms::ac_word, %s_parms::ac_Hword> "
                         "%s_mport;\n",
                         INDENT[1], project_name, project_name, pstorage->name);
-                }
             }
             break;
 
