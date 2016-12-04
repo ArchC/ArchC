@@ -4576,7 +4576,7 @@ void ParseCache(ac_sto_list *cache_in) {
     extern char *project_name;
     struct CacheObject *cache_out;
     if (cache_in->cache_object != NULL)
-        abort();
+        free(cache_in->cache_object);
 
     // Let the OS free this in the end
     cache_in->cache_object = malloc(sizeof(struct CacheObject));
@@ -4695,13 +4695,18 @@ void CacheClassDeclaration(ac_sto_list * storage)
         }
     }
     storage->class_declaration = malloc(s);
-    int r = snprintf(storage->class_declaration, s,
-         "%s<%d, %d, %d, %s_parms::ac_word, %s, %s>", CacheName[cache->type],
-         cache->block_count / cache->associativity, cache->block_size,
-         cache->associativity, project_name, storage->higher->class_declaration,
-         ReplacementPolicyName[cache->replacement_policy]);
+
+    // FIXME: Can I set "ac_memport" directly here instead of
+    // cache->higher->class_declaration?
+    int r = snprintf(
+        storage->class_declaration, s, "%s<%d, %d, %d, %s_parms::ac_word, "
+                                       "ac_memport<mips_parms::ac_word, "
+                                       "mips_parms::ac_Hword>, %s>",
+        CacheName[cache->type], cache->block_count / cache->associativity,
+        cache->block_size, cache->associativity, project_name,
+        ReplacementPolicyName[cache->replacement_policy]);
     if (r >= s)
-  abort();
+        abort();
 }
 
 void EnumerateCaches() {
