@@ -2400,28 +2400,28 @@ void CreateProcessorImpl() {
     free(filename);
 }
 
-
 /** Creates the _arch.cpp Implementation File. */
 void CreateArchImpl() {
     extern ac_sto_list *storage_list, *fetch_device, *first_level_data_device;
-    extern int HaveMemHier, HaveTLMPorts, HaveTLM2IntrPorts, HaveTLM2Ports, HaveTLM2NBPorts, HaveTLM2IntrPorts;
-    extern ac_sto_list* load_device;
+    extern int HaveMemHier, HaveTLMPorts, HaveTLM2IntrPorts, HaveTLM2Ports,
+        HaveTLM2NBPorts, HaveTLM2IntrPorts;
+    extern ac_sto_list *load_device;
     extern char *project_name;
-    ac_sto_list *pstorage; 
+    ac_sto_list *pstorage;
     FILE *output;
     char filename[256];
 
     sprintf(filename, "%s_arch.cpp", project_name);
 
-    load_device= storage_list;
-    if ( !(output = fopen( filename, "w"))){
+    load_device = storage_list;
+    if (!(output = fopen(filename, "w"))) {
         perror("ArchC could not open output file");
         exit(1);
     }
 
-    print_comment( output, "ArchC Resources Implementation file.");
+    print_comment(output, "ArchC Resources Implementation file.");
 
-    fprintf( output, "#include \"%s_arch.H\"\n\n", project_name);
+    fprintf(output, "#include \"%s_arch.H\"\n\n", project_name);
 
     if (HaveMemHier) {
         fprintf(output, "#include \"ac_cache_if.H\"\n");
@@ -2430,9 +2430,10 @@ void CreateArchImpl() {
     fprintf(output, "\n");
 
     /* Emitting Constructor */
-    fprintf(output, "%s%s_arch::%s_arch() :\n", 
-            INDENT[0], project_name, project_name);
-    fprintf(output, "%sac_arch_dec_if<%s_parms::ac_word, %s_parms::ac_Hword>(%s_parms::AC_MAX_BUFFER),\n", 
+    fprintf(output, "%s%s_arch::%s_arch() :\n", INDENT[0], project_name,
+            project_name);
+    fprintf(output, "%sac_arch_dec_if<%s_parms::ac_word, "
+                    "%s_parms::ac_Hword>(%s_parms::AC_MAX_BUFFER),\n",
             INDENT[1], project_name, project_name, project_name);
 
     /* Constructing ac_pc */
@@ -2442,122 +2443,140 @@ void CreateArchImpl() {
     }
     fprintf(output, "),\n");
 
-    for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-        switch( pstorage->type ){
-            case REG:
-                //Formatted registers have a special class.
-                if (pstorage->format != NULL)
-                    fprintf(output, "%s%s(\"%s\"", 
-                            INDENT[1], pstorage->name, pstorage->name);
-                else
-                    fprintf(output, "%s%s(\"%s\", 0", 
-                            INDENT[1], pstorage->name, pstorage->name);
+    for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
+        switch (pstorage->type) {
+        case REG:
+            // Formatted registers have a special class.
+            if (pstorage->format != NULL)
+                fprintf(output, "%s%s(\"%s\"", INDENT[1], pstorage->name,
+                        pstorage->name);
+            else
+                fprintf(output, "%s%s(\"%s\", 0", INDENT[1], pstorage->name,
+                        pstorage->name);
 
-                if (ACDelayFlag) 
-                    fprintf(output, ", time_step");
+            if (ACDelayFlag)
+                fprintf(output, ", time_step");
 
-                fprintf(output, ")");
-                break;
+            fprintf(output, ")");
+            break;
 
-            case REGBANK:
-                //Emitting register bank. Checking is a register width was declared.
-                fprintf( output, "%s%s(\"%s\"", INDENT[1], pstorage->name, pstorage->name);
-                if (ACDelayFlag)
-                    fprintf(output, ", time_step");
+        case REGBANK:
+            // Emitting register bank. Checking is a register width was
+            // declared.
+            fprintf(output, "%s%s(\"%s\"", INDENT[1], pstorage->name,
+                    pstorage->name);
+            if (ACDelayFlag)
+                fprintf(output, ", time_step");
 
-                fprintf(output, ")");
-                break;
+            fprintf(output, ")");
+            break;
 
-            case CACHE:
-            case ICACHE:
-            case DCACHE:
-                if (!pstorage->parms) { //It is a generic cache. Just emit a base container object.
-                    fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
-                            pstorage->name, pstorage->size);
-                    fprintf(output, "%s%s(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-                } else {
-                    //It is an ac_cache object.
-                    fprintf(output, "%s%s(%s_mport,globalId)", INDENT[1], pstorage->name, pstorage->higher->name);
-
-                    if (HaveMemHier && pstorage->level == 0) {
-                        fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name, pstorage->name);
-                        fprintf(output, ",\n%s%s_mport(*this, %s_if)", INDENT[1], pstorage->name,
-                                pstorage->name);
-                    }
-                }
-                break;
-
-            case MEM:
+        case CACHE:
+        case ICACHE:
+        case DCACHE:
+            if (!pstorage->parms) { // It is a generic cache. Just emit a base
+                                    // container object.
                 fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1],
                         pstorage->name, pstorage->name, pstorage->size);
-                fprintf(output, "%s%s_mport(*this, %s)", INDENT[1],
-                        pstorage->name, pstorage->name);
-                break;
+                fprintf(output, "%s%s(*this, %s)", INDENT[1], pstorage->name,
+                        pstorage->name);
+            } else {
+                // It is an ac_cache object.
+                fprintf(output, "%s%s(%s_mport,globalId)", INDENT[1],
+                        pstorage->name, pstorage->higher->name);
 
-            case TLM_PORT:
-                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-                break;
+                if (HaveMemHier && pstorage->level == 0) {
+                    fprintf(output, ",\n%s%s_if(%s)", INDENT[1], pstorage->name,
+                            pstorage->name);
+                    fprintf(output, ",\n%s%s_mport(*this, %s_if)", INDENT[1],
+                            pstorage->name, pstorage->name);
+                }
+            }
+            break;
 
-            case TLM2_PORT:
-                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-                break;
+        case MEM:
+            fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
+                    pstorage->name, pstorage->size);
+            fprintf(output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name,
+                    pstorage->name);
+            break;
 
-            case TLM2_NB_PORT:
-                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-                break;
+        case TLM_PORT:
+            fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
+                    pstorage->name, pstorage->size);
+            fprintf(output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name,
+                    pstorage->name);
+            break;
 
+        case TLM2_PORT:
+            fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
+                    pstorage->name, pstorage->size);
+            fprintf(output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name,
+                    pstorage->name);
+            break;
 
-            default:
-                fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name, pstorage->name, pstorage->size);
-                fprintf( output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name, pstorage->name);
-                break;
+        case TLM2_NB_PORT:
+            fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
+                    pstorage->name, pstorage->size);
+            fprintf(output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name,
+                    pstorage->name);
+            break;
+
+        default:
+            fprintf(output, "%s%s(\"%s\", %uU),\n", INDENT[1], pstorage->name,
+                    pstorage->name, pstorage->size);
+            fprintf(output, "%s%s_mport(*this, %s)", INDENT[1], pstorage->name,
+                    pstorage->name);
+            break;
         }
         if (pstorage->next != NULL)
             fprintf(output, ",\n");
     }
 
     if (HaveTLMIntrPorts || HaveTLM2IntrPorts) {
-        fprintf( output, "\n%s,intr_reg(\"instr_reg\",1)",INDENT[1]);
+        fprintf(output, "\n%s,intr_reg(\"instr_reg\",1)", INDENT[1]);
     }
 
     /* opening constructor body */
     fprintf(output, " {\n\n");
 
     /* setting endianness match */
-    fprintf(output, "%sac_mt_endian = %s_parms::AC_MATCH_ENDIAN;\n", 
-            INDENT[1], project_name);
+    fprintf(output, "%sac_mt_endian = %s_parms::AC_MATCH_ENDIAN;\n", INDENT[1],
+            project_name);
 
     /* setting target endianness */
-    fprintf(output, "%sac_tgt_endian = %s_parms::AC_PROC_ENDIAN;\n\n", 
+    fprintf(output, "%sac_tgt_endian = %s_parms::AC_PROC_ENDIAN;\n\n",
             INDENT[1], project_name);
 
     /* Determining which device is gonna be used for fetching instructions */
-    if( !fetch_device ){
-        //The parser has not determined because there is not an ac_icache obj declared.
-        //In this case, look for the object with the lowest (zero) hierarchy level.
-        for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next)
-            if( pstorage->level == 0 && pstorage->type != REG && 
-                    pstorage->type != REGBANK && pstorage->type != TLM_INTR_PORT && pstorage->type != TLM2_INTR_PORT )
+    if (!fetch_device) {
+        // The parser has not determined because there is not an ac_icache obj
+        // declared.
+        // In this case, look for the object with the lowest (zero) hierarchy
+        // level.
+        for (pstorage = storage_list; pstorage != NULL;
+             pstorage = pstorage->next)
+            if (pstorage->level == 0 && pstorage->type != REG &&
+                pstorage->type != REGBANK && pstorage->type != TLM_INTR_PORT &&
+                pstorage->type != TLM2_INTR_PORT)
                 fetch_device = pstorage;
 
-        if( !fetch_device ) { //Couldn't find a fetch device. Error!
+        if (!fetch_device) { // Couldn't find a fetch device. Error!
             AC_INTERNAL_ERROR("Could not determine a device for fetching.");
             exit(1);
         }
     }
 
-    fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1], fetch_device->name);
+    fprintf(output, "%sINST_PORT = &%s_mport;\n", INDENT[1],
+            fetch_device->name);
 
-    fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1], first_level_data_device->name);
+    fprintf(output, "%sDATA_PORT = &%s_mport;\n", INDENT[1],
+            first_level_data_device->name);
 
-    fprintf( output, "}\n\n");
+    fprintf(output, "}\n\n");
 
-    fprintf( output, "int %s_arch::globalId = 0;", project_name);
+    fprintf(output, "int %s_arch::globalId = 0;", project_name);
 }
-
 
 /*!Create the template for the .cpp file where the user has
   the basic code for the main function. */
