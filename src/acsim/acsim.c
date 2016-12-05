@@ -4716,11 +4716,11 @@ void CacheClassDeclaration(ac_sto_list * storage)
     // cache->higher->class_declaration?
     int r = snprintf(
         storage->class_declaration, s, "%s<%d, %d, %d, %s_parms::ac_word, "
-                                       "ac_memport<mips_parms::ac_word, "
-                                       "mips_parms::ac_Hword>, %s>",
+                                       "ac_memport<%s_parms::ac_word, "
+                                       "%s_parms::ac_Hword>, %s>",
         CacheName[cache->type], cache->block_count / cache->associativity,
-        cache->block_size, cache->associativity, project_name,
-        ReplacementPolicyName[cache->replacement_policy]);
+        cache->block_size, cache->associativity, project_name, project_name,
+        project_name, ReplacementPolicyName[cache->replacement_policy]);
     if (r >= s)
         abort();
 }
