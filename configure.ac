@@ -45,7 +45,7 @@ case "$host" in
     TARGET_ARCH="linux"
     ;;
   *darwin*)
-    TARGET_ARCH="macosx"
+    TARGET_ARCH="macosx64"
     ;;
 esac
 
@@ -69,7 +69,10 @@ AC_ARG_WITH(systemc,
 		EXPORT_SYSTEMC_LIB="$SYSTEMC/lib-$TARGET_ARCH"
 		AS_IF([test ! -e "$EXPORT_SYSTEMC_LIB/libsystemc.so" ],
 			[
-			AC_MSG_ERROR([systemc not found at $SYSTEMC. Exiting...])
+			AS_IF([test ! -e "$EXPORT_SYSTEMC_LIB/libsystemc.dylib" ],
+			    [
+ 			    AC_MSG_ERROR([systemc not found at $SYSTEMC. Exiting...])
+ 			    ])
 			])
 		])
 	EXPORT_SYSTEMC_PKG="EXPORT_SYSTEMC_LIB/pkgconfig"
@@ -184,18 +187,18 @@ AS_IF([test -z "$BISON"], [AC_MSG_ERROR([bison not found, please install bison p
 # Configuration files
 AC_CONFIG_FILES(
 [
-  Makefile 
-  Doxyfile 
-  src/Makefile 
-  src/replace/Makefile 
-  src/acpp/Makefile 
-  src/aclib/Makefile 
-  src/aclib/ac_core/Makefile 
-  src/aclib/ac_decoder/Makefile 
-  src/aclib/ac_gdb/Makefile 
+  Makefile
+  Doxyfile
+  src/Makefile
+  src/replace/Makefile
+  src/acpp/Makefile
+  src/aclib/Makefile
+  src/aclib/ac_core/Makefile
+  src/aclib/ac_decoder/Makefile
+  src/aclib/ac_gdb/Makefile
   src/aclib/ac_rtld/Makefile
-  src/aclib/ac_storage/Makefile 
-  src/aclib/ac_cache/Makefile 
+  src/aclib/ac_storage/Makefile
+  src/aclib/ac_cache/Makefile
   src/aclib/ac_stats/Makefile
   src/aclib/ac_syscall/Makefile
   src/aclib/ac_tlm/Makefile
