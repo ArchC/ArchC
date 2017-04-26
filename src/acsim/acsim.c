@@ -20,19 +20,19 @@
  *            simulator.
  *
  * @attention Copyright (C) 2002-2006 --- The ArchC Team
- * 
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or 
- * (at your option) any later version. 
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
- * GNU General Public License for more details. 
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
@@ -54,7 +54,7 @@
 #define HLT_HEADER "ac_hltrace.H"
 #else
 
-// if ArchC configured with --disable-hlt 
+// if ArchC configured with --disable-hlt
 #define HLT_OBJ
 #define HLT_HEADER
 #endif
@@ -160,7 +160,7 @@ static void DisplayHelp (){
   printf ("Options:\n");
 
   for( i=0; i< ACNumberOfOptions; i++)
-    printf ("    %-18s, %-7s %s\n", option_map[i].name, 
+    printf ("    %-18s, %-7s %s\n", option_map[i].name,
             option_map[i].equivalent, option_map[i].arg_desc);
 
   printf ("\nFor more information please visit www.archc.org\n\n");
@@ -226,11 +226,11 @@ int main(int argc, char** argv) {
   extern char *project_name, *isa_filename;
   extern int wordsize;
   extern int fetchsize;
-  
+
   // Structures to be passed to the decoder generator
   extern ac_dec_format *format_ins_list;
   extern ac_dec_instr *instr_list;
-  
+
   // Structures to be passed to the simulator generator
   extern ac_stg_list *stage_list;
   extern ac_pipe_list *pipe_list;
@@ -289,12 +289,12 @@ int main(int argc, char** argv) {
     /* Handling command line options */
     for(j = 0; j < argn; j++) {
       /* Searching option map.*/
-      
+
       for(i = 0; i < ACNumberOfOptions; i++) {
-        if( (!strcmp(argv[0], option_map[i].name)) || 
+        if( (!strcmp(argv[0], option_map[i].name)) ||
             (!strcmp(argv[0], option_map[i].equivalent))){
 
-            
+
           switch (i) {
             case OPABI:
               ACABIFlag = 1;
@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
     AC_ERROR("Invalid argument %s.\n", argv[0]);
     return EXIT_FAILURE;
   }
-  
+
   if ( !ACDecCacheFlag ) ACFullDecode = 0;
 
   //Loading Configuration Variables
@@ -410,7 +410,7 @@ int main(int argc, char** argv) {
   /* Opening ISA File */
   if(isa_filename == NULL)
     AC_ERROR("No ISA file defined");
-  
+
   if( !acppLoad(isa_filename)){
     AC_ERROR("Could not open ISA input file: %s", isa_filename);
     AC_ERROR("Parser terminated unsuccessfully.\n");
@@ -434,7 +434,7 @@ int main(int argc, char** argv) {
   }
 
   if( fetchsize == 0){
-    AC_MSG("Warning: No fetchsize defined. Default is to be equal to wordsize (%d).\n", 
+    AC_MSG("Warning: No fetchsize defined. Default is to be equal to wordsize (%d).\n",
            wordsize);
     fetchsize = wordsize;
   }
@@ -453,7 +453,7 @@ int main(int argc, char** argv) {
 
   ac_match_endian = (ac_host_endian == ac_tgt_endian);
 
-  //If target is little endian, invert the order of fields in each format. 
+  //If target is little endian, invert the order of fields in each format.
   //This is the way the little endian decoder expects format fields.
   if (ac_tgt_endian == 0)
     invert_fields(format_ins_list);
@@ -499,7 +499,7 @@ int main(int argc, char** argv) {
     AC_MSG("Warning: stage_list is no more used by acsim.\n");
   if( pipe_list )  //Pipeline list exist.
     AC_MSG("Warning: pipe_list is no more used by acsim.\n");
-  
+
   //Creating Processor Files
   CreateProcessorHeader();
   CreateProcessorImpl();
@@ -521,7 +521,7 @@ int main(int argc, char** argv) {
     CreateIntrTLM2Tmpl();
   }
 
-  
+
   //Creating Simulation Statistics class header file.
   if (ACStatsFlag) {
     CreateStatsHeaderTmpl();
@@ -548,7 +548,7 @@ int main(int argc, char** argv) {
 
   //Issuing final messages to the user.
   AC_MSG("%s model files generated.\n", project_name);
-    
+
   return 0;
 }
 
@@ -637,6 +637,9 @@ void CreateArchHeader() {
     /* Declaring Program Counter */
     COMMENT(INDENT[1], "Program Counter.");
     fprintf(output, "%sac_reg<unsigned> ac_pc;\n\n", INDENT[1]);
+    /* Declaring Processor Id */
+    COMMENT(INDENT[1], "Processor id.");
+    fprintf(output, "%sac_reg<unsigned> ac_id;\n\n", INDENT[1]);
 
     /* Declaring storage devices */
     COMMENT(INDENT[1], "Storage Devices.");
@@ -817,7 +820,7 @@ void CreateArchHeader() {
     fprintf(output, "%svirtual ~%s_arch() {};\n\n", INDENT[1], project_name);
 
     fprintf(output, "%sstatic int globalId;\n", INDENT[1]);
-    fprintf(output, "%sint getId() { return id.read(); }\n", INDENT[1]);
+    fprintf(output, "%sint getId() { return ac_id.read(); }\n", INDENT[1]);
 
     fprintf(output, "};\n\n"); // End of ac_resources class
 
@@ -862,7 +865,7 @@ void CreateArchRefHeader() {
     if (HaveTLM2IntrPorts)
         fprintf(output, "#include  \"ac_tlm2_intr_port.H\"\n");
 
-    fprintf(output, "\n");   
+    fprintf(output, "\n");
 
 
     if (HaveMemHier) {
@@ -888,6 +891,10 @@ void CreateArchRefHeader() {
     COMMENT(INDENT[1], "Program Counter.");
     fprintf(output, "%sac_reg<unsigned>& ac_pc;\n\n", INDENT[1]);
 
+    /* Declaring Processor Id */
+    COMMENT(INDENT[1], "Processor Id.");
+    fprintf(output, "%sac_reg<unsigned>& ac_id;\n\n", INDENT[1]);
+
     /* Declaring storage devices */
     COMMENT(INDENT[1],"Storage Devices.");
     for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
@@ -900,31 +907,31 @@ void CreateArchRefHeader() {
                 else{
                     switch((unsigned)(pstorage->width)) {
                         case 0:
-                            fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n", 
+                            fprintf( output, "%sac_reg<%s_parms::ac_word>& %s;\n",
                                     INDENT[1], project_name, pstorage->name);
                             break;
                         case 1:
-                            fprintf( output, "%sac_reg<bool>& %s;\n", 
+                            fprintf( output, "%sac_reg<bool>& %s;\n",
                                     INDENT[1], pstorage->name);
                             break;
                         case 8:
-                            fprintf( output, "%sac_reg<unsigned char>& %s;\n", 
+                            fprintf( output, "%sac_reg<unsigned char>& %s;\n",
                                     INDENT[1], pstorage->name);
                             break;
                         case 16:
-                            fprintf( output, "%sac_reg<unsigned short>& %s;\n", 
+                            fprintf( output, "%sac_reg<unsigned short>& %s;\n",
                                     INDENT[1], pstorage->name);
                             break;
                         case 32:
-                            fprintf( output, "%sac_reg<unsigned long>& %s;\n", 
+                            fprintf( output, "%sac_reg<unsigned long>& %s;\n",
                                     INDENT[1], pstorage->name);
                             break;
                         case 64:
-                            fprintf( output, "%sac_reg<unsigned long long>& %s;\n", 
+                            fprintf( output, "%sac_reg<unsigned long long>& %s;\n",
                                     INDENT[1], pstorage->name);
                             break;
                         default:
-                            AC_ERROR("Register width not supported: %d\n", 
+                            AC_ERROR("Register width not supported: %d\n",
                                     pstorage->width);
                             break;
                     }
@@ -935,28 +942,28 @@ void CreateArchRefHeader() {
                 //Emitting register bank. Checking is a register width was declared.
                 switch((unsigned)(pstorage->width)) {
                     case 0:
-                        fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n", 
-                                INDENT[1], pstorage->size, project_name, 
+                        fprintf( output, "%sac_regbank<%d, %s_parms::ac_word, %s_parms::ac_Dword>& %s;\n",
+                                INDENT[1], pstorage->size, project_name,
                                 project_name, pstorage->name);
                         break;
                     case 8:
-                        fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n", 
+                        fprintf( output, "%sac_regbank<%d, unsigned char, unsigned char>& %s;\n",
                                 INDENT[1], pstorage->size, pstorage->name);
                         break;
                     case 16:
-                        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n", 
+                        fprintf( output, "%sac_regbank<%d, unsigned short, unsigned long>& %s;\n",
                                 INDENT[1], pstorage->size, pstorage->name);
                         break;
                     case 32:
-                        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n", 
+                        fprintf( output, "%sac_regbank<%d, unsigned long, unsigned long long>& %s;\n",
                                 INDENT[1], pstorage->size, pstorage->name);
                         break;
                     case 64:
-                        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n", 
+                        fprintf( output, "%sac_regbank<%d, unsigned long long, unsigned long long>& %s;\n",
                                 INDENT[1], pstorage->size, pstorage->name);
                         break;
                     default:
-                        AC_ERROR("Register width not supported: %d\n", 
+                        AC_ERROR("Register width not supported: %d\n",
                                 pstorage->width);
                         break;
                 }
@@ -975,7 +982,7 @@ void CreateArchRefHeader() {
         }
     }
 
-    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+    if (HaveTLMIntrPorts || HaveTLM2IntrPorts)
         fprintf( output, "%sac_reg<%s_parms::ac_word>& intr_reg;\n",INDENT[1], project_name);
 
     fprintf(output, "\n");
@@ -1018,21 +1025,21 @@ void CreateArchRefImpl() {
     fprintf(output, "%s_arch_ref::%s_arch_ref(%s_arch& arch) : ac_arch_ref<%s_parms::ac_word, %s_parms::ac_Hword>(arch),\n",
             project_name, project_name, project_name, project_name, project_name);
 
-    fprintf(output, "%sac_pc(arch.ac_pc),\n", INDENT[1]);
+    fprintf(output, "%sac_pc(arch.ac_pc), ac_id(arch.ac_id),\n", INDENT[1]);
 
     /* Declaring storage devices */
     for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
-        if ( pstorage->has_memport ) 
+        if ( pstorage->has_memport )
             fprintf(output, "%s%s(arch.%s_mport)", INDENT[1], pstorage->name, pstorage->name);
         else
             fprintf(output, "%s%s(arch.%s)", INDENT[1], pstorage->name, pstorage->name);
-    
+
         if (pstorage->next != NULL) {
             fprintf(output, ", ");
         }
     }
 
-    if (HaveTLMIntrPorts || HaveTLM2IntrPorts) 
+    if (HaveTLMIntrPorts || HaveTLM2IntrPorts)
         fprintf(output, ", intr_reg(arch.intr_reg) ");
 
     fprintf(output, " {}\n\n");
@@ -1073,7 +1080,7 @@ void CreateParmHeader() {
     fprintf( output, "#define  AC_UPDATE_LOG \t //!< Update log generation turned on.\n");
     fprintf( output, "#define  AC_VERBOSE \t //!< Indicates Verbose mode. Where update logs are dumped on screen.\n");
   }
-  
+
   if( ACDebugFlag )
     fprintf( output, "#define  AC_DEBUG \t //!< Indicates that debug option is turned on.\n\n");
 
@@ -1088,34 +1095,34 @@ void CreateParmHeader() {
 
   if( HaveCycleRange )
     fprintf( output, "#define  AC_CYCLE_RANGE \t //!< Indicates that cycle range for instructions were declared.\n\n");
-  
+
   if( ACLongJmpStop || ACThreading )
     fprintf( output, "#define  AC_ACTION_STOP 2\t //!< Indicates action value to stop used by longjmp.\n\n");
-  
+
   /* parms namespace definition */
   fprintf(output, "namespace %s_parms {\n\n", project_name);
 
-  fprintf( output, "\nstatic const unsigned int AC_DEC_FIELD_NUMBER = %d; \t //!< Number of Fields used by decoder.\n", 
+  fprintf( output, "\nstatic const unsigned int AC_DEC_FIELD_NUMBER = %d; \t //!< Number of Fields used by decoder.\n",
            decoder->nFields);
-  fprintf( output, "static const unsigned int AC_DEC_INSTR_NUMBER = %d; \t //!< Number of Instructions declared.\n", 
+  fprintf( output, "static const unsigned int AC_DEC_INSTR_NUMBER = %d; \t //!< Number of Instructions declared.\n",
            instr_num);
-  fprintf( output, "static const unsigned int AC_DEC_FORMAT_NUMBER = %d; \t //!< Number of Formats declared.\n", 
+  fprintf( output, "static const unsigned int AC_DEC_FORMAT_NUMBER = %d; \t //!< Number of Formats declared.\n",
            format_num);
-  fprintf( output, "static const unsigned int AC_DEC_LIST_NUMBER = %d; \t //!< Number of decodification lists used by decoder.\n", 
+  fprintf( output, "static const unsigned int AC_DEC_LIST_NUMBER = %d; \t //!< Number of decodification lists used by decoder.\n",
            declist_num);
-  fprintf( output, "static const unsigned int AC_MAX_BUFFER = %d; \t //!< This is the size needed by decoder buffer. It is equal to the biggest instruction size.\n", 
+  fprintf( output, "static const unsigned int AC_MAX_BUFFER = %d; \t //!< This is the size needed by decoder buffer. It is equal to the biggest instruction size.\n",
            largest_format_size/8);
-  fprintf( output, "static const unsigned int AC_WORDSIZE = %d; \t //!< Architecture wordsize in bits.\n", 
+  fprintf( output, "static const unsigned int AC_WORDSIZE = %d; \t //!< Architecture wordsize in bits.\n",
            wordsize);
-  fprintf( output, "static const unsigned int AC_FETCHSIZE = %d; \t //!< Architecture fetchsize in bits.\n", 
+  fprintf( output, "static const unsigned int AC_FETCHSIZE = %d; \t //!< Architecture fetchsize in bits.\n",
            fetchsize);
-  fprintf( output, "static const unsigned int AC_MATCH_ENDIAN = %d; \t //!< If the simulated arch match the endian with host.\n", 
+  fprintf( output, "static const unsigned int AC_MATCH_ENDIAN = %d; \t //!< If the simulated arch match the endian with host.\n",
            ac_match_endian);
-  fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n", 
+  fprintf( output, "static const unsigned int AC_PROC_ENDIAN = %d; \t //!< The simulated arch is big endian?\n",
            ac_tgt_endian);
-  fprintf( output, "static const unsigned int AC_RAMSIZE = %uU; \t //!< Architecture RAM size in bytes (storage %s).\n", 
+  fprintf( output, "static const unsigned int AC_RAMSIZE = %uU; \t //!< Architecture RAM size in bytes (storage %s).\n",
            load_device->size, load_device->name);
-  fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n", 
+  fprintf( output, "static const unsigned int AC_RAM_END = %uU; \t //!< Architecture end of RAM (storage %s).\n",
            load_device->size, load_device->name);
 
   fprintf( output, "\n\n");
@@ -1168,7 +1175,7 @@ void CreateParmHeader() {
       AC_ERROR("Wordsize not supported: %d\n", wordsize);
       break;
   }
-      
+
   fprintf( output, "typedef  char ac_byte; \t //!< Signed byte word.\n");
   fprintf( output, "typedef  unsigned char ac_Ubyte; \t //!< Unsigned byte word.\n");
 
@@ -1197,7 +1204,7 @@ void CreateParmHeader() {
   //This enum type is used for case identification inside the ac_behavior methods
   fprintf( output, "enum ac_stage_list {");
   fprintf( output, "ST0");
-  
+
   //Closing enum declaration
   fprintf( output, "};\n\n");
 
@@ -1207,7 +1214,7 @@ void CreateParmHeader() {
   //Create a compiler error if delay assignment is used without the -dy option
   COMMENT(INDENT[0],"Create a compiler error if delay assignment is used without the -dy option");
   fprintf( output, "#ifndef AC_DELAY\n");
-  fprintf( output, "extern %s_parms::ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n", 
+  fprintf( output, "extern %s_parms::ac_word ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___;\n",
            project_name);
   fprintf( output, "#define delay(a,b) ArchC_ERROR___PLEASE_USE_OPTION_DELAY_WHEN_CREATING_SIMULATOR___\n");
   fprintf( output, "#endif\n\n\n");
@@ -1275,17 +1282,17 @@ void CreateISAHeader() {
   fprintf(output, "\n");
 
   fprintf(output, "public:\n");
-  fprintf(output, "%sstatic ac_dec_field fields[AC_DEC_FIELD_NUMBER];\n", 
+  fprintf(output, "%sstatic ac_dec_field fields[AC_DEC_FIELD_NUMBER];\n",
           INDENT[1]);
-  fprintf(output, "%sstatic ac_dec_format formats[AC_DEC_FORMAT_NUMBER];\n", 
+  fprintf(output, "%sstatic ac_dec_format formats[AC_DEC_FORMAT_NUMBER];\n",
           INDENT[1]);
-  fprintf(output, "%sstatic ac_dec_list dec_list[AC_DEC_LIST_NUMBER];\n", 
+  fprintf(output, "%sstatic ac_dec_list dec_list[AC_DEC_LIST_NUMBER];\n",
           INDENT[1]);
-  fprintf(output, "%sstatic ac_dec_instr instructions[AC_DEC_INSTR_NUMBER];\n", 
+  fprintf(output, "%sstatic ac_dec_instr instructions[AC_DEC_INSTR_NUMBER];\n",
           INDENT[1]);
-  fprintf(output, "%sstatic const ac_instr_info instr_table[AC_DEC_INSTR_NUMBER + 1];\n\n", 
+  fprintf(output, "%sstatic const ac_instr_info instr_table[AC_DEC_INSTR_NUMBER + 1];\n\n",
           INDENT[1]);
-  fprintf(output, "%sstatic const unsigned instr_format_table[AC_DEC_INSTR_NUMBER + 1];\n\n", 
+  fprintf(output, "%sstatic const unsigned instr_format_table[AC_DEC_INSTR_NUMBER + 1];\n\n",
           INDENT[1]);
 
   fprintf( output, "%sac_decoder_full* decoder;\n\n", INDENT[1]);
@@ -1295,7 +1302,7 @@ void CreateISAHeader() {
   /* current instruction ID */
   if ( ACCurInstrID )
     fprintf(output, "%sint cur_instr_id;\n\n", INDENT[1]);
-  
+
   /* ac_helper */
   if (helper_contents)
   {
@@ -1312,7 +1319,7 @@ void CreateISAHeader() {
   fprintf( output," {\n");
 
   COMMENT(INDENT[2], "Building Decoder.");
-  fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n", 
+  fprintf( output,"%sdecoder = ac_decoder_full::CreateDecoder(%s_isa::formats, %s_isa::instructions, &ref);\n",
            INDENT[2], project_name, project_name );
 
   /* Closing constructor declaration. */
@@ -1320,39 +1327,39 @@ void CreateISAHeader() {
 
   if ( ACCurInstrID ) {
     /* getter methods for current instruction */
-    fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n", 
+    fprintf(output, "%sinline const char* get_name() { return instr_table[cur_instr_id].ac_instr_name; }\n",
             INDENT[1]);
-    fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n", 
+    fprintf(output, "%sinline const char* get_mnemonic() { return instr_table[cur_instr_id].ac_instr_mnemonic; }\n",
             INDENT[1]);
-    fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n", 
+    fprintf(output, "%sinline unsigned get_size() { return instr_table[cur_instr_id].ac_instr_size; };\n",
             INDENT[1]);
-    fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n", 
+    fprintf(output, "%sinline unsigned get_cycles() { return instr_table[cur_instr_id].ac_instr_cycles; };\n",
             INDENT[1]);
-    fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n", 
+    fprintf(output, "%sinline unsigned get_min_latency() { return instr_table[cur_instr_id].ac_instr_min_latency; };\n",
             INDENT[1]);
-    fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n", 
+    fprintf(output, "%sinline unsigned get_max_latency() { return instr_table[cur_instr_id].ac_instr_max_latency; };\n\n",
             INDENT[1]);
-  
+
     // Group query methods.
     for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next)
     {
       fprintf(output, "%sinline const bool belongs_to_%s()\n%s{\n",
               INDENT[2], pgroup->name, INDENT[2]);
-      fprintf(output, "%sreturn group_%s[cur_instr_id];\n%s}\n", 
+      fprintf(output, "%sreturn group_%s[cur_instr_id];\n%s}\n",
               INDENT[3], pgroup->name, INDENT[2]);
       fprintf(output, "\n");
     }
   }
-  
+
   //Turn-on or off Forced Inline in Interpretation Routines
   char finline[64] = "";
   if (ACForcedInline)
     strcpy(finline, "inline __attribute__((always_inline)) ");
-  
+
   /* Instruction Behavior Method declarations */
   /* instruction */
   fprintf(output, "%s%svoid _behavior_instruction(", INDENT[1], finline);
-  
+
   /* common_instr_field_list has the list of fields for the generic instruction. */
   for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
     if (!pfield->sign) fprintf(output, "u");
@@ -1361,9 +1368,9 @@ void CreateISAHeader() {
     else if (pfield->size < 17) fprintf(output, "int16_t");
     else if (pfield->size < 33) fprintf(output, "int32_t");
     else fprintf(output, "int64_t");
-    
+
     fprintf(output, " %s", pfield->name);
-    
+
     if (pfield->next != NULL)
       fprintf(output, ", ");
   }
@@ -1375,7 +1382,7 @@ void CreateISAHeader() {
 
   /* types/formats */
   for (pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "%s%svoid _behavior_%s_%s(", INDENT[1], finline, 
+    fprintf(output, "%s%svoid _behavior_%s_%s(", INDENT[1], finline,
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       if (!pfield->sign) fprintf(output, "u");
@@ -1384,9 +1391,9 @@ void CreateISAHeader() {
       else if (pfield->size < 17) fprintf(output, "int16_t");
       else if (pfield->size < 33) fprintf(output, "int32_t");
       else fprintf(output, "int64_t");
-      
+
       fprintf(output, " %s", pfield->name);
-      
+
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1407,9 +1414,9 @@ void CreateISAHeader() {
       else if (pfield->size < 17) fprintf(output, "int16_t");
       else if (pfield->size < 33) fprintf(output, "int32_t");
       else fprintf(output, "int64_t");
-      
+
       fprintf(output, " %s", pfield->name);
-      
+
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1419,7 +1426,7 @@ void CreateISAHeader() {
 
   /* Closing class declaration. */
   fprintf(output,"};\n");
-  
+
   /* Closing namespace declaration. */
   fprintf(output,"};\n\n");
 
@@ -1438,7 +1445,7 @@ void CreateISAHeader() {
   fprintf( output, "#define _%s_BHV_MACROS_H\n\n", upper_project_name);
 
   /* ac_memory TYPEDEF */
-  fprintf(output, "typedef ac_memport<%s_parms::ac_word, %s_parms::ac_Hword> ac_memory;\n\n", 
+  fprintf(output, "typedef ac_memport<%s_parms::ac_word, %s_parms::ac_Hword> ac_memory;\n\n",
           project_name, project_name);
 
   /* ac_behavior main macro */
@@ -1447,7 +1454,7 @@ void CreateISAHeader() {
   /* ac_behavior 2nd level macros - generic instruction */
   fprintf(output, "#define AC_BEHAVIOR_instruction() %s_parms::%s_isa::_behavior_instruction(",
           project_name, project_name);
-  
+
   /* common_instr_field_list has the list of fields for the generic instruction. */
   for( pfield = common_instr_field_list; pfield != NULL; pfield = pfield->next){
     if (!pfield->sign) fprintf(output, "u");
@@ -1456,26 +1463,26 @@ void CreateISAHeader() {
     else if (pfield->size < 17) fprintf(output, "int16_t");
     else if (pfield->size < 33) fprintf(output, "int32_t");
     else fprintf(output, "int64_t");
-    
+
     fprintf(output, " %s", pfield->name);
-    
+
     if (pfield->next != NULL)
       fprintf(output, ", ");
   }
   fprintf(output, ")\n\n");
 
   /* ac_behavior 2nd level macros - pseudo-instructions begin, end */
-  fprintf(output, "#define AC_BEHAVIOR_begin() %s_parms::%s_isa::_behavior_begin()\n", 
+  fprintf(output, "#define AC_BEHAVIOR_begin() %s_parms::%s_isa::_behavior_begin()\n",
           project_name, project_name);
-  fprintf(output, "#define AC_BEHAVIOR_end() %s_parms::%s_isa::_behavior_end()\n", 
+  fprintf(output, "#define AC_BEHAVIOR_end() %s_parms::%s_isa::_behavior_end()\n",
           project_name, project_name);
 
   fprintf(output, "\n");
 
   /* ac_behavior 2nd level macros - instruction types */
   for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next) {
-    fprintf(output, "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::_behavior_%s_%s(", 
-            pformat->name, project_name, project_name, 
+    fprintf(output, "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::_behavior_%s_%s(",
+            pformat->name, project_name, project_name,
             project_name, pformat->name);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
       if (!pfield->sign) fprintf(output, "u");
@@ -1484,9 +1491,9 @@ void CreateISAHeader() {
       else if (pfield->size < 17) fprintf(output, "int16_t");
       else if (pfield->size < 33) fprintf(output, "int32_t");
       else fprintf(output, "int64_t");
-      
+
       fprintf(output, " %s", pfield->name);
-      
+
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1496,7 +1503,7 @@ void CreateISAHeader() {
 
   /* ac_behavior 2nd level macros - instructions */
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    fprintf(output, "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::behavior_%s(", 
+    fprintf(output, "#define AC_BEHAVIOR_%s() %s_parms::%s_isa::behavior_%s(",
             pinstr->name, project_name, project_name, pinstr->name);
     for (pformat = format_ins_list;
           (pformat != NULL) && strcmp(pinstr->format, pformat->name);
@@ -1508,9 +1515,9 @@ void CreateISAHeader() {
       else if (pfield->size < 17) fprintf(output, "int16_t");
       else if (pfield->size < 33) fprintf(output, "int32_t");
       else fprintf(output, "int64_t");
-      
+
       fprintf(output, " %s", pfield->name);
-      
+
       if (pfield->next != NULL)
         fprintf(output, ", ");
     }
@@ -1528,7 +1535,7 @@ void CreateProcessorHeader() {
   extern char *project_name;
   extern char *upper_project_name;
   extern int HaveTLMIntrPorts, largest_format_size;
-  
+
   extern int HaveTLM2IntrPorts;
   extern ac_sto_list *tlm2_intr_port_list;
 
@@ -1562,12 +1569,12 @@ void CreateProcessorHeader() {
 #endif
   fprintf( output, "#include \"%s_arch.H\"\n", project_name);
   fprintf( output, "#include \"%s_isa.H\"\n", project_name);
-  
+
   // POWER ESTIMATION SUPPORT
 
   if (ACPowerEnable) {
     fprintf( output, "#ifdef POWER_SIM\n");
-    fprintf( output, "#include \"arch_power_stats.H\"\n"); 
+    fprintf( output, "#include \"arch_power_stats.H\"\n");
     fprintf( output, "#endif\n");
   }
 
@@ -1590,10 +1597,10 @@ if (HaveTLM2IntrPorts) {
     fprintf( output, "#include \"ac_gdb.H\"\n");
   }
 
-  fprintf(output, "\n\nclass %s: public ac_module, public %s_arch", 
+  fprintf(output, "\n\nclass %s: public ac_module, public %s_arch",
           project_name, project_name);
   if (ACGDBIntegrationFlag)
-    fprintf(output, ", public AC_GDB_Interface<%s_parms::ac_word>", 
+    fprintf(output, ", public AC_GDB_Interface<%s_parms::ac_word>",
             project_name);
   fprintf(output, " {\n");
 
@@ -1617,9 +1624,9 @@ if (HaveTLM2IntrPorts) {
 
   // POWER ESTIMATION SUPPORT
   if (ACPowerEnable) {
-   
+
     fprintf( output, "#ifdef POWER_SIM\n");
-    fprintf( output, "power_stats ps;\n"); 
+    fprintf( output, "power_stats ps;\n");
     fprintf( output, "#endif\n");
   }
 
@@ -1629,18 +1636,18 @@ if (HaveTLM2IntrPorts) {
 
   fprintf( output, "%sbool has_delayed_load;\n", INDENT[1]);
   fprintf( output, "%schar* delayed_load_program;\n", INDENT[1]);
-  fprintf( output, "%s%s_parms::%s_isa ISA;\n", 
+  fprintf( output, "%s%s_parms::%s_isa ISA;\n",
            INDENT[1], project_name, project_name);
 
   if (HaveTLMIntrPorts) {
     for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-      fprintf(output, "%s%s_%s_handler %s_hnd;\n", 
+      fprintf(output, "%s%s_%s_handler %s_hnd;\n",
               INDENT[1], project_name, pport->name, pport->name);
-      fprintf(output, "%sac_tlm_intr_port %s;\n\n", 
+      fprintf(output, "%sac_tlm_intr_port %s;\n\n",
               INDENT[1], pport->name);
     }
   }
-  
+
  /******/
         if (HaveTLM2IntrPorts) {
           for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
@@ -1655,7 +1662,7 @@ if (HaveTLM2IntrPorts) {
     COMMENT(INDENT[1], "Address of Interpretation Routines.");
     fprintf( output, "%svoid** IntRoutine;\n\n", INDENT[1]);
   }
-  
+
   if(ACDecCacheFlag){
     fprintf( output, "%sDecCacheItem* DEC_CACHE;\n", INDENT[1]);
     fprintf( output, "%sDecCacheItem* instr_dec;\n", INDENT[1]);
@@ -1667,19 +1674,19 @@ if (HaveTLM2IntrPorts) {
   fprintf( output, "%sbool start_up;\n", INDENT[1]);
 
   if (ACGDBIntegrationFlag) {
-    fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n", 
+    fprintf(output, "%sAC_GDB<%s_parms::ac_word>* gdbstub;\n",
             INDENT[1], project_name);
   }
-  
+
   fprintf( output, "\n");
-  
+
   if (ACThreading) {
     COMMENT(INDENT[1], "Dispatch Method.");
-    fprintf( output, 
-             "%sinline __attribute__((always_inline)) void* dispatch();\n\n", 
+    fprintf( output,
+             "%sinline __attribute__((always_inline)) void* dispatch();\n\n",
              INDENT[1]);
   }
-  
+
   COMMENT(INDENT[1], "Behavior execution method.");
   fprintf( output, "%svoid behavior();\n\n", INDENT[1]);
 
@@ -1689,7 +1696,7 @@ if (HaveTLM2IntrPorts) {
   }
 
   fprintf( output, "%sSC_HAS_PROCESS( %s );\n\n", INDENT[1], project_name);
- 
+
   fprintf( output, "%ssc_event wake;\n\n", INDENT[1]);
 
 
@@ -1698,35 +1705,35 @@ if (HaveTLM2IntrPorts) {
 
   // POWER ESTIMATION SUPPORT
 
-  if (ACPowerEnable) { 
+  if (ACPowerEnable) {
     fprintf( output, "\n#ifdef POWER_SIM\n");
-    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this), ps((const char*)name_)", 
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this), ps((const char*)name_)",
            INDENT[1], project_name, project_name);
     fprintf( output, "\n#else\n");
-    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", 
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)",
             INDENT[1], project_name, project_name);
     fprintf( output, "\n#endif\n");
   }
 
   else
   {
-    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)", 
+    fprintf( output, "%s%s( sc_module_name name_ ): ac_module(name_), %s_arch(), ISA(*this)",
             INDENT[1], project_name, project_name);
 
   }
 
 
-  
+
   if (HaveTLMIntrPorts) {
     for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
       fprintf(output, ", %s_hnd(*this,&wake)", pport->name);
-      fprintf(output, ", %s(\"%s\", %s_hnd)", 
+      fprintf(output, ", %s(\"%s\", %s_hnd)",
               pport->name, pport->name, pport->name);
     }
   }
 
 
-   
+
    if (HaveTLM2IntrPorts) {
        for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
     fprintf(output, ", %s_hnd(*this,&wake)", pport->name);
@@ -1748,9 +1755,9 @@ if (HaveTLM2IntrPorts) {
   fprintf( output,"%shas_delayed_load = false; \n", INDENT[2]);
 
   fprintf( output, "%sstart_up=1;\n", INDENT[2]);
-  fprintf( output, "%sid.write(globalId++);\n", INDENT[2]);
- 
-    
+  fprintf( output, "%sac_id.write(globalId++);\n", INDENT[2]);
+
+
   if (ACWaitFlag)
     fprintf(output, "%sset_proc_freq(1000/module_period_ns);\n", INDENT[2]);
 
@@ -1758,7 +1765,7 @@ if (HaveTLM2IntrPorts) {
 
   if(ACDecCacheFlag) {
     fprintf( output, "%svoid init_dec_cache() {\n", INDENT[1]);
-    fprintf( output, "%sDEC_CACHE = (DecCacheItem*) calloc(sizeof(DecCacheItem), (dec_cache_size", 
+    fprintf( output, "%sDEC_CACHE = (DecCacheItem*) calloc(sizeof(DecCacheItem), (dec_cache_size",
              INDENT[2]);
     if( ACIndexFix ) fprintf( output, " / %d", largest_format_size / 8);
     fprintf( output, "));\n");
@@ -1768,7 +1775,7 @@ if (HaveTLM2IntrPorts) {
   if(ACGDBIntegrationFlag) {
     fprintf( output, "%s/***********\n", INDENT[1]);
     fprintf( output, "%s * GDB Support - user supplied methods\n", INDENT[1]);
-    fprintf( output, "%s * For further information, look at ~/src/aclib/ac_gdb/ac_gdb_interface.H\n", 
+    fprintf( output, "%s * For further information, look at ~/src/aclib/ac_gdb/ac_gdb_interface.H\n",
              INDENT[1]);
     fprintf( output, "%s ***********/\n\n", INDENT[1]);
 
@@ -1778,19 +1785,19 @@ if (HaveTLM2IntrPorts) {
 
     fprintf( output, "%s/* Register access */\n", INDENT[1]);
     fprintf( output, "%sint nRegs(void);\n", INDENT[1]);
-    fprintf( output, "%s%s_parms::ac_word reg_read(int reg);\n", 
+    fprintf( output, "%s%s_parms::ac_word reg_read(int reg);\n",
              INDENT[1], project_name);
-    fprintf( output, "%svoid reg_write( int reg, %s_parms::ac_word value );\n", 
+    fprintf( output, "%svoid reg_write( int reg, %s_parms::ac_word value );\n",
              INDENT[1], project_name);
 
     fprintf( output, "%s/* Memory access */\n", INDENT[1]);
-    fprintf( output, "%sunsigned char mem_read( unsigned int address );\n", 
+    fprintf( output, "%sunsigned char mem_read( unsigned int address );\n",
              INDENT[1]);
-    fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n", 
+    fprintf( output, "%svoid mem_write( unsigned int address, unsigned char byte );\n",
              INDENT[1]);
 
     fprintf( output, "%s/* GDB stub access */\n", INDENT[1]);
-    fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n", 
+    fprintf( output, "%sAC_GDB<%s_parms::ac_word>* get_gdbstub();\n",
              INDENT[1], project_name);
   }
 
@@ -1881,13 +1888,13 @@ void CreateRegsHeader() {
       fprintf( output, "\n\n");
 
       //Declaring class constructor.
-      if (ACDelayFlag) 
-        fprintf( output, "%s%s_fmt_%s(char* n, double& ts): \n", 
+      if (ACDelayFlag)
+        fprintf( output, "%s%s_fmt_%s(char* n, double& ts): \n",
                  INDENT[1], project_name, pstorage->name);
-      else 
-        fprintf( output, "%s%s_fmt_%s(char* n): \n", 
+      else
+        fprintf( output, "%s%s_fmt_%s(char* n): \n",
                  INDENT[1], project_name, pstorage->name);
-      
+
       for( pfield = pformat->fields; pfield->next != NULL; pfield = pfield->next) {
         //Initializing field names with reg name. This is to enable Formatted Reg stats.
         //Need to be changed if we adopt statistics collection for each field individually.
@@ -1898,7 +1905,7 @@ void CreateRegsHeader() {
           fprintf( output,"%s%s(\"%s\",%d),\n",
                    INDENT[2],pfield->name,pstorage->name, 0 );
       }
-      
+
       //Last field.
       if (ACDelayFlag)
         fprintf( output,"%s%s(\"%s\",%d,ts){name = n;}\n\n",
@@ -1913,7 +1920,7 @@ void CreateRegsHeader() {
         fprintf( output,"%svoid commit_delays(double time)\n",INDENT[1] );
         fprintf( output,"%s{\n",INDENT[1] );
         for( pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
-          fprintf( output,"%s%s.commit_delays(time);\n", 
+          fprintf( output,"%s%s.commit_delays(time);\n",
                    INDENT[2], pfield->name);
         }
         fprintf( output,"%s}\n",INDENT[1] );
@@ -2084,7 +2091,7 @@ void CreateProcessorImpl() {
         fprintf( output, "%sextern ofstream trace_file;\n", INDENT[1]);
     }
 
-    if( ACThreading ) 
+    if( ACThreading )
         EmitVetLabelAt(output, 1);
     else
         fprintf( output, "%sunsigned ins_id;\n", INDENT[1]);
@@ -2103,7 +2110,7 @@ void CreateProcessorImpl() {
       }*/
 
     if( ACFullDecode ) {
-        fprintf(output, "%sfor (decode_pc = ac_pc; decode_pc < dec_cache_size; decode_pc += %d) {\n", 
+        fprintf(output, "%sfor (decode_pc = ac_pc; decode_pc < dec_cache_size; decode_pc += %d) {\n",
                 INDENT[1], largest_format_size / 8);
         EmitDecodification(output, 2);
         fprintf( output, "%s}\n\n", INDENT[1]);
@@ -2112,7 +2119,7 @@ void CreateProcessorImpl() {
     if ( ACThreading && ACABIFlag && ACDecCacheFlag) {
         fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", INDENT[1]);
         fprintf( output, "%sinstr_dec = (DEC_CACHE + (LOCATION", INDENT[1]);
-        if( ACIndexFix ) 
+        if( ACIndexFix )
             fprintf( output, " / %d", largest_format_size / 8);
         fprintf( output, ")); \\\n");
 
@@ -2126,7 +2133,7 @@ void CreateProcessorImpl() {
         fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[1]);
     }
 
-    // Longjmp of ac_annul_sig and ac_stop_flag  
+    // Longjmp of ac_annul_sig and ac_stop_flag
     fprintf( output, "%sint action = setjmp(ac_env);\n", INDENT[1]);
     if (ACLongJmpStop || ACThreading)
         fprintf( output, "%sif (action == AC_ACTION_STOP) return;\n\n", INDENT[1]);
@@ -2149,14 +2156,14 @@ void CreateProcessorImpl() {
 
         fprintf( output, "#ifdef AC_VERBOSE\n");
         for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-            fprintf( output, "%s%s.change_dump(cerr);\n", 
+            fprintf( output, "%s%s.change_dump(cerr);\n",
                     INDENT[2],pstorage->name );
         }
         fprintf( output, "#endif\n");
 
         fprintf( output, "#ifdef AC_UPDATE_LOG\n");
         for( pstorage = storage_list; pstorage != NULL; pstorage=pstorage->next){
-            fprintf( output, "%s%s.reset_log();\n", 
+            fprintf( output, "%s%s.reset_log();\n",
                     INDENT[2],pstorage->name );
         }
         fprintf( output, "#endif\n");
@@ -2186,7 +2193,7 @@ void CreateProcessorImpl() {
                 fprintf(output, "%sif (ac_cache_traces.find(\"%s\") != ac_cache_traces.end()) "
                         "%s.set_trace(*ac_cache_traces[\"%s\"]);\n",
                         INDENT[1], pstorage->name, pstorage->name, pstorage->name);
-            default: 
+            default:
                 continue;
         }
 
@@ -2197,7 +2204,7 @@ void CreateProcessorImpl() {
     fprintf(output, "#endif\n\n");
     fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
     fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
-    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
+    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n",
             INDENT[1]);
     fprintf(output, "%sInitStat();\n", INDENT[1]);
 
@@ -2247,7 +2254,7 @@ void CreateProcessorImpl() {
     fprintf(output, "#endif\n\n");
     fprintf(output, "%sac_pc = ac_start_addr;\n", INDENT[1]);
     fprintf(output, "%sISA._behavior_begin();\n", INDENT[1]);
-    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n", 
+    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Starting Simulation --------------------\" << endl;\n",
             INDENT[1]);
     fprintf(output, "%sInitStat();\n", INDENT[1]);
 
@@ -2275,7 +2282,7 @@ void CreateProcessorImpl() {
     fprintf(output, "//Stop simulation (may receive exit status)\n");
     fprintf(output, "void %s::stop(int status) {\n", project_name);
 
-    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n", 
+    fprintf(output, "%scerr << endl << \"ArchC: -------------------- Simulation Finished --------------------\" << endl;\n",
             INDENT[1]);
     fprintf(output, "%sISA._behavior_end();\n", INDENT[1]);
     fprintf(output, "%sac_stop_flag = 1;\n", INDENT[1]);
@@ -2294,7 +2301,7 @@ void CreateProcessorImpl() {
     /* delayed_load() */
     fprintf(output, "void %s::delayed_load(char* program) {\n", project_name);
     fprintf(output, "%shas_delayed_load = true;\n", INDENT[1]);
-    fprintf(output, "%sdelayed_load_program = new char[strlen(program)];\n", 
+    fprintf(output, "%sdelayed_load_program = new char[strlen(program)];\n",
             INDENT[1]);
     fprintf(output, "%sstrcpy(delayed_load_program, program);\n", INDENT[1]);
     fprintf(output, "}\n\n");
@@ -2303,7 +2310,7 @@ void CreateProcessorImpl() {
     if (ACGDBIntegrationFlag) {
         /* get_gdbstub() */
         fprintf(output, "// Returns pointer to gdbstub\n");
-        fprintf(output, "AC_GDB<%s_parms::ac_word>* %s::get_gdbstub() {\n", 
+        fprintf(output, "AC_GDB<%s_parms::ac_word>* %s::get_gdbstub() {\n",
                 project_name, project_name);
         fprintf(output, "%sreturn gdbstub;\n", INDENT[1]);
         fprintf(output, "}\n\n");
@@ -2336,7 +2343,7 @@ void CreateProcessorImpl() {
     /* PrintStat() */
     fprintf(output, "// Wrapper function to PrintStat().\n");
     fprintf(output, "void %s::PrintStat() {\n", project_name);
-    fprintf(output, "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n", 
+    fprintf(output, "%sac_arch<%s_parms::ac_word, %s_parms::ac_Hword>::PrintStat();\n",
             INDENT[1], project_name, project_name);
 
 
@@ -2442,6 +2449,10 @@ void CreateArchImpl() {
         fprintf(output, ", time_step");
     }
     fprintf(output, "),\n");
+
+    /* Constructing ac_id */
+    fprintf(output, "%sac_id(\"ac_id\", 0),\n", INDENT[1]);
+
 
     for (pstorage = storage_list; pstorage != NULL; pstorage = pstorage->next) {
         switch (pstorage->type) {
@@ -2608,17 +2619,17 @@ void CreateMainTmpl() {
   fprintf( output, "{\n\n");
 
   COMMENT(INDENT[1],"%sISA simulator", INDENT[1]);
-  fprintf( output, "%s%s %s_proc1(\"%s\");\n\n", 
+  fprintf( output, "%s%s %s_proc1(\"%s\");\n\n",
            INDENT[1], project_name, project_name, project_name);
 
   fprintf( output, "#ifdef AC_DEBUG\n");
-  fprintf( output, "%sac_trace(\"%s_proc1.trace\");\n", 
+  fprintf( output, "%sac_trace(\"%s_proc1.trace\");\n",
            INDENT[1], project_name);
   fprintf( output, "#endif \n\n");
 
   fprintf(output, "%s%s_proc1.init(ac, av);\n", INDENT[1], project_name);
   fprintf(output, "%s%s_proc1.set_prog_args();\n", INDENT[1], project_name);
-  
+
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf(output, "%ssc_start();\n\n", INDENT[1]);
@@ -2627,7 +2638,7 @@ void CreateMainTmpl() {
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
   fprintf( output, "#ifdef AC_STATS\n");
-  fprintf( output, "%sac_stats_base::print_all_stats(std::cerr);\n", 
+  fprintf( output, "%sac_stats_base::print_all_stats(std::cerr);\n",
            INDENT[1]);
   fprintf( output, "#endif \n\n");
 
@@ -2635,7 +2646,7 @@ void CreateMainTmpl() {
   fprintf( output, "%sac_close_trace();\n", INDENT[1]);
   fprintf( output, "#endif \n\n");
 
-  fprintf( output, "%sreturn %s_proc1.ac_exit_status;\n", 
+  fprintf( output, "%sreturn %s_proc1.ac_exit_status;\n",
            INDENT[1], project_name);
 
   fprintf( output, "}\n");
@@ -2681,8 +2692,8 @@ void CreateImplTmpl(){
   fprintf(output, "#include  \"%s_bhv_macros.H\"\n", project_name);
   fprintf( output, "\n");
 
-  COMMENT(INDENT[0], 
-          "'using namespace' statement to allow access to all %s-specific datatypes", 
+  COMMENT(INDENT[0],
+          "'using namespace' statement to allow access to all %s-specific datatypes",
           project_name);
   fprintf( output, "using namespace %s_parms;\n\n", project_name);
 
@@ -2704,7 +2715,7 @@ void CreateImplTmpl(){
   //Declaring Instruction Format behavior methods.
   COMMENT(INDENT[0]," Instruction Format behavior methods.");
   for( pformat = format_ins_list; pformat!= NULL; pformat=pformat->next)
-    fprintf( output, "%svoid ac_behavior( %s ){}\n", 
+    fprintf( output, "%svoid ac_behavior( %s ){}\n",
              INDENT[0], pformat->name);
 
   fprintf( output, " \n");
@@ -2712,7 +2723,7 @@ void CreateImplTmpl(){
   //Declaring each instruction behavior method.
   for( pinstr = instr_list; pinstr!= NULL; pinstr=pinstr->next){
     COMMENT(INDENT[0],"Instruction %s behavior method.",pinstr->name);
-    fprintf( output, "%svoid ac_behavior( %s ){}\n\n", 
+    fprintf( output, "%svoid ac_behavior( %s ){}\n\n",
              INDENT[0], pinstr->name);
   }
 
@@ -2737,13 +2748,13 @@ void CreateImplTmpl(){
   for (pgroup = group_list; pgroup != NULL; pgroup = pgroup->next) {
     COMMENT(INDENT[0], "Group %s table initialization.", pgroup->name);
     fprintf(output, "%sbool %s_parms::%s_isa::group_%s[%s_parms::AC_DEC_INSTR_NUMBER] =\n%s{\n",
-            INDENT[0], project_name, project_name, pgroup->name, 
+            INDENT[0], project_name, project_name, pgroup->name,
             project_name, INDENT[1]);
     for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
       for (pref = pgroup->instrs; pref != NULL; pref = pref->next)
         if (pref->instr == pinstr)
           break;
-        
+
       if (pref == NULL)
         fprintf(output, "%sfalse", INDENT[2]);
       else
@@ -2808,7 +2819,7 @@ void CreateImplTmpl(){
       fprintf(output, "NULL}");
 
     i++;
-    for( pdecfield = pformat->fields; 
+    for( pdecfield = pformat->fields;
          pdecfield!= NULL; pdecfield=pdecfield->next)
       count_fields++;
   }
@@ -2828,7 +2839,7 @@ void CreateImplTmpl(){
               pdeclist->id,
               pdeclist->value);
       if (pdeclist->next)
-        fprintf(output, "&(%s_parms::%s_isa::dec_list[%d])},\n", 
+        fprintf(output, "&(%s_parms::%s_isa::dec_list[%d])},\n",
                 project_name, project_name, i + 1);
       else
         fprintf(output, "NULL}");
@@ -2878,7 +2889,7 @@ void CreateImplTmpl(){
   fprintf(output, "const ac_instr_info\n");
   fprintf(output, "%s_parms::%s_isa::instr_table[%s_parms::AC_DEC_INSTR_NUMBER + 1] = {\n",
           project_name, project_name, project_name);
-  fprintf(output, "%sac_instr_info(0, \"_ac_invalid_\", \"_ac_invalid_\", %d),\n", 
+  fprintf(output, "%sac_instr_info(0, \"_ac_invalid_\", \"_ac_invalid_\", %d),\n",
           INDENT[1], wordsize / 8);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     fprintf(output, "%sac_instr_info(%d, \"%s\", \"%s\", %d)",
@@ -2897,12 +2908,12 @@ void CreateImplTmpl(){
           project_name, project_name, project_name);
   fprintf(output, "%s0,\n", INDENT[1]);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
-    fprintf(output, "%s%d", 
+    fprintf(output, "%s%d",
             INDENT[1], (FindFormat(format_ins_list, pinstr->format))->id);
     if (pinstr->next) fprintf(output, ",\n");
   }
   fprintf(output, "\n};\n");
-  
+
   //!END OF FILE.
   fclose(output);
 
@@ -2939,14 +2950,14 @@ void CreateIntrTLM2Tmpl() {
   //Declaring formatted register behavior methods.
   for (pport = tlm2_intr_port_list; pport != NULL; pport = pport->next) {
     fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", pport->name);
-    fprintf(output, 
+    fprintf(output,
     "void ac_behavior(%s, value, addr) {\n"
    	"   if (value == INTR_PROC_OFF) { \n"
-	"       //printf(\"\\nINSTR_HANDLER: Processor %%d (%s) is sleeping.\" , id.read()); \n"
+	"       //printf(\"\\nINSTR_HANDLER: Processor %%d (%s) is sleeping.\" , ac_id.read()); \n"
 	"       intr_reg.write(value); \n"
 	"   } \n"
 	"   else if (value == INTR_PROC_ON) { \n"
-	"       //printf(\"\\nINSTR_HANDLER: Processor %%d (%s) is waking up.\" , id.read()); \n"
+	"       //printf(\"\\nINSTR_HANDLER: Processor %%d (%s) is waking up.\" , ac_id.read()); \n"
 	"       intr_reg.write(value); \n"
 	"       wake->notify(sc_core::SC_ZERO_TIME); \n\n"
 	"       /* ac_release update a signal to re-start the processor simulator   */ \n"
@@ -2954,7 +2965,7 @@ void CreateIntrTLM2Tmpl() {
 	"       //ac_release();	\n"
 	"   }\n"
 	"   else { \n"
-	"       printf(\"\\nINSTR_HANDLER: Processor %%d (%s) unrecognized interuption code %%d. Ignoring.\", id.read(), value); \n"
+	"       printf(\"\\nINSTR_HANDLER: Processor %%d (%s) unrecognized interuption code %%d. Ignoring.\", ac_id.read(), value); \n"
 	"   }\n}", pport->name, project_name,  project_name, project_name, project_name, project_name);
 
 
@@ -2991,14 +3002,14 @@ void CreateIntrTmpl() {
   fprintf(output, "#include \"%s_intr_handlers.H\"\n\n", project_name);
   fprintf(output, "#include \"%s_ih_bhv_macros.H\"\n\n", project_name);
 
-  COMMENT(INDENT[0], 
-          "'using namespace' statement to allow access to all %s-specific datatypes", 
+  COMMENT(INDENT[0],
+          "'using namespace' statement to allow access to all %s-specific datatypes",
           project_name);
   fprintf( output, "using namespace %s_parms;\n\n", project_name);
 
   //Declaring formatted register behavior methods.
   for (pport = tlm_intr_port_list; pport != NULL; pport = pport->next) {
-    fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n", 
+    fprintf(output, "// Interrupt handler behavior for interrupt port %s.\n",
             pport->name);
     fprintf(output, "void ac_behavior(%s, value, addr) {\n}\n\n", pport->name);
   }
@@ -3144,7 +3155,7 @@ void CreateIntrTLM2Header() {
     fprintf(output, "%spublic %s_arch_ref\n", INDENT[1], project_name);
     fprintf(output, "{\n");
     fprintf(output, " public:\n\n");
-    //fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",    
+    //fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",
     //        INDENT[1], project_name, pport->name, project_name, project_name);
     fprintf(output, "%sexplicit %s_%s_handler(%s_arch& ref,sc_event *event) : %s_arch_ref(ref) { wake = event; }\n\n",
       INDENT[1], project_name, pport->name, project_name, project_name);
@@ -3199,7 +3210,7 @@ void CreateIntrHeader() {
     fprintf(output, "%spublic %s_arch_ref\n", INDENT[1], project_name);
     fprintf(output, "{\n");
     fprintf(output, " public:\n\n");
-    fprintf(output, 
+    fprintf(output,
             "%sexplicit %s_%s_handler(%s_arch& ref) : %s_arch_ref(ref) {}\n\n",
             INDENT[1], project_name, pport->name, project_name, project_name);
     fprintf(output, "%svoid handle(uint32_t value, uint64_t addr);\n\n", INDENT[1]);
@@ -3304,7 +3315,7 @@ void CreateMakefile(){
   }
 
   COMMENT_MAKE("####################################################");
-  COMMENT_MAKE("This is the Makefile for building the %s ArchC model", 
+  COMMENT_MAKE("This is the Makefile for building the %s ArchC model",
                project_name);
   COMMENT_MAKE("This file is automatically generated by ArchC");
   COMMENT_MAKE("WITHOUT WARRANTY OF ANY KIND, either express");
@@ -3369,15 +3380,15 @@ void CreateMakefile(){
   if(HaveTLMIntrPorts || HaveTLM2IntrPorts)
     fprintf( output,  " $(TARGET)_intr_handlers.H $(TARGET)_ih_bhv_macros.H ");
   fprintf( output, "$(TARGET).H\n\n");
-    
+
   //if(HaveTLMIntrPorts)
   //  fprintf( output, "$(TARGET)_intr_handlers.H $(TARGET)_ih_bhv_macros.H ");
   //fprintf( output, "\n\n");
 
   //if(HaveTLM2IntrPorts)
   //       fprintf( output, "$(TARGET)_intr_handlers.H $(TARGET)_ih_bhv_macros.H ");
-  
-  fprintf( output, "\n");  
+
+  fprintf( output, "\n");
 
   //Declaring FILES variable
 //  COMMENT_MAKE("These are the source files provided by ArchC that must be compiled together with the ACSRCS");
@@ -3432,7 +3443,7 @@ void CreateMakefile(){
   //Note: Removed $(TARGET)_isa.cpp, added as include inside $(TARGET).cpp
   COMMENT_MAKE("These are the source files provided by the user + ArchC sources");
   fprintf( output, "SRCS := main.cpp $(ACSRCS) %s",
-          (ACGDBIntegrationFlag)?"$(TARGET)_gdb_funcs.cpp":""); 
+          (ACGDBIntegrationFlag)?"$(TARGET)_gdb_funcs.cpp":"");
   if (ACABIFlag)
       fprintf( output, " $(TARGET)_syscall.cpp");
   if (HaveTLMIntrPorts || HaveTLM2IntrPorts )
@@ -3460,7 +3471,7 @@ void CreateMakefile(){
       fprintf( output, " $(ACHEAD) $(EXE)\n\n");
   }
   fprintf( output, "$(EXE): $(OBJS)\n");
-  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n"); 
+  fprintf( output, "\t$(CC) $(CFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $(OBJS) $(LIBS) 2>&1 | c++filt\n\n");
 
   COMMENT_MAKE("Copy from template if main.cpp not exist");
   fprintf(output, "main.cpp:\n");
@@ -3538,7 +3549,7 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
   if( ACDelayFlag || HaveMemHier || ACWaitFlag) {
     COMMENT(INDENT[base_indent],"Updating Regs for behavioral simulation.");
   }
-  
+
   if (!ACLongJmpStop) {
     fprintf( output, "%sif (ac_stop_flag) ", INDENT[base_indent]);
     if (ACThreading)
@@ -3546,7 +3557,7 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
     else
       fprintf(output, "return;\n\n");
   }
-  
+
   if( ACDelayFlag ){
     fprintf( output, "%sif(!ac_wait_sig){\n", INDENT[base_indent]);
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next ) {
@@ -3555,8 +3566,8 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
         else
             fprintf( output, "%s%s.commit_delays( (double)ac_cycle_counter );\n", INDENT[base_indent + 1], pstorage->name);
     }
-      
-    fprintf( output, "%sac_pc.commit_delays(  (double)ac_cycle_counter );\n", 
+
+    fprintf( output, "%sac_pc.commit_delays(  (double)ac_cycle_counter );\n",
              INDENT[base_indent + 1]);
     fprintf( output, "%sif(!ac_parallel_sig)\n", INDENT[base_indent + 1]);
     fprintf( output, "%sac_cycle_counter++;\n", INDENT[base_indent + 2]);
@@ -3567,13 +3578,13 @@ void EmitUpdateMethod( FILE *output, int base_indent ) {
 
   /*if( HaveMemHier ) {
     for( pstorage = storage_list; pstorage!= NULL; pstorage = pstorage->next ) {
-      if( pstorage->type == CACHE || pstorage->type == ICACHE || 
+      if( pstorage->type == CACHE || pstorage->type == ICACHE ||
           pstorage->type == DCACHE || pstorage->type == MEM )
-        fprintf( output, "%s%s.process_request( );\n", 
+        fprintf( output, "%s%s.process_request( );\n",
                  INDENT[base_indent], pstorage->name);
     }
   }*/
-  
+
   if (ACWaitFlag) {
     fprintf(output, "%sif (ac_qk.need_sync()) {\n", INDENT[base_indent]);
     fprintf(output, "%sac_qk.sync();\n", INDENT[base_indent + 1]);
@@ -3591,32 +3602,32 @@ void EmitDecodification( FILE *output, int base_indent) {
 
   /*if( HaveMemHier ){
     if (fetchsize == wordsize)
-      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read( ac_pc );\n\n", 
+      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read( ac_pc );\n\n",
                INDENT[base_indent]);
     else if (fetchsize == wordsize/2)
-      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_half( ac_pc );\n\n", 
+      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_half( ac_pc );\n\n",
                INDENT[base_indent]);
     else if (fetchsize == 8)
-      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_byte( ac_pc );\n\n", 
+      fprintf( output, "%s*((ac_fetch*)(fetch)) = IM->read_byte( ac_pc );\n\n",
                INDENT[base_indent]);
     else {
       AC_ERROR("Fetchsize differs from wordsize or (wordsize/2) or 8: not implemented.");
       exit(EXIT_FAILURE);
     }
-    
-   
+
+
 
     fprintf( output, "%sif( ac_wait_sig ) {\n", INDENT[base_indent]);
 
    */
 
     //if (ACThreading)
-    //  fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+    //  fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n",
     //          INDENT[base_indent + 1]);
-    //else 
+    //else
     //  fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
-    
-  
+
+
   //}
 
   if( ACDecCacheFlag ){
@@ -3625,48 +3636,48 @@ void EmitDecodification( FILE *output, int base_indent) {
       fprintf( output, "decode_pc");
     else
       fprintf( output, "ac_pc");
-    
-    if( ACIndexFix ) 
+
+    if( ACIndexFix )
       fprintf( output, " / %d", largest_format_size / 8);
     fprintf( output, "));\n");
-    
+
     if( !ACFullDecode ) {
       fprintf( output, "%sif ( !instr_dec->valid ){\n", INDENT[base_indent]);
       base_indent++;
     }
-    
+
     fprintf( output, "%sunsigned* ins_cache;\n", INDENT[base_indent]);
   }
-  
+
   if( !ACFullDecode )
     fprintf( output, "%sdecode_pc = ac_pc;\n", INDENT[base_indent]);
-  
+
   fprintf( output, "%squant = 0;\n", INDENT[base_indent]);
-  fprintf( output, "%sins_cache = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n", 
+  fprintf( output, "%sins_cache = (ISA.decoder)->Decode(reinterpret_cast<unsigned char*>(buffer), quant);\n",
            INDENT[base_indent]);
-  
+
   if( ACDecCacheFlag ){
     if( ACFullDecode ) {
-      fprintf( output, "%sif( ins_cache ) {\n", 
+      fprintf( output, "%sif( ins_cache ) {\n",
                INDENT[base_indent]);
       base_indent++;
     }
     else
-      fprintf( output, "%sinstr_dec->valid = true;\n", 
+      fprintf( output, "%sinstr_dec->valid = true;\n",
                INDENT[base_indent]);
-      
-    fprintf( output, "%sinstr_dec->id = ins_cache ? ins_cache[IDENT]: 0;\n", 
+
+    fprintf( output, "%sinstr_dec->id = ins_cache ? ins_cache[IDENT]: 0;\n",
              INDENT[base_indent]);
-    
+
     if (ACThreading)
-      fprintf( output, "%sinstr_dec->end_rot = IntRoutine[instr_dec->id];\n", 
+      fprintf( output, "%sinstr_dec->end_rot = IntRoutine[instr_dec->id];\n",
                INDENT[base_indent]);
-    
+
     EmitDecCacheAt( output, base_indent);
-    
+
     base_indent--;
     fprintf( output, "%s}\n", INDENT[base_indent]);
-    
+
     if( !ACFullDecode )
       fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
@@ -3675,15 +3686,15 @@ void EmitDecodification( FILE *output, int base_indent) {
 
     //Checking if it is a valid instruction
     fprintf( output, "%sif( ins_id == 0 ) {\n", INDENT[base_indent]);
-    fprintf( output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
+    fprintf( output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n",
             INDENT[base_indent+1]);
-    fprintf( output, "%scerr << \"PC = \" << hex << ac_pc << dec << endl;\n", 
+    fprintf( output, "%scerr << \"PC = \" << hex << ac_pc << dec << endl;\n",
             INDENT[base_indent+1]);
     fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
     if (ACThreading)
-      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n",
               INDENT[base_indent + 1]);
-    else 
+    else
       fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
     fprintf( output, "%s}\n\n", INDENT[base_indent]);
   }
@@ -3697,22 +3708,22 @@ void EmitDecodification( FILE *output, int base_indent) {
 void EmitInstrExecIni( FILE *output, int base_indent) {
   extern ac_dec_field *common_instr_field_list;
   extern ac_dec_format *format_ins_list;
-  
+
   ac_dec_format *pformat;
   ac_dec_field *pfield;
-  
+
   if( ACGDBIntegrationFlag )
-    fprintf( output, "%sif (gdbstub && gdbstub->stop(ac_pc)) gdbstub->process_bp();\n\n", 
+    fprintf( output, "%sif (gdbstub && gdbstub->stop(ac_pc)) gdbstub->process_bp();\n\n",
              INDENT[base_indent]);
 
   if ( ACCurInstrID )
     fprintf(output, "%sISA.cur_instr_id = ins_id;\n", INDENT[base_indent]);
-  
+
   if (!(ACThreading && ACABIFlag)) {
     fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent]);
     /* common_instr_field_list has the list of fields for the generic instruction. */
     if( ACDecCacheFlag ){
-      for( pfield = common_instr_field_list, pformat = format_ins_list; 
+      for( pfield = common_instr_field_list, pformat = format_ins_list;
           pfield != NULL; pfield = pfield->next) {
         fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
         if (pfield->next != NULL)
@@ -3720,7 +3731,7 @@ void EmitInstrExecIni( FILE *output, int base_indent) {
       }
     }
     else {
-      for( pfield = common_instr_field_list; 
+      for( pfield = common_instr_field_list;
           pfield != NULL; pfield = pfield->next){
         fprintf(output, "ins_cache[%d]", pfield->id);
         if (pfield->next != NULL)
@@ -3750,13 +3761,13 @@ void EmitInstrExec( FILE *output, int base_indent){
         fprintf(output, "%sgoto *dispatch();\n\n", INDENT[base_indent + 1]);
 
         if ( ACABIFlag && ACDecCacheFlag ) {
-            fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
+            fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n",
                     INDENT[base_indent]);
             fprintf( output, "%sSys_##LOCATION: \\\n", INDENT[base_indent]);
             base_indent++;
 
             if( ACStatsFlag ){
-                fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
+                fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n",
                         INDENT[base_indent], project_name);
             }
 
@@ -3788,7 +3799,7 @@ void EmitInstrExec( FILE *output, int base_indent){
 
     for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
         if( ACThreading ) {
-            fprintf(output, "%sI_%s: // Instruction %s\n", 
+            fprintf(output, "%sI_%s: // Instruction %s\n",
                     INDENT[base_indent], pinstr->name, pinstr->name);
             if ( ACABIFlag ) {
                 fprintf(output, "%sISA._behavior_instruction(", INDENT[base_indent + 1]);
@@ -3797,7 +3808,7 @@ void EmitInstrExec( FILE *output, int base_indent){
                     for (pformat = format_ins_list;
                             (pformat != NULL) && strcmp(pinstr->format, pformat->name);
                             pformat = pformat->next);
-                    for( pfield = common_instr_field_list; 
+                    for( pfield = common_instr_field_list;
                             pfield != NULL; pfield = pfield->next) {
                         fprintf(output, "instr_dec->F_%s.%s", pformat->name, pfield->name);
                         if (pfield->next != NULL)
@@ -3805,7 +3816,7 @@ void EmitInstrExec( FILE *output, int base_indent){
                     }
                 }
                 else {
-                    for( pfield = common_instr_field_list; 
+                    for( pfield = common_instr_field_list;
                             pfield != NULL; pfield = pfield->next){
                         fprintf(output, "ins_cache[%d]", pfield->id);
                         if (pfield->next != NULL)
@@ -3817,7 +3828,7 @@ void EmitInstrExec( FILE *output, int base_indent){
         }
         else
             /* opens case statement */
-            fprintf(output, "%scase %d: // Instruction %s\n", 
+            fprintf(output, "%scase %d: // Instruction %s\n",
                     INDENT[base_indent], pinstr->id, pinstr->name);
 
         /* emits format behavior method call */
@@ -3867,9 +3878,9 @@ void EmitInstrExec( FILE *output, int base_indent){
 
         if( ACStatsFlag ){
             fprintf( output, "%sif(!ac_wait_sig) {\n", INDENT[base_indent]);
-            fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
+            fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n",
                     INDENT[base_indent+1], project_name);
-            fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
+            fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n",
                     INDENT[base_indent+1], project_name);
             fprintf( output, "%s}\n", INDENT[base_indent]);
         }
@@ -3884,19 +3895,19 @@ void EmitInstrExec( FILE *output, int base_indent){
   \brief Used by EmitProcessorBhv and EmitDispatch functions */
 /***************************************/
 void EmitFetchInit( FILE *output, int base_indent){
-  
+
   if (ACPCAddress) {
     if (!ACDecCacheFlag)
-      fprintf( output, "%sif( ac_pc >= %s.get_size()){\n", 
+      fprintf( output, "%sif( ac_pc >= %s.get_size()){\n",
               INDENT[base_indent], load_device->name);
     else
-      fprintf( output, "%sif( ac_pc >= dec_cache_size){\n", 
+      fprintf( output, "%sif( ac_pc >= dec_cache_size){\n",
               INDENT[base_indent]);
-    fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << ac_pc << \").\" << endl;\n", 
+    fprintf( output, "%scerr << \"ArchC: Address out of bounds (pc=0x\" << hex << ac_pc << \").\" << endl;\n",
             INDENT[base_indent+1]);
     fprintf( output, "%sstop();\n", INDENT[base_indent+1]);
     if (ACThreading)
-      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n",
               INDENT[base_indent + 1]);
     else
       fprintf( output, "%sreturn;\n", INDENT[base_indent+1]);
@@ -3912,36 +3923,36 @@ void EmitFetchInit( FILE *output, int base_indent){
 /***************************************/
 void EmitProcessorBhv( FILE *output, int base_indent ) {
   extern char* project_name;
-  
+
   fprintf(output, "%sfor (;;) {\n\n", INDENT[base_indent]);
   base_indent++;
-  
+
   EmitFetchInit(output, base_indent);
-  
-  if( ACABIFlag ) {  
+
+  if( ACABIFlag ) {
     if (ACSyscallJump) {
-      fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);  
+      fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);
       fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent]);
       base_indent++;
     }
-    
+
     //Emitting system calls handler.
     COMMENT(INDENT[base_indent],"Handling System calls.")
     fprintf( output, "%sswitch( ac_pc ){\n", INDENT[base_indent]);
     base_indent++;
-    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n",
              INDENT[base_indent]);
     fprintf( output, "%scase LOCATION: \\\n", INDENT[base_indent]);
     base_indent++;
-    
+
     if( ACStatsFlag ){
-      fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
+      fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n",
               INDENT[base_indent], project_name);
     }
 
     if( ACDebugFlag ){
       fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
-      fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
+      fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n",
               INDENT[base_indent + 1]);
     }
 
@@ -3951,16 +3962,16 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
     }
 
     fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
-    
+
     if (ACSyscallJump)
       fprintf( output, "%sexec = false; \\\n", INDENT[base_indent]);
-    
+
     base_indent--;
     fprintf( output, "%sbreak;\n", INDENT[base_indent]);
     fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[base_indent]);
     fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[base_indent]);
-    
-    
+
+
     if (ACSyscallJump) {
       base_indent--;
       fprintf( output, "%s} // switch( ac_pc )\n", INDENT[base_indent]);
@@ -3974,17 +3985,17 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
       base_indent++;
     }
   }
-  
+
   if( ACFullDecode ) {
-    fprintf( output, "%sinstr_dec = (DEC_CACHE + (ac_pc", 
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (ac_pc",
              INDENT[base_indent]);
-    if( ACIndexFix ) 
+    if( ACIndexFix )
       fprintf( output, " / %d", largest_format_size / 8);
     fprintf( output, "));\n");
     fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
   else EmitDecodification(output, base_indent);
-    
+
   EmitInstrExec(output, base_indent);
 
   if( ACABIFlag ) {
@@ -3998,19 +4009,19 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
       fprintf( output, "%s} // switch( ac_pc )\n", INDENT[base_indent]);
     }
   }
-  
+
   fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
-  
+
   if (ACVerboseFlag) {
     if( ACABIFlag )
       fprintf( output, "%sdone.write(1);\n", INDENT[base_indent]);
     else
       fprintf( output, "%sbhv_done.write(1);\n", INDENT[base_indent]);
   }
-  
+
   //!Emit update method.
   EmitUpdateMethod( output, base_indent);
-  
+
   base_indent--;
   fprintf( output, "%s} // for (;;)\n", INDENT[base_indent]);
 }
@@ -4023,7 +4034,7 @@ void EmitProcessorBhv( FILE *output, int base_indent ) {
 void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent){
 
   //Parameter 1 will be the pstorage->name string
-  //Parameters passed to the ac_cache constructor. 
+  //Parameters passed to the ac_cache constructor.
   //They are not exactly in the same
   //order used for ArchC declarations.
   //TODO: Include write policy
@@ -4054,23 +4065,23 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 #ifdef DEBUG_STORAGE
       printf("CacheDeclaration: Processing parameter: %d, which is: %s\n", i, pparms->str);
 #endif
-        if( !strcmp(pparms->str, "dm") || !strcmp(pparms->str, "DM") ){ 
+        if( !strcmp(pparms->str, "dm") || !strcmp(pparms->str, "DM") ){
           //It is a direct-mapped cache
           is_dm = 1;
           //Set size will be the 4th parameter for ac_cache constructor.
-          sprintf( parm4, "1");  
-          //DM caches do not need a replacement strategy, 
+          sprintf( parm4, "1");
+          //DM caches do not need a replacement strategy,
           //use a default value in this parameter.
-          sprintf( parm5, "DEFAULT");  
+          sprintf( parm5, "DEFAULT");
         }
-        else if( !strcmp(pparms->str, "fully") || 
-                 !strcmp(pparms->str, "FULLY") ) 
+        else if( !strcmp(pparms->str, "fully") ||
+                 !strcmp(pparms->str, "FULLY") )
           //It is a fully associative cache
           is_fully =1;
         else {  //It is a n-way cache
           aux = strchr( pparms->str,'w');
           if(  !aux ){   // Checking if the string has a 'w'
-            AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
                      pstorage->name);
             printf("The first parameter must be a valid associativity: \"dm\", \"2w\", \"4w\", ..., \"fully\" \n");
             exit(1);
@@ -4079,14 +4090,14 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
           strncpy(aux, pparms->str,  strlen(pparms->str)-1);
           aux[ strlen(pparms->str)-1]='\0';
           //Set size will be the 4th parameter for ac_cache constructor.
-          sprintf(parm4, "%s", aux);  
+          sprintf(parm4, "%s", aux);
           free(aux);
         }
         break;
 
       case 2: /* Second parameter is the number of blocks (lines) */
         if( !(pparms->value > 0 ) ){
-          AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+          AC_ERROR("Invalid parameter in cache declaration: %s\n",
                    pstorage->name);
           printf("The second parameter must be a valid (>0) number of blocks (lines).\n");
           exit(1);
@@ -4100,7 +4111,7 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 
       case 3: /* Third parameter is the block (line) size */
         if( !(pparms->value > 0 ) ){
-          AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+          AC_ERROR("Invalid parameter in cache declaration: %s\n",
                    pstorage->name);
           printf("The third parameter must be a valid (>0) block (line) size.\n");
           exit(1);
@@ -4108,13 +4119,13 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
         sprintf(parm2, "%d", pparms->value);
         break;
 
-      case 4: /* The fourth  parameter may be the write policy or the 
-                replacement strategy. If it is a direct-mapped cache, 
-                then we don't have a replacement strategy, so this 
-                parameter must be the write policy, which is "wt" 
-                (write-through) or "wb" (write-back). Otherwise, 
+      case 4: /* The fourth  parameter may be the write policy or the
+                replacement strategy. If it is a direct-mapped cache,
+                then we don't have a replacement strategy, so this
+                parameter must be the write policy, which is "wt"
+                (write-through) or "wb" (write-back). Otherwise,
                 it must be a replacement strategy, which is "lru"
-                or "random", and the fifth parameter will be the 
+                or "random", and the fifth parameter will be the
                 write policy. */
 
         if( is_dm ) {
@@ -4123,11 +4134,11 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
           if( !strcmp( pparms->str, "wt") || !strcmp( pparms->str, "WT") )
             //One will tell that a wt cache was declared
             wp = WRITE_THROUGH;
-          else if( !strcmp( pparms->str, "wb") || !strcmp( pparms->str, "WB") ) 
+          else if( !strcmp( pparms->str, "wb") || !strcmp( pparms->str, "WB") )
             //Zero will tell that a wb cache was declared
             wp = WRITE_BACK;
           else {
-            AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
                      pstorage->name);
             printf("For direct-mapped caches, the fourth parameter must be a valid write policy: \"wt\" or \"wb\".\n");
             exit(1);
@@ -4138,11 +4149,11 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
           if( !strcmp( pparms->str, "lru") || !strcmp( pparms->str, "LRU") ){
             sprintf( parm5, "LRU");  //Including parameter
           }
-          else if( !strcmp( pparms->str, "random") || 
+          else if( !strcmp( pparms->str, "random") ||
                    !strcmp( pparms->str, "RANDOM") )
             sprintf( parm5, "RANDOM");  //Including parameter
           else {
-            AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
                      pstorage->name);
             printf("For non-direct-mapped caches, the fourth parameter must be a valid replacement strategy: \"lru\" or \"random\".\n");
             exit(1);
@@ -4151,28 +4162,28 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
         break;
 
       case 5: /* The fifth parameter is a write policy. */
-        if( !is_dm ){ 
+        if( !is_dm ){
           //This value is set when the first parameter is being processed.
           if( !strcmp( pparms->str, "wt") || !strcmp( pparms->str, "WT") )
             wp = WRITE_THROUGH;
-          else if( !strcmp( pparms->str, "wb") || !strcmp( pparms->str, "WB") ) 
+          else if( !strcmp( pparms->str, "wb") || !strcmp( pparms->str, "WB") )
             wp = WRITE_BACK;
           else {
-            AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
                      pstorage->name);
             printf("For non-direct-mapped caches, the fourth parameter must be a valid replacement strategy: \"lru\" or \"random\".\n");
             exit(1);
           }
         }
-        else { 
+        else {
           //This value is "war" for write-around or "wal" for "write-allocate"
           if( !strcmp( pparms->str, "war") || !strcmp( pparms->str, "WAR") )
             wp = wp | WRITE_AROUND;
-          else if( !strcmp( pparms->str, "wal") || 
-                   !strcmp( pparms->str, "WAL") ) 
+          else if( !strcmp( pparms->str, "wal") ||
+                   !strcmp( pparms->str, "WAL") )
             wp = wp | WRITE_ALLOCATE;
           else {
-            AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
                      pstorage->name);
             printf("For non-direct-mapped caches, the fourth parameter must be a valid replacement strategy: \"lru\" or \"random\".\n");
             exit(1);
@@ -4182,28 +4193,28 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
 
       case 6: /* The sixth parameter, if it is present, is a write policy.
                 It must not be present for direct-mapped caches.*/
-        if( !is_dm ) { 
+        if( !is_dm ) {
           //This value is set when the first parameter is being processed.
           if( !strcmp( pparms->str, "war") || !strcmp( pparms->str, "WAR") )
             wp = wp | WRITE_AROUND;
-          else if( !strcmp( pparms->str, "wal") || 
-                   !strcmp( pparms->str, "WAL") ) 
+          else if( !strcmp( pparms->str, "wal") ||
+                   !strcmp( pparms->str, "WAL") )
             wp = wp | WRITE_ALLOCATE;
           else {
-            AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+            AC_ERROR("Invalid parameter in cache declaration: %s\n",
                      pstorage->name);
             printf("For non-direct-mapped caches, the fifth parameter must be  \"war\" or \"wal\".\n");
             exit(1);
           }
         }
         else{
-          AC_ERROR("Invalid parameter in cache declaration: %s\n", 
+          AC_ERROR("Invalid parameter in cache declaration: %s\n",
                    pstorage->name);
           printf("For direct-mapped caches there must be only five parameters (do not need a replacement strategy).\n");
           exit(1);
         }
         break;
-        
+
       default:
         break;
     }
@@ -4211,7 +4222,7 @@ void EmitCacheDeclaration( FILE *output, ac_sto_list* pstorage, int base_indent)
   }
   //Printing cache declaration.
   fprintf( output, "%sac_cache ac_resources::%s(\"%s\", %s, %s, %s, %s, 0x%x);\n",
-           INDENT[base_indent], pstorage->name, pstorage->name, 
+           INDENT[base_indent], pstorage->name, pstorage->name,
            parm2, parm3, parm4, parm5, wp);
 }
 
@@ -4225,7 +4236,7 @@ void EmitDecCache(FILE *output, int base_indent) {
 
   ac_dec_format *pformat;
   ac_dec_field *pfield;
-  
+
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
     fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
     for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) {
@@ -4236,22 +4247,22 @@ void EmitDecCache(FILE *output, int base_indent) {
       else if (pfield->size < 17) fprintf(output, "int16_t");
       else if (pfield->size < 33) fprintf(output, "int32_t");
       else fprintf(output, "int64_t");
-      
+
       fprintf(output, " %s;\n", pfield->name);
     }
     fprintf(output, "%s} T_%s;\n\n", INDENT[base_indent], pformat->name);
   }
-  
+
   fprintf(output, "%stypedef struct {\n", INDENT[base_indent]);
-  if( !ACFullDecode ) 
+  if( !ACFullDecode )
     fprintf(output, "%sbool valid;\n", INDENT[base_indent + 1]);
   if (ACThreading)
     fprintf(output, "%svoid* end_rot;\n", INDENT[base_indent + 1]);
   fprintf(output, "%sunsigned id;\n", INDENT[base_indent + 1]);
-  
+
   fprintf(output, "%sunion {\n", INDENT[base_indent + 1]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
-    fprintf(output, "%sT_%s F_%s;\n", INDENT[base_indent + 2], 
+    fprintf(output, "%sT_%s F_%s;\n", INDENT[base_indent + 2],
             pformat->name, pformat->name);
   }
   fprintf(output, "%s};\n", INDENT[base_indent + 1]);
@@ -4267,33 +4278,33 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
   extern ac_dec_format *format_ins_list;
   ac_dec_format *pformat;
   ac_dec_field *pfield;
-  
-  fprintf(output, "%sswitch (ISA.instr_format_table[instr_dec->id]) {\n", 
+
+  fprintf(output, "%sswitch (ISA.instr_format_table[instr_dec->id]) {\n",
           INDENT[base_indent]);
   for (pformat = format_ins_list; pformat != NULL ; pformat = pformat->next) {
     fprintf(output, "%scase %d:\n", INDENT[base_indent + 1], pformat->id);
-    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next) 
-      fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache[%d];\n", 
-              INDENT[base_indent + 2], pformat->name, 
+    for (pfield = pformat->fields; pfield != NULL; pfield = pfield->next)
+      fprintf(output, "%sinstr_dec->F_%s.%s = ins_cache[%d];\n",
+              INDENT[base_indent + 2], pformat->name,
               pfield->name, pfield->id);
     fprintf(output, "%sbreak;\n", INDENT[base_indent + 1]);
   }
-  
+
   if( !ACFullDecode ) {
     fprintf(output, "%sdefault:\n", INDENT[base_indent + 1]);
-    fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n", 
+    fprintf(output, "%scerr << \"ArchC Error: Unidentified instruction. \" << endl;\n",
             INDENT[base_indent + 2]);
-    fprintf(output, "%scerr << \"PC = \" << hex << ac_pc << dec << endl;\n", 
+    fprintf(output, "%scerr << \"PC = \" << hex << ac_pc << dec << endl;\n",
             INDENT[base_indent + 2]);
     fprintf(output, "%sstop();\n", INDENT[base_indent + 2]);
 
     if (ACThreading)
-      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n", 
+      fprintf(output, "%slongjmp(ac_env, AC_ACTION_STOP);\n",
               INDENT[base_indent + 2]);
-    else 
+    else
       fprintf(output, "%sreturn;\n", INDENT[base_indent + 2]);
   }
-  
+
   fprintf(output, "%s}\n", INDENT[base_indent]);
 }
 
@@ -4303,7 +4314,7 @@ void EmitDecCacheAt(FILE *output, int base_indent) {
 /***************************************/
 void EmitDispatch(FILE *output, int base_indent) {
 
-  fprintf( output, "%svoid* %s::dispatch() {\n", 
+  fprintf( output, "%svoid* %s::dispatch() {\n",
            INDENT[base_indent], project_name);
 
   base_indent++;
@@ -4314,11 +4325,11 @@ void EmitDispatch(FILE *output, int base_indent) {
     fprintf(output, "%s/*************************************************************************************/\n",INDENT[base_indent]);
     fprintf(output, "%s/* SLEEP / AWAKE mode control                                                        */\n",INDENT[base_indent]);
     fprintf(output, "%s/* intr_reg may store 1 (AWAKE MODE) or 0 (SLEEP MODE) - default is AWAKE            */\n",INDENT[base_indent]);
-    fprintf(output, "%s/* if intr_reg == 0, the simulator will be suspended until it happens the wake event */\n",INDENT[base_indent]);   
+    fprintf(output, "%s/* if intr_reg == 0, the simulator will be suspended until it happens the wake event */\n",INDENT[base_indent]);
     fprintf(output, "%s/* wake - this event will happen in the moment the processor receives and            */\n",INDENT[base_indent]);
-    fprintf(output, "%s/* interrupt with code AWAKE (1)                                                     */\n",INDENT[base_indent]);    
+    fprintf(output, "%s/* interrupt with code AWAKE (1)                                                     */\n",INDENT[base_indent]);
     fprintf(output, "%s/*************************************************************************************/\n",INDENT[base_indent]);
-    fprintf(output, "%sif (intr_reg.read() == 0)  wait(wake);\n",INDENT[base_indent]);  
+    fprintf(output, "%sif (intr_reg.read() == 0)  wait(wake);\n",INDENT[base_indent]);
   }
 
 
@@ -4326,43 +4337,43 @@ void EmitDispatch(FILE *output, int base_indent) {
     fprintf( output, "%sextern bool ac_do_trace;\n", INDENT[base_indent]);
     fprintf( output, "%sextern ofstream trace_file;\n", INDENT[base_indent]);
   }
-  
+
   //!Emit update method.
   EmitUpdateMethod( output, base_indent);
-  
+
   EmitFetchInit(output, base_indent);
-  
+
   fprintf( output, "%sac_instr_counter++;\n", INDENT[base_indent]);
   fprintf( output, "%sunsigned ins_id;\n", INDENT[base_indent]);
-  
- 
+
+
 
 
 
   if( ACABIFlag && !ACDecCacheFlag) {
     if (ACSyscallJump) {
-      fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);  
+      fprintf( output, "%sbool exec = true;\n\n", INDENT[base_indent]);
       fprintf( output, "%sif (ac_pc < 0x100) {\n", INDENT[base_indent]);
       base_indent++;
     }
-    
+
     //Emitting system calls handler.
     COMMENT(INDENT[base_indent],"Handling System calls.")
-    fprintf( output, "%sswitch( ac_pc ){\n", INDENT[base_indent]);  
+    fprintf( output, "%sswitch( ac_pc ){\n", INDENT[base_indent]);
     base_indent++;
-    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n", 
+    fprintf( output, "%s#define AC_SYSC(NAME,LOCATION) \\\n",
              INDENT[base_indent]);
     fprintf( output, "%scase LOCATION: \\\n", INDENT[base_indent]);
     base_indent++;
 
     if( ACStatsFlag ){
-      fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n", 
+      fprintf( output, "%sISA.stats[%s_stat_ids::SYSCALLS]++; \\\n",
               INDENT[base_indent], project_name);
     }
 
     if( ACDebugFlag ){
       fprintf( output, "%sif( ac_do_trace != 0 )\\\n", INDENT[base_indent]);
-      fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n", 
+      fprintf( output, "%strace_file << hex << ac_pc << dec << endl; \\\n",
               INDENT[base_indent + 1]);
     }
     if( ACHLTraceFlag)
@@ -4371,24 +4382,24 @@ void EmitDispatch(FILE *output, int base_indent) {
     }
 
     fprintf( output, "%sISA.syscall.NAME(); \\\n", INDENT[base_indent]);
-    
+
     if (ACSyscallJump)
       fprintf( output, "%sexec = false; \\\n", INDENT[base_indent]);
-    
+
     if (ACThreading)
       fprintf( output, "%sreturn IntRoutine[0]; \\\n", INDENT[base_indent]);
-    
+
     base_indent--;
     fprintf( output, "%sbreak;\n", INDENT[base_indent]);
     fprintf( output, "%s#include <ac_syscall.def>\n", INDENT[base_indent]);
     fprintf( output, "%s#undef AC_SYSC\n\n", INDENT[base_indent]);
-    
+
     if (ACSyscallJump) {
       base_indent--;
-      fprintf( output, "%s} // switch( ac_pc )\n", 
+      fprintf( output, "%s} // switch( ac_pc )\n",
                INDENT[base_indent]);
       base_indent--;
-      fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n", 
+      fprintf( output, "%s} // if( ac_pc < 0x100 )\n\n",
                INDENT[base_indent]);
       fprintf( output, "%sif (exec) {\n", INDENT[base_indent]);
       base_indent++;
@@ -4398,24 +4409,24 @@ void EmitDispatch(FILE *output, int base_indent) {
       base_indent++;
     }
   }
-  
+
   if( ACFullDecode ) {
-    fprintf( output, "%sinstr_dec = (DEC_CACHE + (ac_pc", 
+    fprintf( output, "%sinstr_dec = (DEC_CACHE + (ac_pc",
              INDENT[base_indent]);
-    if( ACIndexFix ) 
+    if( ACIndexFix )
       fprintf( output, " / %d", largest_format_size / 8);
     fprintf( output, "));\n");
     fprintf( output, "%sins_id = instr_dec->id;\n\n", INDENT[base_indent]);
   }
   else EmitDecodification(output, base_indent);
-  
+
   EmitInstrExecIni(output, base_indent);
-  
+
   if( ACStatsFlag ){
     fprintf( output, "%sif(!ac_wait_sig && ins_id) {\n", INDENT[base_indent]);
-    fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n", 
+    fprintf( output, "%sISA.stats[%s_stat_ids::INSTRUCTIONS]++;\n",
             INDENT[base_indent + 1], project_name);
-    fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n", 
+    fprintf( output, "%s(*(ISA.instr_stats[ins_id]))[%s_instr_stat_ids::COUNT]++;\n",
             INDENT[base_indent + 1], project_name);
     fprintf( output, "%s}\n", INDENT[base_indent]);
   }
@@ -4428,7 +4439,7 @@ void EmitDispatch(FILE *output, int base_indent) {
   {
     fprintf( output, "%sgenerate_trace_for_address(ac_pc);\\\n", INDENT[base_indent]);
   }
-  
+
   if( ACABIFlag && !ACDecCacheFlag ) {
       base_indent--;
     if( ACSyscallJump ) {
@@ -4440,7 +4451,7 @@ void EmitDispatch(FILE *output, int base_indent) {
       fprintf( output, "%s} // switch( ac_pc )\n", INDENT[base_indent]);
     }
   }
-  
+
   if (ACVerboseFlag) {
     if( ACABIFlag )
       fprintf( output, "%sdone.write(1);\n", INDENT[base_indent]);
@@ -4456,19 +4467,19 @@ void EmitDispatch(FILE *output, int base_indent) {
     fprintf(output, "#endif\n\n");
   }
 
-  
+
   if(ACDecCacheFlag)
-    fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent]);  
+    fprintf( output, "%sreturn instr_dec->end_rot;\n", INDENT[base_indent]);
   else
-    fprintf( output, "%sreturn IntRoutine[ins_id];\n", INDENT[base_indent]);  
-  
+    fprintf( output, "%sreturn IntRoutine[ins_id];\n", INDENT[base_indent]);
+
   base_indent--;
-  fprintf( output, "%s}\n\n", INDENT[base_indent]);  
+  fprintf( output, "%s}\n\n", INDENT[base_indent]);
 }
 
 
 /**************************************/
-/*!  Emits the Vector with Address of the 
+/*!  Emits the Vector with Address of the
  * Interpretation Routines used by Threading
   \brief Used by CreateProcessorImpl function */
 /***************************************/
@@ -4476,7 +4487,7 @@ void EmitVetLabelAt(FILE *output, int base_indent) {
   extern ac_dec_instr *instr_list;
   ac_dec_instr *pinstr;
   unsigned cont = 0;
-  
+
   fprintf( output, "%svoid* vet[] = {&&I_Init", INDENT[base_indent]);
   for (pinstr = instr_list; pinstr != NULL; pinstr = pinstr->next) {
     fprintf(output, ", ");
@@ -4487,7 +4498,7 @@ void EmitVetLabelAt(FILE *output, int base_indent) {
     fprintf(output, "&&I_%s", pinstr->name);
   }
   fprintf(output, "};\n\n");
-  
+
   fprintf(output, "%sIntRoutine = vet;\n\n", INDENT[base_indent]);
 }
 
@@ -4537,8 +4548,8 @@ void ReadConfFile(){
       int len = readlink("/proc/self/exe", buf, 512-1);
       while (buf[--len] != '/');  // find the path without exec name
       while (buf[--len] != '/');  // find the path without /bin
-      buf[len] = '\0';  
-      strcat(buf,"/etc/archc.conf");      
+      buf[len] = '\0';
+      strcat(buf,"/etc/archc.conf");
       conf_file = fopen(buf,"r");
   }
 
@@ -4742,7 +4753,7 @@ void EnumerateCaches() {
 void GetFetchDevice()
 {
     extern ac_sto_list *fetch_device, *storage_list;
-    ac_sto_list *pstorage; 
+    ac_sto_list *pstorage;
     int lowest_level = 10;
 
     /* Determining which device is gonna be used for fetching instructions */
