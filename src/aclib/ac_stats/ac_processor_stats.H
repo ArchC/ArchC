@@ -85,6 +85,7 @@ class ac_processor_stats : public ac_basic_stats<EN>, public ac_stats_base {
 
     /// Printing method from ac_stats_base.
     void print_stats(ostream& os);
+    void print_stats_csv(FILE* file);
 
     /// Method that adds an ac_instruction_stats to the corresponding list.
     void add_instr_stats(ac_printable_stats* is);
@@ -121,6 +122,29 @@ void ac_processor_stats<EN>::print_stats(ostream& os)
       it++) {
     (*it)->print_stats(os);
   }
+
+}
+
+template <class EN>
+void ac_processor_stats<EN>::print_stats_csv(FILE* file){
+  FILE *output;
+  string filename = "";
+  filename.append(proc_name_);
+  filename.append("_lastrun_stats.csv");
+
+  if ( !(output = fopen( filename.c_str(), "w"))){
+    perror("ArchC could not open stats csv output file");
+    exit(1);
+  }
+  fprintf(output, "INSTRUCTION, USES\n");
+  list<ac_printable_stats*>::iterator it;
+  for (it = list_of_instr_stats_.begin();
+      it != list_of_instr_stats_.end();
+      it++) {
+    (*it)->print_stats_csv(output);
+  }
+
+  fclose(output);
 }
 
 template <class EN>

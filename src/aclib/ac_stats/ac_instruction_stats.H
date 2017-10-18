@@ -87,6 +87,8 @@ class ac_instruction_stats : public ac_basic_stats<EN>,
 
     /// Printing method from ac_printable_stats.
     void print_stats(ostream& os);
+    void print_stats_csv(FILE* file);
+
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -114,6 +116,15 @@ void ac_instruction_stats<EN>::print_stats(ostream& os)
     os << "     " << stat_name_[i] << " : " << stat_[i] << endl;
   }
 }
+
+template <class EN>
+void ac_instruction_stats<EN>::print_stats_csv(FILE* file)
+{
+  for (int i = 0; i < number_of_stats_; i++) {
+    fprintf(file, "%s, %lld\n", instr_name_.c_str(), stat_[i]);
+  }
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 

@@ -111,6 +111,7 @@ enum _ac_cmd_options {
   OPHelp,
   OPDecCache,
   OPStats,
+  OPCSVStats,
   OPVerbose,
   OPVersion,
   OPGDBIntegration,

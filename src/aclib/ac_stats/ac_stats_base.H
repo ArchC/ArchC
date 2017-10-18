@@ -71,9 +71,11 @@ class ac_stats_base : public ac_printable_stats {
 
     /// Prints info of all instances.
     static void print_all_stats(ostream& os);
+    static void print_all_stats_csv();
 
     /// Prints info of this ac_stats_instance.
     virtual void print_stats(ostream& os) = 0;
+    virtual void print_stats_csv(FILE* file) = 0;
 
     /// Virtual destructor.
     virtual ~ac_stats_base();

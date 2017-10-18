@@ -61,6 +61,7 @@ using std::ostream;
 class ac_printable_stats {
   public:
     virtual void print_stats(ostream& os) = 0;
+    virtual void print_stats_csv(FILE* file) = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////

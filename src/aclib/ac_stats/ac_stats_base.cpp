@@ -77,6 +77,14 @@ void ac_stats_base::print_all_stats(ostream& os)
   }
 }
 
+void ac_stats_base::print_all_stats_csv()
+{
+  list<ac_stats_base*>::iterator it;
+  for (it = list_of_stats_.begin(); it != list_of_stats_.end(); it++) {
+    (*it)->print_stats_csv(NULL);
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 // Destructors

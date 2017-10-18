@@ -73,6 +73,7 @@ int  ACDecCacheFlag=1;                          //!<Indicates whether the simula
 int  ACDelayFlag=0;                             //!<Indicates whether delay option is turned on or not
 int  ACDDecoderFlag=0;                          //!<Indicates whether decoder structures are dumped or not
 int  ACStatsFlag=0;                             //!<Indicates whether statistics collection is enable or not
+int  ACCSVStatsFlag = 0;                        //!< Indicates whether statistics collection to csv is enable or not
 int  ACVerboseFlag=0;                           //!<Indicates whether verbose option is turned on or not
 int  ACGDBIntegrationFlag=0;                    //!<Indicates whether gdb support will be included in the simulator
 int  ACWaitFlag=1;                              //!<Indicates whether the instruction execution thread issues a wait() call or not
@@ -128,6 +129,7 @@ struct option_map option_map[] = {
   {"--help"            , "-h"  ,"Display this help message."       , 0},
   {"--no-dec-cache"    , "-ndc","Disable cache of decoded instructions." ,"o"},
   {"--stats"           , "-s"  ,"Enable statistics collection during simulation." ,"o"},
+  {"--stats-csv"         , "-scsv"          , "Enable statistics collection during simulation and output to file $ARCH_lastrun_stats.csv." ,"o"},
   {"--verbose"         , "-vb" ,"Display update logs for storage devices during simulation.", "o"},
   {"--version"         , "-vrs","Display ACSIM version.", 0},
   {"--gdb-integration" , "-gdb","Enable support for debbuging programs running on the simulator.", 0},
@@ -328,6 +330,11 @@ int main(int argc, char** argv) {
               break;
             case OPStats:
               ACStatsFlag = 1;
+              ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
+              break;
+            case OPCSVStats:
+              ACStatsFlag = 1;
+              ACCSVStatsFlag = 1;
               ACOptions_p += sprintf( ACOptions_p, "%s ", argv[0]);
               break;
             case OPVerbose:
@@ -1089,6 +1096,9 @@ void CreateParmHeader() {
 
   if( ACStatsFlag )
     fprintf( output, "#define  AC_STATS \t //!< Indicates that statistics collection is turned on.\n");
+
+  if( ACCSVStatsFlag )
+    fprintf( output, "#define  AC_CSV_STATS \t //!< Indicates that statistics collection is turned on and directed do csv file.\n");
 
   if( HaveMemHier )
     fprintf( output, "#define  AC_MEM_HIERARCHY \t //!< Indicates that a memory hierarchy was declared.\n\n");
@@ -2637,9 +2647,15 @@ void CreateMainTmpl() {
   fprintf(output, "%s%s_proc1.PrintStat();\n", INDENT[1], project_name);
   fprintf(output, "%scerr << endl;\n\n", INDENT[1]);
 
+
+
   fprintf( output, "#ifdef AC_STATS\n");
+  fprintf( output, "%s#ifdef AC_CSV_STATS\n", INDENT[1]);
+  fprintf( output, "%sac_stats_base::print_all_stats_csv();\n",INDENT[2]);
+  fprintf( output, "%s#else\n", INDENT[1]);
   fprintf( output, "%sac_stats_base::print_all_stats(std::cerr);\n",
-           INDENT[1]);
+           INDENT[2]);
+  fprintf( output, "%s#endif \n\n", INDENT[1]);
   fprintf( output, "#endif \n\n");
 
   fprintf( output, "#ifdef AC_DEBUG\n");
@@ -3520,7 +3536,7 @@ void CreateMakefile(){
 
   fprintf( output, "model_clean:\n");
   //fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) $(ACFILESHEAD)  *.tmpl loader.ac \n\n");
-  fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) *.tmpl loader.ac \n\n");
+  fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) %s*.tmpl loader.ac \n\n", ACStatsFlag ? "$(TARGET)_stats.cpp " : "");
 
   fprintf( output, "sim_clean: clean model_clean\n\n");
 
