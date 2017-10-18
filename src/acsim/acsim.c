@@ -3536,7 +3536,7 @@ void CreateMakefile(){
 
   fprintf( output, "model_clean:\n");
   //fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) $(ACFILESHEAD)  *.tmpl loader.ac \n\n");
-  fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) *.tmpl loader.ac \n\n");
+  fprintf( output, "\trm -f $(ACSRCS) $(ACHEAD) $(ACINCS) %s*.tmpl loader.ac \n\n", ACStatsFlag ? "$(TARGET)_stats.cpp " : "");
 
   fprintf( output, "sim_clean: clean model_clean\n\n");
 
